@@ -21,7 +21,7 @@ export default function Home() {
   const [toastMilestones, setToastMilestones] = useState([])
 
   useEffect(() => {
-    const id = setInterval(() => setTickCount(c => c + 1), 1000)
+    const id = setInterval(() => setTickCount(c => c + 1), 100)
     return () => clearInterval(id)
   }, [])
 
@@ -32,7 +32,6 @@ export default function Home() {
       return
     }
 
-    // Fetch user's name
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name')
@@ -59,7 +58,6 @@ export default function Home() {
       setTrackers(data)
       if (activeIdx >= data.length) setActiveIdx(0)
 
-      // Check for new milestones across all trackers
       const allNew = []
       for (const tr of data) {
         const newOnes = await checkAndMarkMilestones(tr, user.id)
@@ -183,6 +181,18 @@ export default function Home() {
 
   const pad = (n) => String(n).padStart(2, '0')
 
+  // Days in current month — for accurate days jar
+  const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+
+  // JAR FILL PERCENTAGES — each unit measures only itself within its own cycle
+  const ms = now.getMilliseconds()
+  const yearsFill = (years / 10) * 100             // max 10 years
+  const monthsFill = (months / 12) * 100            // max 12 months
+  const daysFill = (days / daysInCurrentMonth) * 100 // max 28-31 days
+  const hoursFill = (hours / 24) * 100              // max 24 hours
+  const minsFill = (mins / 60) * 100                // max 60 mins
+  const secsFill = ((secs * 1000 + ms) / 60000) * 100 // smooth fill within each second
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
@@ -247,13 +257,13 @@ export default function Home() {
           </p>
 
           <div style={styles.gridA}>
-            <Cell n={years} u="year" />
-            <Cell n={months} u="months" />
-            <Cell n={days} u="days" />
+            <Cell n={years} u="year" fillPercent={yearsFill} hideIfZero />
+            <Cell n={months} u="months" fillPercent={monthsFill} />
+            <Cell n={days} u="days" fillPercent={daysFill} />
             <div style={styles.row2}>
-              <Cell n={pad(hours)} u="hours" />
-              <Cell n={pad(mins)} u="mins" />
-              <Cell n={pad(secs)} u="secs" accent />
+              <Cell n={pad(hours)} u="hours" fillPercent={hoursFill} />
+              <Cell n={pad(mins)} u="mins" fillPercent={minsFill} />
+              <Cell n={pad(secs)} u="secs" fillPercent={secsFill} accent />
             </div>
           </div>
 
@@ -428,11 +438,32 @@ export default function Home() {
   )
 }
 
-function Cell({ n, u, accent }) {
+function Cell({ n, u, accent, fillPercent, hideIfZero }) {
+  const isHidden = hideIfZero && (!n || n === 0 || n === '00')
+  
   return (
     <div style={styles.cellA}>
-      <p style={{...styles.cellN, ...(accent ? styles.cellAccent : {})}}>{n}</p>
-      <p style={styles.cellU}>{u}</p>
+      {!isHidden && (
+        <div 
+          style={{
+            ...styles.cellFill,
+            height: `${Math.min(fillPercent || 0, 100)}%`,
+            background: accent
+              ? 'linear-gradient(180deg, rgba(197,87,44,0.30) 0%, rgba(197,87,44,0.55) 100%)'
+              : 'linear-gradient(180deg, rgba(217,151,80,0.25) 0%, rgba(197,109,44,0.45) 100%)',
+          }}
+        />
+      )}
+      <div style={styles.cellContent}>
+        {isHidden ? (
+          <p style={{...styles.cellU, marginTop: '14px'}}>—</p>
+        ) : (
+          <>
+            <p style={{...styles.cellN, ...(accent ? styles.cellAccent : {})}}>{n}</p>
+            <p style={styles.cellU}>{u}</p>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -537,9 +568,27 @@ const styles = {
   row2: { gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' },
   cellA: {
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F6EFDD 100%)',
-    borderRadius: '12px', padding: '12px 4px 10px', textAlign: 'center',
+    borderRadius: '12px',
+    padding: '12px 4px 10px',
+    textAlign: 'center',
     border: '0.5px solid #ECE2CD',
     boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.7), 0 1px 2px rgba(120,80,30,0.04)',
+    position: 'relative',
+    overflow: 'hidden',
+    minHeight: '54px',
+  },
+  cellFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    transition: 'height 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+    pointerEvents: 'none',
+    zIndex: 0,
+  },
+  cellContent: {
+    position: 'relative',
+    zIndex: 1,
   },
   cellN: {
     fontSize: '22px', fontWeight: 500, color: '#2A1F15',
