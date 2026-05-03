@@ -12,6 +12,19 @@ const TECHNIQUES = [
   { id: 'reach', name: 'Reach out', duration: 0 },
 ]
 
+const RELATIONSHIPS = [
+  { value: 'mother', label: 'Mother', icon: '👩' },
+  { value: 'father', label: 'Father', icon: '👨' },
+  { value: 'partner', label: 'Partner', icon: '💑' },
+  { value: 'sibling', label: 'Sibling', icon: '👫' },
+  { value: 'friend', label: 'Friend', icon: '🤝' },
+  { value: 'sponsor', label: 'Sponsor', icon: '🪶' },
+  { value: 'counselor', label: 'Counselor', icon: '🧘' },
+  { value: 'other', label: 'Other', icon: '⚓' },
+]
+
+const URGE_MESSAGE = "Hey, I'm having a tough moment. Can you talk?"
+
 export default function UrgeFlow() {
   const { trackerId } = useParams()
   const navigate = useNavigate()
@@ -170,7 +183,6 @@ function Intro({ onStart, onCancel, tracker }) {
         return
       }
 
-      // Progress measured from start of streak (not from last milestone)
       const progressPct = Math.min(
         Math.max(Math.round((daysCleanFloat / nextMilestone.days_required) * 100), 0),
         99
@@ -337,7 +349,7 @@ function BreathTechnique({ stepNum, total, onDone, onSkip }) {
   )
 }
 
-// ────────── 2. TAP TO FOCUS — 3x4 grid ──────────
+// ────────── 2. TAP TO FOCUS ──────────
 function TapTechnique({ stepNum, total, onDone, onSkip }) {
   const GRID_ROWS = 4
   const GRID_COLS = 3
@@ -767,23 +779,122 @@ function WhyTechnique({ stepNum, total, profileBio, onDone }) {
   )
 }
 
-// ────────── 6. REACH OUT ──────────
+// ────────── 6. REACH OUT — with anchors integration ──────────
 function ReachOutTechnique({ stepNum, total, onDone }) {
+  const [anchors, setAnchors] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [expandedId, setExpandedId] = useState(null)
+
+  useEffect(() => {
+    async function loadAnchors() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+      const { data } = await supabase
+        .from('anchors')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('position')
+      setAnchors(data || [])
+      setLoading(false)
+    }
+    loadAnchors()
+  }, [])
+
+  const handleCall = (anchor) => {
+    window.location.href = `tel:${anchor.phone}`
+  }
+
+  const handleWhatsApp = (anchor) => {
+    const cleanPhone = anchor.phone.replace(/\D/g, '')
+    const body = encodeURIComponent(URGE_MESSAGE)
+    window.open(`https://wa.me/${cleanPhone}?text=${body}`, '_blank')
+  }
+
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id)
+  }
+
   return (
     <div style={styles.center}>
       <p style={styles.techCount}>{stepNum} of {total} · Reach out</p>
-      <div style={styles.softIcon}>🤝</div>
-      <h3 style={styles.bigTitle}>Call someone you trust.</h3>
+      <div style={styles.softIcon}>⚓</div>
+      <h3 style={styles.bigTitle}>You don't have to do this alone.</h3>
       <p style={styles.body}>
-        A parent. A friend. A sponsor.<br/>
-        You don't have to talk about the urge.<br/>
-        Just hearing a voice helps.
+        Reach out to an anchor.<br/>
+        You don't have to explain. Just hearing a voice helps.
       </p>
-      <div style={styles.placeholderBox}>
-        <p style={styles.placeholderText}>
-          Trusted contacts coming soon — for now, open your phone and call someone close.
-        </p>
-      </div>
+
+      {loading ? (
+        <p style={{...styles.subtle, marginTop: '1rem'}}>Loading...</p>
+      ) : anchors.length === 0 ? (
+        <div style={styles.anchorsEmptyBox}>
+          <p style={styles.anchorsEmptyText}>
+            No anchors set up yet.
+          </p>
+          <p style={styles.anchorsEmptySubtle}>
+            After this urge passes, add 1-3 trusted people in the Anchors tab. They'll be here next time.
+          </p>
+        </div>
+      ) : (
+        <div style={styles.anchorsListUrge}>
+          {anchors.map(anchor => {
+            const rel = RELATIONSHIPS.find(r => r.value === anchor.relationship) || RELATIONSHIPS[7]
+            const isExpanded = expandedId === anchor.id
+            const hasWhy = !!anchor.why_note
+
+            return (
+              <div key={anchor.id} style={styles.anchorCardUrge}>
+                <div style={styles.anchorCardHead}>
+                  <div style={styles.anchorRowAvatar}>
+                    {anchor.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div style={styles.anchorRowInfo}>
+                    <p style={styles.anchorRowName}>
+                      {anchor.name}
+                      <span style={styles.anchorRelBadge}>{rel.icon} {rel.label}</span>
+                    </p>
+                    <p style={styles.anchorRowPhone}>{anchor.phone}</p>
+                  </div>
+                </div>
+
+                {hasWhy && (
+                  <button
+                    onClick={() => toggleExpand(anchor.id)}
+                    style={styles.whyToggle}
+                  >
+                    {isExpanded ? '▾ Hide why' : '▸ Why they matter'}
+                  </button>
+                )}
+
+                {isExpanded && hasWhy && (
+                  <div style={styles.whyExpanded}>
+                    <span style={styles.whyExpandedQuote}>"</span>
+                    <p style={styles.whyExpandedText}>{anchor.why_note}</p>
+                  </div>
+                )}
+
+                <div style={styles.anchorActions}>
+                  <button
+                    onClick={() => handleCall(anchor)}
+                    style={styles.callBtn}
+                  >
+                    <span style={{fontSize: '17px'}}>📞</span>
+                    <span>Call</span>
+                  </button>
+                  <button
+                    onClick={() => handleWhatsApp(anchor)}
+                    style={styles.msgBtn}
+                  >
+                    <span style={{fontSize: '17px'}}>💬</span>
+                    <span>Message</span>
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       <button onClick={onDone} style={{...styles.btnPill, ...styles.btnPrimary, marginTop: '1.5rem'}}>
         Done →
       </button>
@@ -810,7 +921,7 @@ function CheckIn({ onPassed, onStill }) {
   )
 }
 
-// ────────── FEEDBACK with expanded triggers + pill button ──────────
+// ────────── FEEDBACK ──────────
 function Feedback({ intensity, setIntensity, trigger, setTrigger, onDone, saving }) {
   const intensities = ['Mild', 'Moderate', 'Strong']
   const triggers = [
@@ -906,22 +1017,17 @@ const styles = {
     boxShadow: '0 4px 14px rgba(80,50,20,0.06)',
   },
   meterCompletedText: {
-    fontSize: '14px',
-    color: '#2A1F15',
+    fontSize: '14px', color: '#2A1F15',
     margin: '0.5rem 0 0.25rem',
-    fontFamily: 'Georgia, serif',
-    lineHeight: 1.4,
+    fontFamily: 'Georgia, serif', lineHeight: 1.4,
   },
   meterMilestoneText: {
-    fontSize: '13px',
-    color: '#854F0B',
-    margin: '0 0 0.5rem',
-    fontWeight: 500,
+    fontSize: '13px', color: '#854F0B',
+    margin: '0 0 0.5rem', fontWeight: 500,
     fontFamily: 'Georgia, serif',
   },
   meterMotivation: {
-    fontSize: '12px',
-    color: '#9C8C78',
+    fontSize: '12px', color: '#9C8C78',
     fontStyle: 'italic',
     margin: '0.5rem 0 0',
     fontFamily: 'Georgia, serif',
@@ -959,12 +1065,9 @@ const styles = {
     fontFamily: 'inherit', flex: 1,
   },
   btnPill: {
-    padding: '11px 28px',
-    borderRadius: '999px',
-    fontSize: '13px',
-    fontWeight: 500,
-    border: 'none',
-    cursor: 'pointer',
+    padding: '11px 28px', borderRadius: '999px',
+    fontSize: '13px', fontWeight: 500,
+    border: 'none', cursor: 'pointer',
     fontFamily: 'inherit',
     letterSpacing: '0.02em',
   },
@@ -1133,14 +1236,125 @@ const styles = {
     zIndex: 3,
     transition: 'opacity 0.3s',
   },
-  placeholderBox: {
+  // ANCHORS in urge flow
+  anchorsListUrge: {
+    display: 'flex', flexDirection: 'column', gap: '10px',
+    width: '100%', boxSizing: 'border-box',
+    margin: '1rem 0 0',
+  },
+  anchorCardUrge: {
+    background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',
+    border: '0.5px solid #E8DFD0',
+    borderRadius: '14px',
+    padding: '12px',
+    boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
+  },
+  anchorCardHead: {
+    display: 'flex', alignItems: 'center', gap: '10px',
+    width: '100%',
+  },
+  anchorRowAvatar: {
+    width: '40px', height: '40px', borderRadius: '50%',
+    background: 'linear-gradient(180deg, #C5572C 0%, #A8431F 100%)',
+    color: '#FAF7F1',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '16px', fontWeight: 500, fontFamily: 'Georgia, serif',
+    flexShrink: 0,
+  },
+  anchorRowInfo: { flex: 1, minWidth: 0, textAlign: 'left' },
+  anchorRowName: {
+    fontSize: '14px', fontWeight: 500, color: '#2A1F15',
+    margin: 0, fontFamily: 'Georgia, serif',
+    display: 'flex', alignItems: 'center', gap: '6px',
+    flexWrap: 'wrap',
+  },
+  anchorRelBadge: {
+    fontSize: '10px',
+    background: '#F4ECDD',
+    color: '#854F0B',
+    padding: '1px 8px',
+    borderRadius: '999px',
+    fontWeight: 500,
+    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+    fontStyle: 'normal',
+  },
+  anchorRowPhone: {
+    fontSize: '11px', color: '#6B5C4A',
+    margin: '2px 0 0',
+    fontVariantNumeric: 'tabular-nums',
+  },
+  whyToggle: {
+    background: 'transparent', border: 'none',
+    color: '#854F0B', fontSize: '11px',
+    cursor: 'pointer', fontFamily: 'inherit',
+    fontWeight: 500, padding: '8px 0 4px',
+    width: '100%', textAlign: 'left',
+    fontStyle: 'italic',
+  },
+  whyExpanded: {
+    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
+    border: '0.5px solid #E8DCC2',
+    borderRadius: '10px',
+    padding: '10px 12px',
+    margin: '6px 0 8px',
+    display: 'flex', alignItems: 'flex-start', gap: '6px',
+  },
+  whyExpandedQuote: {
+    fontSize: '20px',
+    color: '#C5572C',
+    lineHeight: 0.8,
+    fontWeight: 700,
+    fontFamily: 'Georgia, serif',
+    opacity: 0.55,
+    flexShrink: 0,
+  },
+  whyExpandedText: {
+    fontSize: '12px', color: '#2A1F15',
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    lineHeight: 1.5,
+    margin: 0,
+    flex: 1,
+    textAlign: 'left',
+  },
+  anchorActions: {
+    display: 'flex', gap: '8px', marginTop: '10px',
+  },
+  callBtn: {
+    flex: 1,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+    padding: '10px',
+    background: 'linear-gradient(180deg, #7A8C5A 0%, #5A6B45 100%)',
+    color: 'white',
+    border: 'none', borderRadius: '12px',
+    fontSize: '13px', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit',
+    boxShadow: '0 3px 10px rgba(122,140,90,0.3)',
+  },
+  msgBtn: {
+    flex: 1,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+    padding: '10px',
+    background: 'linear-gradient(180deg, #25D366 0%, #1da955 100%)',
+    color: 'white',
+    border: 'none', borderRadius: '12px',
+    fontSize: '13px', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit',
+    boxShadow: '0 3px 10px rgba(37,211,102,0.3)',
+  },
+  anchorsEmptyBox: {
     background: '#F4ECDD',
     border: '0.5px dashed #C9B894',
-    borderRadius: '12px', padding: '14px',
-    margin: '1rem 0', width: '100%', boxSizing: 'border-box',
+    borderRadius: '12px', padding: '16px',
+    margin: '1rem 0 0', width: '100%', boxSizing: 'border-box',
   },
-  placeholderText: {
-    fontSize: '12px', color: '#854F0B',
+  anchorsEmptyText: {
+    fontSize: '13px', color: '#2A1F15',
+    margin: '0 0 4px', fontWeight: 500,
+    fontFamily: 'Georgia, serif',
+  },
+  anchorsEmptySubtle: {
+    fontSize: '11px', color: '#854F0B',
     margin: 0, fontStyle: 'italic',
     lineHeight: 1.5, fontFamily: 'Georgia, serif',
   },

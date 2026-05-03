@@ -316,10 +316,10 @@ export default function Profile() {
         )}
 
         <div style={styles.tabRow}>
-          <button onClick={() => navigate('/home')} style={styles.tab}>{t('home')}</button>
-          <button onClick={() => alert('Community coming soon')} style={styles.tab}>{t('community')}</button>
-          <button style={{...styles.tab, ...styles.tabActive}}>{t('profile')}</button>
-        </div>
+  <button onClick={() => navigate('/home')} style={styles.tab}>{t('home')}</button>
+  <button onClick={() => navigate('/anchors')} style={styles.tab}>Anchors</button>
+  <button style={{...styles.tab, ...styles.tabActive}}>{t('profile')}</button>
+</div>
 
         {showSettings && (
           <div style={styles.modal} onClick={() => setShowSettings(false)}>

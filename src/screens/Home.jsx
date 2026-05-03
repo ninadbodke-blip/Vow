@@ -309,20 +309,20 @@ export default function Home() {
         </div>
 
         <div style={styles.tabRow}>
-          <button style={{...styles.tab, ...styles.tabActive, border: 'none', cursor: 'pointer', fontFamily: 'inherit'}}>{t('home')}</button>
-          <button 
-            onClick={() => alert('Community coming soon')}
-            style={{...styles.tab, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit'}}
-          >
-            {t('community')}
-          </button>
-          <button 
-            onClick={() => navigate('/profile')}
-            style={{...styles.tab, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit'}}
-          >
-            {t('profile')}
-          </button>
-        </div>
+  <button style={{...styles.tab, ...styles.tabActive, border: 'none', cursor: 'pointer', fontFamily: 'inherit'}}>{t('home')}</button>
+  <button 
+    onClick={() => navigate('/anchors')}
+    style={{...styles.tab, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit'}}
+  >
+    Anchors
+  </button>
+  <button 
+    onClick={() => navigate('/profile')}
+    style={{...styles.tab, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit'}}
+  >
+    {t('profile')}
+  </button>
+</div>
 
         <div style={styles.devBar}>
           <button onClick={resetLang} style={styles.devBtn}>Reset language</button>

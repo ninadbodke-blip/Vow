@@ -14,6 +14,8 @@ import Milestones from './screens/Milestones'
 import Home from './screens/Home'
 import SlipHistory from './screens/SlipHistory'
 import UrgeLog from './screens/UrgeLog'
+import Anchors from './screens/Anchors'
+import AnchorPublic from './screens/AnchorPublic'
 
 function AppRoutes() {
   const { lang } = useLang()
@@ -75,6 +77,7 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/a/:token" element={<AnchorPublic />} />
       <Route 
         path="/" 
         element={
@@ -135,6 +138,10 @@ function AppRoutes() {
 <Route 
   path="/urges" 
   element={session ? <UrgeLog /> : <Navigate to="/welcome" />} 
+/>
+<Route 
+  path="/anchors" 
+  element={session ? <Anchors /> : <Navigate to="/welcome" />} 
 />
     </Routes>
   )
