@@ -6,16 +6,20 @@ import LanguageSelector from './screens/onboarding/LanguageSelector'
 import SignUp from './screens/onboarding/SignUp'
 import AddictionPicker from './screens/onboarding/AddictionPicker'
 import TrackerSetup from './screens/onboarding/TrackerSetup'
+import Welcome from './screens/onboarding/Welcome'
 import SlipFlow from './screens/SlipFlow'
 import UrgeFlow from './screens/UrgeFlow'
 import Profile from './screens/Profile'
 import Milestones from './screens/Milestones'
 import Home from './screens/Home'
+import SlipHistory from './screens/SlipHistory'
+import UrgeLog from './screens/UrgeLog'
 
 function AppRoutes() {
   const { lang } = useLang()
   const [session, setSession] = useState(undefined)
   const [hasTrackers, setHasTrackers] = useState(undefined)
+  const [onboardingDone, setOnboardingDone] = useState(undefined)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -24,17 +28,19 @@ function AppRoutes() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      setHasTrackers(undefined) // reset to recheck
+      setHasTrackers(undefined)
+      setOnboardingDone(undefined)
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  // When session changes, check if user has trackers
+  // When session changes, check trackers + onboarding status
   useEffect(() => {
     async function check() {
       if (!session) {
         setHasTrackers(null)
+        setOnboardingDone(null)
         return
       }
       const { count } = await supabase
@@ -43,12 +49,19 @@ function AppRoutes() {
         .eq('user_id', session.user.id)
         .eq('is_active', true)
       setHasTrackers(count > 0)
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', session.user.id)
+        .single()
+      setOnboardingDone(!!profile?.onboarding_completed)
     }
     if (session) check()
   }, [session])
 
-  // Loading states
-  if (session === undefined || (session && hasTrackers === undefined)) {
+  // Loading
+  if (session === undefined || (session && (hasTrackers === undefined || onboardingDone === undefined))) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -66,9 +79,17 @@ function AppRoutes() {
         path="/" 
         element={
           !lang ? <LanguageSelector /> :
-          !session ? <Navigate to="/signup" /> :
+          !session ? <Navigate to="/welcome" /> :
           hasTrackers ? <Navigate to="/home" /> :
           <Navigate to="/onboarding/addiction" />
+        } 
+      />
+      <Route 
+        path="/welcome" 
+        element={
+          !lang ? <Navigate to="/" /> :
+          session ? <Navigate to="/home" /> :
+          <Welcome />
         } 
       />
       <Route 
@@ -81,7 +102,7 @@ function AppRoutes() {
       />
       <Route 
         path="/onboarding/addiction" 
-        element={session ? <AddictionPicker /> : <Navigate to="/signup" />} 
+        element={session ? <AddictionPicker onboardingDone={onboardingDone} /> : <Navigate to="/signup" />} 
       />
       <Route 
         path="/onboarding/setup" 
@@ -89,23 +110,31 @@ function AppRoutes() {
       />
       <Route 
         path="/home" 
-        element={session ? <Home /> : <Navigate to="/signup" />} 
+        element={session ? <Home /> : <Navigate to="/welcome" />} 
       />
       <Route 
-  path="/profile" 
-  element={session ? <Profile /> : <Navigate to="/signup" />} 
-/>
-<Route 
-  path="/milestones/:trackerId" 
-  element={session ? <Milestones /> : <Navigate to="/signup" />} 
-/>
+        path="/profile" 
+        element={session ? <Profile /> : <Navigate to="/welcome" />} 
+      />
       <Route 
-  path="/slip/:trackerId" 
-  element={session ? <SlipFlow /> : <Navigate to="/signup" />} 
+        path="/slip/:trackerId" 
+        element={session ? <SlipFlow /> : <Navigate to="/welcome" />} 
+      />
+      <Route 
+        path="/urge/:trackerId" 
+        element={session ? <UrgeFlow /> : <Navigate to="/welcome" />} 
+      />
+      <Route 
+        path="/milestones/:trackerId" 
+        element={session ? <Milestones /> : <Navigate to="/welcome" />} 
+      />
+      <Route 
+  path="/slips" 
+  element={session ? <SlipHistory /> : <Navigate to="/welcome" />} 
 />
 <Route 
-  path="/urge/:trackerId" 
-  element={session ? <UrgeFlow /> : <Navigate to="/signup" />} 
+  path="/urges" 
+  element={session ? <UrgeLog /> : <Navigate to="/welcome" />} 
 />
     </Routes>
   )

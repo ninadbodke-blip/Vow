@@ -76,10 +76,10 @@ export default function Home() {
   }, [])
 
   const resetLang = () => {
-    localStorage.removeItem('vow_lang')
-    setLang(null)
-    navigate('/')
-  }
+  localStorage.removeItem('vow_lang')
+  setLang(null)
+  navigate('/')
+}
 
   const signOut = async () => {
     await supabase.auth.signOut()

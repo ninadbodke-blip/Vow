@@ -24,7 +24,7 @@ export const translations = {
     next: 'Next',
     back: 'Back',
     finish: 'Finish Setup',
-    logUrge: 'Log Urge',
+    logUrge: 'Urge Incoming',
     iSlipped: 'I Slipped',
     moneySaved: 'Money Saved',
     longestStreak: 'Longest Streak',

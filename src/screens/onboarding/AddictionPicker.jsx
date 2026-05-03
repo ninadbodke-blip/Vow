@@ -3,160 +3,128 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../../LanguageContext'
 import { supabase } from '../../supabaseClient'
 
-const styles = {
-  frame: {
-    minHeight: '100vh',
-    background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
-    padding: '2rem 1rem',
-    display: 'flex',
-    justifyContent: 'center',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  },
-  card: {
-    background: '#FAF7F1',
-    maxWidth: '460px',
-    width: '100%',
-    borderRadius: '28px',
-    padding: '2rem 1.5rem',
-    boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
-  },
-  header: { textAlign: 'center', marginBottom: '1.5rem' },
-  title: {
-    fontSize: '22px', fontWeight: 500, color: '#2A1F15', margin: 0,
-    fontFamily: 'Georgia, serif',
-  },
-  subtitle: {
-    fontSize: '12px', color: '#8A7B6A', margin: '6px 0 0',
-  },
-  countBar: {
-    fontSize: '11px', color: '#6B5C4A',
-    textAlign: 'center', marginBottom: '1rem',
-    padding: '8px', background: '#F4ECDD',
-    borderRadius: '8px',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '8px',
-    marginBottom: '1.5rem',
-  },
-  tile: {
+const FREE_LIMIT = 2
+
+function DemonFace({ selected }) {
+  if (selected) {
+    return (
+      <div style={demonStyles.selectedWrap}>
+        <div style={demonStyles.selectedIcon}>{selected.icon}</div>
+        <p style={demonStyles.selectedName}>{selected.name}</p>
+        <p style={demonStyles.tapToChange}>Tap to change</p>
+      </div>
+    )
+  }
+
+  return (
+    <svg viewBox="0 0 240 240" style={{ width: '100%', height: '100%' }}>
+      <defs>
+        <radialGradient id="demonBody" cx="50%" cy="40%">
+          <stop offset="0%" stopColor="#5A2A1A" />
+          <stop offset="100%" stopColor="#2A0F08" />
+        </radialGradient>
+        <radialGradient id="demonEye" cx="50%" cy="40%">
+          <stop offset="0%" stopColor="#FFD088" />
+          <stop offset="40%" stopColor="#E8754A" />
+          <stop offset="100%" stopColor="#A93B1A" />
+        </radialGradient>
+      </defs>
+      
+      {/* Subtle glow halo */}
+      <circle cx="120" cy="125" r="105" fill="rgba(232,117,74,0.08)" />
+      <circle cx="120" cy="125" r="90" fill="rgba(232,117,74,0.10)" />
+      
+      {/* Horns */}
+      <path d="M 70 75 Q 60 40 80 35 Q 85 55 90 80 Z" fill="url(#demonBody)" />
+      <path d="M 170 75 Q 180 40 160 35 Q 155 55 150 80 Z" fill="url(#demonBody)" />
+      
+      {/* Head — rounded triangular */}
+      <path d="M 120 75 Q 75 80 70 130 Q 70 175 120 200 Q 170 175 170 130 Q 165 80 120 75 Z" 
+            fill="url(#demonBody)" />
+      
+      {/* Inner shadow on head for depth */}
+      <path d="M 120 85 Q 85 88 80 135 Q 82 165 120 188 Q 158 165 160 135 Q 155 88 120 85 Z" 
+            fill="rgba(0,0,0,0.2)" />
+      
+      {/* Eyes — glowing */}
+      <ellipse cx="98" cy="125" rx="14" ry="10" fill="url(#demonEye)" />
+      <ellipse cx="142" cy="125" rx="14" ry="10" fill="url(#demonEye)" />
+      
+      {/* Eye pupils */}
+      <ellipse cx="98" cy="125" rx="4" ry="6" fill="#1A0805" />
+      <ellipse cx="142" cy="125" rx="4" ry="6" fill="#1A0805" />
+      
+      {/* Eye highlights */}
+      <circle cx="100" cy="121" r="2" fill="#FFE8C4" />
+      <circle cx="144" cy="121" r="2" fill="#FFE8C4" />
+      
+      {/* Mouth — sharp grin */}
+      <path d="M 95 165 Q 120 175 145 165 L 142 172 L 138 168 L 132 174 L 128 168 L 120 175 L 112 168 L 108 174 L 102 168 L 98 172 Z" 
+            fill="#1A0805" />
+      
+      {/* Subtle cheek shadows */}
+      <ellipse cx="85" cy="150" rx="8" ry="4" fill="rgba(0,0,0,0.25)" />
+      <ellipse cx="155" cy="150" rx="8" ry="4" fill="rgba(0,0,0,0.25)" />
+    </svg>
+  )
+}
+
+const demonStyles = {
+  selectedWrap: {
+    width: '100%', height: '100%',
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center',
     background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
-    padding: '14px 6px',
-    cursor: 'pointer',
-    textAlign: 'center',
-    boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
-    transition: 'all 0.15s',
-    position: 'relative',
-    fontFamily: 'inherit',
+    border: '2px solid #C5572C',
+    borderRadius: '50%',
+    boxShadow: '0 8px 24px rgba(197,87,44,0.2)',
   },
-  tileSelected: {
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    border: '0.5px solid #241710',
-    boxShadow: '0 4px 12px rgba(40,25,10,0.25)',
+  selectedIcon: { fontSize: '64px', marginBottom: '8px' },
+  selectedName: {
+    fontSize: '16px', fontWeight: 600, color: '#2A1F15',
+    fontFamily: 'Georgia, serif', margin: 0,
   },
-  tileExisting: {
-    background: '#E8DCC2',
-    border: '0.5px solid #C9B894',
-    cursor: 'not-allowed',
-  },
-  tileLocked: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  },
-  icon: { fontSize: '22px', marginBottom: '4px' },
-  name: {
-    fontSize: '11px',
-    color: '#2A1F15',
-    fontWeight: 500,
-    margin: 0,
-    lineHeight: 1.25,
-  },
-  nameSelected: { color: '#FAF7F1' },
-  badge: {
-    position: 'absolute',
-    top: '4px',
-    right: '4px',
-    color: 'white',
-    borderRadius: '6px',
-    padding: '1px 5px',
-    fontSize: '8px',
-    fontWeight: 500,
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-  },
-  badgeAdded: { background: '#7A8C5A' },
-  badgePro: { background: '#D97757' },
-  bottomBar: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  btn: {
-    padding: '14px',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: 500,
-    border: 'none',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-  },
-  btnPrimary: {
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
-  },
-  btnSecondary: {
-    background: 'white',
-    color: '#2A1F15',
-    border: '0.5px solid #DDCFB6',
-  },
-  btnDisabled: { opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' },
-  err: {
-    fontSize: '12px', color: '#B23B3B',
-    textAlign: 'center', padding: '8px',
-    background: '#FBEBEB', borderRadius: '6px',
-    marginBottom: '8px',
+  tapToChange: {
+    fontSize: '11px', color: '#9C8C78',
+    margin: '4px 0 0', fontStyle: 'italic',
   },
 }
 
-const FREE_LIMIT = 2
-
-export default function AddictionPicker() {
+export default function AddictionPicker({ onboardingDone }) {
   const { t } = useLang()
   const navigate = useNavigate()
 
   const [addictions, setAddictions] = useState([])
   const [existingIds, setExistingIds] = useState([])
-  const [selected, setSelected] = useState([])
+  const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showFounderMessage, setShowFounderMessage] = useState(false)
+  const [showAddictionList, setShowAddictionList] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     async function load() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-          navigate('/signup')
-          return
-        }
+        if (!user) { navigate('/signup'); return }
 
-        // Load all addiction types
-        const { data: addictionData, error: aErr } = await supabase
-          .from('addiction_types')
-          .select('*')
-          .order('id')
-        if (aErr) throw aErr
+        const { data: addictionData } = await supabase
+          .from('addiction_types').select('*').order('id')
 
-        // Load user's existing active trackers
-        const { data: trackerData, error: tErr } = await supabase
-          .from('trackers')
-          .select('addiction_type_id')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-        if (tErr) throw tErr
+        const { data: trackerData } = await supabase
+          .from('trackers').select('addiction_type_id')
+          .eq('user_id', user.id).eq('is_active', true)
 
-        const existing = trackerData.map(t => t.addiction_type_id).filter(Boolean)
+        const existing = trackerData?.map(t => t.addiction_type_id).filter(Boolean) || []
         setExistingIds(existing)
-        setAddictions(addictionData)
+        setAddictions(addictionData || [])
+
+        if (!onboardingDone) setShowFounderMessage(true)
+
+        if (existing.length >= FREE_LIMIT) {
+          setError(`You're already tracking ${FREE_LIMIT} addictions on the free plan. Delete one or upgrade to add more.`)
+        }
       } catch (err) {
         setError(err.message)
       } finally {
@@ -164,40 +132,26 @@ export default function AddictionPicker() {
       }
     }
     load()
-  }, [])
-
-  const slotsLeft = FREE_LIMIT - existingIds.length
-  const canAddMore = slotsLeft > 0
-
-  const toggle = (id) => {
-    setError(null)
-    if (existingIds.includes(id)) {
-      setError('You\'re already tracking this. Go back to home to view it.')
-      return
-    }
-    if (selected.includes(id)) {
-      setSelected(selected.filter(s => s !== id))
-    } else {
-      if (selected.length >= slotsLeft) {
-        setError(`Free plan allows ${FREE_LIMIT} addictions. You're already tracking ${existingIds.length}. Delete one or upgrade to Premium.`)
-        return
-      }
-      setSelected([...selected, id])
-    }
-  }
+  }, [onboardingDone])
 
   const handleNext = () => {
-    if (selected.length === 0) {
-      setError('Please choose at least one to begin.')
+    if (!selected) {
+      setError('Tap the icon above to pick what you\'re quitting.')
       return
     }
-    navigate('/onboarding/setup', { state: { selectedIds: selected } })
+    navigate('/onboarding/setup', { state: { selectedIds: [selected.id] } })
   }
 
   const handleBack = () => {
     if (existingIds.length > 0) navigate('/home')
     else navigate('/signup')
   }
+
+  const filteredAddictions = addictions.filter(a => {
+    if (existingIds.includes(a.id)) return false
+    if (!searchQuery) return true
+    return a.name.toLowerCase().includes(searchQuery.toLowerCase())
+  })
 
   if (loading) {
     return (
@@ -211,72 +165,375 @@ export default function AddictionPicker() {
     <div style={styles.frame}>
       <div style={styles.card}>
         <div style={styles.header}>
-          <h2 style={styles.title}>
-            {existingIds.length > 0 ? 'Add another addiction' : t('pickAddictions')}
-          </h2>
-          <p style={styles.subtitle}>
-            {existingIds.length > 0
-              ? `You can add ${slotsLeft} more on free plan`
-              : t('pickUpTo2')}
-          </p>
+          {existingIds.length > 0 && (
+            <button onClick={handleBack} style={styles.backBtn}>‹ Back</button>
+          )}
+          <div style={{flex: 1}}></div>
         </div>
 
-        <div style={styles.countBar}>
-          {existingIds.length > 0 && `${existingIds.length} already tracking · `}
-          {selected.length} of {slotsLeft} new selected
-        </div>
+        <h1 style={styles.title}>
+          Which vice do you vow to quit today?
+        </h1>
+        <p style={styles.subtitle}>
+          Tap the face below to name your battle.
+        </p>
+
+        <button
+          onClick={() => setShowAddictionList(true)}
+          style={styles.demonBtn}
+          aria-label="Pick your vice"
+        >
+          <DemonFace selected={selected} />
+        </button>
+
+        {!selected && (
+          <p style={styles.hintText}>
+            Tap to choose
+          </p>
+        )}
 
         {error && <div style={styles.err}>{error}</div>}
 
-        <div style={styles.grid}>
-          {addictions.map(a => {
-            const isExisting = existingIds.includes(a.id)
-            const isSelected = selected.includes(a.id)
-            const wouldExceed = !isSelected && !isExisting && selected.length >= slotsLeft
-
-            return (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => toggle(a.id)}
-                disabled={isExisting || wouldExceed}
-                style={{
-                  ...styles.tile,
-                  ...(isSelected ? styles.tileSelected : {}),
-                  ...(isExisting ? styles.tileExisting : {}),
-                  ...(wouldExceed ? styles.tileLocked : {}),
-                }}
-              >
-                {isExisting && <span style={{...styles.badge, ...styles.badgeAdded}}>Added</span>}
-                {wouldExceed && !isExisting && <span style={{...styles.badge, ...styles.badgePro}}>Pro</span>}
-                <div style={styles.icon}>{a.icon}</div>
-                <p style={{...styles.name, ...(isSelected ? styles.nameSelected : {})}}>
-                  {a.name}
-                </p>
-              </button>
-            )
-          })}
-        </div>
-
-        <div style={styles.bottomBar}>
-          <button
-            onClick={handleNext}
-            disabled={selected.length === 0 || !canAddMore}
-            style={{
-              ...styles.btn,
-              ...styles.btnPrimary,
-              ...(selected.length === 0 || !canAddMore ? styles.btnDisabled : {})
-            }}
-          >
-            {t('next')}
-          </button>
-          {existingIds.length > 0 && (
-            <button onClick={handleBack} style={{...styles.btn, ...styles.btnSecondary}}>
-              {t('back')} to home
-            </button>
-          )}
-        </div>
+        <button
+          onClick={handleNext}
+          disabled={!selected}
+          style={{
+            ...styles.btn,
+            ...(selected ? styles.btnPrimary : styles.btnDisabled),
+          }}
+        >
+          {selected ? 'Make this vow →' : 'Pick a vice first'}
+        </button>
       </div>
+
+      {/* ADDICTION LIST MODAL */}
+      {showAddictionList && (
+        <div style={styles.listModal} onClick={() => setShowAddictionList(false)}>
+          <div style={styles.listSheet} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.sheetHandle}></div>
+            <p style={styles.sheetTitle}>Pick your vice</p>
+            <input
+              type="text"
+              placeholder="Search…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={styles.searchInput}
+              autoFocus
+            />
+            <div style={styles.listGrid}>
+              {filteredAddictions.length === 0 ? (
+                <p style={styles.emptyMsg}>No matches found.</p>
+              ) : (
+                filteredAddictions.map(a => (
+                  <button
+                    key={a.id}
+                    onClick={() => {
+                      setSelected(a)
+                      setShowAddictionList(false)
+                      setSearchQuery('')
+                      setError(null)
+                    }}
+                    style={styles.listItem}
+                  >
+                    <span style={styles.listIcon}>{a.icon}</span>
+                    <span style={styles.listName}>{a.name}</span>
+                  </button>
+                ))
+              )}
+            </div>
+            <button
+              onClick={() => setShowAddictionList(false)}
+              style={styles.closeSheet}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* FOUNDER MESSAGE */}
+      {showFounderMessage && (
+        <div style={founderStyles.modal}>
+          <div style={founderStyles.modalCard}>
+            <div style={founderStyles.waveIcon}>👋</div>
+            <h3 style={founderStyles.title}>Welcome to Vow.</h3>
+            <p style={founderStyles.body}>
+              I built this app after battling substance abuse for 15 years.
+              With the support of my loved ones, I was able to overcome it.
+            </p>
+            <p style={founderStyles.bodyEmphasis}>
+              I'm sharing this to remind you — it's not impossible.<br/>
+              You can do this too.
+            </p>
+            <div style={founderStyles.signature}>— Ninad, founder</div>
+            <button
+              onClick={async () => {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user) {
+                  await supabase
+                    .from('profiles')
+                    .update({ onboarding_completed: true })
+                    .eq('id', user.id)
+                }
+                setShowFounderMessage(false)
+              }}
+              style={founderStyles.btn}
+            >
+              Make your vow
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+const styles = {
+  frame: {
+    minHeight: '100vh',
+    background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
+    padding: '2rem 1rem',
+    display: 'flex',
+    justifyContent: 'center',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  card: {
+    background: '#FAF7F1',
+    maxWidth: '420px',
+    width: '100%',
+    borderRadius: '28px',
+    padding: '2rem 1.75rem 2.5rem',
+    boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  header: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: '1rem',
+  },
+  backBtn: {
+    background: 'transparent', border: 'none',
+    color: '#854F0B', fontSize: '14px', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px',
+  },
+  title: {
+    fontSize: '24px',
+    fontWeight: 600,
+    color: '#2A1F15',
+    margin: '0.5rem 0 0.5rem',
+    fontFamily: 'Georgia, serif',
+    textAlign: 'center',
+    lineHeight: 1.3,
+  },
+  subtitle: {
+    fontSize: '13px',
+    color: '#8A7B6A',
+    margin: '0 0 2.5rem',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    fontFamily: 'Georgia, serif',
+  },
+  demonBtn: {
+    width: '220px',
+    height: '220px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 0,
+    margin: '0 auto 1rem',
+    transition: 'transform 0.2s',
+  },
+  hintText: {
+    fontSize: '12px',
+    color: '#9C8C78',
+    fontStyle: 'italic',
+    margin: '0 0 2rem',
+    fontFamily: 'Georgia, serif',
+  },
+  err: {
+    fontSize: '12px',
+    color: '#B23B3B',
+    textAlign: 'center',
+    padding: '8px 12px',
+    background: '#FBEBEB',
+    borderRadius: '8px',
+    margin: '0 0 1rem',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  btn: {
+    width: '100%',
+    padding: '14px',
+    borderRadius: '14px',
+    fontSize: '14px',
+    fontWeight: 500,
+    border: 'none',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    marginTop: 'auto',
+  },
+  btnPrimary: {
+    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    color: '#FAF7F1',
+    boxShadow: '0 4px 14px rgba(40,25,10,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
+  },
+  btnDisabled: {
+    background: '#E8DFD0',
+    color: '#9C8C78',
+    cursor: 'not-allowed',
+  },
+
+  // BOTTOM SHEET MODAL
+  listModal: {
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(40,25,15,0.55)',
+    backdropFilter: 'blur(4px)',
+    zIndex: 200,
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    padding: '0 0.5rem',
+  },
+  listSheet: {
+    background: '#FAF7F1',
+    width: '100%',
+    maxWidth: '440px',
+    maxHeight: '80vh',
+    borderRadius: '24px 24px 0 0',
+    padding: '0.75rem 1.25rem 1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 -10px 40px rgba(40,25,15,0.3)',
+  },
+  sheetHandle: {
+    width: '40px',
+    height: '4px',
+    background: '#DDCFB6',
+    borderRadius: '2px',
+    margin: '0 auto 1rem',
+  },
+  sheetTitle: {
+    fontSize: '17px',
+    fontWeight: 500,
+    color: '#2A1F15',
+    margin: '0 0 1rem',
+    fontFamily: 'Georgia, serif',
+    textAlign: 'center',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '12px 14px',
+    borderRadius: '10px',
+    border: '0.5px solid #DDCFB6',
+    background: 'white',
+    fontSize: '14px',
+    color: '#2A1F15',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+    outline: 'none',
+    marginBottom: '12px',
+  },
+  listGrid: {
+    overflowY: 'auto',
+    flex: 1,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '8px',
+    padding: '4px 4px 12px 0',
+  },
+  listItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 14px',
+    background: 'white',
+    border: '0.5px solid #E8DFD0',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    fontSize: '13px',
+    color: '#2A1F15',
+    fontWeight: 500,
+    textAlign: 'left',
+    boxShadow: '0 1px 3px rgba(80,50,20,0.04)',
+  },
+  listIcon: { fontSize: '18px' },
+  listName: {
+    flex: 1,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  emptyMsg: {
+    gridColumn: '1 / -1',
+    textAlign: 'center',
+    color: '#9C8C78',
+    fontStyle: 'italic',
+    fontSize: '13px',
+    padding: '2rem 0',
+    fontFamily: 'Georgia, serif',
+  },
+  closeSheet: {
+    width: '100%',
+    padding: '12px',
+    background: 'white',
+    color: '#2A1F15',
+    border: '0.5px solid #DDCFB6',
+    borderRadius: '12px',
+    fontSize: '13px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    marginTop: '0.5rem',
+  },
+}
+
+const founderStyles = {
+  modal: {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(40,25,15,0.55)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: '1rem', zIndex: 250,
+    backdropFilter: 'blur(4px)',
+  },
+  modalCard: {
+    background: '#FAF7F1',
+    maxWidth: '380px',
+    width: '100%',
+    borderRadius: '24px',
+    padding: '2rem 1.75rem',
+    boxShadow: '0 20px 60px rgba(40,25,15,0.4)',
+    textAlign: 'center',
+  },
+  waveIcon: { fontSize: '40px', marginBottom: '1rem' },
+  title: {
+    fontSize: '22px', fontWeight: 600, color: '#2A1F15',
+    margin: '0 0 1rem', fontFamily: 'Georgia, serif',
+  },
+  body: {
+    fontSize: '14px', color: '#6B5C4A',
+    margin: '0 0 1rem', lineHeight: 1.6, fontFamily: 'Georgia, serif',
+  },
+  bodyEmphasis: {
+    fontSize: '14px', color: '#2A1F15',
+    margin: '0 0 1.25rem', lineHeight: 1.6,
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
+  },
+  signature: {
+    fontSize: '12px', color: '#9C8C78',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    marginBottom: '1.75rem',
+  },
+  btn: {
+    width: '100%', padding: '14px',
+    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    color: '#FAF7F1', border: 'none', borderRadius: '14px',
+    fontSize: '14px', fontWeight: 500, cursor: 'pointer',
+    fontFamily: 'inherit',
+    boxShadow: '0 4px 14px rgba(40,25,10,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
+  },
 }
