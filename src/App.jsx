@@ -17,6 +17,16 @@ import UrgeLog from './screens/UrgeLog'
 import Anchors from './screens/Anchors'
 import AnchorPublic from './screens/AnchorPublic'
 
+// ===== Vow Path =====
+import VowPathIntro from './screens/vowPath/VowPathIntro'
+import StageCheck from './screens/vowPath/StageCheck'
+import StageReveal from './screens/vowPath/StageReveal'
+import ReflectV2Day from './screens/vowPath/ReflectV2Day'
+import ReflectOverview from './screens/vowPath/ReflectOverview'
+import SubstancePicker from './screens/vowPath/SubstancePicker'
+import LibraryHome from './screens/vowPath/LibraryHome'
+import LibraryDeepRead from './screens/vowPath/LibraryDeepRead'
+
 function AppRoutes() {
   const { lang } = useLang()
   const [session, setSession] = useState(undefined)
@@ -132,17 +142,53 @@ function AppRoutes() {
         element={session ? <Milestones /> : <Navigate to="/welcome" />} 
       />
       <Route 
-  path="/slips" 
-  element={session ? <SlipHistory /> : <Navigate to="/welcome" />} 
-/>
-<Route 
-  path="/urges" 
-  element={session ? <UrgeLog /> : <Navigate to="/welcome" />} 
-/>
-<Route 
-  path="/anchors" 
-  element={session ? <Anchors /> : <Navigate to="/welcome" />} 
-/>
+        path="/slips" 
+        element={session ? <SlipHistory /> : <Navigate to="/welcome" />} 
+      />
+      <Route 
+        path="/urges" 
+        element={session ? <UrgeLog /> : <Navigate to="/welcome" />} 
+      />
+      <Route 
+        path="/anchors" 
+        element={session ? <Anchors /> : <Navigate to="/welcome" />} 
+      />
+
+      {/* ===== VOW PATH ===== */}
+      <Route
+        path="/vow-path"
+        element={session ? <VowPathIntro /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/vow-path/substance"
+        element={session ? <SubstancePicker /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/vow-path/check"
+        element={session ? <StageCheck /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/vow-path/result/:stageSlug"
+        element={session ? <StageReveal /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/vow-path/reflect"
+        element={session ? <ReflectOverview /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/vow-path/reflect/day/:dayNumber"
+        element={session ? <ReflectV2Day /> : <Navigate to="/welcome" />}
+      />
+
+      {/* ===== LIBRARY ===== */}
+      <Route
+        path="/library/reflect"
+        element={session ? <LibraryHome /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/library/reflect/day/:dayNumber"
+        element={session ? <LibraryDeepRead /> : <Navigate to="/welcome" />}
+      />
     </Routes>
   )
 }

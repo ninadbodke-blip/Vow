@@ -1,0 +1,921 @@
+// =====================================================================
+// REFLECT v2 — 21 Days of Content
+// =====================================================================
+// Each day has:
+//   - day:               1-21
+//   - week:              1, 2, or 3
+//   - phase:             "see_it" | "feel_it" | "decide"
+//   - dayType:           "read" | "interactive" | "write" | "audio" | "special"
+//   - mechanic:          which interaction component to render
+//   - arrivalTitle:      shown on arrival screen
+//   - arrivalSubtitle:   italic subhead on arrival screen
+//   - intro:             paragraphs of intro copy (shown before interaction)
+//   - founderAudio:      optional founder audio object (for Days 1, 10, 21)
+//   - mechanicProps:     props passed to the mechanic component
+//   - resultCopy:        text for the result reveal screen (function or string)
+//   - closingLine:       final dignified line
+//   - artifactType:      key used when saving to vow_artifacts
+//   - byFamily:          optional object — if present, content branches
+//                        by substance_family ("substance" | "behavior")
+// =====================================================================
+
+export const REFLECT_V2_DAYS = [
+  // ===================================================================
+  // WEEK 1 — SEE IT (Days 1-7)
+  // ===================================================================
+
+  {
+    day: 1,
+    week: 1,
+    phase: 'see_it',
+    dayType: 'audio',
+    mechanic: 'multi_select_chips',
+    arrivalTitle: 'What brought you here.',
+    arrivalSubtitle: 'The single most important question of these three weeks.',
+    founderAudio: {
+      audioSrc: '/audio/reflect-v2/day_01.mp3',
+      transcript: `Hi. It's Ninad.
+
+If you're here, something brought you. Maybe a worry that's been following you around. Maybe someone said something. Maybe a moment last week — or last night — that you can't quite shake.
+
+You don't need to know yet whether you'll quit, or cut down, or do nothing. The Vow Stage Check put you here, in Reflect, because you're somewhere between knowing something is off and being ready to act on it. That in-between is exactly where this is built for.
+
+Twenty-one days. Mostly short. A few longer. Some reading, a lot of small actions, and four moments where you'll write something that matters.
+
+By Day 21, you'll have a picture of yourself you didn't have when you started. Some of it will be uncomfortable. Some of it will be a relief. All of it will be yours.
+
+That's the work. Let's begin.`,
+    },
+    intro: [],
+    mechanicProps: {
+      header: 'What brought you here?',
+      subtext: 'Tap any that feel true. As many as you want. None of them commit you to anything.',
+      chips: [
+        { id: 'specific_moment', label: 'A specific moment recently' },
+        { id: 'partner_said', label: 'Something a partner or family member said' },
+        { id: 'health', label: 'A health concern' },
+        { id: 'money', label: 'Money it costs me' },
+        { id: 'sleep_energy', label: 'Sleep, energy, or how I feel each day' },
+        { id: 'work', label: 'Work or career consequences' },
+        { id: 'someone_died', label: 'Someone close to me died from this' },
+        { id: 'just_want_to_know', label: 'I just want to know what’s actually happening' },
+        { id: 'tried_before', label: 'I’ve tried to stop before and slipped' },
+        { id: 'dont_know', label: 'I don’t fully know yet' },
+      ],
+      allowCustom: true,
+      minSelection: 1,
+    },
+    resultCopy: null,
+    closingLine: 'You showed up. The rest is also showing up.',
+    artifactType: 'reflect_day_1_arrival',
+  },
+
+  {
+    day: 2,
+    week: 1,
+    phase: 'see_it',
+    dayType: 'interactive',
+    mechanic: 'landscape_builder',
+    arrivalTitle: 'What, exactly.',
+    arrivalSubtitle: 'The first picture is the picture of facts.',
+    intro: [
+      'Most people who use a substance regularly underestimate how much they use. This is well-documented. The brain protects itself by keeping the numbers fuzzy.',
+      'Today we make the numbers real.',
+      'This isn’t to shame you. The number is whatever it is. But honest numbers are the foundation of everything else in these three weeks. Without them, you’re working with the using self’s estimate — and the using self has a strong incentive to round down.',
+      'Be honest. Round up if you’re not sure. The picture only works if it’s true.',
+    ],
+    mechanicProps: {},
+    closingLine: 'The numbers exist now. They’ve been there all along.',
+    artifactType: 'reflect_day_2_landscape',
+  },
+
+  {
+    day: 3,
+    week: 1,
+    phase: 'see_it',
+    dayType: 'interactive',
+    mechanic: 'trigger_checklist',
+    arrivalTitle: 'When it happens.',
+    arrivalSubtitle: 'Your specific pattern, mapped.',
+    intro: [
+      'Substance use isn’t random. It follows a pattern, even when it feels like it doesn’t. Specific situations, emotions, times of day, people, places — these are your triggers. They’re not the same for everyone.',
+      'Today’s interaction takes about two minutes. You’ll see fourteen common triggers. Tap the ones that are real for you. Not the ones you’ve heard about. The ones that, when you think honestly, you recognize.',
+      'You’ll also be able to add your own.',
+      'This becomes the first map of your specific pattern.',
+    ],
+    mechanicProps: {
+      header: 'Which of these are real for you?',
+      subtext: 'Tap the ones you actually recognize. Skip the ones you don’t.',
+      triggers: [
+        { id: 'stress', label: 'Stress at work or in life' },
+        { id: 'boredom', label: 'Boredom — empty time with nothing to do' },
+        { id: 'loneliness', label: 'Loneliness or feeling disconnected' },
+        { id: 'anger', label: 'Anger or frustration that has no outlet' },
+        { id: 'anxiety', label: 'Anxiety — racing thoughts, restlessness' },
+        { id: 'sadness', label: 'Sadness or low mood' },
+        { id: 'time_of_day', label: 'Specific times of day (after work, late night, weekends)' },
+        { id: 'people', label: 'Specific people (friends who use, certain family members)' },
+        { id: 'places', label: 'Specific places (a bar, your living room, a party)' },
+        { id: 'celebration', label: 'Celebration — something good happened' },
+        { id: 'avoidance', label: 'Avoidance — to not think about something' },
+        { id: 'sleep', label: 'Sleep — to fall asleep or stay asleep' },
+        { id: 'sex', label: 'Sex or intimacy' },
+        { id: 'habit', label: 'Just habit — the time of day or situation makes me reach for it' },
+      ],
+      allowCustom: true,
+      maxCustom: 3,
+      minSelection: 1,
+    },
+    closingLine: 'A pattern named is a pattern less in control of you.',
+    artifactType: 'reflect_day_3_triggers',
+  },
+
+  {
+    day: 4,
+    week: 1,
+    phase: 'see_it',
+    dayType: 'interactive',
+    mechanic: 'truth_sort',
+    arrivalTitle: 'What’s true.',
+    arrivalSubtitle: 'Eight statements. Three piles.',
+    intro: [
+      'When you hedge on a statement about yourself — "kind of," "sometimes," "depends" — the hedging is comfortable. It’s also stuck. As long as you can stay in "sort of," you never quite have to decide what to do about anything.',
+      'Today’s exercise refuses the hedge. You’ll see eight statements about your relationship with the substance. For each, three options: true, not true, not sure. "Sort of" isn’t available.',
+      '"Not sure" is the deliberate safety valve. You’re not forced into yes or no when you genuinely don’t know. But you can’t hide in "sort of" or "depends."',
+    ],
+    mechanicProps: {
+      statements: [
+        { id: 'getting_defensive', text: 'I get defensive when someone asks about my use.' },
+        { id: 'rules_broken', text: 'I’ve made rules about my use and broken them.' },
+        { id: 'others_noticed', text: 'People around me have noticed before I have.' },
+        { id: 'used_for_emotion', text: 'I use to handle hard emotions.' },
+        { id: 'lied_about_amount', text: 'I’ve lied about how much I use — to someone close, or to myself.' },
+        { id: 'cant_imagine_without', text: 'I can’t fully imagine a version of my life without it.' },
+        { id: 'wanted_to_stop', text: 'There have been days I’ve genuinely wanted to stop.' },
+        { id: 'occupies_more', text: 'It occupies more of my mind than I want it to.' },
+      ],
+    },
+    closingLine: 'A sorted statement is harder to hedge around later.',
+    artifactType: 'reflect_day_4_truth_sort',
+  },
+
+  {
+    day: 5,
+    week: 1,
+    phase: 'see_it',
+    dayType: 'interactive',
+    mechanic: 'time_money_calculator',
+    arrivalTitle: 'What it takes.',
+    arrivalSubtitle: 'Time and money, computed honestly.',
+    intro: [
+      'There’s a difference between knowing, in general, that the substance costs time and money, and seeing the specific computed total for your specific use.',
+      'The general knowledge has been with you for years. It hasn’t produced change. The specific number, sometimes, does.',
+      'Today’s sliders go beyond the direct cost. You’ll account for time spent preparing, recovering, and thinking about it — because those are also time the substance occupies, even if it doesn’t feel that way in the moment.',
+      'The numbers will be larger than you expect. That’s not because we inflated anything. It’s because you’ve been carrying costs you weren’t counting.',
+    ],
+    mechanicProps: {},
+    closingLine: 'The numbers exist now. They’ve been accumulating all along.',
+    artifactType: 'reflect_day_5_time_money',
+  },
+
+  {
+    day: 6,
+    week: 1,
+    phase: 'see_it',
+    dayType: 'write',
+    mechanic: 'letter_writer',
+    arrivalTitle: 'A letter to who you were.',
+    arrivalSubtitle: 'Before any of this entered your life.',
+    intro: [
+      `There's a version of you from before. Before the substance had a place in your week. Before any of the patterns you've now named started.`,
+      `Today, you write a letter to that version. Not to your current self. Not to your future self. To the person you were before this began.`,
+      `Write to them as you would to someone you owed an honest accounting to. Tell them what you'd want them to know. What you'd warn them about. What you'd wish for them.`,
+      `Take your time. There's no minimum length. There's no maximum. What matters is that you write to them, honestly, in your own voice.`,
+      `This letter will be sealed at the end. You won't see it again until Day 20, when your full portrait surfaces.`,
+    ],
+    mechanicProps: {
+      letterKey: 'reflect_day_6_letter_to_past_self',
+      promptHeader: `Dear me, before any of this:`,
+      starterPrompts: [
+        `"The thing I wish you'd known is..."`,
+        `"If you start this thing, here's what happens..."`,
+        `"There's a version of you that exists in 10 years..."`,
+      ],
+      unsealOnKey: 'reflect_day_20',
+    },
+    closingLine: `You wrote to them. They live in you still.`,
+    artifactType: 'reflect_day_6_letter',
+  },
+
+  {
+    day: 7,
+    week: 1,
+    phase: 'see_it',
+    dayType: 'read',
+    mechanic: 'truth_check',
+    arrivalTitle: 'The first week closes.',
+    arrivalSubtitle: 'A pause. A reading. A small tap.',
+    intro: [
+      `Seven days. The first phase is done.`,
+      `Week 1 was about seeing. Your reasons for being here. Your specific landscape. Your trigger map. The statements you sorted. The time and money this has taken. A letter to who you were.`,
+      `Most apps that run for 21 or 30 days treat each day as interchangeable — content, exercise, content, exercise. The Vow Path doesn't. Today is a phase boundary. The brain doesn't integrate self-knowledge in real time — it does it during gaps. Today's gap is for what last week produced to settle.`,
+      `Week 2 begins tomorrow. The feeling phase. Both sides of the trade, felt honestly.`,
+      `But today — just a closing tap.`,
+    ],
+    mechanicProps: {
+      promptText: 'How did the first week land?',
+      options: [
+        { id: 'landed_true', label: 'This is true for me. The picture is honest.' },
+        { id: 'landed_partial', label: `Some of it landed. Some I'm still sitting with.` },
+        { id: 'landed_skip', label: 'Skip this question.' },
+      ],
+    },
+    closingLine: `The seeing is the foundation of what comes next.`,
+    artifactType: 'reflect_day_7_phase_1_close',
+  },
+
+  // ===================================================================
+  // WEEK 2 — FEEL IT (Days 8-14) — PLACEHOLDERS
+  // ===================================================================
+
+  {
+    day: 8,
+    week: 2,
+    phase: 'feel_it',
+    dayType: 'interactive',
+    mechanic: 'cost_ranker',
+    arrivalTitle: 'What it costs you.',
+    arrivalSubtitle: 'Five costs. One ranking.',
+    intro: [
+      `When people are asked to rate the costs of substance use on a scale, the data is mostly noise. "How much does your health matter?" gets answered with 9 or 10 from almost everyone.`,
+      `The using self is happy to rate everything highly, because high ratings produce no priority. And no priority produces no action.`,
+      `Today's exercise refuses the rating. You'll see five categories of cost. You don't rate them. You rank them — put them in order, from most to least important to you.`,
+      `What sits at your #1 is, by the structure of the exercise, the cost that pulls hardest against what the substance is doing to your life. That's the information the ranking produces.`,
+    ],
+    mechanicProps: {
+      costs: [
+        {
+          id: 'health',
+          label: 'Health',
+          description: 'Your body. Sleep, energy, organs, longevity.',
+        },
+        {
+          id: 'money',
+          label: 'Money',
+          description: 'What this has cost you financially. Direct and indirect.',
+        },
+        {
+          id: 'relationships',
+          label: 'Relationships',
+          description: 'Partner, family, friends. The closeness that has shifted.',
+        },
+        {
+          id: 'work',
+          label: 'Work and career',
+          description: 'Performance, focus, ambition, what you could have built.',
+        },
+        {
+          id: 'self',
+          label: 'Self',
+          description: `Who you are. Who you wanted to be. The version of yourself you're not quite living up to.`,
+        },
+      ],
+    },
+    closingLine: `The #1 cost is the one that pulls hardest.`,
+    artifactType: 'reflect_day_8_cost_ranking',
+  },
+
+  {
+    day: 9,
+    week: 2,
+    phase: 'feel_it',
+    dayType: 'interactive',
+    mechanic: 'body_map',
+    arrivalTitle: 'What your body knows.',
+    arrivalSubtitle: 'A map of what you carry.',
+    intro: [
+      `Your mind has been arguing about this for years. The body has been keeping its own record.`,
+      `Today's exercise asks you to tap the places where you've noticed something. Not for a diagnosis. Just to make the body's record visible.`,
+      `You'll see a map of common zones. Tap any that apply. For each, you can briefly note what you've noticed there.`,
+      `If anything you tap is concerning to you medically, that conversation belongs with a doctor, not with Vow. This exercise gives you a baseline. What you do with it is yours.`,
+    ],
+    mechanicProps: {
+      // Defaults to substance family. byFamily override below provides behavior variant.
+      header: 'Where have you noticed something?',
+      subtext: 'Tap any that apply. For each, you can add a short note.',
+      zones: [
+        { id: 'head', label: 'Head', examples: 'Headaches, mental fog, racing thoughts' },
+        { id: 'sleep', label: 'Sleep', examples: 'Difficulty falling asleep, broken sleep, no rest from sleep' },
+        { id: 'energy', label: 'Energy', examples: 'Mornings, afternoons, the dragging feeling' },
+        { id: 'gut', label: 'Stomach / gut', examples: 'Digestion, nausea, appetite changes' },
+        { id: 'chest', label: 'Chest / heart', examples: 'Racing, tightness, irregular feeling' },
+        { id: 'liver_kidney', label: 'Liver or kidneys', examples: 'Pain, tenderness, things a doctor flagged' },
+        { id: 'mood', label: 'Mood and emotions', examples: 'Anxiety, low mood, irritability, flatness' },
+        { id: 'skin', label: 'Skin and appearance', examples: 'Skin changes, weight, aging that feels accelerated' },
+        { id: 'libido', label: 'Libido / intimacy', examples: 'Desire, performance, presence' },
+        { id: 'memory', label: 'Memory and focus', examples: 'Forgetting things, losing track, can\'t concentrate' },
+      ],
+    },
+    byFamily: {
+      behavior: {
+        mechanicProps: {
+          header: 'Where have you noticed something?',
+          subtext: 'Tap any that apply. For each, you can add a short note.',
+          zones: [
+            { id: 'sleep', label: 'Sleep', examples: 'Late-night use, broken sleep, not enough hours' },
+            { id: 'energy', label: 'Energy', examples: 'Mornings, afternoons, the depleted feeling' },
+            { id: 'mood', label: 'Mood and emotions', examples: 'Shame after, anxiety, low mood, restlessness' },
+            { id: 'libido', label: 'Sex life with a partner', examples: 'Desire, presence, comparison, performance' },
+            { id: 'time', label: 'Time and attention', examples: 'Hours lost, the pull during work or other moments' },
+            { id: 'memory', label: 'Memory and focus', examples: 'Trouble concentrating on real life' },
+            { id: 'spiritual', label: 'Sense of self', examples: 'Who you are, who you\'d like to be, the gap' },
+            { id: 'isolation', label: 'Connection with others', examples: 'Pulling away from people, avoiding closeness' },
+            { id: 'work', label: 'Work or studies', examples: 'Productivity, distraction, sneaking time during the day' },
+            { id: 'finances', label: 'Finances', examples: 'Money lost, debt, hiding spend (especially for gambling)' },
+          ],
+        },
+      },
+    },
+    closingLine: `The body has been keeping a record. Now you've seen it.`,
+    artifactType: 'reflect_day_9_body_map',
+  },
+
+  {
+    day: 10,
+    week: 2,
+    phase: 'feel_it',
+    dayType: 'audio',
+    mechanic: 'soft_tap',
+    arrivalTitle: 'Halfway.',
+    arrivalSubtitle: 'Ten days down. Eleven to go.',
+    founderAudio: {
+      audioSrc: '/audio/reflect-v2/day_10.mp3',
+      transcript: `Hi. It's Ninad. We're halfway.
+
+Ten days. You've named what brought you. You've put numbers on your pattern. You've mapped your triggers, sorted what's true, calculated the time and money this has taken. You've written a letter to a version of yourself from before this began. You've ranked your costs. And you've made a map of what your body has been carrying.
+
+That's a lot. Most people who download an app to look at their substance use don't make it past Day 3. You're at Day 10.
+
+Week 2 from here is heavier than Week 1. The shape of the work changes. Week 1 was looking. Week 2 is feeling. The numbers on Day 5 were data. The body map you did yesterday was data. Two days from now, you'll write again — to a version of yourself five years from now. Some of what comes up may surprise you.
+
+The work is working if it's getting harder, not easier. That's how this stage is supposed to land. Stay with it.
+
+I'll see you on the other side of Day 21.`,
+    },
+    intro: [],
+    mechanicProps: {
+      promptText: 'How are you, today?',
+      options: [
+        { id: 'steady', label: `Steady. The work is landing as it should.` },
+        { id: 'heavier', label: `Heavier than I expected. But I'm still here.` },
+        { id: 'wobbling', label: `Wobbling. Not sure I can keep going.` },
+        { id: 'detached', label: `Detached. The work isn't quite landing for me.` },
+      ],
+    },
+    closingLine: `Halfway. Eleven more days. Stay with it.`,
+    artifactType: 'reflect_day_10_halfway',
+  },
+
+  {
+    day: 11,
+    week: 2,
+    phase: 'feel_it',
+    dayType: 'interactive',
+    mechanic: 'two_futures',
+    arrivalTitle: 'Two futures.',
+    arrivalSubtitle: 'Five years from now. Two versions.',
+    intro: [
+      `Today's exercise pairs the desired future with the realistic alternative. Most behavior change efforts only ask you to imagine the better version. That's been studied carefully, and it produces less change than you'd expect — imagining a good future, by itself, gives you the emotional payoff without the work.`,
+      `What works is contrast. You'll see two cards. One is your life five years from now if nothing changes — if you keep using the way you do today. The other is your life five years from now if you've stopped or significantly cut back.`,
+      `Read both, slowly. Then pick the one that feels closer to your actual trajectory. Not which one you'd prefer. Which one feels more likely if you don't act.`,
+    ],
+    mechanicProps: {
+      // Substance family defaults
+      cardA: {
+        title: 'The continuing version',
+        subtitle: 'If nothing changes',
+        body: [
+          'Five years from today, the pattern is still here. Possibly heavier.',
+          'Your body has the wear of these extra years.',
+          'People close to you have either grown used to it, or have grown more distant.',
+          'You\'ve had a few moments where you tried to stop. They didn\'t hold.',
+          'The version of yourself you wanted to be by 40, by 50, by retirement — quieter now. Less reachable.',
+        ],
+      },
+      cardB: {
+        title: 'The other version',
+        subtitle: 'If you stop',
+        body: [
+          'Five years from today, the substance is no longer part of your week.',
+          'The first year was hard. The second was easier. By the fifth, it\'s just how you live.',
+          'Money you would have spent on it sits somewhere else. Time you would have used has gone to other things.',
+          'A few people in your life noticed the change. A few never had to.',
+          'The version of yourself you wanted to be is closer than it has been in a long time.',
+        ],
+      },
+      promptText: 'Which feels closer to your trajectory?',
+    },
+    byFamily: {
+      behavior: {
+        mechanicProps: {
+          cardA: {
+            title: 'The continuing version',
+            subtitle: 'If nothing changes',
+            body: [
+              'Five years from today, the behavior is still in your week. Possibly more frequent.',
+              'The hours it has taken are still being taken.',
+              'Your relationship to your partner — or your future partner — is shaped by it, in ways you\'ve learned not to look at.',
+              'You\'ve tried to cut back a few times. The cutting back didn\'t hold.',
+              'The version of yourself you wanted to be — present, focused, available — is quieter now. Less reachable.',
+            ],
+          },
+          cardB: {
+            title: 'The other version',
+            subtitle: 'If you stop',
+            body: [
+              'Five years from today, the behavior is no longer pulling on your week.',
+              'The first months were hard. After that, it became simpler.',
+              'The hours that were going to it have gone somewhere else — to the people in your life, to work, to things you\'d been wanting to do.',
+              'Your relationship to intimacy is different. More present.',
+              'The version of yourself you wanted to be is closer than it has been in a long time.',
+            ],
+          },
+          promptText: 'Which feels closer to your trajectory?',
+        },
+      },
+    },
+    closingLine: `The version you pick as closer is the version you're moving toward — unless something changes.`,
+    artifactType: 'reflect_day_11_two_futures',
+  },
+
+  {
+    day: 12,
+    week: 2,
+    phase: 'feel_it',
+    dayType: 'interactive',
+    mechanic: 'voice_checklist',
+    arrivalTitle: 'The using voice.',
+    arrivalSubtitle: 'The voice that argues for using.',
+    intro: [
+      `Most people who use a substance regularly have an internal voice that argues for it. The voice has lines. They show up at predictable moments.`,
+      `Today's exercise isn't about arguing with the voice. Arguing rarely works — the voice has counter-arguments. Today is about naming the voice.`,
+      `You'll see six statements. The kinds of things the voice typically says when it's making the case for use. Tap any you've heard yourself say — out loud or silently.`,
+      `Each statement has a name. The name is the work. Once a statement has a name, the next time it shows up, you recognize it as a pattern rather than as new wisdom.`,
+    ],
+    mechanicProps: {
+      // Substance family defaults
+      header: 'Which of these have you heard yourself say?',
+      subtext: 'Tap any you recognize. You can also add your own.',
+      statements: [
+        {
+          id: 'just_one',
+          text: `"Just one. I can stop after one."`,
+          pattern: 'The promise that keeps moving',
+        },
+        {
+          id: 'deserve_it',
+          text: `"I deserve this after the day/week I had."`,
+          pattern: 'The reward framing',
+        },
+        {
+          id: 'tomorrow',
+          text: `"I'll start tomorrow. (Or next week. Or after this event.)"`,
+          pattern: 'The future date that keeps moving',
+        },
+        {
+          id: 'not_that_bad',
+          text: `"It's not that bad. People drink/use way more than I do."`,
+          pattern: 'Comparing down to feel okay',
+        },
+        {
+          id: 'special_occasion',
+          text: `"This is a special occasion. Doesn't count."`,
+          pattern: 'The exception that becomes the rule',
+        },
+        {
+          id: 'cant_handle',
+          text: `"I can't get through this without it."`,
+          pattern: 'The dependence framed as necessity',
+        },
+      ],
+      allowCustom: true,
+      maxCustom: 2,
+    },
+    byFamily: {
+      behavior: {
+        mechanicProps: {
+          header: 'Which of these have you heard yourself say?',
+          subtext: 'Tap any you recognize. You can also add your own.',
+          statements: [
+            {
+              id: 'just_once',
+              text: `"Just this once. I can stop after this."`,
+              pattern: 'The promise that keeps moving',
+            },
+            {
+              id: 'deserve_break',
+              text: `"I deserve a break. I've earned this."`,
+              pattern: 'The reward framing',
+            },
+            {
+              id: 'tomorrow',
+              text: `"I'll quit/cut back starting tomorrow. Just not today."`,
+              pattern: 'The future date that keeps moving',
+            },
+            {
+              id: 'everyone_does',
+              text: `"Everyone does this. It's not a big deal."`,
+              pattern: 'Comparing down to feel okay',
+            },
+            {
+              id: 'no_one_knows',
+              text: `"No one knows. As long as no one knows, it's fine."`,
+              pattern: 'The private exception',
+            },
+            {
+              id: 'cant_relax',
+              text: `"I can't relax/sleep/handle this without it."`,
+              pattern: 'The dependence framed as necessity',
+            },
+          ],
+          allowCustom: true,
+          maxCustom: 2,
+        },
+      },
+    },
+    closingLine: `A statement with a name has less power than one without.`,
+    artifactType: 'reflect_day_12_using_voice',
+  },
+
+  {
+    day: 13,
+    week: 2,
+    phase: 'feel_it',
+    dayType: 'read',
+    mechanic: 'stories_recognition',
+    arrivalTitle: 'Others who looked.',
+    arrivalSubtitle: 'Four stories. Four moments of seeing.',
+    intro: [
+      `Today is a passive day. Four short stories of people who sat with their own use. After each, one tap: familiar or not familiar.`,
+      `The stories aren't meant to be relatable in every detail. They're meant to surface recognition — the moments in someone else's account that match something in yours.`,
+      `You won't agree with all four. Some won't apply. That's fine. The tap is the work.`,
+    ],
+    mechanicProps: {
+      // Substance family defaults
+      stories: [
+        {
+          id: 'rhea',
+          intro: 'Rhea, 34, marketing manager in Bangalore.',
+          body: `Rhea had told herself for years that her drinking was social. She drank with friends, at events, on weekends. Then she started tracking it — just for one month, just out of curiosity. By the end of the month, she realized she'd had a drink on 22 of 30 evenings. Most weren't social. Most were on the couch, alone, after work. The number "social drinker" had stopped being accurate years ago. She hadn't noticed.`,
+        },
+        {
+          id: 'arjun',
+          intro: 'Arjun, 41, partner in a consulting firm.',
+          body: `Arjun had always been functional. He performed well at work. He showed up for his kids. He told himself this meant the smoking and drinking were fine. Then his father, who had been just as functional, died at 67 from complications related to decades of "just functional" use. At his father's funeral, Arjun realized he was watching his own future. The grief and the recognition arrived in the same week.`,
+        },
+        {
+          id: 'priya',
+          intro: 'Priya, 29, doctor in Delhi.',
+          body: `Priya started using cannabis recreationally in medical school. She told herself it helped her sleep. Years later, she realized she hadn't fallen asleep without it in seven years. The "help with sleep" framing had turned into something else. Not a problem, exactly. But also not what she'd thought it was.`,
+        },
+        {
+          id: 'sanjay',
+          intro: 'Sanjay, 52, civil servant.',
+          body: `Sanjay had quit drinking twice before. Both times, it had stuck for several months. Both times, it had come back. The third time he considered quitting, he was tired of the cycle. He didn't want to be the kind of person who quit and started, quit and started. He wanted to look honestly at why the previous attempts hadn't held. The looking was harder than the quitting.`,
+        },
+      ],
+      promptText: 'For each, was anything familiar?',
+    },
+    byFamily: {
+      behavior: {
+        mechanicProps: {
+          stories: [
+            {
+              id: 'rohit_porn',
+              intro: 'Rohit, 31, software engineer in Bangalore.',
+              body: `Rohit had started watching porn casually in college. By his thirties, it was a daily routine — usually before bed, sometimes mid-day if he was working from home. He'd told himself it was fine. Then he noticed something. He'd stopped reaching for his partner. Not consciously. Just less often. He hadn't realized how slowly that had happened.`,
+            },
+            {
+              id: 'meera_gambling',
+              intro: 'Meera, 39, runs a small business in Mumbai.',
+              body: `Meera had started with fantasy cricket in her thirties. Small amounts. Then bigger amounts. Then she realized she'd been hiding the size of her losses from her husband for the past two years. Not lying outright. Just not mentioning them. The not-mentioning had grown to cover a lot of ground.`,
+            },
+            {
+              id: 'kabir_porn',
+              intro: 'Kabir, 27, recently engaged.',
+              body: `Kabir had used porn since he was 14. He didn't think it was a problem. He had a fiancée he loved. He performed fine. He wasn't compulsive. But when he tried to stop for 30 days, just to see, he found himself thinking about it constantly. The thinking was the thing he hadn't known was there.`,
+            },
+            {
+              id: 'vivek_gambling',
+              intro: 'Vivek, 46, builder.',
+              body: `Vivek had quit gambling twice before. Both times, it had stuck for several months. Both times, it had come back — usually after a stressful project or a difficult month. The third time he considered stopping, he didn't want to just stop again. He wanted to understand why he kept returning. The returning had a pattern. He'd never sat with the pattern long enough to name it.`,
+            },
+          ],
+          promptText: 'For each, was anything familiar?',
+        },
+      },
+    },
+    closingLine: `You're not alone in any of this. That's not a slogan. That's what the data shows.`,
+    artifactType: 'reflect_day_13_stories',
+  },
+
+  {
+    day: 14,
+    week: 2,
+    phase: 'feel_it',
+    dayType: 'read',
+    mechanic: 'truth_check',
+    arrivalTitle: 'The Weighing closes.',
+    arrivalSubtitle: 'A pause. A reading. A small tap.',
+    intro: [
+      `Fourteen days. Two weeks. The Weighing is closing.`,
+      `Week 2 was harder than Week 1. That was the design landing — not a sign of failure. The Mirror week (Week 1) was about seeing what is. The Weighing week (Week 2) was about feeling both sides of the trade.`,
+      `If pieces of it felt like grief — for what the substance has given you that you might be giving up — that grief is appropriate, not weakness. The substance has, in some sense, been a relationship. Acknowledging the loss of any relationship is the work of metabolizing it.`,
+      `Most people in change research who follow through on a decision — who actually stop, and stay stopped — say later that the hardest part wasn't the stopping. It was the part where they had to feel both sides honestly before deciding. That's what Week 2 was for.`,
+      `Week 3 begins tomorrow. Where you actually stand.`,
+      `But today — just a closing tap.`,
+    ],
+    mechanicProps: {
+      promptText: 'How did the second week land?',
+      options: [
+        { id: 'landed_heavy', label: `It landed. Heavier than Week 1, but I'm still here.` },
+        { id: 'landed_some', label: `Some of it landed. Some I'm still sitting with.` },
+        { id: 'landed_lighter', label: `Honestly, lighter than expected. I was more ready than I thought.` },
+        { id: 'landed_skip', label: 'Skip this question.' },
+      ],
+    },
+    closingLine: `The feeling is the foundation of the deciding.`,
+    artifactType: 'reflect_day_14_phase_2_close',
+  },
+
+  // ===================================================================
+  // WEEK 3 — DECIDE (Days 15-21) — PLACEHOLDERS
+  // ===================================================================
+
+  {
+    day: 15,
+    week: 3,
+    phase: 'decide',
+    dayType: 'interactive',
+    mechanic: 'outcome_sorter',
+    arrivalTitle: 'What would change.',
+    arrivalSubtitle: 'Eight outcomes. Three feelings.',
+    intro: [
+      `If you stopped using, what would happen? Not as inspirational poster. As specific changes to your specific life.`,
+      `Today's exercise lists eight outcomes that commonly follow a decision to stop. Some are practical (money saved, sleep improved). Some are relational (different conversations with your partner). Some are internal (a different relationship with yourself).`,
+      `You won't sort them by which you want. You'll sort them by how each one feels in your body when you consider it: hopeful, scared, or neutral.`,
+      `"Scared" is not weakness. Some of these changes — even the good ones — produce fear, because they change something about who you've been. The fear is information.`,
+    ],
+    mechanicProps: {
+      outcomes: [
+        { id: 'money', label: `Money you've been spending becomes available for other things.` },
+        { id: 'sleep', label: `Sleep, energy, and physical health improve over months.` },
+        { id: 'time', label: `Hours that went to using become hours for other things.` },
+        { id: 'partner', label: `Conversations with your partner change. Some get easier. Some get harder before they get easier.` },
+        { id: 'identity', label: `You stop being the person who uses. You start being someone else.` },
+        { id: 'social', label: `Social events that used to include the substance shift. Some friends shift with you. Some don't.` },
+        { id: 'emotions', label: `Hard emotions arrive without their usual softener. You feel things more directly.` },
+        { id: 'future', label: `Possible futures that weren't possible while using become possible.` },
+      ],
+    },
+    closingLine: `The mix is what's true. Hopeful and scared, both, are how it actually feels.`,
+    artifactType: 'reflect_day_15_outcomes',
+  },
+
+  {
+    day: 16,
+    week: 3,
+    phase: 'decide',
+    dayType: 'interactive',
+    mechanic: 'fears_two_column',
+    arrivalTitle: 'The fears.',
+    arrivalSubtitle: 'On both sides.',
+    intro: [
+      `Most people focus only on the fears of continuing. They forget there are also fears of stopping.`,
+      `Today's exercise names both sides. Two columns. Left: what you're afraid of if you stop. Right: what you're afraid of if you don't.`,
+      `You'll see common fears in each column. Tap any that are true for you. You can also add your own.`,
+      `When both columns are visible at once, the actual shape of the choice gets clearer. The decision isn't between fear and no-fear. It's between two different sets of fears. The work is choosing which set you'd rather carry.`,
+    ],
+    mechanicProps: {
+      // Substance family defaults
+      leftColumn: {
+        title: 'If I stop',
+        subtitle: 'Fears of stopping',
+        fears: [
+          { id: 'social_awkward', label: `Social situations will feel awkward without it.` },
+          { id: 'identity_loss', label: `I won't know who I am without it.` },
+          { id: 'pleasure_lost', label: `I'll lose something I enjoy.` },
+          { id: 'cant_cope', label: `I won't be able to cope with hard emotions.` },
+          { id: 'boring', label: `Life will be boring or grey.` },
+          { id: 'cant_sleep', label: `I won't be able to sleep / relax / unwind.` },
+        ],
+      },
+      rightColumn: {
+        title: `If I don't stop`,
+        subtitle: 'Fears of continuing',
+        fears: [
+          { id: 'health_decline', label: `My health declines, in ways I can't reverse.` },
+          { id: 'relationship_damage', label: `Damage to my relationship that becomes permanent.` },
+          { id: 'time_lost', label: `Years pass and the same pattern is still there.` },
+          { id: 'identity_decline', label: `I become a version of myself I don't respect.` },
+          { id: 'professional_consequence', label: `Work or financial consequences I can't take back.` },
+          { id: 'death', label: `I die earlier than I should have.` },
+        ],
+      },
+      allowCustom: true,
+      maxCustomPerSide: 2,
+    },
+    byFamily: {
+      behavior: {
+        mechanicProps: {
+          leftColumn: {
+            title: 'If I stop',
+            subtitle: 'Fears of stopping',
+            fears: [
+              { id: 'cant_relax', label: `I won't have a way to relax or wind down.` },
+              { id: 'sex_life', label: `My sex life or relationship to my body will feel emptier.` },
+              { id: 'boredom', label: `I'll have hours in my week I don't know what to do with.` },
+              { id: 'identity_loss', label: `It feels like part of who I am.` },
+              { id: 'no_pleasure', label: `I'll lose something I enjoy, even if it's costing me.` },
+              { id: 'cant_cope', label: `I won't have a way to handle stress or hard emotions.` },
+            ],
+          },
+          rightColumn: {
+            title: `If I don't stop`,
+            subtitle: 'Fears of continuing',
+            fears: [
+              { id: 'relationship_damage', label: `My partner finds out, or it damages our intimacy permanently.` },
+              { id: 'time_lost', label: `Years more of my life given to this.` },
+              { id: 'identity_decline', label: `I become a version of myself I don't respect.` },
+              { id: 'financial_ruin', label: `Financial damage I can't recover from (especially for gambling).` },
+              { id: 'compulsion_grows', label: `The pull gets stronger, not weaker, with time.` },
+              { id: 'discovery_consequence', label: `Someone finds out and I can't control the consequence.` },
+            ],
+          },
+          allowCustom: true,
+          maxCustomPerSide: 2,
+        },
+      },
+    },
+    closingLine: `The decision isn't between fear and no-fear. It's between two sets of fears.`,
+    artifactType: 'reflect_day_16_fears',
+  },
+
+  {
+    day: 17,
+    week: 3,
+    phase: 'decide',
+    dayType: 'write',
+    mechanic: 'letter_writer',
+    arrivalTitle: 'A letter from your future self.',
+    arrivalSubtitle: 'From the version of you five years from now.',
+    intro: [
+      `Today, you write a different kind of letter. Not to yourself. From yourself.`,
+      `Imagine the version of you, five years from today, who is on the other side of this. They've made a decision and held it. They have the perspective you don't have yet — the perspective that comes only from having walked the path.`,
+      `Write a letter from that version of yourself to the version of you reading this now. What would they tell you? What do they wish you'd known? What was harder than they'd expected? What was easier? What turned out to matter?`,
+      `This is the second sealed letter. It will be sealed at the end. You'll see it again on Day 21, when you stand at the three doors.`,
+      `Take your time. Let yourself write as if you actually were that future version. They have things to say.`,
+    ],
+    mechanicProps: {
+      letterKey: 'reflect_day_17_letter_from_future_self',
+      promptHeader: 'From me, five years from now:',
+      starterPrompts: [
+        `"The thing I wish you'd known is..."`,
+        `"What I want you to do right now is..."`,
+        `"I want to tell you about the year you're about to have..."`,
+      ],
+      unsealOnKey: 'reflect_day_21',
+      dayNumber: 17,
+    },
+    closingLine: `They wrote to you. From a version of you that exists, somewhere ahead.`,
+    artifactType: 'reflect_day_17_letter_from_future',
+  },
+
+  {
+    day: 18,
+    week: 3,
+    phase: 'decide',
+    dayType: 'interactive',
+    mechanic: 'readiness_ruler',
+    arrivalTitle: 'Readiness.',
+    arrivalSubtitle: 'Where are you, today?',
+    intro: [
+      `One of the most reliable findings in change research is this: the strongest predictor of whether someone will follow through on a decision to change isn't their reasons, their resources, or even their support. It's their own honest rating of how ready they feel.`,
+      `Today is the readiness ruler. A slider, one through ten. There's no right answer. The number is just information.`,
+      `Below the slider, two questions. They're short. The answers help anchor the number.`,
+    ],
+    mechanicProps: {},
+    closingLine: `The number is information. It doesn't decide. You do.`,
+    artifactType: 'reflect_day_18_readiness',
+  },
+
+  {
+    day: 19,
+    week: 3,
+    phase: 'decide',
+    dayType: 'read',
+    mechanic: 'truth_check',
+    arrivalTitle: 'What ready means.',
+    arrivalSubtitle: 'A pause. A reading. A small tap.',
+    intro: [
+      `Yesterday you rated your readiness. Today's question is what that rating means.`,
+      `"Ready" doesn't mean unafraid. It doesn't mean certain. It doesn't mean having a perfect plan. People who succeed at hard change almost always start before they feel fully ready. The waiting-to-feel-ready, in fact, is one of the things that keeps people stuck.`,
+      `What "ready" actually means is something simpler: ready enough to begin. To take the next step, knowing the steps after that are not yet visible.`,
+      `Some of you, yesterday, rated yourself at 9 or 10. Some of you rated yourself at 3 or 4. Both are valid readings of where you actually are. The work of Day 21 — two days from now — is to take that reading honestly and to decide what to do with it.`,
+      `Tomorrow, you see what you've made. Your full portrait, every artifact from these three weeks, surfaced at once.`,
+      `Today, one tap.`,
+    ],
+    mechanicProps: {
+      promptText: 'What does ready feel like for you right now?',
+      options: [
+        { id: 'ready_to_begin', label: `Ready enough to begin. I don't need to be certain.` },
+        { id: 'almost_ready', label: `Almost there. Maybe not quite yet.` },
+        { id: 'not_ready', label: `Not ready. The looking has been valuable, but I'm not at action.` },
+        { id: 'something_else', label: `Something else, that none of these quite capture.` },
+      ],
+    },
+    closingLine: `Whatever ready means for you, the next two days will hold it.`,
+    artifactType: 'reflect_day_19_what_ready_means',
+  },
+
+  {
+    day: 20,
+    week: 3,
+    phase: 'decide',
+    dayType: 'special',
+    mechanic: 'portrait_reveal',
+    arrivalTitle: 'Your portrait.',
+    arrivalSubtitle: 'Three weeks. Surfaced.',
+    intro: [
+      `For nineteen days, you have been making something. Most of it has not been visible to you yet — each day stood alone.`,
+      `Today, all of it surfaces.`,
+      `What you'll see next is your full portrait. Your reasons for being here. Your specific landscape. Your trigger map. The statements you sorted. The time and money this has taken. The letter you wrote to who you were — unsealed now, after fourteen days in the dark. Your costs ranked. Your body's record. Your readings of the using voice. Stories you recognized in. The two futures, and which one you said feels closer. The fears, on both sides. The number that came up when you rated your readiness honestly.`,
+      `Take your time with it. There's no need to read every word again. The pieces are there for you, in your own voice, ready to be seen all at once.`,
+      `Tomorrow is the last day. Three doors.`,
+    ],
+    mechanicProps: {},
+    closingLine: `What you have made is yours. Tomorrow, you decide what to do with it.`,
+    artifactType: 'reflect_day_20_portrait',
+  },
+
+  {
+    day: 21,
+    week: 3,
+    phase: 'decide',
+    dayType: 'special',
+    mechanic: 'three_doors',
+    arrivalTitle: 'Three doors.',
+    arrivalSubtitle: 'The last day. Where do you actually stand?',
+    founderAudio: {
+      audioSrc: '/audio/reflect-v2/day_21.mp3',
+      transcript: `Hi. It's Ninad, on the last day.
+
+Twenty-one days. You came in not sure what to do. You're standing in a different place now.
+
+I want to say something specific, because it matters today: the work of these three weeks was the deciding, not the stopping. Some of you, today, will pick the first door. The Commit door. You're ready to begin the next stage of the path. Others will pick the second door — the wait. You've looked honestly and you need more time before the decision is yours to make. That's not failure. That's information. The third door is for those of you who, in the looking, decided this isn't for you, or isn't for you yet. That's also a decision. Vow honors that one too.
+
+One more thing. The letter you wrote on Day 17, from your future self to you — you'll see it on the next screen. I'd suggest reading it before you pick a door. The version of you who wrote it knew things the version of you sitting here right now does not yet know. Let them speak.
+
+That's it. Thank you for the work. Whatever door you pick, I'll be on the other side of it.`,
+    },
+    intro: [
+      `Twenty-one days. The work of Reflect closes today.`,
+      `Below, in order: a brief reading. The letter you sealed on Day 17, from a version of yourself five years from now. The three doors.`,
+      `Take your time. There's no rush. This is the one decision the work was for.`,
+    ],
+    mechanicProps: {},
+    closingLine: `The door you pick is the door you pick. You're not locked in.`,
+    artifactType: 'reflect_day_21_three_doors',
+  },
+]
+
+export const REFLECT_V2_TOTAL_DAYS = 21
+
+export function getReflectV2Day(dayNumber) {
+  return REFLECT_V2_DAYS.find(d => d.day === dayNumber) || null
+}
+
+// Phase definitions for the overview
+export const REFLECT_V2_PHASES = [
+  {
+    key: 'see_it',
+    week: 1,
+    title: 'Week 1 — See it',
+    subtitle: 'Days 1–7. Looking honestly.',
+    dayRange: [1, 7],
+  },
+  {
+    key: 'feel_it',
+    week: 2,
+    title: 'Week 2 — Feel it',
+    subtitle: 'Days 8–14. Both sides, felt fully.',
+    dayRange: [8, 14],
+  },
+  {
+    key: 'decide',
+    week: 3,
+    title: 'Week 3 — Decide',
+    subtitle: 'Days 15–21. Where do you actually stand?',
+    dayRange: [15, 21],
+  },
+]
