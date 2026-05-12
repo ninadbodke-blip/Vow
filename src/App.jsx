@@ -26,6 +26,10 @@ import ReflectOverview from './screens/vowPath/ReflectOverview'
 import SubstancePicker from './screens/vowPath/SubstancePicker'
 import LibraryHome from './screens/vowPath/LibraryHome'
 import LibraryDeepRead from './screens/vowPath/LibraryDeepRead'
+import NoticeOverview from './screens/vowPath/NoticeOverview'
+import NoticeDay from './screens/vowPath/NoticeDay'
+import CommitOverview from './screens/vowPath/CommitOverview'
+import CommitDay from './screens/vowPath/CommitDay'
 
 function AppRoutes() {
   const { lang } = useLang()
@@ -179,6 +183,22 @@ function AppRoutes() {
         path="/vow-path/reflect/day/:dayNumber"
         element={session ? <ReflectV2Day /> : <Navigate to="/welcome" />}
       />
+      <Route
+        path="/vow-path/notice"
+        element={session ? <NoticeOverview /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/vow-path/notice/day/:dayNumber"
+        element={session ? <NoticeDay /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/vow-path/commit"
+        element={session ? <CommitOverview /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/vow-path/commit/day/:dayNumber"
+        element={session ? <CommitDay /> : <Navigate to="/welcome" />}
+      />
 
       {/* ===== LIBRARY ===== */}
       <Route
@@ -187,6 +207,22 @@ function AppRoutes() {
       />
       <Route
         path="/library/reflect/day/:dayNumber"
+        element={session ? <LibraryDeepRead /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/library/notice"
+        element={session ? <LibraryHome /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/library/notice/day/:dayNumber"
+        element={session ? <LibraryDeepRead /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/library/commit"
+        element={session ? <LibraryHome /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/library/commit/day/:dayNumber"
         element={session ? <LibraryDeepRead /> : <Navigate to="/welcome" />}
       />
     </Routes>
