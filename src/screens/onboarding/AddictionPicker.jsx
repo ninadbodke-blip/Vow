@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../../LanguageContext'
 import { supabase } from '../../supabaseClient'
 
-const FREE_LIMIT = 2
-
 function DemonFace({ selected }) {
   if (selected) {
     return (
@@ -29,40 +27,22 @@ function DemonFace({ selected }) {
           <stop offset="100%" stopColor="#A93B1A" />
         </radialGradient>
       </defs>
-      
-      {/* Subtle glow halo */}
       <circle cx="120" cy="125" r="105" fill="rgba(232,117,74,0.08)" />
       <circle cx="120" cy="125" r="90" fill="rgba(232,117,74,0.10)" />
-      
-      {/* Horns */}
       <path d="M 70 75 Q 60 40 80 35 Q 85 55 90 80 Z" fill="url(#demonBody)" />
       <path d="M 170 75 Q 180 40 160 35 Q 155 55 150 80 Z" fill="url(#demonBody)" />
-      
-      {/* Head — rounded triangular */}
       <path d="M 120 75 Q 75 80 70 130 Q 70 175 120 200 Q 170 175 170 130 Q 165 80 120 75 Z" 
             fill="url(#demonBody)" />
-      
-      {/* Inner shadow on head for depth */}
       <path d="M 120 85 Q 85 88 80 135 Q 82 165 120 188 Q 158 165 160 135 Q 155 88 120 85 Z" 
             fill="rgba(0,0,0,0.2)" />
-      
-      {/* Eyes — glowing */}
       <ellipse cx="98" cy="125" rx="14" ry="10" fill="url(#demonEye)" />
       <ellipse cx="142" cy="125" rx="14" ry="10" fill="url(#demonEye)" />
-      
-      {/* Eye pupils */}
       <ellipse cx="98" cy="125" rx="4" ry="6" fill="#1A0805" />
       <ellipse cx="142" cy="125" rx="4" ry="6" fill="#1A0805" />
-      
-      {/* Eye highlights */}
       <circle cx="100" cy="121" r="2" fill="#FFE8C4" />
       <circle cx="144" cy="121" r="2" fill="#FFE8C4" />
-      
-      {/* Mouth — sharp grin */}
       <path d="M 95 165 Q 120 175 145 165 L 142 172 L 138 168 L 132 174 L 128 168 L 120 175 L 112 168 L 108 174 L 102 168 L 98 172 Z" 
             fill="#1A0805" />
-      
-      {/* Subtle cheek shadows */}
       <ellipse cx="85" cy="150" rx="8" ry="4" fill="rgba(0,0,0,0.25)" />
       <ellipse cx="155" cy="150" rx="8" ry="4" fill="rgba(0,0,0,0.25)" />
     </svg>
@@ -95,9 +75,9 @@ export default function AddictionPicker({ onboardingDone }) {
   const navigate = useNavigate()
 
   const [addictions, setAddictions] = useState([])
-  const [existingIds, setExistingIds] = useState([])
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [showFounderMessage, setShowFounderMessage] = useState(false)
   const [showAddictionList, setShowAddictionList] = useState(false)
@@ -109,22 +89,24 @@ export default function AddictionPicker({ onboardingDone }) {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { navigate('/signup'); return }
 
-        const { data: addictionData } = await supabase
+        const { data: addictionData, error: addictionError } = await supabase
           .from('addiction_types').select('*').order('id')
 
-        const { data: trackerData } = await supabase
-          .from('trackers').select('addiction_type_id')
-          .eq('user_id', user.id).eq('is_active', true)
+        if (addictionError) {
+          console.error('Failed to load addiction_types:', addictionError)
+          setError('Could not load options. Please refresh.')
+          setLoading(false)
+          return
+        }
 
-        const existing = trackerData?.map(t => t.addiction_type_id).filter(Boolean) || []
-        setExistingIds(existing)
+        // Log the first row to see what columns exist (for substance metadata)
+        if (addictionData?.length > 0) {
+          console.log('[AddictionPicker] addiction_types columns:', Object.keys(addictionData[0]))
+        }
+
         setAddictions(addictionData || [])
 
         if (!onboardingDone) setShowFounderMessage(true)
-
-        if (existing.length >= FREE_LIMIT) {
-          setError(`You're already tracking ${FREE_LIMIT} addictions on the free plan. Delete one or upgrade to add more.`)
-        }
       } catch (err) {
         setError(err.message)
       } finally {
@@ -134,21 +116,60 @@ export default function AddictionPicker({ onboardingDone }) {
     load()
   }, [onboardingDone])
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!selected) {
-      setError('Tap the icon above to pick what you\'re quitting.')
+      setError('Tap the icon above to pick what you are quitting.')
       return
     }
-    navigate('/onboarding/setup', { state: { selectedIds: [selected.id] } })
-  }
 
-  const handleBack = () => {
-    if (existingIds.length > 0) navigate('/home')
-    else navigate('/signup')
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        navigate('/signup')
+        return
+      }
+
+      // Build the substance metadata write.
+      // We write whichever fields exist on the selected addiction_type row.
+      const substanceUpdate = {
+        user_id: user.id,
+        primary_substance: selected.id,
+        substance_label: selected.name,
+        updated_at: new Date().toISOString(),
+      }
+
+      // Optional fields — only included if present on the addiction_types row
+      if (selected.family) substanceUpdate.substance_family = selected.family
+      if (selected.verb) substanceUpdate.substance_verb = selected.verb
+
+      // Upsert into vow_path_progress so the state picker has the substance to reference
+      const { error: upsertError } = await supabase
+        .from('vow_path_progress')
+        .upsert(substanceUpdate, { onConflict: 'user_id' })
+
+      if (upsertError) {
+        console.error('Failed to save substance selection:', upsertError)
+        setError('Could not save your selection. Please try again.')
+        setSaving(false)
+        return
+      }
+
+      // Mark onboarding as in progress
+      await supabase
+        .from('profiles')
+        .update({ onboarding_completed: true })
+        .eq('id', user.id)
+
+      navigate('/onboarding/state-picker')
+    } catch (err) {
+      console.error(err)
+      setError(err.message || 'Something went wrong. Please try again.')
+      setSaving(false)
+    }
   }
 
   const filteredAddictions = addictions.filter(a => {
-    if (existingIds.includes(a.id)) return false
     if (!searchQuery) return true
     return a.name.toLowerCase().includes(searchQuery.toLowerCase())
   })
@@ -164,18 +185,11 @@ export default function AddictionPicker({ onboardingDone }) {
   return (
     <div style={styles.frame}>
       <div style={styles.card}>
-        <div style={styles.header}>
-          {existingIds.length > 0 && (
-            <button onClick={handleBack} style={styles.backBtn}>‹ Back</button>
-          )}
-          <div style={{flex: 1}}></div>
-        </div>
-
         <h1 style={styles.title}>
-          Which vice do you vow to quit today?
+          Which vice do you vow to address?
         </h1>
         <p style={styles.subtitle}>
-          Tap the face below to name your battle.
+          Tap the face below to name it.
         </p>
 
         <button
@@ -187,22 +201,20 @@ export default function AddictionPicker({ onboardingDone }) {
         </button>
 
         {!selected && (
-          <p style={styles.hintText}>
-            Tap to choose
-          </p>
+          <p style={styles.hintText}>Tap to choose</p>
         )}
 
         {error && <div style={styles.err}>{error}</div>}
 
         <button
           onClick={handleNext}
-          disabled={!selected}
+          disabled={!selected || saving}
           style={{
             ...styles.btn,
-            ...(selected ? styles.btnPrimary : styles.btnDisabled),
+            ...(selected && !saving ? styles.btnPrimary : styles.btnDisabled),
           }}
         >
-          {selected ? 'Make this vow →' : 'Pick a vice first'}
+          {saving ? 'Saving...' : (selected ? 'Continue' : 'Pick first')}
         </button>
       </div>
 
@@ -214,7 +226,7 @@ export default function AddictionPicker({ onboardingDone }) {
             <p style={styles.sheetTitle}>Pick your vice</p>
             <input
               type="text"
-              placeholder="Search…"
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.searchInput}
@@ -267,19 +279,10 @@ export default function AddictionPicker({ onboardingDone }) {
             </p>
             <div style={founderStyles.signature}>— Ninad, founder</div>
             <button
-              onClick={async () => {
-                const { data: { user } } = await supabase.auth.getUser()
-                if (user) {
-                  await supabase
-                    .from('profiles')
-                    .update({ onboarding_completed: true })
-                    .eq('id', user.id)
-                }
-                setShowFounderMessage(false)
-              }}
+              onClick={() => setShowFounderMessage(false)}
               style={founderStyles.btn}
             >
-              Make your vow
+              Begin
             </button>
           </div>
         </div>
@@ -307,17 +310,6 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-  },
-  header: {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: '1rem',
-  },
-  backBtn: {
-    background: 'transparent', border: 'none',
-    color: '#854F0B', fontSize: '14px', fontWeight: 500,
-    cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px',
   },
   title: {
     fontSize: '24px',
@@ -378,15 +370,13 @@ const styles = {
   btnPrimary: {
     background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
     color: '#FAF7F1',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
+    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
   },
   btnDisabled: {
     background: '#E8DFD0',
     color: '#9C8C78',
     cursor: 'not-allowed',
   },
-
-  // BOTTOM SHEET MODAL
   listModal: {
     position: 'fixed',
     top: 0, left: 0, right: 0, bottom: 0,

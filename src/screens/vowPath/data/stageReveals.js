@@ -1,5 +1,3 @@
-console.log('STAGE_REVEALS file loaded. Notice status:', 'available')
-
 // =====================================================================
 // VOW STAGE CHECK — Stage Reveal Copy
 // =====================================================================
@@ -49,11 +47,10 @@ By the end of Commit, you have everything you need to walk into the actually-sto
     code: 'A',
     name: 'Endure',
     duration: '21 days',
-    status: 'coming_soon',
+    status: 'available',
     headline: `You're at Endure.`,
     subhead: 'Walking through the hardest stretch.',
     body: `Endure is the 21-day program for the early sobriety stretch. The first 72 hours, the first week, the first month. The cravings, the flatness, the sleep disruption, the using voice. Endure works with what's surfacing rather than trying to suppress it — drawing on relapse prevention, nervous system regulation, recovery capital building, and contemplative traditions.`,
-    coming_soon_note: `Endure is being written. We'll let you know when it's ready.`,
   },
   build: {
     code: 'M',

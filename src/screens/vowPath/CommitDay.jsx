@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { getCommitDay, COMMIT_TOTAL_DAYS } from './data/commitContent'
+import { transitionFromCommit } from './utils/stageTransitions'
 
 // Mechanic components
 import DatePicker from './mechanics/DatePicker'
@@ -52,6 +53,7 @@ export default function CommitDay() {
   const [interactionData, setInteractionData] = useState(null)
   const [existingArtifact, setExistingArtifact] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [completing, setCompleting] = useState(false)
 
   // Audio
   const audioRef = useRef(null)
@@ -227,20 +229,6 @@ export default function CommitDay() {
           updated_at: new Date().toISOString(),
         }
 
-        // Day 10 → write stop date for Endure transition
-        if (dayNumber === 10) {
-          // Get stop date from Day 1 artifact
-          const { data: day1 } = await supabase
-            .from('vow_artifacts')
-            .select('content')
-            .eq('user_id', user.id)
-            .eq('artifact_type', 'commit_day_1')
-            .maybeSingle()
-          if (day1?.content?.stop_date) {
-            updates.endure_starts_at = day1.content.stop_date
-          }
-        }
-
         await supabase
           .from('vow_path_progress')
           .update(updates)
@@ -254,6 +242,18 @@ export default function CommitDay() {
       alert('Something went wrong. Please try again.')
       setSaving(false)
     }
+  }
+
+  // ---- COMMIT COMPLETION ----
+  const handleCommitComplete = async () => {
+    setCompleting(true)
+    const result = await transitionFromCommit()
+    if (result.error) {
+      alert('Could not transition to Endure: ' + result.error)
+      setCompleting(false)
+      return
+    }
+    navigate('/vow-path/transition/commit/to/endure')
   }
 
   const getBackLabel = () => {
@@ -483,10 +483,11 @@ export default function CommitDay() {
 
           {isFinalDay ? (
             <button
-              onClick={() => navigate('/vow-path/commit/complete')}
-              style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
+              onClick={handleCommitComplete}
+              disabled={completing}
+              style={{ ...styles.primaryBtn, marginTop: '1.5rem', ...(completing ? { opacity: 0.5 } : {}) }}
             >
-              Continue to threshold
+              {completing ? 'Walking through...' : 'Continue to threshold'}
             </button>
           ) : (
             <button

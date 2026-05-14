@@ -16,7 +16,6 @@ export default function StageReveal() {
       return
     }
 
-    // Load the user's substance label for display
     async function loadSubstance() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -47,7 +46,6 @@ export default function StageReveal() {
         return
       }
 
-      // Get existing progress (to preserve completed_stages and substance fields)
       const { data: existingProgress } = await supabase
         .from('vow_path_progress')
         .select('*')
@@ -67,7 +65,6 @@ export default function StageReveal() {
         updated_at: new Date().toISOString(),
       }
 
-      // Preserve substance fields from existing row if they exist
       if (existingProgress) {
         if (existingProgress.substance_label) upsertData.substance_label = existingProgress.substance_label
         if (existingProgress.substance_family) upsertData.substance_family = existingProgress.substance_family
@@ -76,7 +73,6 @@ export default function StageReveal() {
         if (existingProgress.path_started_at) upsertData.path_started_at = existingProgress.path_started_at
         if (existingProgress.is_pilot_mode !== undefined) upsertData.is_pilot_mode = existingProgress.is_pilot_mode
       } else {
-        // First time — set defaults
         upsertData.path_started_at = new Date().toISOString()
         upsertData.is_paused = false
       }
@@ -94,7 +90,9 @@ export default function StageReveal() {
         return
       }
 
-      navigate(`/vow-path/${stageSlug}/day/1`)
+      // Route to the overview, not directly to Day 1.
+      // The user sees the full stage shape first, then taps Day 1 themselves.
+      navigate(`/vow-path/${stageSlug}`)
     } catch (err) {
       console.error('Unexpected error:', err)
       alert(`Something went wrong: ${err.message}`)

@@ -1,256 +1,74 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../../supabaseClient'
+import { transitionFromNotice } from '../utils/stageTransitions'
 
-export default function ThreeDoorsNotice({ data, onSave, onComplete, saving: parentSaving }) {
+export default function ThreeDoorsNotice({ data, onSave, saving }) {
   const navigate = useNavigate()
-  const handleFinalize = onSave || onComplete
-
   const { landingPrompt, landingOptions, doors } = data
 
-  // Phases: 'summary' -> 'landing' -> 'fork' -> 'confirm'
-  const [phase, setPhase] = useState('summary')
-
-  const [landingTap, setLandingTap] = useState(null)
+  // Phases: 'landing' -> 'doors' -> 'confirm'
+  const [phase, setPhase] = useState('landing')
+  const [landingChoice, setLandingChoice] = useState(null)
   const [selectedDoor, setSelectedDoor] = useState(null)
-  const [saving, setSaving] = useState(false)
+  const [transitioning, setTransitioning] = useState(false)
+  const [error, setError] = useState(null)
 
-  // Days 1-4 summary data
-  const [day1Data, setDay1Data] = useState(null)
-  const [day2Data, setDay2Data] = useState(null)
-  const [day3Data, setDay3Data] = useState(null)
-  const [day4Data, setDay4Data] = useState(null)
+  const pickLanding = (option) => {
+    setLandingChoice(option)
+    setPhase('doors')
+  }
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data: artifacts } = await supabase
-        .from('vow_artifacts')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('stage', 'notice')
-        .in('day_number', [1, 2, 3, 4])
-
-      if (artifacts) {
-        const d1 = artifacts.find(a => a.day_number === 1)
-        const d2 = artifacts.find(a => a.day_number === 2)
-        const d3 = artifacts.find(a => a.day_number === 3)
-        const d4 = artifacts.find(a => a.day_number === 4)
-        setDay1Data(d1?.content || null)
-        setDay2Data(d2?.content || null)
-        setDay3Data(d3?.content || null)
-        setDay4Data(d4?.content || null)
-      }
-    }
-    load()
-  }, [])
-
-  const selectDoor = (doorId) => {
-    setSelectedDoor(doorId)
+  const tapDoor = (door) => {
+    setSelectedDoor(door)
     setPhase('confirm')
   }
 
   const confirmDoor = async () => {
-    if (saving) return
-    setSaving(true)
+    setTransitioning(true)
+    setError(null)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setSaving(false)
+    // Save the artifact (records landing choice + door choice)
+    await onSave({
+      landing_choice_id: landingChoice?.id,
+      landing_choice_label: landingChoice?.label,
+      door_id: selectedDoor.id,
+      door_title: selectedDoor.title,
+      decided_at: new Date().toISOString(),
+    })
+
+    const result = await transitionFromNotice({ doorChoice: selectedDoor.id })
+
+    if (result.error) {
+      setError(result.error)
+      setTransitioning(false)
       return
     }
 
-    try {
-      // Write notice_decisions row
-      await supabase.from('notice_decisions').upsert({
-        user_id: user.id,
-        decision: selectedDoor,
-        letter_landing_tap: landingTap,
-      }, { onConflict: 'user_id' })
-
-      // Update vow_path_progress based on door
-      const { data: progressRow } = await supabase
-        .from('vow_path_progress')
-        .select('completed_stages')
-        .eq('user_id', user.id)
-        .maybeSingle()
-
-      const completed = progressRow?.completed_stages || []
-      completed.push({
-        stage: 'notice',
-        completed_at: new Date().toISOString(),
-        decision: selectedDoor,
-      })
-
-      let progressUpdate = { completed_stages: completed }
-
-      if (selectedDoor === 'reflect') {
-        progressUpdate.current_stage = 'reflect'
-        progressUpdate.current_day = 1
-        progressUpdate.last_completed_day = 0
-        progressUpdate.stage_started_at = new Date().toISOString()
-        progressUpdate.vow_path_status = 'active'
-      } else if (selectedDoor === 'wait_30_days') {
-        const nextEligible = new Date()
-        nextEligible.setDate(nextEligible.getDate() + 30)
-        progressUpdate.vow_path_status = 'paused_30_days'
-        progressUpdate.next_eligible_at = nextEligible.toISOString()
-      } else if (selectedDoor === 'not_for_me') {
-        progressUpdate.vow_path_status = 'closed_permanent'
-        progressUpdate.closed_at = new Date().toISOString()
-      }
-
-      await supabase.from('vow_path_progress')
-        .update(progressUpdate)
-        .eq('user_id', user.id)
-
-      // Save Day 5 artifact
-      handleFinalize({
-        landing_tap: landingTap,
-        door_selected: selectedDoor,
-        selected_at: new Date().toISOString(),
-      })
-
-      setTimeout(() => {
-        if (selectedDoor === 'reflect') {
-          navigate('/vow-path/reflect/day/1')
-        } else {
-          navigate('/home')
-        }
-      }, 200)
-    } catch (err) {
-      console.error('Error saving door selection:', err)
-      setSaving(false)
+    if (result.nextStage === 'reflect') {
+      navigate('/vow-path/transition/notice/to/reflect')
+    } else if (result.action === 'wait_30_days' || result.action === 'closed_permanently') {
+      navigate('/home')
+    } else {
+      navigate('/home')
     }
   }
 
-  const cancelDoor = () => {
-    setSelectedDoor(null)
-    setPhase('fork')
-  }
-
-  // ===================================================================
-  // PHASE: SUMMARY — the four days
-  // ===================================================================
-  if (phase === 'summary') {
-    return (
-      <div style={styles.container}>
-        <h2 style={styles.prompt}>The four days.</h2>
-        <p style={styles.subtext}>A brief look at what you've seen.</p>
-
-        <div style={styles.summaryList}>
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryDay}>Day 1 — Lines crossed</p>
-            <p style={styles.summaryBody}>
-              You named {(day1Data?.lines_identified?.length || 0) + (day1Data?.custom_lines?.length || 0)} lines.
-              You've crossed {day1Data?.crossed_count || 0} of them.
-            </p>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryDay}>Day 2 — The trajectory</p>
-            <p style={styles.summaryBody}>
-              Direction: {day2Data?.trajectory_shape?.replace(/_/g, ' ') || 'unknown'}.
-            </p>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryDay}>Day 3 — The relationships</p>
-            <p style={styles.summaryBody}>
-              You named {day3Data?.people?.length || 0} people closest to you.
-              {day3Data?.aggregated_patterns?.stopped_bringing_up_count > 0 && (
-                <> {day3Data.aggregated_patterns.stopped_bringing_up_count} of them have stopped bringing up your use, or never started.</>
-              )}
-            </p>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryDay}>Day 4 — The ledger</p>
-            <p style={styles.summaryBody}>
-              You named {day4Data?.total_count || 0} things you've given up.
-              {day4Data?.categories_touched?.length > 0 && (
-                <> Across {day4Data.categories_touched.length} {day4Data.categories_touched.length === 1 ? 'area' : 'areas'} of life.</>
-              )}
-            </p>
-          </div>
-        </div>
-
-        <p style={styles.summaryNote}>
-          This is what's now visible.
-        </p>
-
-        <div style={styles.footer}>
-          <button onClick={() => setPhase('landing')} style={styles.primaryBtn}>
-            Continue
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ===================================================================
-  // PHASE: LANDING — single tap
-  // ===================================================================
+  // ====================================================================
+  // PHASE: LANDING
+  // ====================================================================
   if (phase === 'landing') {
     return (
       <div style={styles.container}>
         <h2 style={styles.prompt}>{landingPrompt}</h2>
 
-        <div style={styles.optionList}>
-          {landingOptions.map(opt => {
-            const selected = landingTap === opt.id
-            return (
-              <button
-                key={opt.id}
-                onClick={() => setLandingTap(opt.id)}
-                style={{
-                  ...styles.optionCard,
-                  ...(selected ? styles.optionCardSelected : {}),
-                }}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
-
-        <div style={styles.footer}>
-          <button
-            onClick={() => setPhase('fork')}
-            disabled={!landingTap}
-            style={{
-              ...styles.primaryBtn,
-              ...(landingTap ? {} : styles.primaryBtnDisabled),
-            }}
-          >
-            Continue
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ===================================================================
-  // PHASE: FORK — three doors
-  // ===================================================================
-  if (phase === 'fork') {
-    return (
-      <div style={styles.container}>
-        <h2 style={styles.prompt}>The fork.</h2>
-        <p style={styles.subtext}>Three doors. Each is fully respected. There is no right one.</p>
-
-        <div style={styles.doorList}>
-          {doors.map(door => (
+        <div style={styles.landingList}>
+          {landingOptions.map(option => (
             <button
-              key={door.id}
-              onClick={() => selectDoor(door.id)}
-              style={styles.doorCard}
+              key={option.id}
+              onClick={() => pickLanding(option)}
+              style={styles.landingCard}
             >
-              <p style={styles.doorNum}>Door {door.number}</p>
-              <p style={styles.doorTitle}>{door.title}</p>
-              <p style={styles.doorDescription}>{door.description}</p>
+              <p style={styles.landingLabel}>{option.label}</p>
             </button>
           ))}
         </div>
@@ -258,34 +76,79 @@ export default function ThreeDoorsNotice({ data, onSave, onComplete, saving: par
     )
   }
 
-  // ===================================================================
-  // PHASE: CONFIRM
-  // ===================================================================
-  const door = doors.find(d => d.id === selectedDoor)
-  if (!door) return null
+  // ====================================================================
+  // PHASE: DOORS
+  // ====================================================================
+  if (phase === 'doors') {
+    return (
+      <div style={styles.container}>
+        <p style={styles.doorsEyebrow}>Three doors stand in front of you.</p>
+        <p style={styles.doorsSubtext}>
+          No right one. Each is fully respected.
+        </p>
 
+        <div style={styles.doorsList}>
+          {doors.map(door => (
+            <button
+              key={door.id}
+              onClick={() => tapDoor(door)}
+              style={styles.doorCard}
+            >
+              <div style={styles.doorNumber}>{door.number}</div>
+              <div style={styles.doorContent}>
+                <p style={styles.doorTitle}>{door.title}</p>
+                {door.description && (
+                  <p style={styles.doorDescription}>{door.description}</p>
+                )}
+              </div>
+              <div style={styles.doorChevron}>›</div>
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setPhase('landing')}
+          style={styles.backLink}
+        >
+          ‹ Back
+        </button>
+      </div>
+    )
+  }
+
+  // ====================================================================
+  // PHASE: CONFIRM
+  // ====================================================================
   return (
     <div style={styles.container}>
-      <h2 style={styles.confirmTitle}>{door.confirmTitle}</h2>
-      <p style={styles.confirmBody}>{door.confirmBody}</p>
+      <p style={styles.confirmEyebrow}>You chose Door {selectedDoor.number}.</p>
+      <h2 style={styles.confirmTitle}>{selectedDoor.confirmTitle}</h2>
+
+      {selectedDoor.confirmBody && (
+        <div style={styles.confirmBody}>
+          <p style={styles.confirmBodyText}>{selectedDoor.confirmBody}</p>
+        </div>
+      )}
+
+      {error && <p style={styles.errorText}>{error}</p>}
 
       <div style={styles.footer}>
         <button
-          onClick={confirmDoor}
-          disabled={saving}
-          style={{
-            ...styles.primaryBtn,
-            ...(saving ? styles.primaryBtnDisabled : {}),
-          }}
+          onClick={() => { setSelectedDoor(null); setPhase('doors') }}
+          style={styles.secondaryBtn}
+          disabled={transitioning}
         >
-          {saving ? 'Saving...' : door.confirmButton}
+          ‹ Change
         </button>
         <button
-          onClick={cancelDoor}
-          disabled={saving}
-          style={styles.secondaryBtn}
+          onClick={confirmDoor}
+          disabled={transitioning || saving}
+          style={{
+            ...styles.primaryBtnFlex,
+            ...((transitioning || saving) ? styles.primaryBtnDisabled : {}),
+          }}
         >
-          Go back
+          {transitioning ? 'Walking through...' : (selectedDoor.confirmButton || 'Confirm')}
         </button>
       </div>
     </div>
@@ -295,103 +158,111 @@ export default function ThreeDoorsNotice({ data, onSave, onComplete, saving: par
 const styles = {
   container: { paddingTop: '0.5rem' },
   prompt: {
+    fontSize: '22px', color: '#2A1F15',
+    fontFamily: 'Georgia, serif', fontWeight: 500,
+    lineHeight: 1.3, margin: '0 0 1.5rem',
+  },
+  landingList: {
+    display: 'flex', flexDirection: 'column', gap: '10px',
+  },
+  landingCard: {
+    width: '100%', padding: '16px 18px',
+    background: 'white',
+    border: '0.5px solid #E8DFD0',
+    borderRadius: '14px',
+    cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+    transition: 'all 0.15s',
+    boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
+  },
+  landingLabel: {
+    fontSize: '15px', color: '#2A1F15',
+    fontFamily: 'Georgia, serif', fontWeight: 400,
+    margin: 0, lineHeight: 1.4,
+  },
+  doorsEyebrow: {
     fontSize: '20px', color: '#2A1F15',
     fontFamily: 'Georgia, serif', fontWeight: 500,
-    lineHeight: 1.3, margin: '0 0 0.5rem',
+    margin: '0 0 0.5rem', lineHeight: 1.3,
   },
-  subtext: {
+  doorsSubtext: {
     fontSize: '13px', color: '#6B5C4A',
     fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.55, margin: '0 0 1.25rem',
+    margin: '0 0 1.5rem', lineHeight: 1.55,
   },
-  optionList: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  optionCard: {
-    padding: '14px 16px',
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
-    fontSize: '14px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    cursor: 'pointer', textAlign: 'left',
-    lineHeight: 1.4,
-    transition: 'all 0.15s',
-  },
-  optionCardSelected: {
-    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
-    border: '1px solid #C5572C',
-    boxShadow: '0 2px 8px rgba(197,87,44,0.12)',
-  },
-  summaryList: {
-    display: 'flex', flexDirection: 'column', gap: '10px',
-    marginBottom: '1rem',
-  },
-  summaryCard: {
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
-    padding: '12px 14px',
-  },
-  summaryDay: {
-    fontSize: '11px', color: '#854F0B',
-    textTransform: 'uppercase', letterSpacing: '0.12em',
-    fontWeight: 500, fontFamily: 'Georgia, serif',
-    margin: '0 0 6px',
-  },
-  summaryBody: {
-    fontSize: '13.5px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    margin: 0, lineHeight: 1.5,
-  },
-  summaryNote: {
-    fontSize: '13px', color: '#6B5C4A',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.6, textAlign: 'center',
-    margin: '0 0 1rem',
-  },
-  doorList: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  doorsList: { display: 'flex', flexDirection: 'column', gap: '12px' },
   doorCard: {
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+    width: '100%', padding: '16px 16px',
     background: 'white',
     border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
-    padding: '16px',
-    textAlign: 'left',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    transition: 'all 0.15s',
+    borderRadius: '16px',
+    cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+    gap: '12px', transition: 'all 0.15s',
+    boxShadow: '0 2px 8px rgba(80,50,20,0.04)',
   },
-  doorNum: {
-    fontSize: '11px', color: '#854F0B',
-    textTransform: 'uppercase', letterSpacing: '0.12em',
-    fontWeight: 500, fontFamily: 'Georgia, serif',
-    margin: '0 0 6px',
+  doorNumber: {
+    width: '28px', height: '28px', borderRadius: '50%',
+    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
+    border: '0.5px solid #E0D5C2',
+    color: '#854F0B',
+    fontFamily: 'Georgia, serif',
+    fontSize: '14px', fontWeight: 500,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0, marginTop: '2px',
   },
+  doorContent: { flex: 1, minWidth: 0 },
   doorTitle: {
-    fontSize: '16px', color: '#2A1F15',
+    fontSize: '15px', color: '#2A1F15',
     fontFamily: 'Georgia, serif', fontWeight: 500,
-    margin: '0 0 8px', lineHeight: 1.4,
+    margin: '0 0 4px', lineHeight: 1.35,
   },
   doorDescription: {
     fontSize: '12.5px', color: '#6B5C4A',
     fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.5, margin: 0,
+    margin: 0, lineHeight: 1.5,
+  },
+  doorChevron: {
+    fontSize: '22px', color: '#854F0B', fontWeight: 500,
+    flexShrink: 0, alignSelf: 'center',
+  },
+  backLink: {
+    background: 'transparent', border: 'none',
+    color: '#854F0B', fontSize: '12px',
+    fontStyle: 'italic', fontFamily: 'Georgia, serif',
+    cursor: 'pointer', padding: '12px 0',
+    marginTop: '1rem',
+  },
+  confirmEyebrow: {
+    fontSize: '11px', color: '#854F0B',
+    textTransform: 'uppercase', letterSpacing: '0.18em',
+    fontWeight: 500, fontFamily: 'Georgia, serif',
+    margin: '0 0 0.85rem',
   },
   confirmTitle: {
     fontSize: '24px', color: '#2A1F15',
     fontFamily: 'Georgia, serif', fontWeight: 500,
-    margin: '0 0 1rem', textAlign: 'center',
+    lineHeight: 1.3, margin: '0 0 1.25rem',
   },
   confirmBody: {
-    fontSize: '14px', color: '#6B5C4A',
+    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
+    border: '0.5px solid #E0D5C2',
+    borderRadius: '14px',
+    padding: '16px',
+    marginBottom: '1.25rem',
+  },
+  confirmBodyText: {
+    fontSize: '14px', color: '#2A1F15',
     fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.65, textAlign: 'center',
-    margin: '0 0 1.5rem',
+    lineHeight: 1.65, margin: 0,
   },
-  footer: {
-    marginTop: '1.5rem',
-    display: 'flex', flexDirection: 'column', gap: '8px',
+  errorText: {
+    fontSize: '12px', color: '#A14222',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    margin: '0 0 1rem', textAlign: 'center',
   },
-  primaryBtn: {
-    width: '100%', padding: '14px',
+  footer: { marginTop: '1.5rem', display: 'flex', gap: '8px' },
+  primaryBtnFlex: {
+    flex: 1, padding: '14px',
     background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
     color: '#FAF7F1',
     border: 'none', borderRadius: '14px',
@@ -399,12 +270,9 @@ const styles = {
     fontFamily: 'inherit',
     boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
   },
-  primaryBtnDisabled: {
-    opacity: 0.4, cursor: 'not-allowed',
-    boxShadow: 'none',
-  },
+  primaryBtnDisabled: { opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' },
   secondaryBtn: {
-    width: '100%', padding: '12px',
+    padding: '14px 18px',
     background: 'white',
     color: '#2A1F15',
     border: '0.5px solid #DDCFB6',

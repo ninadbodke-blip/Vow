@@ -4,17 +4,20 @@ import { supabase } from '../../supabaseClient'
 import { getReflectDeepRead } from './data/reflectDeepReads'
 import { getNoticeDeepRead } from './data/noticeDeepReads'
 import { getCommitDeepRead } from './data/commitDeepReads'
+import { getEndureDeepRead } from './data/endureDeepReads'
 
 const STAGE_GETTERS = {
   reflect: getReflectDeepRead,
   notice: getNoticeDeepRead,
   commit: getCommitDeepRead,
+  endure: getEndureDeepRead,
 }
 
 const STAGE_LABELS = {
   reflect: 'Reflect',
   notice: 'Notice',
   commit: 'Commit',
+  endure: 'Endure',
 }
 
 export default function LibraryDeepRead() {
@@ -56,7 +59,7 @@ export default function LibraryDeepRead() {
 
       if (!progress) {
         setAccessAllowed(false)
-        setAccessReason(`You need to begin ${stageLabel} before reading the deep reads.`)
+        setAccessReason(`You need to begin ${stageLabel} before reading the chapters.`)
         setChecking(false)
         return
       }
@@ -78,7 +81,7 @@ export default function LibraryDeepRead() {
         const lastCompleted = progress.last_completed_day || 0
         if (dayNumber > lastCompleted) {
           setAccessAllowed(false)
-          setAccessReason(`This deep read unlocks after you complete Day ${dayNumber}.`)
+          setAccessReason(`This chapter unlocks after you complete Day ${dayNumber}.`)
           setChecking(false)
           return
         }
@@ -97,9 +100,7 @@ export default function LibraryDeepRead() {
   if (checking) {
     return (
       <div style={styles.frame}>
-        <div style={{ ...styles.phone, textAlign: 'center', color: '#9C8C78', paddingTop: '4rem', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
-          Loading...
-        </div>
+        <div style={styles.loadingPhone}>Loading...</div>
       </div>
     )
   }
@@ -110,14 +111,10 @@ export default function LibraryDeepRead() {
         <div style={styles.phone}>
           <Header navigate={navigate} stageKey={stageKey} stageLabel={stageLabel} />
           <div style={styles.notFound}>
-            <p style={styles.notFoundIcon}>📖</p>
-            <h2 style={styles.notFoundTitle}>Deep read not found</h2>
+            <p style={styles.notFoundTitle}>Chapter not found</p>
             <p style={styles.notFoundText}>
-              {`The deep read for Day ${dayNumber} doesn't exist.`}
+              The chapter for Day {dayNumber} doesn't exist.
             </p>
-            <button onClick={() => navigate(`/library/${stageKey}`)} style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}>
-              Back to library
-            </button>
           </div>
         </div>
       </div>
@@ -130,24 +127,26 @@ export default function LibraryDeepRead() {
         <div style={styles.phone}>
           <Header navigate={navigate} stageKey={stageKey} stageLabel={stageLabel} />
           <div style={styles.locked}>
-            <p style={styles.lockedIcon}>🔒</p>
-            <h2 style={styles.lockedTitle}>Not yet</h2>
+            <p style={styles.lockedTitle}>Not yet</p>
             <p style={styles.lockedText}>{accessReason}</p>
-            <button onClick={() => navigate(`/library/${stageKey}`)} style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}>
-              Back to library
-            </button>
           </div>
         </div>
       </div>
     )
   }
 
+  // Filter out the "OPENING" section label — render its prose without a heading.
+  const sections = content.sections.map(s => {
+    const isOpeningLabel = s.heading && s.heading.toLowerCase().trim() === 'opening'
+    return { ...s, displayHeading: isOpeningLabel ? null : s.heading }
+  })
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
         <Header navigate={navigate} stageKey={stageKey} stageLabel={stageLabel} />
 
-        {/* HERO — centered, with the stage badge as a real visual element */}
+        {/* HERO */}
         <div style={styles.hero}>
           <div style={styles.stageBadge}>
             <span style={styles.stageBadgeText}>{stageLabel}</span>
@@ -156,39 +155,46 @@ export default function LibraryDeepRead() {
           </div>
 
           <h1 style={styles.title}>{content.title}</h1>
-          <p style={styles.subtitle}>{content.subtitle}</p>
+          {content.subtitle && (
+            <p style={styles.subtitle}>{content.subtitle}</p>
+          )}
 
           <div style={styles.metaRow}>
-            <span style={styles.metaItem}>~{content.readMinutes} min read</span>
-            <span style={styles.metaDot}>·</span>
-            <span style={styles.metaItem}>{content.wordCount} words</span>
+            <span style={styles.metaItem}>{content.readMinutes} min read</span>
           </div>
 
-          <div style={styles.heroDivider}>
-            <span style={styles.heroDividerOrnament}>· · ·</span>
-          </div>
+          <div style={styles.heroOrnament}>· · ·</div>
         </div>
 
         {/* ARTICLE */}
         <article style={styles.article}>
-          {content.sections.map((section, sectionIdx) => {
-            const isOpening = section.heading && section.heading.toLowerCase() === 'opening'
-            const showHeading = section.heading && !isOpening
+          {sections.map((section, sectionIdx) => {
+            const isFirstSection = sectionIdx === 0
 
             return (
               <section key={sectionIdx} style={styles.section}>
-                {showHeading && (
+                {section.displayHeading && (
                   <div style={styles.sectionHeadingWrap}>
-                    <h3 style={styles.sectionHeading}>{formatHeading(section.heading)}</h3>
+                    <div style={styles.sectionOrnament}>· · ·</div>
+                    <h2 style={styles.sectionHeading}>{formatHeading(section.displayHeading)}</h2>
                   </div>
                 )}
                 <div style={styles.sectionBody}>
                   {section.paragraphs.map((para, pIdx) => {
-                    // First paragraph of opening: drop cap treatment
-                    const isFirstOpeningPara = isOpening && sectionIdx === 0 && pIdx === 0
+                    const isFirstPara = isFirstSection && pIdx === 0
                     return (
-                      <p key={pIdx} style={isFirstOpeningPara ? styles.firstParagraph : styles.paragraph}>
-                        {para}
+                      <p
+                        key={pIdx}
+                        style={isFirstPara ? styles.firstParagraph : styles.paragraph}
+                      >
+                        {isFirstPara ? (
+                          <>
+                            <span style={styles.dropCap}>{para.charAt(0)}</span>
+                            {para.slice(1)}
+                          </>
+                        ) : (
+                          para
+                        )}
                       </p>
                     )
                   })}
@@ -199,29 +205,17 @@ export default function LibraryDeepRead() {
         </article>
 
         {/* ENDING ORNAMENT */}
-        <div style={styles.endOrnament}>
-          <span style={styles.endOrnamentMark}>· · ·</span>
-        </div>
-
-        {/* ACTIONS */}
-        <div style={styles.endActions}>
-          <button onClick={() => navigate(`/library/${stageKey}`)} style={styles.secondaryBtn}>
-            ‹ All deep reads
-          </button>
-          <button onClick={() => navigate(`/vow-path/${stageKey}`)} style={styles.primaryBtnFlex}>
-            Back to {stageLabel}
-          </button>
-        </div>
+        <div style={styles.endOrnament}>· · ·</div>
       </div>
     </div>
   )
 }
 
-function Header({ navigate, stageKey, stageLabel }) {
+function Header({ navigate, stageLabel }) {
   return (
     <div style={styles.topBar}>
-      <button onClick={() => navigate(`/library/${stageKey}`)} style={styles.backBtn}>‹ Library</button>
-      <p style={styles.topBarTitle}>{stageLabel}</p>
+      <button onClick={() => navigate(-1)} style={styles.backBtn}>‹ Back</button>
+      <p style={styles.topBarTitle}>{stageLabel} · Library</p>
       <div style={{ width: '60px' }}></div>
     </div>
   )
@@ -229,9 +223,7 @@ function Header({ navigate, stageKey, stageLabel }) {
 
 function formatHeading(raw) {
   if (!raw) return ''
-  // Convert "WHY A SPECIFIC DATE, NOT \"WHEN I'M READY\"" -> "Why a specific date, not 'when I'm ready'"
-  const lower = raw.toLowerCase()
-  // Capitalize first letter
+  const lower = raw.toLowerCase().trim()
   return lower.charAt(0).toUpperCase() + lower.slice(1)
 }
 
@@ -246,11 +238,23 @@ const styles = {
   },
   phone: {
     background: '#FAF7F1',
-    maxWidth: '460px',
+    maxWidth: '620px',
     width: '100%',
     borderRadius: '28px',
-    padding: '1.5rem 1.75rem 2.5rem',
+    padding: '1.5rem 2rem 2.5rem',
     boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
+  },
+  loadingPhone: {
+    background: '#FAF7F1',
+    maxWidth: '620px',
+    width: '100%',
+    borderRadius: '28px',
+    padding: '5rem 2rem',
+    boxShadow: '0 14px 40px rgba(60,40,20,0.10)',
+    color: '#9C8C78',
+    textAlign: 'center',
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
   },
   topBar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -271,26 +275,26 @@ const styles = {
   // ---- HERO ----
   hero: {
     textAlign: 'center',
-    paddingTop: '0.75rem',
+    paddingTop: '1rem',
     paddingBottom: '0.5rem',
     marginBottom: '2.5rem',
   },
   stageBadge: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '8px',
-    padding: '6px 16px',
+    gap: '10px',
+    padding: '6px 18px',
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
     border: '0.5px solid #E0D5C2',
     borderRadius: '999px',
-    marginBottom: '1.5rem',
+    marginBottom: '1.75rem',
     boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
   },
   stageBadgeText: {
     fontSize: '11px',
     color: '#854F0B',
     textTransform: 'uppercase',
-    letterSpacing: '0.18em',
+    letterSpacing: '0.2em',
     fontWeight: 500,
     fontFamily: 'Georgia, serif',
   },
@@ -299,24 +303,23 @@ const styles = {
     fontSize: '10px',
   },
   title: {
-    fontSize: '34px',
+    fontSize: '36px',
     color: '#2A1F15',
     fontFamily: 'Georgia, serif',
     fontWeight: 500,
     lineHeight: 1.2,
-    margin: '0 0 0.85rem',
-    letterSpacing: '-0.01em',
+    margin: '0 auto 1rem',
+    letterSpacing: '-0.015em',
+    maxWidth: '480px',
   },
   subtitle: {
-    fontSize: '15px',
+    fontSize: '16px',
     color: '#6B5C4A',
     fontFamily: 'Georgia, serif',
     fontStyle: 'italic',
-    lineHeight: 1.5,
-    margin: '0 0 1.5rem',
-    maxWidth: '340px',
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    lineHeight: 1.55,
+    margin: '0 auto 1.5rem',
+    maxWidth: '420px',
   },
   metaRow: {
     display: 'flex',
@@ -328,28 +331,25 @@ const styles = {
     fontFamily: 'Georgia, serif',
     fontStyle: 'italic',
     textTransform: 'uppercase',
-    letterSpacing: '0.12em',
+    letterSpacing: '0.18em',
+    marginBottom: '2rem',
   },
   metaItem: {
     fontVariantNumeric: 'tabular-nums',
   },
-  metaDot: {
-    color: '#DDCFB6',
-  },
-  heroDivider: {
-    marginTop: '1.75rem',
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  heroDividerOrnament: {
+  heroOrnament: {
     fontSize: '14px',
     color: '#C5AE8A',
     letterSpacing: '0.5em',
+    marginTop: '0.25rem',
   },
 
   // ---- ARTICLE ----
   article: {
     paddingBottom: '1rem',
+    maxWidth: '560px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
   section: {
     marginBottom: '2.5rem',
@@ -357,30 +357,34 @@ const styles = {
   sectionHeadingWrap: {
     textAlign: 'center',
     marginBottom: '1.5rem',
-    marginTop: '0.5rem',
+    marginTop: '1.5rem',
+  },
+  sectionOrnament: {
+    fontSize: '12px',
+    color: '#C5AE8A',
+    letterSpacing: '0.5em',
+    marginBottom: '1rem',
   },
   sectionHeading: {
-    fontSize: '13px',
-    color: '#854F0B',
+    fontSize: '18px',
+    color: '#2A1F15',
     fontFamily: 'Georgia, serif',
     fontStyle: 'italic',
     fontWeight: 500,
     margin: 0,
     lineHeight: 1.4,
-    letterSpacing: '0.02em',
-    paddingTop: '1rem',
-    borderTop: '0.5px solid #E8DFD0',
-    display: 'inline-block',
-    paddingLeft: '2rem',
-    paddingRight: '2rem',
+    letterSpacing: '-0.005em',
+    maxWidth: '460px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
   sectionBody: {},
   paragraph: {
-    fontSize: '16px',
+    fontSize: '16.5px',
     color: '#2A1F15',
     fontFamily: 'Georgia, serif',
     lineHeight: 1.85,
-    margin: '0 0 1.35rem',
+    margin: '0 0 1.4rem',
     letterSpacing: '0.005em',
   },
   firstParagraph: {
@@ -388,71 +392,35 @@ const styles = {
     color: '#2A1F15',
     fontFamily: 'Georgia, serif',
     lineHeight: 1.85,
-    margin: '0 0 1.35rem',
+    margin: '0 0 1.4rem',
     letterSpacing: '0.005em',
-    // Soft first-letter emphasis
+  },
+  dropCap: {
+    float: 'left',
+    fontSize: '52px',
+    fontFamily: 'Georgia, serif',
+    fontWeight: 500,
+    lineHeight: 0.95,
+    paddingTop: '6px',
+    paddingRight: '10px',
+    paddingBottom: '0px',
+    color: '#854F0B',
   },
 
   // ---- ENDING ----
   endOrnament: {
-    display: 'flex',
-    justifyContent: 'center',
-    margin: '2rem 0 1.75rem',
-  },
-  endOrnamentMark: {
+    textAlign: 'center',
     fontSize: '14px',
     color: '#C5AE8A',
     letterSpacing: '0.5em',
-  },
-  endActions: {
-    display: 'flex',
-    gap: '10px',
-  },
-  primaryBtnFlex: {
-    flex: 2,
-    padding: '14px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    border: 'none',
-    borderRadius: '14px',
-    fontSize: '14px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
-  },
-  primaryBtn: {
-    width: '100%',
-    padding: '14px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    border: 'none',
-    borderRadius: '14px',
-    fontSize: '14px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
-  },
-  secondaryBtn: {
-    flex: 1,
-    padding: '14px',
-    background: 'white',
-    color: '#2A1F15',
-    border: '0.5px solid #DDCFB6',
-    borderRadius: '14px',
-    fontSize: '13px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: 'inherit',
+    margin: '2.5rem 0 1rem',
   },
 
-  // ---- ERROR / LOCKED ----
   notFound: { textAlign: 'center', padding: '3rem 1rem' },
-  notFoundIcon: { fontSize: '40px', margin: '0 0 1rem' },
   notFoundTitle: {
     fontSize: '20px', color: '#2A1F15',
     fontFamily: 'Georgia, serif',
+    fontWeight: 500,
     margin: '0 0 0.75rem',
   },
   notFoundText: {
@@ -461,10 +429,10 @@ const styles = {
     lineHeight: 1.6, margin: 0,
   },
   locked: { textAlign: 'center', padding: '3rem 1rem' },
-  lockedIcon: { fontSize: '36px', margin: '0 0 1rem' },
   lockedTitle: {
     fontSize: '20px', color: '#2A1F15',
     fontFamily: 'Georgia, serif',
+    fontWeight: 500,
     margin: '0 0 0.75rem',
   },
   lockedText: {

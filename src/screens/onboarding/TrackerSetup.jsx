@@ -192,14 +192,12 @@ const styles = {
 }
 
 const COST_PRESETS = [50, 100, 200, 500]
-const TIME_PRESETS = [15, 30, 60, 120] // minutes
+const TIME_PRESETS = [15, 30, 60, 120]
 
 export default function TrackerSetup() {
   const { t } = useLang()
   const navigate = useNavigate()
   const location = useLocation()
-
-  const selectedIds = location.state?.selectedIds || []
 
   const [addictions, setAddictions] = useState([])
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -209,31 +207,90 @@ export default function TrackerSetup() {
   const [setupData, setSetupData] = useState({})
 
   useEffect(() => {
-    if (selectedIds.length === 0) {
-      navigate('/onboarding/addiction')
-      return
-    }
-
     async function load() {
-      const { data, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        navigate('/signup')
+        return
+      }
+
+      // Step 1: Figure out which addiction(s) we are setting up.
+      // Source priority:
+      //   A) route state.selectedIds — coming from AddictionPicker
+      //   B) vow_path_progress.primary_substance — deep-linked from a free home
+      let selectedIds = location.state?.selectedIds || []
+
+      if (selectedIds.length === 0) {
+        const { data: progress } = await supabase
+          .from('vow_path_progress')
+          .select('primary_substance')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (progress?.primary_substance) {
+  // primary_substance is stored as TEXT but addiction_types.id is INTEGER.
+  // Cast back to a number for the query.
+  selectedIds = [Number(progress.primary_substance)]
+}
+      }
+
+      // Step 2: Still nothing? Then send to AddictionPicker as a true fallback.
+      if (selectedIds.length === 0) {
+        navigate('/onboarding/addiction')
+        return
+      }
+
+      // Step 3: Did this user already create a tracker for this addiction?
+      // If so, skip setup and bounce back to /home — they don't need to set up again.
+      const { data: existingTrackers } = await supabase
+        .from('trackers')
+        .select('id, addiction_type_id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .in('addiction_type_id', selectedIds)
+
+      if (existingTrackers && existingTrackers.length === selectedIds.length) {
+        navigate('/home')
+        return
+      }
+
+      // Filter selectedIds down to those not yet tracked
+      const alreadyTracked = new Set((existingTrackers || []).map(t => t.addiction_type_id))
+      const toSetUp = selectedIds.filter(id => !alreadyTracked.has(id))
+
+      if (toSetUp.length === 0) {
+        navigate('/home')
+        return
+      }
+
+      // Step 4: Load addiction_types details for the selected ones
+      const { data: addictionData, error: loadError } = await supabase
         .from('addiction_types')
         .select('*')
-        .in('id', selectedIds)
+        .in('id', toSetUp)
 
-      if (error) setError(error.message)
-      else {
-        const ordered = selectedIds.map(id => data.find(a => a.id === id)).filter(Boolean)
-        setAddictions(ordered)
+      if (loadError) {
+        setError(loadError.message)
+        setLoading(false)
+        return
       }
-      setLoading(false)
+
+      console.log('[TrackerSetup] selectedIds:', selectedIds)
+console.log('[TrackerSetup] toSetUp:', toSetUp)
+console.log('[TrackerSetup] addictionData:', addictionData)
+console.log('[TrackerSetup] loadError:', loadError)
+const ordered = toSetUp.map(id => addictionData.find(a => a.id === id)).filter(Boolean)
+console.log('[TrackerSetup] ordered:', ordered)
+setAddictions(ordered)
+setLoading(false)
     }
     load()
   }, [])
 
   if (loading) {
     return (
-      <div style={{...styles.frame, alignItems: 'center'}}>
-        <div style={{...styles.card, textAlign: 'center', color: '#9C8C78'}}>Loading...</div>
+      <div style={{ ...styles.frame, alignItems: 'center' }}>
+        <div style={{ ...styles.card, textAlign: 'center', color: '#9C8C78' }}>Loading...</div>
       </div>
     )
   }
@@ -265,13 +322,10 @@ export default function TrackerSetup() {
   }
 
   const setEarlierDate = (dateStr) => {
-    updateSetup({
-      startDate: new Date(dateStr).toISOString(),
-    })
+    updateSetup({ startDate: new Date(dateStr).toISOString() })
   }
 
   const setTrackingType = (type) => {
-    // Reset values when switching types
     updateSetup({
       trackingType: type,
       cost: 0,
@@ -307,7 +361,6 @@ export default function TrackerSetup() {
       return
     }
 
-    // Save all to DB
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -327,7 +380,6 @@ export default function TrackerSetup() {
 
       if (insertError) throw insertError
 
-      // Build savings rows — one or two per tracker depending on tracking type
       const savingsToInsert = []
       insertedTrackers.forEach((tracker, idx) => {
         const data = setupData[addictions[idx].id]
@@ -349,12 +401,9 @@ export default function TrackerSetup() {
         }
       })
 
-      // Note: tracker_savings has a unique constraint on tracker_id, so "both" won't work yet
-      // We'll handle "both" by storing them separately OR we relax the constraint
-      // For now, save first one only if "both" — we'll fix this in next step
       const { error: savingsError } = await supabase
-  .from('tracker_savings')
-  .insert(savingsToInsert)
+        .from('tracker_savings')
+        .insert(savingsToInsert)
 
       if (savingsError) throw savingsError
 
@@ -367,7 +416,7 @@ export default function TrackerSetup() {
 
   const handleBack = () => {
     if (currentIdx > 0) setCurrentIdx(currentIdx - 1)
-    else navigate('/onboarding/addiction')
+    else navigate('/home')
   }
 
   const trackingType = currentSetup.trackingType || 'money'
@@ -414,26 +463,26 @@ export default function TrackerSetup() {
           <button
             type="button"
             onClick={() => setTrackingType('money')}
-            style={{...styles.typeBtn, ...(trackingType === 'money' ? styles.typeBtnSelected : {})}}
+            style={{ ...styles.typeBtn, ...(trackingType === 'money' ? styles.typeBtnSelected : {}) }}
           >
             <div style={styles.typeIcon}>💰</div>
-            <p style={{...styles.typeLabel, ...(trackingType === 'money' ? styles.typeLabelSelected : {})}}>Money</p>
+            <p style={{ ...styles.typeLabel, ...(trackingType === 'money' ? styles.typeLabelSelected : {}) }}>Money</p>
           </button>
           <button
             type="button"
             onClick={() => setTrackingType('time')}
-            style={{...styles.typeBtn, ...(trackingType === 'time' ? styles.typeBtnSelected : {})}}
+            style={{ ...styles.typeBtn, ...(trackingType === 'time' ? styles.typeBtnSelected : {}) }}
           >
             <div style={styles.typeIcon}>⏱️</div>
-            <p style={{...styles.typeLabel, ...(trackingType === 'time' ? styles.typeLabelSelected : {})}}>Time</p>
+            <p style={{ ...styles.typeLabel, ...(trackingType === 'time' ? styles.typeLabelSelected : {}) }}>Time</p>
           </button>
           <button
             type="button"
             onClick={() => setTrackingType('both')}
-            style={{...styles.typeBtn, ...(trackingType === 'both' ? styles.typeBtnSelected : {})}}
+            style={{ ...styles.typeBtn, ...(trackingType === 'both' ? styles.typeBtnSelected : {}) }}
           >
             <div style={styles.typeIcon}>✨</div>
-            <p style={{...styles.typeLabel, ...(trackingType === 'both' ? styles.typeLabelSelected : {})}}>Both</p>
+            <p style={{ ...styles.typeLabel, ...(trackingType === 'both' ? styles.typeLabelSelected : {}) }}>Both</p>
           </button>
         </div>
 
@@ -501,7 +550,7 @@ export default function TrackerSetup() {
           <button
             onClick={handleBack}
             disabled={saving}
-            style={{...styles.btn, ...styles.btnSecondary}}
+            style={{ ...styles.btn, ...styles.btnSecondary }}
           >
             {t('back')}
           </button>

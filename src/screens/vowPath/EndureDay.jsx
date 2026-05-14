@@ -1,28 +1,28 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
-import { getReflectV2Day, REFLECT_V2_TOTAL_DAYS } from './data/reflectV2Content'
+import { getEndureDay, ENDURE_TOTAL_DAYS } from './data/endureContent'
+import { transitionFromEndure } from './utils/stageTransitions'
 
-// Mechanic components
-import MultiSelectChips from './mechanics/MultiSelectChips'
-import LandscapeBuilder from './mechanics/LandscapeBuilder'
-import TriggerChecklist from './mechanics/TriggerChecklist'
-import PlaceholderMechanic from './mechanics/PlaceholderMechanic'
-import TruthSort from './mechanics/TruthSort'
-import TimeMoneyCalculator from './mechanics/TimeMoneyCalculator'
-import TruthCheck from './mechanics/TruthCheck'
-import LetterWriter from './mechanics/LetterWriter'
-import CostRanker from './mechanics/CostRanker'
-import BodyMap from './mechanics/BodyMap'
-import SoftTap from './mechanics/SoftTap'
-import TwoFutures from './mechanics/TwoFutures'
-import VoiceChecklist from './mechanics/VoiceChecklist'
-import StoriesRecognition from './mechanics/StoriesRecognition'
-import OutcomeSorter from './mechanics/OutcomeSorter'
-import FearsTwoColumn from './mechanics/FearsTwoColumn'
-import ReadinessRuler from './mechanics/ReadinessRuler'
-import PortraitReveal from './mechanics/PortraitReveal'
-import ThreeDoors from './mechanics/ThreeDoors'
+// Endure mechanic components
+import GuidedHold from './mechanics/GuidedHold'
+import StateLocator from './mechanics/StateLocator'
+import ProtectedEmotionsMap from './mechanics/ProtectedEmotionsMap'
+import AVEProtocolBuilder from './mechanics/AVEProtocolBuilder'
+import StateMatchedResponse from './mechanics/StateMatchedResponse'
+import ShameStatement from './mechanics/ShameStatement'
+import PhaseClose from './mechanics/PhaseClose'
+import AnhedoniaAssessment from './mechanics/AnhedoniaAssessment'
+import GuidedWitness from './mechanics/GuidedWitness'
+import ReplacementEngineCheck from './mechanics/ReplacementEngineCheck'
+import CapitalAssessment from './mechanics/CapitalAssessment'
+import LapseRelapseRecall from './mechanics/LapseRelapseRecall'
+import ValuesPortrait from './mechanics/ValuesPortrait'
+import EndurePortrait from './mechanics/EndurePortrait'
+import VowHeld from './mechanics/VowHeld'
+
+// Reused from Commit
+import FinalTap from './mechanics/FinalTap'
 
 const STEP = {
   ARRIVAL: 'arrival',
@@ -33,32 +33,29 @@ const STEP = {
 }
 
 const MECHANIC_COMPONENTS = {
-  multi_select_chips: MultiSelectChips,
-  landscape_builder: LandscapeBuilder,
-  trigger_checklist: TriggerChecklist,
-  truth_sort: TruthSort,
-  time_money_calculator: TimeMoneyCalculator,
-  truth_check: TruthCheck,
-  letter_writer: LetterWriter,
-  cost_ranker: CostRanker,
-  body_map: BodyMap,
-  soft_tap: SoftTap,
-  two_futures: TwoFutures,
-  voice_checklist: VoiceChecklist,
-  stories_recognition: StoriesRecognition,
-  outcome_sorter: OutcomeSorter,
-  fears_two_column: FearsTwoColumn,
-  readiness_ruler: ReadinessRuler,
-  portrait_reveal: PortraitReveal,
-  three_doors: ThreeDoors,
-  placeholder: PlaceholderMechanic,
+  guidedHold: GuidedHold,
+  stateLocator: StateLocator,
+  protectedEmotionsMap: ProtectedEmotionsMap,
+  aveProtocolBuilder: AVEProtocolBuilder,
+  stateMatchedResponse: StateMatchedResponse,
+  shameStatement: ShameStatement,
+  phaseClose: PhaseClose,
+  anhedoniaAssessment: AnhedoniaAssessment,
+  guidedWitness: GuidedWitness,
+  replacementEngineCheck: ReplacementEngineCheck,
+  capitalAssessment: CapitalAssessment,
+  lapseRelapseRecall: LapseRelapseRecall,
+  valuesPortrait: ValuesPortrait,
+  endurePortrait: EndurePortrait,
+  vowHeld: VowHeld,
+  finalTap: FinalTap,
 }
 
-export default function ReflectV2Day() {
+export default function EndureDay() {
   const navigate = useNavigate()
   const { dayNumber: dayNumberParam } = useParams()
   const dayNumber = parseInt(dayNumberParam, 10)
-  const dayContent = getReflectV2Day(dayNumber)
+  const dayContent = getEndureDay(dayNumber)
 
   const [step, setStep] = useState(STEP.ARRIVAL)
   const [progress, setProgress] = useState(null)
@@ -70,13 +67,14 @@ export default function ReflectV2Day() {
   const [interactionData, setInteractionData] = useState(null)
   const [existingArtifact, setExistingArtifact] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [completing, setCompleting] = useState(false)
 
-  // Audio player state
+  // Audio
   const audioRef = useRef(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioError, setAudioError] = useState(false)
 
-  // ---- Validation: does day exist + does user have access? ----
+  // ---- Access check ----
   useEffect(() => {
     async function checkAccess() {
       if (!dayContent) {
@@ -87,10 +85,7 @@ export default function ReflectV2Day() {
       }
 
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        navigate('/welcome')
-        return
-      }
+      if (!user) { navigate('/welcome'); return }
 
       const { data: progressRow } = await supabase
         .from('vow_path_progress')
@@ -98,9 +93,9 @@ export default function ReflectV2Day() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'reflect') {
+      if (!progressRow || progressRow.current_stage !== 'endure') {
         setAccessDenied(true)
-        setAccessReason('You have not started Reflect yet.')
+        setAccessReason('You have not started Endure yet.')
         setAccessLoading(false)
         return
       }
@@ -121,11 +116,12 @@ export default function ReflectV2Day() {
         return
       }
 
+      const artifactType = dayContent.artifactType
       const { data: artifact } = await supabase
         .from('vow_artifacts')
         .select('*')
         .eq('user_id', user.id)
-        .eq('artifact_type', dayContent.artifactType)
+        .eq('artifact_type', artifactType)
         .maybeSingle()
 
       if (artifact) {
@@ -200,7 +196,7 @@ export default function ReflectV2Day() {
     const idx = sequence.indexOf(step)
 
     if (idx === 0 || step === STEP.CLOSING) {
-      navigate('/vow-path/reflect')
+      navigate('/vow-path/endure')
       return
     }
 
@@ -218,13 +214,15 @@ export default function ReflectV2Day() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/welcome'); return }
 
+      const artifactType = dayContent.artifactType
+
       const { error: artifactError } = await supabase
         .from('vow_artifacts')
         .upsert({
           user_id: user.id,
-          artifact_type: dayContent.artifactType,
+          artifact_type: artifactType,
           content: data,
-          stage: 'reflect',
+          stage: 'endure',
           day_number: dayNumber,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id,artifact_type' })
@@ -238,28 +236,38 @@ export default function ReflectV2Day() {
 
       const wasLatestDay = dayNumber > (progress?.last_completed_day || 0)
       if (wasLatestDay) {
+        const updates = {
+          last_completed_day: dayNumber,
+          last_completed_at: new Date().toISOString(),
+          current_day: Math.min(dayNumber + 1, ENDURE_TOTAL_DAYS),
+          updated_at: new Date().toISOString(),
+        }
+
         await supabase
           .from('vow_path_progress')
-          .update({
-            last_completed_day: dayNumber,
-            last_completed_at: new Date().toISOString(),
-            current_day: Math.min(dayNumber + 1, REFLECT_V2_TOTAL_DAYS),
-            updated_at: new Date().toISOString(),
-          })
+          .update(updates)
           .eq('user_id', user.id)
       }
 
       setSaving(false)
-
-      // Day 21 (three_doors) handles its own navigation to transition screen
-      if (dayContent.mechanic !== 'three_doors') {
-        advance()
-      }
+      advance() // to closing
     } catch (err) {
       console.error(err)
       alert('Something went wrong. Please try again.')
       setSaving(false)
     }
+  }
+
+  // ---- ENDURE COMPLETION (Day 21 -> Build transition) ----
+  const handleEndureComplete = async () => {
+    setCompleting(true)
+    const result = await transitionFromEndure()
+    if (result.error) {
+      alert('Could not transition to Build: ' + result.error)
+      setCompleting(false)
+      return
+    }
+    navigate('/vow-path/transition/endure/to/build')
   }
 
   const getBackLabel = () => {
@@ -276,9 +284,7 @@ export default function ReflectV2Day() {
   if (accessLoading) {
     return (
       <div style={styles.frame}>
-        <div style={styles.loadingPhone}>
-          Loading...
-        </div>
+        <div style={styles.loadingPhone}>Loading...</div>
       </div>
     )
   }
@@ -288,7 +294,7 @@ export default function ReflectV2Day() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path/reflect')} style={styles.backBtn}>{'\u2039'} Overview</button>
+            <button onClick={() => navigate('/vow-path/endure')} style={styles.backBtn}>{'\u2039'} Overview</button>
             <div style={{ width: '40px' }}></div>
             <div style={{ width: '40px' }}></div>
           </div>
@@ -365,14 +371,16 @@ export default function ReflectV2Day() {
                 ? 'Audio not yet available. Read the script below.'
                 : (isPlaying ? 'Playing...' : 'Tap to play')}
             </p>
-            <audio
-              ref={audioRef}
-              src={dayContent.founderAudio.audioSrc}
-              onEnded={() => setIsPlaying(false)}
-              onError={() => setAudioError(true)}
-              preload="none"
-              style={{ display: 'none' }}
-            />
+            {dayContent.founderAudio.audioSrc && (
+              <audio
+                ref={audioRef}
+                src={dayContent.founderAudio.audioSrc}
+                onEnded={() => setIsPlaying(false)}
+                onError={() => setAudioError(true)}
+                preload="none"
+                style={{ display: 'none' }}
+              />
+            )}
           </div>
 
           <details style={styles.transcriptDetails}>
@@ -424,21 +432,16 @@ export default function ReflectV2Day() {
 
   // ---- INTERACTION ----
   if (step === STEP.INTERACTION) {
-    const MechanicComponent = MECHANIC_COMPONENTS[dayContent.mechanic]
+    const MechanicComponent = MECHANIC_COMPONENTS[dayContent.mechanic.type]
 
     if (!MechanicComponent) {
       return (
         <div style={styles.frame}>
           <div style={styles.phone}>
-            <p>Unknown mechanic: {dayContent.mechanic}</p>
+            <p>Unknown mechanic: {dayContent.mechanic.type}</p>
           </div>
         </div>
       )
-    }
-
-    const props = {
-      ...dayContent.mechanicProps,
-      ...(dayContent.byFamily?.[substance.family]?.mechanicProps || {}),
     }
 
     return (
@@ -451,11 +454,12 @@ export default function ReflectV2Day() {
           </div>
 
           <MechanicComponent
-            {...props}
+            data={dayContent.mechanic.data}
             substance={substance}
             existingData={interactionData}
             onSave={handleSaveInteraction}
             saving={saving}
+            dayNumber={dayNumber}
           />
         </div>
       </div>
@@ -464,28 +468,41 @@ export default function ReflectV2Day() {
 
   // ---- CLOSING ----
   if (step === STEP.CLOSING) {
-    const isFinalDay = dayNumber === REFLECT_V2_TOTAL_DAYS
+    const isFinalDay = dayNumber === ENDURE_TOTAL_DAYS
     return (
       <div style={styles.frame}>
         <div style={{ ...styles.phone, ...styles.centeredPhone }}>
           <div style={styles.savedIcon}>{'\u2713'}</div>
           <p style={styles.savedLabel}>Saved</p>
           <div style={styles.closingDivider}></div>
-          <p style={styles.closingLine}>{dayContent.closingLine}</p>
+          <p style={styles.closingLine}>{dayContent.closingTitle}</p>
+          {dayContent.closingBody && (
+            <p style={styles.closingBody}>{dayContent.closingBody}</p>
+          )}
 
           <button
-            onClick={() => navigate(`/library/reflect/day/${dayNumber}`)}
+            onClick={() => navigate(`/library/endure/day/${dayNumber}`)}
             style={styles.libraryLink}
           >
             Curious about the science behind this? Read the deep read {'\u2192'}
           </button>
 
-          <button
-            onClick={() => navigate('/vow-path/reflect')}
-            style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
-          >
-            {isFinalDay ? 'Back to overview' : 'Close'}
-          </button>
+          {isFinalDay ? (
+            <button
+              onClick={handleEndureComplete}
+              disabled={completing}
+              style={{ ...styles.primaryBtn, marginTop: '1.5rem', ...(completing ? { opacity: 0.5 } : {}) }}
+            >
+              {completing ? 'Walking through...' : 'Continue to threshold'}
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/vow-path/endure')}
+              style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
+            >
+              Close
+            </button>
+          )}
         </div>
       </div>
     )
@@ -524,10 +541,8 @@ const styles = {
     fontStyle: 'italic',
   },
   arrivalContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
+    display: 'flex', flexDirection: 'column',
+    justifyContent: 'center', alignItems: 'center',
     textAlign: 'center',
     padding: '3rem 1.5rem 2rem',
     minHeight: '60vh',
@@ -714,6 +729,17 @@ const styles = {
     margin: 0,
     maxWidth: '340px',
     textAlign: 'center',
+  },
+  closingBody: {
+    fontSize: '15px',
+    color: '#6B5C4A',
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    lineHeight: 1.6,
+    margin: '0.75rem 0 0',
+    maxWidth: '340px',
+    textAlign: 'center',
+    whiteSpace: 'pre-wrap',
   },
   libraryLink: {
     background: 'transparent',
