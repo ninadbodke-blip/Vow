@@ -96,7 +96,7 @@ export default function EndureOverview() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Back</button>
+            <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
             <p style={styles.headerTitle}>Endure</p>
             <div style={{ width: '60px' }}></div>
           </div>

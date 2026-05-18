@@ -38,6 +38,13 @@ import EndureOverview from './screens/vowPath/EndureOverview'
 import EndureDay from './screens/vowPath/EndureDay'
 import StageTransition from './screens/vowPath/StageTransition'
 
+// ===== Motivation =====
+import MotivationHome from './screens/motivation/MotivationHome'
+import MotivationArticle from './screens/motivation/MotivationArticle'
+
+// ===== Mirror =====
+import MirrorScreen from './screens/mirror/MirrorScreen'
+
 function AppRoutes() {
   const { lang } = useLang()
   const [session, setSession] = useState(undefined)
@@ -239,6 +246,22 @@ function AppRoutes() {
       <Route
         path="/library/:stage/day/:dayNumber"
         element={session ? <LibraryDeepRead /> : <Navigate to="/welcome" />}
+      />
+
+      {/* ===== MOTIVATION ===== */}
+      <Route
+        path="/motivation"
+        element={session ? <MotivationHome /> : <Navigate to="/welcome" />}
+      />
+      <Route
+        path="/motivation/article/:slug"
+        element={session ? <MotivationArticle /> : <Navigate to="/welcome" />}
+      />
+
+      {/* ===== MIRROR ===== */}
+      <Route
+        path="/mirror"
+        element={session ? <MirrorScreen /> : <Navigate to="/welcome" />}
       />
     </Routes>
   )

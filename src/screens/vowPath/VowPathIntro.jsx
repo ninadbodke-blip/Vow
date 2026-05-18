@@ -1,14 +1,55 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../../supabaseClient'
+
+const ACTIVE_STAGES = ['notice', 'reflect', 'commit', 'endure']
 
 export default function VowPathIntro() {
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function checkProgress() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        navigate('/welcome')
+        return
+      }
+
+      const { data: progress } = await supabase
+        .from('vow_path_progress')
+        .select('current_stage')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      // If user is already on an active paid stage, send them straight to
+      // their stage overview — don't make them re-take the Stage Check.
+      if (progress?.current_stage && ACTIVE_STAGES.includes(progress.current_stage)) {
+        navigate(`/vow-path/${progress.current_stage}`, { replace: true })
+        return
+      }
+
+      setLoading(false)
+    }
+    checkProgress()
+  }, [navigate])
+
+  if (loading) {
+    return (
+      <div style={styles.frame}>
+        <div style={{ ...styles.phone, textAlign: 'center', color: '#9C8C78', paddingTop: '4rem' }}>
+          Loading...
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
 
         <div style={styles.header}>
-          <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Back</button>
+          <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
           <p style={styles.headerTitle}>The Vow Path</p>
           <div style={{ width: '40px' }}></div>
         </div>

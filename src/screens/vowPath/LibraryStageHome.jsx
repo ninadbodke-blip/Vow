@@ -86,7 +86,7 @@ export default function LibraryStageHome() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.topBar}>
-            <button onClick={() => navigate('/library')} style={styles.backBtn}>‹ Library</button>
+            <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
             <p style={styles.topBarTitle}>Unknown</p>
             <div style={{ width: '60px' }}></div>
           </div>
@@ -142,7 +142,7 @@ export default function LibraryStageHome() {
       <div style={styles.phone}>
 
         <div style={styles.topBar}>
-          <button onClick={() => navigate('/library')} style={styles.backBtn}>‹ Library</button>
+          <button onClick={() => navigate(`/vow-path/${stage}`)} style={styles.backBtn}>‹ Back</button>
           <p style={styles.topBarTitle}>{config.label}</p>
           <div style={{ width: '60px' }}></div>
         </div>

@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../LanguageContext'
 import { supabase } from '../supabaseClient'
+import BottomNav from '../components/BottomNav'
 
 export default function Profile() {
-  const { lang, setLang, t } = useLang()
+  const { lang, setLang } = useLang()
   const navigate = useNavigate()
 
   const [user, setUser] = useState(null)
@@ -80,18 +81,18 @@ export default function Profile() {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    navigate('/signup')
+    navigate('/welcome')
   }
 
   if (loading) {
-  return (
-    <div style={styles.frame}>
-      <div style={{...styles.phone, textAlign: 'center', color: '#9C8C78'}}>
-        Loading...
+    return (
+      <div style={styles.frame}>
+        <div style={{...styles.phone, textAlign: 'center', color: '#9C8C78'}}>
+          Loading...
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 
   const now = new Date()
   const activeTracker = trackers.find(tr => tr.id === activeTrackerId)
@@ -149,34 +150,34 @@ export default function Profile() {
       <div style={styles.phone}>
 
         {/* IDENTITY CARD WITH GEAR */}
-<div style={styles.identityCard}>
-  <div style={styles.avatar}>
-    {(profile?.full_name || 'V').charAt(0).toUpperCase()}
-  </div>
-  <div style={styles.identityText}>
-    {editingName ? (
-      <div style={{display: 'flex', gap: '6px', alignItems: 'center'}}>
-        <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} style={styles.inlineInput} autoFocus />
-        <button onClick={saveName} style={styles.miniBtn}>✓</button>
-        <button onClick={() => { setEditingName(false); setNameDraft(profile?.full_name || '') }} style={styles.miniBtnSecondary}>✕</button>
-      </div>
-    ) : (
-      <>
-        <div style={styles.nameLine}>
-          <span style={styles.nameText}>{profile?.full_name || 'Your name'}</span>
-          <button onClick={() => setEditingName(true)} style={styles.editIcon} aria-label="Edit name">✎</button>
+        <div style={styles.identityCard}>
+          <div style={styles.avatar}>
+            {(profile?.full_name || 'V').charAt(0).toUpperCase()}
+          </div>
+          <div style={styles.identityText}>
+            {editingName ? (
+              <div style={{display: 'flex', gap: '6px', alignItems: 'center'}}>
+                <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} style={styles.inlineInput} autoFocus />
+                <button onClick={saveName} style={styles.miniBtn}>✓</button>
+                <button onClick={() => { setEditingName(false); setNameDraft(profile?.full_name || '') }} style={styles.miniBtnSecondary}>✕</button>
+              </div>
+            ) : (
+              <>
+                <div style={styles.nameLine}>
+                  <span style={styles.nameText}>{profile?.full_name || 'Your name'}</span>
+                  <button onClick={() => setEditingName(true)} style={styles.editIcon} aria-label="Edit name">✎</button>
+                </div>
+                <p style={styles.emailText}>{user?.email}</p>
+              </>
+            )}
+          </div>
+          <button onClick={() => setShowSettings(true)} style={styles.gearBtn} aria-label="Settings">⚙</button>
         </div>
-        <p style={styles.emailText}>{user?.email}</p>
-      </>
-    )}
-  </div>
-  <button onClick={() => setShowSettings(true)} style={styles.gearBtn} aria-label="Settings">⚙</button>
-</div>
 
-        {/* THE WHY — clean serif card */}
+        {/* THE WHY */}
         <div style={styles.whySection}>
           <p style={styles.sectionLabel}>Why I started</p>
-          
+
           {editingWhy ? (
             <div style={styles.whyEditCard}>
               <textarea
@@ -193,20 +194,20 @@ export default function Profile() {
               </div>
             </div>
           ) : fullBio ? (
-  <div style={styles.whyCard}>
-    <p style={styles.whyText}>
-      {showFullWhy ? fullBio : (bioPreview + (hasMore ? '...' : ''))}
-    </p>
-    <div style={styles.whyFooter}>
-      {hasMore && (
-        <button onClick={() => setShowFullWhy(!showFullWhy)} style={styles.whyLink}>
-          {showFullWhy ? 'Show less' : 'Read more'}
-        </button>
-      )}
-      <button onClick={() => setEditingWhy(true)} style={styles.whyLinkMuted}>Edit</button>
-    </div>
-  </div>
-) : (
+            <div style={styles.whyCard}>
+              <p style={styles.whyText}>
+                {showFullWhy ? fullBio : (bioPreview + (hasMore ? '...' : ''))}
+              </p>
+              <div style={styles.whyFooter}>
+                {hasMore && (
+                  <button onClick={() => setShowFullWhy(!showFullWhy)} style={styles.whyLink}>
+                    {showFullWhy ? 'Show less' : 'Read more'}
+                  </button>
+                )}
+                <button onClick={() => setEditingWhy(true)} style={styles.whyLinkMuted}>Edit</button>
+              </div>
+            </div>
+          ) : (
             <button onClick={() => setEditingWhy(true)} style={styles.whyEmptyBtn}>
               <span style={{fontSize: '18px', marginRight: '8px'}}>✎</span>
               Write your why
@@ -315,23 +316,39 @@ export default function Profile() {
           </>
         )}
 
-        <div style={styles.tabRow}>
-  <button onClick={() => navigate('/home')} style={styles.tab}>{t('home')}</button>
-  <button onClick={() => navigate('/anchors')} style={styles.tab}>Anchors</button>
-  <button style={{...styles.tab, ...styles.tabActive}}>{t('profile')}</button>
-</div>
+        {/* YOUR PATH — Reassess + Sign out */}
+        <div style={styles.section}>
+          <p style={styles.sectionLabel}>Your path</p>
+          <div style={styles.pathLinks}>
+            <button
+              onClick={() => navigate('/onboarding/state-picker')}
+              style={styles.pathRow}
+            >
+              <div style={styles.pathRowText}>
+                <p style={styles.pathRowLabel}>Reassess where I am</p>
+                <p style={styles.pathRowHelper}>Re-take the readiness check, move to a different path.</p>
+              </div>
+              <span style={styles.linkArrow}>›</span>
+            </button>
+            <div style={styles.linkDivider}></div>
+            <button onClick={signOut} style={styles.pathRow}>
+              <div style={styles.pathRowText}>
+                <p style={{ ...styles.pathRowLabel, color: '#B23B3B' }}>Sign out</p>
+              </div>
+              <span style={styles.linkArrow}>›</span>
+            </button>
+          </div>
+        </div>
 
+        <BottomNav />
+
+        {/* SETTINGS MODAL — language only now */}
         {showSettings && (
           <div style={styles.modal} onClick={() => setShowSettings(false)}>
             <div style={styles.modalCard} onClick={e => e.stopPropagation()}>
               <p style={styles.modalTitle}>Settings</p>
               <button onClick={resetLang} style={styles.settingsRow}>
                 <span>Language: {lang === 'hi' ? 'हिंदी' : 'English'}</span>
-                <span style={{color: '#9C8C78'}}>›</span>
-              </button>
-              <div style={styles.settingsDivider}></div>
-              <button onClick={signOut} style={{...styles.settingsRow, color: '#B23B3B'}}>
-                <span>Sign out</span>
                 <span style={{color: '#9C8C78'}}>›</span>
               </button>
               <button onClick={() => setShowSettings(false)} style={styles.modalClose}>Close</button>
@@ -353,24 +370,24 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   phone: {
-  background: '#FAF7F1',
-  maxWidth: '420px', width: '100%',
-  borderRadius: '28px',
-  padding: '2.5rem 1.25rem 1.5rem',
-  boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
-},
+    background: '#FAF7F1',
+    maxWidth: '420px', width: '100%',
+    borderRadius: '28px',
+    padding: '2.5rem 1.25rem 1.5rem',
+    boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
+  },
 
   gearBtn: {
-  width: '34px', height: '34px',
-  background: 'rgba(232,223,208,0.4)',
-  border: '0.5px solid #E8DFD0',
-  borderRadius: '50%',
-  color: '#6B5C4A', fontSize: '15px',
-  cursor: 'pointer', fontFamily: 'inherit',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  padding: 0,
-  flexShrink: 0,
-},
+    width: '34px', height: '34px',
+    background: 'rgba(232,223,208,0.4)',
+    border: '0.5px solid #E8DFD0',
+    borderRadius: '50%',
+    color: '#6B5C4A', fontSize: '15px',
+    cursor: 'pointer', fontFamily: 'inherit',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: 0,
+    flexShrink: 0,
+  },
 
   identityCard: {
     display: 'flex', alignItems: 'center', gap: '14px',
@@ -434,12 +451,12 @@ const styles = {
   // WHY SECTION
   whySection: { marginBottom: '1.5rem' },
   whyCard: {
-  background: 'linear-gradient(180deg, #2A1F15 0%, #1A1208 100%)',
-  border: '0.5px solid #3A2A1C',
-  borderRadius: '16px',
-  padding: '1.5rem 1.5rem 1.25rem',
-  boxShadow: '0 6px 20px rgba(20,12,5,0.25), inset 0 1px 0 rgba(212,175,100,0.08)',
-},
+    background: 'linear-gradient(180deg, #2A1F15 0%, #1A1208 100%)',
+    border: '0.5px solid #3A2A1C',
+    borderRadius: '16px',
+    padding: '1.5rem 1.5rem 1.25rem',
+    boxShadow: '0 6px 20px rgba(20,12,5,0.25), inset 0 1px 0 rgba(212,175,100,0.08)',
+  },
   quoteOpen: {
     position: 'absolute',
     top: '0px', left: '14px',
@@ -451,36 +468,36 @@ const styles = {
     opacity: 0.45,
   },
   whyText: {
-  fontSize: '14px',
-  color: '#D4AF64',
-  fontFamily: 'Georgia, serif',
-  fontStyle: 'italic',
-  lineHeight: 1.75,
-  margin: 0,
-  whiteSpace: 'pre-wrap',
-  letterSpacing: '0.01em',
-},
+    fontSize: '14px',
+    color: '#D4AF64',
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    lineHeight: 1.75,
+    margin: 0,
+    whiteSpace: 'pre-wrap',
+    letterSpacing: '0.01em',
+  },
   whyFooter: {
-  display: 'flex', justifyContent: 'space-between',
-  alignItems: 'center',
-  marginTop: '1rem',
-  paddingTop: '0.875rem',
-  borderTop: '0.5px solid rgba(212,175,100,0.2)',
-},
+    display: 'flex', justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '1rem',
+    paddingTop: '0.875rem',
+    borderTop: '0.5px solid rgba(212,175,100,0.2)',
+  },
   whyLink: {
-  background: 'transparent', border: 'none', padding: 0,
-  color: '#D4AF64', fontSize: '12px',
-  fontWeight: 500, cursor: 'pointer',
-  fontFamily: 'inherit',
-  letterSpacing: '0.02em',
-},
-whyLinkMuted: {
-  background: 'transparent', border: 'none', padding: 0,
-  color: 'rgba(212,175,100,0.55)', fontSize: '12px',
-  cursor: 'pointer', fontFamily: 'inherit',
-  textDecoration: 'underline', textUnderlineOffset: '2px',
-  letterSpacing: '0.02em',
-},
+    background: 'transparent', border: 'none', padding: 0,
+    color: '#D4AF64', fontSize: '12px',
+    fontWeight: 500, cursor: 'pointer',
+    fontFamily: 'inherit',
+    letterSpacing: '0.02em',
+  },
+  whyLinkMuted: {
+    background: 'transparent', border: 'none', padding: 0,
+    color: 'rgba(212,175,100,0.55)', fontSize: '12px',
+    cursor: 'pointer', fontFamily: 'inherit',
+    textDecoration: 'underline', textUnderlineOffset: '2px',
+    letterSpacing: '0.02em',
+  },
   whyEmptyBtn: {
     width: '100%',
     padding: '20px',
@@ -623,24 +640,33 @@ whyLinkMuted: {
   linkArrow: { color: '#9C8C78', fontSize: '18px', flexShrink: 0 },
   linkDivider: { height: '0.5px', background: '#EFE7D7', margin: '0 16px' },
 
-  // TAB BAR
-  tabRow: {
-    display: 'flex', gap: '4px', padding: '6px',
-    background: 'white', borderRadius: '16px',
-    border: '0.5px solid #E8DFD0',
-    boxShadow: '0 4px 14px rgba(80,50,20,0.05)',
-    marginTop: '0.5rem',
+  // YOUR PATH (Reassess + Sign out)
+  pathLinks: {
+    background: 'white', border: '0.5px solid #E8DFD0',
+    borderRadius: '14px', overflow: 'hidden',
   },
-  tab: {
-    flex: 1, padding: '9px 4px', textAlign: 'center',
-    fontSize: '11px', color: '#9C8C78', borderRadius: '10px',
+  pathRow: {
+    display: 'flex', alignItems: 'center', gap: '12px',
+    width: '100%', padding: '14px 16px',
     background: 'transparent', border: 'none',
     cursor: 'pointer', fontFamily: 'inherit',
+    textAlign: 'left',
   },
-  tabActive: {
-    background: 'linear-gradient(180deg, #F4ECDD 0%, #EFE5D0 100%)',
-    color: '#2A1F15', fontWeight: 500,
-    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.6)',
+  pathRowText: {
+    flex: 1,
+    display: 'flex', flexDirection: 'column', gap: '3px',
+  },
+  pathRowLabel: {
+    fontSize: '14px', color: '#2A1F15',
+    fontWeight: 500, margin: 0,
+    fontFamily: 'Georgia, serif',
+    lineHeight: 1.3,
+  },
+  pathRowHelper: {
+    fontSize: '11px', color: '#9C8C78',
+    fontStyle: 'italic', margin: 0,
+    fontFamily: 'Georgia, serif',
+    lineHeight: 1.4,
   },
 
   // MODAL
@@ -668,7 +694,6 @@ whyLinkMuted: {
     cursor: 'pointer', fontFamily: 'inherit',
     textAlign: 'left',
   },
-  settingsDivider: { height: '0.5px', background: '#EFE7D7', margin: '0 4px' },
   modalClose: {
     width: '100%', padding: '12px',
     background: 'white', color: '#2A1F15',

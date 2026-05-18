@@ -99,7 +99,7 @@ export default function ReflectOverview() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Back</button>
+            <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
             <p style={styles.headerTitle}>Reflect</p>
             <div style={{ width: '60px' }}></div>
           </div>

@@ -105,10 +105,10 @@ export default function StageReveal() {
       <div style={styles.phone}>
 
         <div style={styles.header}>
-          <div style={{ width: '60px' }}></div>
-          <p style={styles.headerTitle}>Your stage</p>
-          <div style={{ width: '60px' }}></div>
-        </div>
+  <button onClick={() => navigate('/vow-path/check')} style={styles.backBtn}>‹ Back</button>
+  <p style={styles.headerTitle}>Your stage</p>
+  <div style={{ width: '60px' }}></div>
+</div>
 
         <h1 style={styles.headline}>{reveal.headline}</h1>
         <p style={styles.subhead}>{reveal.subhead}</p>
@@ -343,4 +343,10 @@ const styles = {
     textAlign: 'center',
     margin: '1rem 0 0',
   },
+  backBtn: {
+  background: 'transparent', border: 'none',
+  color: '#854F0B', fontSize: '14px', fontWeight: 500,
+  cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px',
+  minWidth: '60px', textAlign: 'left',
+},
 }

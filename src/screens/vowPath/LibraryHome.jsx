@@ -93,7 +93,7 @@ export default function LibraryHome() {
       <div style={styles.phone}>
 
         <div style={styles.topBar}>
-          <button onClick={() => navigate(-1)} style={styles.backBtn}>‹ Back</button>
+          <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
           <p style={styles.topBarTitle}>Library</p>
           <div style={{ width: '60px' }}></div>
         </div>

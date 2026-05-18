@@ -6,6 +6,10 @@ import { supabase } from '../../supabaseClient'
 // The others use a placeholder until I send them.
 import NoticeFreeHome from './NoticeFreeHome'
 import EndureFreeHome from './EndureFreeHome'
+import ReflectFreeHome from './ReflectFreeHome'
+import CommitFreeHome from './CommitFreeHome'
+import BuildFreeHome from './BuildFreeHome'
+import ReclaimFreeHome from './ReclaimFreeHome'
 
 // Placeholder for the free homes I haven't sent yet.
 // You'll replace these with real imports as files arrive.
@@ -195,22 +199,6 @@ export default function HomeRouter() {
         }
 
         // ─────────────────────────────────────────────────────────────
-        // PAID VOW PATH IN PROGRESS — redirect to that stage's overview
-        // ─────────────────────────────────────────────────────────────
-        // A user is "actively on the paid path" if:
-        //   - current_stage is set (notice/reflect/commit/endure)
-        //   - AND vow_path_status is 'active' (not paused, not closed)
-        const isActivelyOnPaidPath = progressRow.current_stage
-          && progressRow.vow_path_status === 'active'
-          && ['notice', 'reflect', 'commit', 'endure'].includes(progressRow.current_stage)
-
-        if (isActivelyOnPaidPath) {
-          // They've started the Vow Path — send them to their stage overview
-          navigate(`/vow-path/${progressRow.current_stage}`)
-          return
-        }
-
-        // ─────────────────────────────────────────────────────────────
         // FREE TIER — render the home that matches their free_state
         // ─────────────────────────────────────────────────────────────
         if (!progressRow.free_state) {
@@ -265,19 +253,19 @@ export default function HomeRouter() {
 
     // The following will be replaced with real components as I send them
     case 'reflect':
-      return <ComingSoonHome stageLabel="Reflect" free_state={freeState} navigate={navigate} />
+  return <ReflectFreeHome progress={progress} />
 
     case 'commit':
-      return <ComingSoonHome stageLabel="Commit" free_state={freeState} navigate={navigate} />
+      return <CommitFreeHome progress={progress} />
 
     case 'endure':
   return <EndureFreeHome progress={progress} />
 
     case 'build':
-      return <ComingSoonHome stageLabel="Build" free_state={freeState} navigate={navigate} />
+      return <BuildFreeHome progress={progress} />
 
     case 'reclaim':
-      return <ComingSoonHome stageLabel="Reclaim" free_state={freeState} navigate={navigate} />
+      return <ReclaimFreeHome progress={progress} />
 
     default:
       // Unknown state — send back to picker

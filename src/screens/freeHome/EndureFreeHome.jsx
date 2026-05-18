@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { checkAndMarkMilestones } from '../../milestoneHelpers'
+import BottomNav from '../../components/BottomNav'
 
 // ===================================================================
 // ENDURE-FREE HOME
@@ -9,7 +10,26 @@ import { checkAndMarkMilestones } from '../../milestoneHelpers'
 // Stage: Endure (action). User has stopped or is about to.
 // Tone: holding, continuing, the vow is active.
 // Centerpiece: sobriety counter with jar fill.
+// Nav: bottom tabs handle Home / Mirror / Motivation / Vow Path.
+//      Profile (state-picker + sign out) lives behind humanoid icon top-right.
+//      Anchors lives as a dedicated tile here (stage-relevant for Endure).
 // ===================================================================
+
+const ProfileIcon = () => (
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+  </svg>
+)
 
 export default function EndureFreeHome({ progress }) {
   const navigate = useNavigate()
@@ -32,7 +52,6 @@ export default function EndureFreeHome({ progress }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Profile for greeting
       const { data: profile } = await supabase
         .from('profiles')
         .select('first_name, full_name')
@@ -42,7 +61,6 @@ export default function EndureFreeHome({ progress }) {
       else if (profile?.full_name) setFirstName(profile.full_name.split(' ')[0])
       else if (user.email) setFirstName(user.email.split('@')[0])
 
-      // Active tracker (single addiction in pilot)
       const { data: trackers } = await supabase
         .from('trackers')
         .select(`
@@ -58,7 +76,6 @@ export default function EndureFreeHome({ progress }) {
         const tr = trackers[0]
         setTracker(tr)
 
-        // Check for new milestones
         const newOnes = await checkAndMarkMilestones(tr, user.id)
         if (newOnes && newOnes.length > 0) {
           setToastMilestones(newOnes.map(m => ({ ...m, trackerName: tr.addiction_types.name })))
@@ -70,11 +87,6 @@ export default function EndureFreeHome({ progress }) {
     }
     load()
   }, [])
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    navigate('/welcome')
-  }
 
   if (loading) {
     return (
@@ -91,8 +103,12 @@ export default function EndureFreeHome({ progress }) {
         {/* TOP BAR */}
         <div style={styles.topBar}>
           <p style={styles.brandLine}>Vow</p>
-          <button onClick={() => navigate('/profile')} style={styles.profileBtn}>
-            Profile
+          <button
+            onClick={() => navigate('/profile')}
+            style={styles.profileBtn}
+            aria-label="Profile"
+          >
+            <ProfileIcon />
           </button>
         </div>
 
@@ -102,7 +118,7 @@ export default function EndureFreeHome({ progress }) {
           substanceLabel={progress.substance_label}
         />
 
-        {/* TILE 2 — TRACKER PILLS (single + add placeholder) */}
+        {/* TILE 2 — TRACKER PILLS */}
         <TrackerPillsTile
           tracker={tracker}
           onAddPress={() => setShowAddPlaceholder(true)}
@@ -118,35 +134,20 @@ export default function EndureFreeHome({ progress }) {
           />
         )}
 
-        {/* TILE 4 — URGE / SLIP ACTIONS (only if tracker exists) */}
+        {/* TILE 4 — URGE / SLIP ACTIONS */}
         {tracker && (
           <ActionTile tracker={tracker} navigate={navigate} />
         )}
 
-        {/* TILE 5 — SAVINGS / MILESTONES (only if tracker exists) */}
+        {/* TILE 5 — SAVINGS / MILESTONES */}
         {tracker && (
           <SavingsMilestonesTile tracker={tracker} navigate={navigate} />
         )}
 
-        {/* TILE 6 — VOW PATH CTA (continuation framing) */}
-        <VowPathCTATile navigate={navigate} />
+        {/* TILE 6 — ANCHORS (stage-relevant for Endure) */}
+        <AnchorsTile navigate={navigate} />
 
-        {/* TILE 7 — QUICK LINKS */}
-        <QuickLinksTile navigate={navigate} />
-
-        {/* FOOTER */}
-        <div style={styles.footer}>
-          <button
-            onClick={() => navigate('/onboarding/state-picker')}
-            style={styles.footerLink}
-          >
-            Where I am has changed
-          </button>
-          <span style={styles.footerSeparator}>·</span>
-          <button onClick={handleSignOut} style={styles.footerLink}>
-            Sign out
-          </button>
-        </div>
+        <BottomNav />
 
         {/* ADD PLACEHOLDER MODAL */}
         {showAddPlaceholder && (
@@ -216,7 +217,7 @@ function GreetingTile({ firstName, substanceLabel }) {
 }
 
 // ===================================================================
-// TILE: TRACKER PILLS (single + add placeholder)
+// TILE: TRACKER PILLS
 // ===================================================================
 function TrackerPillsTile({ tracker, onAddPress }) {
   return (
@@ -241,7 +242,7 @@ function TrackerPillsTile({ tracker, onAddPress }) {
 }
 
 // ===================================================================
-// TILE: COUNTER (the big jar fill display)
+// TILE: COUNTER
 // ===================================================================
 function CounterTile({ tracker, navigate }) {
   const startDate = new Date(tracker.start_date)
@@ -328,7 +329,7 @@ function Cell({ n, u, accent, fillPercent, hideIfZero }) {
 }
 
 // ===================================================================
-// TILE: COUNTER SETUP PROMPT (when no tracker)
+// TILE: COUNTER SETUP PROMPT
 // ===================================================================
 function CounterSetupPromptTile({ substanceLabel, navigate }) {
   return (
@@ -351,7 +352,7 @@ function CounterSetupPromptTile({ substanceLabel, navigate }) {
 }
 
 // ===================================================================
-// TILE: ACTIONS (urge / slip)
+// TILE: ACTIONS
 // ===================================================================
 function ActionTile({ tracker, navigate }) {
   return (
@@ -447,46 +448,23 @@ function SavingsMilestonesTile({ tracker, navigate }) {
 }
 
 // ===================================================================
-// TILE: VOW PATH CTA (continuation framing for Endure)
+// TILE: ANCHORS (replaces old Quick Links — stage-relevant only for Endure)
 // ===================================================================
-function VowPathCTATile({ navigate }) {
-  return (
-    <div style={styles.ctaTile}>
-      <div style={styles.ctaOrnament}>· · ·</div>
-      <p style={styles.ctaEyebrow}>The Vow Path</p>
-      <h3 style={styles.ctaTitle}>Walk the structured 21 days.</h3>
-      <p style={styles.ctaBody}>
-        The crash, the flatness, the return — three phases mapped, day by day.
-        For the stretch where most people leave, and the return when pleasure flickers back.
-      </p>
-      <button
-        onClick={() => navigate('/vow-path')}
-        style={styles.ctaBtn}
-      >
-        Continue with Vow Path
-      </button>
-      <p style={styles.ctaMicro}>21 days · designed for where you are</p>
-    </div>
-  )
-}
-
-// ===================================================================
-// TILE: QUICK LINKS
-// ===================================================================
-function QuickLinksTile({ navigate }) {
+function AnchorsTile({ navigate }) {
   return (
     <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Also available</p>
-      <div style={styles.quickLinksRow}>
-        <button onClick={() => navigate('/anchors')} style={styles.quickLink}>
-          <div style={styles.quickLinkIcon}>🌿</div>
-          <p style={styles.quickLinkLabel}>Anchors</p>
-        </button>
-        <button onClick={() => navigate('/library')} style={styles.quickLink}>
-          <div style={styles.quickLinkIcon}>📖</div>
-          <p style={styles.quickLinkLabel}>Library</p>
-        </button>
-      </div>
+      <p style={styles.tileEyebrow}>Anchors</p>
+      <h3 style={styles.tileTitle}>People you'd call</h3>
+      <p style={styles.tileBody}>
+        The list you'd reach for at midnight when the urge sharpens. Build it
+        now, before you need it.
+      </p>
+      <button
+        onClick={() => navigate('/anchors')}
+        style={styles.anchorsBtn}
+      >
+        Open Anchors
+      </button>
     </div>
   )
 }
@@ -536,8 +514,8 @@ const styles = {
   },
   profileBtn: {
     background: 'transparent', border: 'none', color: '#854F0B',
-    fontSize: '12px', fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'inherit', padding: '4px 8px', fontStyle: 'italic',
+    cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
 
   // GENERIC TILE
@@ -752,78 +730,18 @@ const styles = {
     cursor: 'pointer', fontFamily: 'inherit',
   },
 
-  // CTA TILE
-  ctaTile: {
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    borderRadius: '20px',
-    padding: '22px 20px',
-    textAlign: 'center',
-    boxShadow: '0 6px 20px rgba(40,25,10,0.25)',
-  },
-  ctaOrnament: {
-    fontSize: '12px', color: 'rgba(250,247,241,0.4)',
-    letterSpacing: '0.5em', margin: '0 0 14px',
-  },
-  ctaEyebrow: {
-    fontSize: '10px', color: '#D9B57A',
-    textTransform: 'uppercase', letterSpacing: '0.24em',
-    fontWeight: 500, fontFamily: 'Georgia, serif',
-    margin: '0 0 8px',
-  },
-  ctaTitle: {
-    fontSize: '20px', color: '#FAF7F1',
-    fontFamily: 'Georgia, serif', fontWeight: 500,
-    lineHeight: 1.3, margin: '0 0 10px',
-  },
-  ctaBody: {
-    fontSize: '13px', color: 'rgba(250,247,241,0.75)',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.6, margin: '0 0 16px',
-  },
-  ctaBtn: {
-    width: '100%', padding: '13px',
-    background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)',
-    color: '#241710', border: 'none', borderRadius: '12px',
+  // ANCHORS TILE
+  anchorsBtn: {
+    width: '100%',
+    padding: '13px',
+    background: 'white',
+    color: '#2A1F15',
+    border: '0.5px solid #DDCFB6',
+    borderRadius: '12px',
     fontSize: '14px', fontWeight: 500, cursor: 'pointer',
     fontFamily: 'inherit',
-    boxShadow: '0 3px 10px rgba(0,0,0,0.2)',
+    boxShadow: '0 2px 8px rgba(80,50,20,0.05)',
   },
-  ctaMicro: {
-    fontSize: '11px', color: 'rgba(250,247,241,0.5)',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    margin: '10px 0 0',
-  },
-
-  // QUICK LINKS
-  quickLinksRow: {
-    display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px',
-  },
-  quickLink: {
-    padding: '14px 10px',
-    background: 'white',
-    border: '0.5px solid #E0D5C2',
-    borderRadius: '12px',
-    fontFamily: 'inherit', cursor: 'pointer',
-    textAlign: 'center',
-    boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
-  },
-  quickLinkIcon: { fontSize: '24px', marginBottom: '4px' },
-  quickLinkLabel: {
-    fontSize: '12px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0,
-  },
-
-  // FOOTER
-  footer: {
-    display: 'flex', justifyContent: 'center', alignItems: 'center',
-    gap: '8px', marginTop: '0.5rem', paddingTop: '0.5rem',
-  },
-  footerLink: {
-    background: 'transparent', border: 'none',
-    color: '#9C8C78', fontSize: '11px', fontStyle: 'italic',
-    cursor: 'pointer', fontFamily: 'Georgia, serif', padding: '4px 8px',
-  },
-  footerSeparator: { color: '#C9B894', fontSize: '10px' },
 
   // MODAL
   modal: {
@@ -861,11 +779,14 @@ const styles = {
     boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
   },
 
-  // TOAST
+  // TOAST (bumped above BottomNav)
   toast: {
-    position: 'fixed', bottom: '24px', left: '50%',
+    position: 'fixed',
+    bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+    left: '50%',
     transform: 'translateX(-50%)',
-    zIndex: 200, maxWidth: '90vw',
+    zIndex: 200,
+    maxWidth: '90vw',
   },
   toastInner: {
     background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',

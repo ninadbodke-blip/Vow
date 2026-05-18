@@ -119,6 +119,9 @@ export default function StageTransition() {
     return (
       <div style={styles.frame}>
         <div style={styles.phone}>
+          <div style={styles.topBar}>
+          <button onClick={() => setPhase('arrival')} style={styles.backBtn}>‹ Back</button>
+        </div>
           <div style={styles.readingHeader}>
             <p style={styles.readingEyebrow}>{content.eyebrow}</p>
             <h2 style={styles.readingTitle}>{content.title}</h2>
@@ -324,4 +327,13 @@ const styles = {
     fontFamily: 'inherit',
     boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
   },
+  topBar: {
+  display: 'flex', alignItems: 'center',
+  marginBottom: '0.5rem',
+},
+backBtn: {
+  background: 'transparent', border: 'none',
+  color: '#854F0B', fontSize: '14px', fontWeight: 500,
+  cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px',
+},
 }
