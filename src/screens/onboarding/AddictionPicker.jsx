@@ -17,34 +17,176 @@ function DemonFace({ selected }) {
   return (
     <svg viewBox="0 0 240 240" style={{ width: '100%', height: '100%' }}>
       <defs>
-        <radialGradient id="demonBody" cx="50%" cy="40%">
-          <stop offset="0%" stopColor="#5A2A1A" />
-          <stop offset="100%" stopColor="#2A0F08" />
+        <radialGradient id="auraOuter" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="rgba(180,30,20,0.18)" />
+          <stop offset="60%" stopColor="rgba(180,30,20,0.05)" />
+          <stop offset="100%" stopColor="rgba(180,30,20,0)" />
         </radialGradient>
-        <radialGradient id="demonEye" cx="50%" cy="40%">
-          <stop offset="0%" stopColor="#FFD088" />
-          <stop offset="40%" stopColor="#E8754A" />
-          <stop offset="100%" stopColor="#A93B1A" />
+        <linearGradient id="bodyDark" x1="0.5" y1="0" x2="0.5" y2="1">
+          <stop offset="0%" stopColor="#3A0A0A" />
+          <stop offset="55%" stopColor="#1A0404" />
+          <stop offset="100%" stopColor="#080000" />
+        </linearGradient>
+        <linearGradient id="hornGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1A0202" />
+          <stop offset="50%" stopColor="#2A0808" />
+          <stop offset="100%" stopColor="#4A0E0E" />
+        </linearGradient>
+        <radialGradient id="eyeGlow" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="#FFF0A0" />
+          <stop offset="20%" stopColor="#FFB040" />
+          <stop offset="55%" stopColor="#E8401A" />
+          <stop offset="85%" stopColor="#8A1010" />
+          <stop offset="100%" stopColor="#3A0202" />
+        </radialGradient>
+        <radialGradient id="eyeHalo" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="rgba(255,140,40,0.45)" />
+          <stop offset="100%" stopColor="rgba(255,140,40,0)" />
         </radialGradient>
       </defs>
-      <circle cx="120" cy="125" r="105" fill="rgba(232,117,74,0.08)" />
-      <circle cx="120" cy="125" r="90" fill="rgba(232,117,74,0.10)" />
-      <path d="M 70 75 Q 60 40 80 35 Q 85 55 90 80 Z" fill="url(#demonBody)" />
-      <path d="M 170 75 Q 180 40 160 35 Q 155 55 150 80 Z" fill="url(#demonBody)" />
-      <path d="M 120 75 Q 75 80 70 130 Q 70 175 120 200 Q 170 175 170 130 Q 165 80 120 75 Z" 
-            fill="url(#demonBody)" />
-      <path d="M 120 85 Q 85 88 80 135 Q 82 165 120 188 Q 158 165 160 135 Q 155 88 120 85 Z" 
-            fill="rgba(0,0,0,0.2)" />
-      <ellipse cx="98" cy="125" rx="14" ry="10" fill="url(#demonEye)" />
-      <ellipse cx="142" cy="125" rx="14" ry="10" fill="url(#demonEye)" />
-      <ellipse cx="98" cy="125" rx="4" ry="6" fill="#1A0805" />
-      <ellipse cx="142" cy="125" rx="4" ry="6" fill="#1A0805" />
-      <circle cx="100" cy="121" r="2" fill="#FFE8C4" />
-      <circle cx="144" cy="121" r="2" fill="#FFE8C4" />
-      <path d="M 95 165 Q 120 175 145 165 L 142 172 L 138 168 L 132 174 L 128 168 L 120 175 L 112 168 L 108 174 L 102 168 L 98 172 Z" 
-            fill="#1A0805" />
-      <ellipse cx="85" cy="150" rx="8" ry="4" fill="rgba(0,0,0,0.25)" />
-      <ellipse cx="155" cy="150" rx="8" ry="4" fill="rgba(0,0,0,0.25)" />
+
+      {/* Outer red aura */}
+      <circle cx="120" cy="125" r="118" fill="url(#auraOuter)" />
+
+      {/* Smoke wisps - left */}
+      <path
+        d="M 35 220 Q 50 180 40 140 Q 55 160 45 110"
+        stroke="rgba(60,20,10,0.2)"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 60 230 Q 75 200 70 175"
+        stroke="rgba(60,20,10,0.12)"
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+      />
+
+      {/* Smoke wisps - right */}
+      <path
+        d="M 205 220 Q 190 180 200 140 Q 185 160 195 110"
+        stroke="rgba(60,20,10,0.2)"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 180 230 Q 165 200 170 175"
+        stroke="rgba(60,20,10,0.12)"
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+      />
+
+      {/* Left horn - long, curved back */}
+      <path
+        d="M 72 92
+           Q 50 65, 32 36
+           Q 27 28, 35 30
+           Q 50 50, 65 75
+           Q 70 85, 72 92 Z"
+        fill="url(#hornGrad)"
+      />
+
+      {/* Right horn */}
+      <path
+        d="M 168 92
+           Q 190 65, 208 36
+           Q 213 28, 205 30
+           Q 190 50, 175 75
+           Q 170 85, 168 92 Z"
+        fill="url(#hornGrad)"
+      />
+
+      {/* Horn glints */}
+      <path
+        d="M 40 48 Q 36 40, 36 32"
+        stroke="rgba(200,80,40,0.45)"
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 200 48 Q 204 40, 204 32"
+        stroke="rgba(200,80,40,0.45)"
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+      />
+
+      {/* Main head - angular silhouette */}
+      <path
+        d="M 72 92
+           L 62 130
+           Q 60 165, 80 195
+           Q 100 215, 120 222
+           Q 140 215, 160 195
+           Q 180 165, 178 130
+           L 168 92
+           Q 145 80, 120 80
+           Q 95 80, 72 92 Z"
+        fill="url(#bodyDark)"
+      />
+
+      {/* Face contour shadows (cheeks) */}
+      <path
+        d="M 78 155 Q 88 200, 120 220 Q 100 205, 86 165 Z"
+        fill="rgba(0,0,0,0.5)"
+      />
+      <path
+        d="M 162 155 Q 152 200, 120 220 Q 140 205, 154 165 Z"
+        fill="rgba(0,0,0,0.5)"
+      />
+
+      {/* Eye halos */}
+      <ellipse cx="95" cy="135" rx="24" ry="16" fill="url(#eyeHalo)" />
+      <ellipse cx="145" cy="135" rx="24" ry="16" fill="url(#eyeHalo)" />
+
+      {/* Eyes - angular almond */}
+      <path
+        d="M 78 132
+           Q 90 124, 110 132
+           Q 110 141, 100 143
+           Q 85 143, 78 138 Z"
+        fill="url(#eyeGlow)"
+      />
+      <path
+        d="M 162 132
+           Q 150 124, 130 132
+           Q 130 141, 140 143
+           Q 155 143, 162 138 Z"
+        fill="url(#eyeGlow)"
+      />
+
+      {/* Eye bright spots */}
+      <ellipse cx="95" cy="132" rx="3" ry="2" fill="#FFF6D0" opacity="0.9" />
+      <ellipse cx="145" cy="132" rx="3" ry="2" fill="#FFF6D0" opacity="0.9" />
+
+      {/* Vertical slit pupils */}
+      <path d="M 95 127 Q 96.5 134, 95 141 Q 93.5 134, 95 127 Z" fill="#000" />
+      <path d="M 145 127 Q 146.5 134, 145 141 Q 143.5 134, 145 127 Z" fill="#000" />
+
+      {/* Brow ridge shadows */}
+      <path d="M 75 121 Q 95 115, 115 124 Q 95 128, 75 126 Z" fill="#000" opacity="0.65" />
+      <path d="M 125 124 Q 145 115, 165 121 Q 145 128, 125 128 Z" fill="#000" opacity="0.65" />
+
+      {/* Jagged fang-mouth */}
+      <path
+        d="M 88 175
+           L 92 185 L 98 175 L 102 185 L 108 175 L 112 185 L 118 175 L 122 185
+           L 128 175 L 132 185 L 138 175 L 142 185 L 148 175 L 152 184
+           Q 135 196, 120 197 Q 105 196, 88 175 Z"
+        fill="#000"
+        opacity="0.95"
+      />
+
+      {/* Mouth inner depth */}
+      <path
+        d="M 100 185 Q 120 193, 140 185 Q 130 196, 120 196 Q 110 196, 100 185 Z"
+        fill="#1A0204"
+      />
     </svg>
   )
 }
@@ -99,11 +241,6 @@ export default function AddictionPicker({ onboardingDone }) {
           return
         }
 
-        // Log the first row to see what columns exist (for substance metadata)
-        if (addictionData?.length > 0) {
-          console.log('[AddictionPicker] addiction_types columns:', Object.keys(addictionData[0]))
-        }
-
         setAddictions(addictionData || [])
 
         if (!onboardingDone) setShowFounderMessage(true)
@@ -118,32 +255,24 @@ export default function AddictionPicker({ onboardingDone }) {
 
   const handleNext = async () => {
     if (!selected) {
-      setError('Tap the icon above to pick what you are quitting.')
+      setError('Tap the face above to name your vice.')
       return
     }
 
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        navigate('/signup')
-        return
-      }
+      if (!user) { navigate('/signup'); return }
 
-      // Build the substance metadata write.
-      // We write whichever fields exist on the selected addiction_type row.
       const substanceUpdate = {
         user_id: user.id,
         primary_substance: selected.id,
         substance_label: selected.name,
         updated_at: new Date().toISOString(),
       }
-
-      // Optional fields — only included if present on the addiction_types row
       if (selected.family) substanceUpdate.substance_family = selected.family
       if (selected.verb) substanceUpdate.substance_verb = selected.verb
 
-      // Upsert into vow_path_progress so the state picker has the substance to reference
       const { error: upsertError } = await supabase
         .from('vow_path_progress')
         .upsert(substanceUpdate, { onConflict: 'user_id' })
@@ -155,7 +284,6 @@ export default function AddictionPicker({ onboardingDone }) {
         return
       }
 
-      // Mark onboarding as in progress
       await supabase
         .from('profiles')
         .update({ onboarding_completed: true })
@@ -176,8 +304,8 @@ export default function AddictionPicker({ onboardingDone }) {
 
   if (loading) {
     return (
-      <div style={{...styles.frame, alignItems: 'center'}}>
-        <div style={{...styles.card, textAlign: 'center', color: '#9C8C78'}}>Loading...</div>
+      <div style={{ ...styles.frame, alignItems: 'center' }}>
+        <div style={{ ...styles.card, textAlign: 'center', color: '#9C8C78' }}>Loading...</div>
       </div>
     )
   }
@@ -274,7 +402,7 @@ export default function AddictionPicker({ onboardingDone }) {
               With the support of my loved ones, I was able to overcome it.
             </p>
             <p style={founderStyles.bodyEmphasis}>
-              I'm sharing this to remind you — it's not impossible.<br/>
+              I'm sharing this to remind you — it's not impossible.<br />
               You can do this too.
             </p>
             <div style={founderStyles.signature}>— Ninad, founder</div>
@@ -313,7 +441,7 @@ const styles = {
   },
   title: {
     fontSize: '24px',
-    fontWeight: 600,
+    fontWeight: 500,
     color: '#2A1F15',
     margin: '0.5rem 0 0.5rem',
     fontFamily: 'Georgia, serif',
@@ -329,8 +457,8 @@ const styles = {
     fontFamily: 'Georgia, serif',
   },
   demonBtn: {
-    width: '220px',
-    height: '220px',
+    width: '240px',
+    height: '240px',
     background: 'transparent',
     border: 'none',
     cursor: 'pointer',

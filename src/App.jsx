@@ -37,6 +37,8 @@ import CommitDay from './screens/vowPath/CommitDay'
 import EndureOverview from './screens/vowPath/EndureOverview'
 import EndureDay from './screens/vowPath/EndureDay'
 import StageTransition from './screens/vowPath/StageTransition'
+import BuildOverview from './screens/vowPath/BuildOverview'
+import BuildDay from './screens/vowPath/BuildDay'
 
 // ===== Motivation =====
 import MotivationHome from './screens/motivation/MotivationHome'
@@ -63,7 +65,6 @@ function AppRoutes() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // When session changes, check onboarding progress (do they have a substance picked?)
   useEffect(() => {
     async function check() {
       if (!session) {
@@ -71,20 +72,17 @@ function AppRoutes() {
         return
       }
 
-      // Check if user has at least picked a substance (i.e., started onboarding)
       const { data: progress } = await supabase
         .from('vow_path_progress')
         .select('primary_substance, free_state')
         .eq('user_id', session.user.id)
         .maybeSingle()
 
-      // hasOnboardingProgress is true if substance is picked
       setHasOnboardingProgress(!!progress?.primary_substance)
     }
     if (session) check()
   }, [session])
 
-  // Loading state
   if (session === undefined || (session && hasOnboardingProgress === undefined)) {
     return (
       <div style={{
@@ -144,125 +142,55 @@ function AppRoutes() {
         element={session ? <TrackerSetup /> : <Navigate to="/signup" />}
       />
 
-      {/* ===== HOME (HomeRouter decides what to render) ===== */}
+      {/* ===== HOME ===== */}
       <Route
         path="/home"
         element={session ? <HomeRouter /> : <Navigate to="/welcome" />}
       />
 
       {/* ===== USER-FACING TOOLS ===== */}
-      <Route
-        path="/profile"
-        element={session ? <Profile /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/slip/:trackerId"
-        element={session ? <SlipFlow /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/urge/:trackerId"
-        element={session ? <UrgeFlow /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/milestones/:trackerId"
-        element={session ? <Milestones /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/slips"
-        element={session ? <SlipHistory /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/urges"
-        element={session ? <UrgeLog /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/anchors"
-        element={session ? <Anchors /> : <Navigate to="/welcome" />}
-      />
+      <Route path="/profile" element={session ? <Profile /> : <Navigate to="/welcome" />} />
+      <Route path="/slip/:trackerId" element={session ? <SlipFlow /> : <Navigate to="/welcome" />} />
+      <Route path="/urge/:trackerId" element={session ? <UrgeFlow /> : <Navigate to="/welcome" />} />
+      <Route path="/milestones/:trackerId" element={session ? <Milestones /> : <Navigate to="/welcome" />} />
+      <Route path="/slips" element={session ? <SlipHistory /> : <Navigate to="/welcome" />} />
+      <Route path="/urges" element={session ? <UrgeLog /> : <Navigate to="/welcome" />} />
+      <Route path="/anchors" element={session ? <Anchors /> : <Navigate to="/welcome" />} />
 
       {/* ===== VOW PATH ===== */}
-      <Route
-        path="/vow-path"
-        element={session ? <VowPathIntro /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/substance"
-        element={session ? <SubstancePicker /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/check"
-        element={session ? <StageCheck /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/result/:stageSlug"
-        element={session ? <StageReveal /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/reflect"
-        element={session ? <ReflectOverview /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/reflect/day/:dayNumber"
-        element={session ? <ReflectV2Day /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/notice"
-        element={session ? <NoticeOverview /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/notice/day/:dayNumber"
-        element={session ? <NoticeDay /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/commit"
-        element={session ? <CommitOverview /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/commit/day/:dayNumber"
-        element={session ? <CommitDay /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/endure"
-        element={session ? <EndureOverview /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/endure/day/:dayNumber"
-        element={session ? <EndureDay /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/vow-path/transition/:fromStage/to/:toStage"
-        element={session ? <StageTransition /> : <Navigate to="/welcome" />}
-      />
+      <Route path="/vow-path" element={session ? <VowPathIntro /> : <Navigate to="/welcome" />} />
+      <Route path="/vow-path/substance" element={session ? <SubstancePicker /> : <Navigate to="/welcome" />} />
+      <Route path="/vow-path/check" element={session ? <StageCheck /> : <Navigate to="/welcome" />} />
+      <Route path="/vow-path/result/:stageSlug" element={session ? <StageReveal /> : <Navigate to="/welcome" />} />
+
+      <Route path="/vow-path/reflect" element={session ? <ReflectOverview /> : <Navigate to="/welcome" />} />
+      <Route path="/vow-path/reflect/day/:dayNumber" element={session ? <ReflectV2Day /> : <Navigate to="/welcome" />} />
+
+      <Route path="/vow-path/notice" element={session ? <NoticeOverview /> : <Navigate to="/welcome" />} />
+      <Route path="/vow-path/notice/day/:dayNumber" element={session ? <NoticeDay /> : <Navigate to="/welcome" />} />
+
+      <Route path="/vow-path/commit" element={session ? <CommitOverview /> : <Navigate to="/welcome" />} />
+      <Route path="/vow-path/commit/day/:dayNumber" element={session ? <CommitDay /> : <Navigate to="/welcome" />} />
+
+      <Route path="/vow-path/endure" element={session ? <EndureOverview /> : <Navigate to="/welcome" />} />
+      <Route path="/vow-path/endure/day/:dayNumber" element={session ? <EndureDay /> : <Navigate to="/welcome" />} />
+
+      <Route path="/vow-path/build" element={session ? <BuildOverview /> : <Navigate to="/welcome" />} />
+      <Route path="/vow-path/build/day/:dayNumber" element={session ? <BuildDay /> : <Navigate to="/welcome" />} />
+
+      <Route path="/vow-path/transition/:fromStage/to/:toStage" element={session ? <StageTransition /> : <Navigate to="/welcome" />} />
 
       {/* ===== LIBRARY ===== */}
-      <Route
-        path="/library"
-        element={session ? <LibraryHome /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/library/:stage"
-        element={session ? <LibraryStageHome /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/library/:stage/day/:dayNumber"
-        element={session ? <LibraryDeepRead /> : <Navigate to="/welcome" />}
-      />
+      <Route path="/library" element={session ? <LibraryHome /> : <Navigate to="/welcome" />} />
+      <Route path="/library/:stage" element={session ? <LibraryStageHome /> : <Navigate to="/welcome" />} />
+      <Route path="/library/:stage/day/:dayNumber" element={session ? <LibraryDeepRead /> : <Navigate to="/welcome" />} />
 
       {/* ===== MOTIVATION ===== */}
-      <Route
-        path="/motivation"
-        element={session ? <MotivationHome /> : <Navigate to="/welcome" />}
-      />
-      <Route
-        path="/motivation/article/:slug"
-        element={session ? <MotivationArticle /> : <Navigate to="/welcome" />}
-      />
+      <Route path="/motivation" element={session ? <MotivationHome /> : <Navigate to="/welcome" />} />
+      <Route path="/motivation/article/:slug" element={session ? <MotivationArticle /> : <Navigate to="/welcome" />} />
 
       {/* ===== MIRROR ===== */}
-      <Route
-        path="/mirror"
-        element={session ? <MirrorScreen /> : <Navigate to="/welcome" />}
-      />
+      <Route path="/mirror" element={session ? <MirrorScreen /> : <Navigate to="/welcome" />} />
     </Routes>
   )
 }

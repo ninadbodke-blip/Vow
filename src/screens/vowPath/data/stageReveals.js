@@ -55,11 +55,13 @@ By the end of Commit, you have everything you need to walk into the actually-sto
   build: {
     code: 'M',
     name: 'Build',
-    duration: '8 weeks',
-    status: 'coming_soon',
+    duration: '9 weekly entries',
+    status: 'available',
     headline: `You're at Build.`,
     subhead: 'Living the vow.',
-    body: `Build is for the long stretch after the early sobriety phase has settled. The substance is no longer the central preoccupation, but you stay vigilant. Build is about constructing the life on the other side — work, relationships, identity, time.`,
+    body: `Build is for the long stretch after the early sobriety phase has settled. The substance is no longer the central preoccupation, but you stay vigilant. Build is about constructing the life on the other side — work, relationships, identity, time.
+
+Nine weekly entries across about twelve weeks. Each one short. Each one asks you to mark where you are. The version of you that starts here is the version we'll keep listening to.`,
     coming_soon_note: `Build is being written. We'll let you know when it's ready.`,
   },
   reclaim: {
