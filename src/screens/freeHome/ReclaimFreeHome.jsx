@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
+import { resolveAddictionTypeId } from '../vowPath/utils/addictionTypes'
 
 // ===================================================================
 // RECLAIM-FREE HOME
@@ -160,47 +161,52 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
     setTransitioning(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const addictionTypeId = Number(progress.primary_substance)
-      const now = new Date().toISOString()
+      const addictionTypeId = await resolveAddictionTypeId(progress.primary_substance)
 
-      // Find or create active tracker
-      const { data: existingTrackers } = await supabase
-        .from('trackers')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('addiction_type_id', addictionTypeId)
-        .eq('is_active', true)
+      // Only touch trackers when the substance maps to an addiction_types row.
+      // Custom / unmapped substances transition without a tracker.
+      if (addictionTypeId != null) {
+        const now = new Date().toISOString()
 
-      if (existingTrackers && existingTrackers.length > 0) {
-        // Reset start_date to now (longest_streak_seconds is preserved separately)
-        const { error: trackerError } = await supabase
+        // Find or create active tracker
+        const { data: existingTrackers } = await supabase
           .from('trackers')
-          .update({ start_date: now })
-          .eq('id', existingTrackers[0].id)
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('addiction_type_id', addictionTypeId)
+          .eq('is_active', true)
 
-        if (trackerError) {
-          console.error('Failed to reset tracker:', trackerError)
-          alert('Could not restart. Please try again.')
-          setTransitioning(false)
-          return
-        }
-      } else {
-        // No active tracker — create one
-        const { error: createError } = await supabase
-          .from('trackers')
-          .insert({
-            user_id: user.id,
-            addiction_type_id: addictionTypeId,
-            start_date: now,
-            is_active: true,
-            tracker_status: 'active',
-          })
+        if (existingTrackers && existingTrackers.length > 0) {
+          // Reset start_date to now (longest_streak_seconds is preserved separately)
+          const { error: trackerError } = await supabase
+            .from('trackers')
+            .update({ start_date: now })
+            .eq('id', existingTrackers[0].id)
 
-        if (createError) {
-          console.error('Failed to create tracker:', createError)
-          alert('Could not restart. Please try again.')
-          setTransitioning(false)
-          return
+          if (trackerError) {
+            console.error('Failed to reset tracker:', trackerError)
+            alert('Could not restart. Please try again.')
+            setTransitioning(false)
+            return
+          }
+        } else {
+          // No active tracker — create one
+          const { error: createError } = await supabase
+            .from('trackers')
+            .insert({
+              user_id: user.id,
+              addiction_type_id: addictionTypeId,
+              start_date: now,
+              is_active: true,
+              tracker_status: 'active',
+            })
+
+          if (createError) {
+            console.error('Failed to create tracker:', createError)
+            alert('Could not restart. Please try again.')
+            setTransitioning(false)
+            return
+          }
         }
       }
 

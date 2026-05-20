@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
+import { resolveAddictionTypeId } from '../vowPath/utils/addictionTypes'
 
 // ===================================================================
 // COMMIT-FREE HOME
@@ -187,31 +188,35 @@ export default function CommitFreeHome({ progress: initialProgress }) {
     setTransitioning(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const addictionTypeId = Number(progress.primary_substance)
+      const addictionTypeId = await resolveAddictionTypeId(progress.primary_substance)
 
-      const { data: existingTrackers } = await supabase
-        .from('trackers')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('addiction_type_id', addictionTypeId)
-        .eq('is_active', true)
-
-      if (!existingTrackers || existingTrackers.length === 0) {
-        const { error: trackerError } = await supabase
+      // Only create a tracker when the substance maps to an addiction_types row.
+      // Custom / unmapped substances proceed to Endure without a tracker.
+      if (addictionTypeId != null) {
+        const { data: existingTrackers } = await supabase
           .from('trackers')
-          .insert({
-            user_id: user.id,
-            addiction_type_id: addictionTypeId,
-            start_date: new Date().toISOString(),
-            is_active: true,
-            tracker_status: 'active',
-          })
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('addiction_type_id', addictionTypeId)
+          .eq('is_active', true)
 
-        if (trackerError) {
-          console.error('Failed to create tracker:', trackerError)
-          alert('Could not start Endure. Please try again.')
-          setTransitioning(false)
-          return
+        if (!existingTrackers || existingTrackers.length === 0) {
+          const { error: trackerError } = await supabase
+            .from('trackers')
+            .insert({
+              user_id: user.id,
+              addiction_type_id: addictionTypeId,
+              start_date: new Date().toISOString(),
+              is_active: true,
+              tracker_status: 'active',
+            })
+
+          if (trackerError) {
+            console.error('Failed to create tracker:', trackerError)
+            alert('Could not start Endure. Please try again.')
+            setTransitioning(false)
+            return
+          }
         }
       }
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useLang } from '../../LanguageContext'
 import { supabase } from '../../supabaseClient'
+import { resolveAddictionTypeId } from '../vowPath/utils/addictionTypes'
 
 const styles = {
   frame: {
@@ -227,16 +228,16 @@ export default function TrackerSetup() {
           .eq('user_id', user.id)
           .maybeSingle()
 
-        if (progress?.primary_substance) {
-  // primary_substance is stored as TEXT but addiction_types.id is INTEGER.
-  // Cast back to a number for the query.
-  selectedIds = [Number(progress.primary_substance)]
-}
+        // primary_substance may be a numeric addiction_types.id (onboarding) or a
+        // substances.js slug (Vow Path). resolveAddictionTypeId handles both.
+        const resolvedId = await resolveAddictionTypeId(progress?.primary_substance)
+        if (resolvedId != null) selectedIds = [resolvedId]
       }
 
-      // Step 2: Still nothing? Then send to AddictionPicker as a true fallback.
+      // Step 2: Nothing trackable — surface a clear message instead of a blank screen.
       if (selectedIds.length === 0) {
-        navigate('/onboarding/addiction')
+        setError("Tracking isn't available for this substance yet.")
+        setLoading(false)
         return
       }
 
@@ -286,6 +287,21 @@ setLoading(false)
     return (
       <div style={{ ...styles.frame, alignItems: 'center' }}>
         <div style={{ ...styles.card, textAlign: 'center', color: '#9C8C78' }}>Loading...</div>
+      </div>
+    )
+  }
+
+  if (addictions.length === 0) {
+    return (
+      <div style={{ ...styles.frame, alignItems: 'center' }}>
+        <div style={styles.card}>
+          <p style={{ fontFamily: 'Georgia, serif', color: '#2A1F15', fontSize: '15px', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
+            {error || "Tracking isn't available for this substance yet."}
+          </p>
+          <button onClick={() => navigate('/home')} style={{ ...styles.optionBtn, width: '100%' }}>
+            Back to home
+          </button>
+        </div>
       </div>
     )
   }

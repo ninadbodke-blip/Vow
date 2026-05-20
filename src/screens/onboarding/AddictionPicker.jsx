@@ -266,7 +266,10 @@ export default function AddictionPicker({ onboardingDone }) {
 
       const substanceUpdate = {
         user_id: user.id,
-        primary_substance: selected.id,
+        // Canonical format is the addiction_types.slug. Fall back to the numeric
+        // id (as text) only if a row somehow lacks a slug; resolveAddictionTypeId
+        // tolerates both.
+        primary_substance: selected.slug || String(selected.id),
         substance_label: selected.name,
         updated_at: new Date().toISOString(),
       }
