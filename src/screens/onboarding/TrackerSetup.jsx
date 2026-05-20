@@ -275,12 +275,7 @@ export default function TrackerSetup() {
         return
       }
 
-      console.log('[TrackerSetup] selectedIds:', selectedIds)
-console.log('[TrackerSetup] toSetUp:', toSetUp)
-console.log('[TrackerSetup] addictionData:', addictionData)
-console.log('[TrackerSetup] loadError:', loadError)
 const ordered = toSetUp.map(id => addictionData.find(a => a.id === id)).filter(Boolean)
-console.log('[TrackerSetup] ordered:', ordered)
 setAddictions(ordered)
 setLoading(false)
     }
@@ -371,6 +366,7 @@ setLoading(false)
         addiction_type_id: a.id,
         start_date: setupData[a.id].startDate,
         is_active: true,
+        tracker_status: 'active',
       }))
 
       const { data: insertedTrackers, error: insertError } = await supabase

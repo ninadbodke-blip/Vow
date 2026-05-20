@@ -62,16 +62,18 @@ By the end of Commit, you have everything you need to walk into the actually-sto
     body: `Build is for the long stretch after the early sobriety phase has settled. The substance is no longer the central preoccupation, but you stay vigilant. Build is about constructing the life on the other side — work, relationships, identity, time.
 
 Nine weekly entries across about twelve weeks. Each one short. Each one asks you to mark where you are. The version of you that starts here is the version we'll keep listening to.`,
-    coming_soon_note: `Build is being written. We'll let you know when it's ready.`,
   },
   reclaim: {
     code: 'R',
     name: 'Reclaim',
-    duration: '7 days',
-    status: 'coming_soon',
+    duration: '5 days',
+    status: 'available',
     headline: `You're at Reclaim.`,
     subhead: 'Beginning again.',
-    body: `Reclaim is for after a slip. Not for starting over — for continuing. The 7 days are about understanding what happened without spiraling, repairing the structure you had built, and stepping back into the work without shame.`,
-    coming_soon_note: `Reclaim is being written. We'll let you know when it's ready.`,
+    body: `Reclaim is for after a slip. Not for starting over — for continuing.
+
+Five days of quiet acts. No required writing. Each day is short. The work is to interrupt the cascade that turns one slip into a longer one, to right-size what happened, to see what's still here, and to mend the line you've been walking.
+
+On Day 5, you'll step back into the stage of the journey that fits where you actually are right now — not where you wish you were. The literature on recovery is clear that the stage you re-enter matters more than the speed.`,
   },
 };

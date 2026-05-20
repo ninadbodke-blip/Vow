@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import {
-  NOTICE_V2_DAYS as NOTICE_DAYS,
-  NOTICE_TOTAL_DAYS,
-  NOTICE_PHASES,
-} from './data/noticeContent'
+  RECLAIM_DAYS,
+  RECLAIM_TOTAL_DAYS,
+  RECLAIM_PHASES,
+} from './data/reclaimContent'
 
 const STATUS = {
   COMPLETED: 'completed',
@@ -13,7 +13,7 @@ const STATUS = {
   LOCKED: 'locked',
 }
 
-export default function NoticeOverview() {
+export default function ReclaimOverview() {
   const navigate = useNavigate()
 
   const [progress, setProgress] = useState(null)
@@ -35,7 +35,7 @@ export default function NoticeOverview() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'notice') {
+      if (!progressRow || progressRow.current_stage !== 'reclaim') {
         setAccessDenied(true)
         setLoaded(true)
         return
@@ -47,7 +47,7 @@ export default function NoticeOverview() {
         .from('vow_artifacts')
         .select('day_number')
         .eq('user_id', user.id)
-        .eq('stage', 'notice')
+        .eq('stage', 'reclaim')
 
       const completed = new Set(
         (artifacts || [])
@@ -78,7 +78,7 @@ export default function NoticeOverview() {
 
   const handleDayTap = (dayNum) => {
     if (!isDayTappable(dayNum)) return
-    navigate(`/vow-path/notice/day/${dayNum}`)
+    navigate(`/vow-path/reclaim/day/${dayNum}`)
   }
 
   if (!loaded) {
@@ -97,13 +97,16 @@ export default function NoticeOverview() {
         <div style={styles.phone}>
           <div style={styles.header}>
             <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
-            <p style={styles.headerTitle}>Notice</p>
+            <p style={styles.headerTitle}>Reclaim</p>
             <div style={{ width: '60px' }}></div>
           </div>
           <div style={styles.lockedBlock}>
             <div style={styles.lockedIcon}>⏳</div>
-            <p style={styles.lockedTitle}>Not yet.</p>
-            <p style={styles.lockedReason}>{`You haven't started Notice yet. Take the Stage Check first.`}</p>
+            <p style={styles.lockedTitle}>Reclaim isn't open.</p>
+            <p style={styles.lockedReason}>
+              Reclaim is the post-slip re-entry stage. It opens when you mark a slip,
+              or if the Stage Check places you here.
+            </p>
             <button
               onClick={() => navigate('/vow-path')}
               style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
@@ -126,24 +129,22 @@ export default function NoticeOverview() {
 
         <div style={styles.header}>
           <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
-          <p style={styles.headerTitle}>Notice</p>
-          <button onClick={() => navigate('/library/notice')} style={styles.libraryBtn}>
-            Library
-          </button>
+          <p style={styles.headerTitle}>Reclaim</p>
+          <div style={{ width: '60px' }}></div>
         </div>
 
         <div style={styles.summaryCard}>
-          <p style={styles.summaryLabel}>Your journey</p>
+          <p style={styles.summaryLabel}>Your re-entry</p>
           <p style={styles.summaryNumbers}>
             <span style={styles.summaryBig}>{totalCompleted}</span>
             <span style={styles.summarySlash}> / </span>
-            <span style={styles.summaryTotal}>{NOTICE_TOTAL_DAYS}</span>
+            <span style={styles.summaryTotal}>{RECLAIM_TOTAL_DAYS}</span>
           </p>
           <p style={styles.summarySubtitle}>
             {totalCompleted === 0
               ? 'Begin with Day 1.'
-              : totalCompleted === NOTICE_TOTAL_DAYS
-                ? 'Notice is complete.'
+              : totalCompleted === RECLAIM_TOTAL_DAYS
+                ? 'Reclaim is complete.'
                 : `Day ${lastCompleted + 1} is next.`}
           </p>
 
@@ -151,7 +152,7 @@ export default function NoticeOverview() {
             <div
               style={{
                 ...styles.progressFill,
-                width: `${(totalCompleted / NOTICE_TOTAL_DAYS) * 100}%`,
+                width: `${(totalCompleted / RECLAIM_TOTAL_DAYS) * 100}%`,
               }}
             ></div>
           </div>
@@ -165,9 +166,9 @@ export default function NoticeOverview() {
           </div>
         )}
 
-        {NOTICE_PHASES.map((phase) => {
+        {RECLAIM_PHASES.map((phase) => {
           const [start, end] = phase.dayRange
-          const phaseDays = NOTICE_DAYS.filter(d => d.day >= start && d.day <= end)
+          const phaseDays = RECLAIM_DAYS.filter(d => d.day >= start && d.day <= end)
 
           return (
             <div key={phase.key} style={styles.phaseSection}>
@@ -271,13 +272,6 @@ const styles = {
   headerTitle: {
     fontSize: '17px', fontWeight: 500, color: '#2A1F15',
     margin: 0, fontFamily: 'Georgia, serif',
-  },
-  libraryBtn: {
-    background: 'transparent', border: 'none',
-    color: '#854F0B', fontSize: '13px', fontWeight: 500,
-    cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px',
-    minWidth: '60px', textAlign: 'right',
-    fontStyle: 'italic',
   },
   summaryCard: {
     background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',

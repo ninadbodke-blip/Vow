@@ -15,6 +15,7 @@ import ConversationPlanner from './mechanics/ConversationPlanner'
 import VowDrafter from './mechanics/VowDrafter'
 import WitnessesAndCadence from './mechanics/WitnessesAndCadence'
 import FinalTap from './mechanics/FinalTap'
+import usePersistedStep from '../../hooks/usePersistedStep'
 
 const STEP = {
   ARRIVAL: 'arrival',
@@ -43,7 +44,7 @@ export default function CommitDay() {
   const dayNumber = parseInt(dayNumberParam, 10)
   const dayContent = getCommitDay(dayNumber)
 
-  const [step, setStep] = useState(STEP.ARRIVAL)
+  const [step, setStep] = usePersistedStep(`vow_step_commit_${dayNumber}`, STEP.ARRIVAL, { skipPersist: [STEP.CLOSING] })
   const [progress, setProgress] = useState(null)
   const [substance, setSubstance] = useState(null)
   const [accessLoading, setAccessLoading] = useState(true)

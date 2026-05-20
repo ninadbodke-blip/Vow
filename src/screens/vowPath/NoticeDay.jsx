@@ -11,6 +11,7 @@ import TrajectoryMap from './mechanics/TrajectoryMap'
 import RelationshipMap from './mechanics/RelationshipMap'
 import LedgerOfForgone from './mechanics/LedgerOfForgone'
 import ThreeDoorsNotice from './mechanics/ThreeDoorsNotice'
+import usePersistedStep from '../../hooks/usePersistedStep'
 
 const STEP = {
   ARRIVAL: 'arrival',
@@ -33,7 +34,7 @@ export default function NoticeDay() {
   const dayNumber = parseInt(dayNumberParam, 10)
   const dayContent = getNoticeDay(dayNumber)
 
-  const [step, setStep] = useState(STEP.ARRIVAL)
+  const [step, setStep] = usePersistedStep(`vow_step_notice_${dayNumber}`, STEP.ARRIVAL, { skipPersist: [STEP.CLOSING] })
   const [progress, setProgress] = useState(null)
   const [substance, setSubstance] = useState(null)
   const [accessLoading, setAccessLoading] = useState(true)

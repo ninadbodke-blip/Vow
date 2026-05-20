@@ -99,7 +99,7 @@ export default function ReflectOverview() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
+            <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
             <p style={styles.headerTitle}>Reflect</p>
             <div style={{ width: '60px' }}></div>
           </div>
@@ -128,7 +128,7 @@ export default function ReflectOverview() {
       <div style={styles.phone}>
 
         <div style={styles.header}>
-          <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
+          <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
           <p style={styles.headerTitle}>Reflect</p>
           <button onClick={() => navigate('/library/reflect')} style={styles.libraryBtn}>
             Library

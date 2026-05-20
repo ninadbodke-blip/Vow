@@ -23,6 +23,7 @@ import FearsTwoColumn from './mechanics/FearsTwoColumn'
 import ReadinessRuler from './mechanics/ReadinessRuler'
 import PortraitReveal from './mechanics/PortraitReveal'
 import ThreeDoors from './mechanics/ThreeDoors'
+import usePersistedStep from '../../hooks/usePersistedStep'
 
 const STEP = {
   ARRIVAL: 'arrival',
@@ -60,7 +61,7 @@ export default function ReflectV2Day() {
   const dayNumber = parseInt(dayNumberParam, 10)
   const dayContent = getReflectV2Day(dayNumber)
 
-  const [step, setStep] = useState(STEP.ARRIVAL)
+  const [step, setStep] = usePersistedStep(`vow_step_reflect_${dayNumber}`, STEP.ARRIVAL, { skipPersist: [STEP.CLOSING] })
   const [progress, setProgress] = useState(null)
   const [substance, setSubstance] = useState(null)
   const [accessLoading, setAccessLoading] = useState(true)

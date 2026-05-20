@@ -20,6 +20,7 @@ import LapseRelapseRecall from './mechanics/LapseRelapseRecall'
 import ValuesPortrait from './mechanics/ValuesPortrait'
 import EndurePortrait from './mechanics/EndurePortrait'
 import VowHeld from './mechanics/VowHeld'
+import usePersistedStep from '../../hooks/usePersistedStep'
 
 // Reused from Commit
 import FinalTap from './mechanics/FinalTap'
@@ -57,7 +58,7 @@ export default function EndureDay() {
   const dayNumber = parseInt(dayNumberParam, 10)
   const dayContent = getEndureDay(dayNumber)
 
-  const [step, setStep] = useState(STEP.ARRIVAL)
+  const [step, setStep] = usePersistedStep(`vow_step_endure_${dayNumber}`, STEP.ARRIVAL, { skipPersist: [STEP.CLOSING] })
   const [progress, setProgress] = useState(null)
   const [substance, setSubstance] = useState(null)
   const [accessLoading, setAccessLoading] = useState(true)

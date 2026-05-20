@@ -96,7 +96,7 @@ export default function CommitOverview() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
+            <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
             <p style={styles.headerTitle}>Commit</p>
             <div style={{ width: '60px' }}></div>
           </div>
@@ -125,7 +125,7 @@ export default function CommitOverview() {
       <div style={styles.phone}>
 
         <div style={styles.header}>
-          <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
+          <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
           <p style={styles.headerTitle}>Commit</p>
           <button onClick={() => navigate('/library/commit')} style={styles.libraryBtn}>
             Library

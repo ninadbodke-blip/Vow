@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import {
-  getBuildDay,
-  BUILD_TOTAL_DAYS,
-  getCurrentBuildWeek,
-} from './data/buildContent'
+  getReclaimDay,
+  RECLAIM_TOTAL_DAYS,
+} from './data/reclaimContent'
 
-import BuildWeeklyEntry from './mechanics/BuildWeeklyEntry'
-import PlaceholderMechanic from './mechanics/PlaceholderMechanic'
+import ReclaimPlaceholder from './mechanics/ReclaimPlaceholder'
+import ReclaimSpiralAndBreath from './mechanics/ReclaimSpiralAndBreath'
+import ReclaimProportion from './mechanics/ReclaimProportion'
+import ReclaimStillStanding from './mechanics/ReclaimStillStanding'
+import ReclaimMending from './mechanics/ReclaimMending'
+import ReclaimMatchedStep from './mechanics/ReclaimMatchedStep'
 import usePersistedStep from '../../hooks/usePersistedStep'
 
 const STEP = {
@@ -19,33 +22,36 @@ const STEP = {
 }
 
 const MECHANIC_COMPONENTS = {
-  build_weekly_entry: BuildWeeklyEntry,
-  placeholder: PlaceholderMechanic,
+  placeholder: ReclaimPlaceholder,
+  reclaim_spiral_and_breath: ReclaimSpiralAndBreath,
+  reclaim_proportion: ReclaimProportion,
+  reclaim_still_standing: ReclaimStillStanding,
+  reclaim_mending: ReclaimMending,
+  reclaim_matched_step: ReclaimMatchedStep,
 }
 
-export default function BuildDay() {
+export default function ReclaimDay() {
   const navigate = useNavigate()
   const { dayNumber: dayNumberParam } = useParams()
   const dayNumber = parseInt(dayNumberParam, 10)
-  const dayContent = getBuildDay(dayNumber)
+  const dayContent = getReclaimDay(dayNumber)
 
-  const [step, setStep] = usePersistedStep(`vow_step_build_${dayNumber}`, STEP.ARRIVAL, { skipPersist: [STEP.CLOSING] })
+  const [step, setStep] = usePersistedStep(`vow_step_reclaim_${dayNumber}`, STEP.ARRIVAL, { skipPersist: [STEP.CLOSING] })
   const [progress, setProgress] = useState(null)
-  const [currentWeek, setCurrentWeek] = useState(1)
-  const [substance, setSubstance] = useState(null)
   const [accessLoading, setAccessLoading] = useState(true)
   const [accessDenied, setAccessDenied] = useState(false)
   const [accessReason, setAccessReason] = useState('')
 
   const [interactionData, setInteractionData] = useState(null)
-  const [priorEntries, setPriorEntries] = useState([])
+  const [priorArtifacts, setPriorArtifacts] = useState([])
+  const [stageProgress, setStageProgress] = useState({})
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     async function checkAccess() {
       if (!dayContent) {
         setAccessDenied(true)
-        setAccessReason('That entry does not exist.')
+        setAccessReason('That day does not exist.')
         setAccessLoading(false)
         return
       }
@@ -59,24 +65,16 @@ export default function BuildDay() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'build') {
+      if (!progressRow || progressRow.current_stage !== 'reclaim') {
         setAccessDenied(true)
-        setAccessReason('You have not reached Build yet.')
+        setAccessReason('You are not currently in Reclaim.')
         setAccessLoading(false)
         return
       }
 
       setProgress(progressRow)
-      const week = getCurrentBuildWeek(progressRow.build_starts_at)
-      setCurrentWeek(week)
-      setSubstance({
-        primary: progressRow.primary_substance,
-        label: progressRow.substance_label,
-        family: progressRow.substance_family,
-        verb: progressRow.substance_verb,
-      })
 
-      const unlocked = isDayUnlocked(progressRow, dayNumber, week)
+      const unlocked = isDayUnlocked(progressRow, dayNumber)
       if (!unlocked.allowed) {
         setAccessDenied(true)
         setAccessReason(unlocked.reason)
@@ -84,7 +82,6 @@ export default function BuildDay() {
         return
       }
 
-      // Load this entry's existing artifact (if user has saved before)
       const { data: artifact } = await supabase
         .from('vow_artifacts')
         .select('*')
@@ -96,29 +93,28 @@ export default function BuildDay() {
         setInteractionData(artifact.content)
       }
 
-      // Fetch prior entries declared in retrieveFrom config
-      // (used by Entry 5 to surface Entry 1's marking; Entry 9 to surface 1+5)
-      const retrieveFrom = dayContent.mechanicProps?.retrieveFrom || []
-      if (retrieveFrom.length > 0) {
-        const artifactTypes = retrieveFrom.map(n => `build_entry_${n}`)
-        const { data: priorArts } = await supabase
+      const retrieveFromStages = dayContent.mechanicProps?.retrieveFromStages || []
+      if (retrieveFromStages.length > 0) {
+        const { data: prior } = await supabase
           .from('vow_artifacts')
           .select('*')
           .eq('user_id', user.id)
-          .eq('stage', 'build')
-          .in('artifact_type', artifactTypes)
+          .in('stage', retrieveFromStages)
+        setPriorArtifacts(prior || [])
+      }
 
-        const fetched = (priorArts || [])
-          .map(art => {
-            const day = parseInt(
-              art.artifact_type.replace('build_entry_', ''),
-              10
-            )
-            return { day, content: art.content }
-          })
-          .sort((x, y) => x.day - y.day)
-
-        setPriorEntries(fetched)
+      if (dayContent.mechanicProps?.needsStageProgress) {
+        const { data: allArts } = await supabase
+          .from('vow_artifacts')
+          .select('stage, day_number')
+          .eq('user_id', user.id)
+        const sp = {}
+        ;(allArts || []).forEach(a => {
+          if (!a.stage) return
+          if (!sp[a.stage]) sp[a.stage] = []
+          if (a.day_number != null) sp[a.stage].push(a.day_number)
+        })
+        setStageProgress(sp)
       }
 
       setAccessLoading(false)
@@ -126,13 +122,14 @@ export default function BuildDay() {
     checkAccess()
   }, [dayNumber, dayContent, navigate])
 
-  function isDayUnlocked(progressRow, requestedDay, week) {
+  function isDayUnlocked(progressRow, requestedDay) {
     if (import.meta.env.DEV) return { allowed: true }
     if (progressRow?.is_pilot_mode) return { allowed: true }
-    if (requestedDay <= week) return { allowed: true }
+    const lastCompleted = progressRow?.last_completed_day || 0
+    if (requestedDay <= lastCompleted + 1) return { allowed: true }
     return {
       allowed: false,
-      reason: `Entry ${requestedDay} opens in Week ${requestedDay}. You're currently in Week ${week}.`,
+      reason: `Day ${requestedDay} unlocks after you complete Day ${requestedDay - 1}.`,
     }
   }
 
@@ -156,12 +153,10 @@ export default function BuildDay() {
   const goBack = () => {
     const sequence = buildStepSequence()
     const idx = sequence.indexOf(step)
-
     if (idx === 0 || step === STEP.CLOSING) {
-      navigate('/vow-path/build')
+      navigate('/vow-path/reclaim')
       return
     }
-
     if (idx > 0) {
       setStep(sequence[idx - 1])
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -171,7 +166,6 @@ export default function BuildDay() {
   const handleSaveInteraction = async (data) => {
     setInteractionData(data)
     setSaving(true)
-
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/welcome'); return }
@@ -182,7 +176,7 @@ export default function BuildDay() {
           user_id: user.id,
           artifact_type: dayContent.artifactType,
           content: data,
-          stage: 'build',
+          stage: 'reclaim',
           day_number: dayNumber,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id,artifact_type' })
@@ -201,7 +195,7 @@ export default function BuildDay() {
           .update({
             last_completed_day: dayNumber,
             last_completed_at: new Date().toISOString(),
-            current_day: Math.min(dayNumber + 1, BUILD_TOTAL_DAYS),
+            current_day: Math.min(dayNumber + 1, RECLAIM_TOTAL_DAYS),
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', user.id)
@@ -212,6 +206,55 @@ export default function BuildDay() {
     } catch (err) {
       console.error(err)
       alert('Something went wrong. Please try again.')
+      setSaving(false)
+    }
+  }
+
+  const handleCompleteAndTransition = async (chosenStage, artifactData) => {
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { navigate('/welcome'); return }
+
+      const { error: artifactError } = await supabase
+        .from('vow_artifacts')
+        .upsert({
+          user_id: user.id,
+          artifact_type: dayContent.artifactType,
+          content: artifactData,
+          stage: 'reclaim',
+          day_number: dayNumber,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,artifact_type' })
+
+      if (artifactError) {
+        console.error('Failed to save Day 5 artifact:', artifactError)
+        alert('Could not save. Please try again.')
+        setSaving(false)
+        return
+      }
+
+      const { error: progressError } = await supabase
+        .from('vow_path_progress')
+        .update({
+          current_stage: chosenStage,
+          last_completed_day: 0,
+          current_day: 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id)
+
+      if (progressError) {
+        console.error('Failed to transition stage:', progressError)
+        alert('Could not transition. Please try again.')
+        setSaving(false)
+        return
+      }
+
+      navigate(`/vow-path/${chosenStage}`)
+    } catch (err) {
+      console.error(err)
+      alert('Something went wrong during transition. Please try again.')
       setSaving(false)
     }
   }
@@ -236,7 +279,7 @@ export default function BuildDay() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path/build')} style={styles.backBtn}>‹ Overview</button>
+            <button onClick={() => navigate('/vow-path/reclaim')} style={styles.backBtn}>‹ Overview</button>
             <div style={{ width: '40px' }}></div>
             <div style={{ width: '40px' }}></div>
           </div>
@@ -252,8 +295,7 @@ export default function BuildDay() {
 
   if (!dayContent) return null
 
-  const weekLabel = `Week ${dayNumber}`
-  const isCurrentEntry = dayNumber === currentWeek || import.meta.env.DEV || progress?.is_pilot_mode
+  const dayLabel = `Day ${dayNumber}`
 
   if (step === STEP.ARRIVAL) {
     return (
@@ -265,7 +307,7 @@ export default function BuildDay() {
             <div style={{ width: '40px' }}></div>
           </div>
           <div style={styles.arrivalContent}>
-            <div style={styles.dayLabel}>{weekLabel}</div>
+            <div style={styles.dayLabel}>{dayLabel}</div>
             <h1 style={styles.arrivalTitle}>{dayContent.arrivalTitle}</h1>
             {dayContent.arrivalSubtitle && (
               <p style={styles.arrivalSubtitle}>{dayContent.arrivalSubtitle}</p>
@@ -290,7 +332,7 @@ export default function BuildDay() {
           </div>
 
           <div style={styles.introHeaderBlock}>
-            <div style={styles.introDayLabel}>{weekLabel}</div>
+            <div style={styles.introDayLabel}>{dayLabel}</div>
             <h2 style={styles.introTitle}>{dayContent.arrivalTitle}</h2>
             {dayContent.arrivalSubtitle && (
               <p style={styles.introSubtitle}>{dayContent.arrivalSubtitle}</p>
@@ -328,19 +370,20 @@ export default function BuildDay() {
         <div style={styles.phone}>
           <div style={styles.header}>
             <button onClick={goBack} style={styles.backBtn}>{getBackLabel()}</button>
-            <p style={styles.headerTitle}>{weekLabel}</p>
+            <p style={styles.headerTitle}>{dayLabel}</p>
             <div style={{ width: '40px' }}></div>
           </div>
 
           <MechanicComponent
             {...dayContent.mechanicProps}
-            substance={substance}
             existingData={interactionData}
             onSave={handleSaveInteraction}
+            onCompleteAndTransition={handleCompleteAndTransition}
             saving={saving}
-            isCurrentEntry={isCurrentEntry}
             dayNumber={dayNumber}
-            priorEntries={priorEntries}
+            priorArtifacts={priorArtifacts}
+            stageProgress={stageProgress}
+            rationale={dayContent.rationale}
           />
         </div>
       </div>
@@ -348,21 +391,44 @@ export default function BuildDay() {
   }
 
   if (step === STEP.CLOSING) {
-    const isFinalEntry = dayNumber === BUILD_TOTAL_DAYS
+    const isFinalDay = dayNumber === RECLAIM_TOTAL_DAYS
+    const hasRationale = Array.isArray(dayContent.rationale) && dayContent.rationale.length > 0
+
     return (
       <div style={styles.frame}>
-        <div style={{ ...styles.phone, ...styles.centeredPhone }}>
-          <div style={styles.savedIcon}>✓</div>
-          <p style={styles.savedLabel}>Saved</p>
-          <div style={styles.closingDivider}></div>
+        <div style={styles.phone}>
+          <div style={styles.header}>
+            <button onClick={() => navigate('/vow-path/reclaim')} style={styles.backBtn}>‹ Overview</button>
+            <p style={styles.headerTitle}>{dayLabel}</p>
+            <div style={{ width: '40px' }}></div>
+          </div>
+
+          <div style={styles.closingHeaderBlock}>
+            <div style={styles.savedIcon}>✓</div>
+            <p style={styles.savedLabel}>Saved</p>
+          </div>
+
           {dayContent.closingLine && (
             <p style={styles.closingLine}>{dayContent.closingLine}</p>
           )}
+
+          {hasRationale && (
+            <>
+              <div style={styles.rationaleDivider}></div>
+              <p style={styles.rationaleEyebrow}>Why we did this</p>
+              <div style={styles.rationaleBlock}>
+                {dayContent.rationale.map((para, i) => (
+                  <p key={i} style={styles.rationalePara}>{para}</p>
+                ))}
+              </div>
+            </>
+          )}
+
           <button
-            onClick={() => navigate('/vow-path/build')}
-            style={{ ...styles.primaryBtn, marginTop: '2rem' }}
+            onClick={() => navigate('/vow-path/reclaim')}
+            style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
           >
-            {isFinalEntry ? 'Back to overview' : 'Close'}
+            {isFinalDay ? 'Back to overview' : 'Close'}
           </button>
         </div>
       </div>
@@ -390,34 +456,21 @@ const styles = {
     boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
   },
   loadingPhone: {
-    background: '#FAF7F1',
-    maxWidth: '440px',
-    width: '100%',
-    borderRadius: '28px',
-    padding: '5rem 2rem',
+    background: '#FAF7F1', maxWidth: '440px', width: '100%',
+    borderRadius: '28px', padding: '5rem 2rem',
     boxShadow: '0 14px 40px rgba(60,40,20,0.10)',
-    color: '#9C8C78',
-    textAlign: 'center',
-    fontFamily: 'Georgia, serif',
-    fontStyle: 'italic',
+    color: '#9C8C78', textAlign: 'center',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
   },
   arrivalContent: {
     display: 'flex', flexDirection: 'column',
     justifyContent: 'center', alignItems: 'center',
-    textAlign: 'center',
-    padding: '3rem 1.5rem 2rem',
+    textAlign: 'center', padding: '3rem 1.5rem 2rem',
     minHeight: '60vh',
   },
-  centeredPhone: {
-    minHeight: '70vh',
-    display: 'flex', flexDirection: 'column',
-    justifyContent: 'center', alignItems: 'center',
-    textAlign: 'center',
-    padding: '3rem 2rem',
-  },
   header: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: '1rem',
+    display: 'flex', alignItems: 'center',
+    justifyContent: 'space-between', marginBottom: '1rem',
   },
   headerTitle: {
     fontSize: '13px', fontWeight: 500, color: '#9C8C78',
@@ -437,129 +490,96 @@ const styles = {
   },
   arrivalTitle: {
     fontSize: '34px', color: '#2A1F15',
-    margin: '0 0 1rem',
-    fontFamily: 'Georgia, serif',
-    fontWeight: 500,
-    lineHeight: 1.2,
+    margin: '0 0 1rem', fontFamily: 'Georgia, serif',
+    fontWeight: 500, lineHeight: 1.2,
   },
   arrivalSubtitle: {
-    fontSize: '16px', color: '#6B5C4A',
-    margin: 0,
-    fontFamily: 'Georgia, serif',
-    fontStyle: 'italic',
-    lineHeight: 1.5,
+    fontSize: '16px', color: '#6B5C4A', margin: 0,
+    fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5,
   },
-  introHeaderBlock: {
-    textAlign: 'center',
-    marginBottom: '2rem',
-    paddingTop: '1.5rem',
-  },
+  introHeaderBlock: { textAlign: 'center', marginBottom: '2rem', paddingTop: '1.5rem' },
   introDayLabel: {
-    fontSize: '12px',
-    color: '#854F0B',
-    textTransform: 'uppercase',
-    letterSpacing: '0.18em',
-    fontWeight: 500,
-    marginBottom: '0.85rem',
+    fontSize: '12px', color: '#854F0B',
+    textTransform: 'uppercase', letterSpacing: '0.18em',
+    fontWeight: 500, marginBottom: '0.85rem',
   },
   introTitle: {
-    fontSize: '28px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    fontWeight: 500,
-    lineHeight: 1.25,
-    margin: '0 0 0.6rem',
+    fontSize: '28px', color: '#2A1F15',
+    fontFamily: 'Georgia, serif', fontWeight: 500,
+    lineHeight: 1.25, margin: '0 0 0.6rem',
   },
   introSubtitle: {
-    fontSize: '15px',
-    color: '#6B5C4A',
-    fontFamily: 'Georgia, serif',
-    fontStyle: 'italic',
-    lineHeight: 1.5,
-    margin: '0 0 1.5rem',
+    fontSize: '15px', color: '#6B5C4A',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    lineHeight: 1.5, margin: '0 0 1.5rem',
   },
-  introDivider: {
-    height: '0.5px',
-    background: '#E8DFD0',
-    width: '40%',
-    margin: '0 auto',
-  },
-  readingBlock: {
-    marginBottom: '2rem',
-    paddingLeft: '0.25rem',
-    paddingRight: '0.25rem',
-  },
+  introDivider: { height: '0.5px', background: '#E8DFD0', width: '40%', margin: '0 auto' },
+  readingBlock: { marginBottom: '2rem', paddingLeft: '0.25rem', paddingRight: '0.25rem' },
   readingPara: {
-    fontSize: '16px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    lineHeight: 1.8,
+    fontSize: '16px', color: '#2A1F15',
+    fontFamily: 'Georgia, serif', lineHeight: 1.8,
     margin: '0 0 1.35rem',
   },
+  closingHeaderBlock: {
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center',
+    marginTop: '1rem', marginBottom: '1.25rem',
+  },
   savedIcon: {
-    width: '56px', height: '56px',
-    borderRadius: '50%',
+    width: '48px', height: '48px', borderRadius: '50%',
     background: 'linear-gradient(180deg, #EAF3DE 0%, #DCE9C8 100%)',
-    border: '0.5px solid #C2D49A',
-    color: '#3B6D11',
-    fontSize: '28px',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    margin: '0 auto 1rem',
-    fontWeight: 500,
+    border: '0.5px solid #C2D49A', color: '#3B6D11',
+    fontSize: '22px', display: 'flex',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: '0.6rem', fontWeight: 500,
   },
   savedLabel: {
-    fontSize: '12px',
-    color: '#3B6D11',
-    fontFamily: 'Georgia, serif',
-    fontStyle: 'italic',
-    textTransform: 'uppercase',
-    letterSpacing: '0.18em',
-    fontWeight: 500,
-    margin: 0,
-  },
-  closingDivider: {
-    height: '0.5px',
-    background: '#E8DFD0',
-    width: '40%',
-    margin: '1.75rem auto',
+    fontSize: '11px', color: '#3B6D11',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    textTransform: 'uppercase', letterSpacing: '0.18em',
+    fontWeight: 500, margin: 0,
   },
   closingLine: {
-    fontSize: '20px', color: '#2A1F15',
+    fontSize: '22px', color: '#2A1F15',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    lineHeight: 1.45, margin: '0 auto',
+    textAlign: 'center', whiteSpace: 'pre-line',
+    maxWidth: '360px',
+  },
+  rationaleDivider: {
+    height: '0.5px', background: '#E8DFD0',
+    width: '50%', margin: '2rem auto 1.5rem',
+  },
+  rationaleEyebrow: {
+    fontSize: '11px', color: '#854F0B',
+    textTransform: 'uppercase', letterSpacing: '0.18em',
+    fontWeight: 500, margin: '0 0 1rem',
+    textAlign: 'center',
+  },
+  rationaleBlock: {
+    padding: '0 0.25rem',
+  },
+  rationalePara: {
+    fontSize: '14.5px', color: '#2A1F15',
     fontFamily: 'Georgia, serif',
-    fontStyle: 'italic',
-    lineHeight: 1.5,
-    margin: 0,
-    maxWidth: '340px',
-    textAlign: 'center',
+    lineHeight: 1.75, margin: '0 0 1.1rem',
   },
-  lockedBlock: {
-    textAlign: 'center',
-    padding: '3rem 1rem',
-  },
-  lockedIcon: {
-    fontSize: '40px',
-    marginBottom: '1.25rem',
-  },
+  lockedBlock: { textAlign: 'center', padding: '3rem 1rem' },
+  lockedIcon: { fontSize: '40px', marginBottom: '1.25rem' },
   lockedTitle: {
     fontSize: '20px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    margin: '0 0 1rem',
+    fontFamily: 'Georgia, serif', margin: '0 0 1rem',
   },
   lockedReason: {
     fontSize: '14px', color: '#6B5C4A',
-    fontFamily: 'Georgia, serif',
-    fontStyle: 'italic',
-    lineHeight: 1.6,
-    margin: 0,
-    maxWidth: '320px',
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    lineHeight: 1.6, margin: 0, maxWidth: '320px',
+    marginLeft: 'auto', marginRight: 'auto',
   },
   primaryBtn: {
     width: '100%', padding: '16px',
     background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    border: 'none', borderRadius: '14px',
+    color: '#FAF7F1', border: 'none', borderRadius: '14px',
     fontSize: '15px', fontWeight: 500, cursor: 'pointer',
     fontFamily: 'inherit',
     boxShadow: '0 4px 14px rgba(40,25,10,0.25)',

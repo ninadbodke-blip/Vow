@@ -39,6 +39,8 @@ import EndureDay from './screens/vowPath/EndureDay'
 import StageTransition from './screens/vowPath/StageTransition'
 import BuildOverview from './screens/vowPath/BuildOverview'
 import BuildDay from './screens/vowPath/BuildDay'
+import ReclaimOverview from './screens/vowPath/ReclaimOverview'
+import ReclaimDay from './screens/vowPath/ReclaimDay'
 
 // ===== Motivation =====
 import MotivationHome from './screens/motivation/MotivationHome'
@@ -177,6 +179,9 @@ function AppRoutes() {
 
       <Route path="/vow-path/build" element={session ? <BuildOverview /> : <Navigate to="/welcome" />} />
       <Route path="/vow-path/build/day/:dayNumber" element={session ? <BuildDay /> : <Navigate to="/welcome" />} />
+
+      <Route path="/vow-path/reclaim" element={session ? <ReclaimOverview /> : <Navigate to="/welcome" />} />
+      <Route path="/vow-path/reclaim/day/:dayNumber" element={session ? <ReclaimDay /> : <Navigate to="/welcome" />} />
 
       <Route path="/vow-path/transition/:fromStage/to/:toStage" element={session ? <StageTransition /> : <Navigate to="/welcome" />} />
 
