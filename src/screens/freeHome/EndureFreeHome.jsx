@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { checkAndMarkMilestones } from '../../milestoneHelpers'
+import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import BottomNav from '../../components/BottomNav'
 
 // ===================================================================
@@ -36,6 +37,9 @@ export default function EndureFreeHome({ progress }) {
 
   const [tracker, setTracker] = useState(null)
   const [firstName, setFirstName] = useState('')
+  const [todayCheckin, setTodayCheckin] = useState(null)
+  const [checkinOpen, setCheckinOpen] = useState(false)
+  const [activityLogs, setActivityLogs] = useState([])
   const [, setTickCount] = useState(0)
   const [toastMilestones, setToastMilestones] = useState([])
   const [showAddPlaceholder, setShowAddPlaceholder] = useState(false)
@@ -83,10 +87,25 @@ export default function EndureFreeHome({ progress }) {
         }
       }
 
+      // ---- daily check-in (shared signal) ----
+      const { data: tc } = await supabase
+        .from('free_daily_checkins').select('*')
+        .eq('user_id', user.id).eq('checkin_date', localDateStr()).maybeSingle()
+      if (tc) setTodayCheckin(tc)
+
+      // ---- replacement / grounding activity logs ----
+      const { data: acts } = await supabase
+        .from('free_activity_logs').select('*')
+        .eq('user_id', user.id).order('created_at', { ascending: false }).limit(40)
+      if (acts) setActivityLogs(acts)
+
       setLoading(false)
     }
     load()
   }, [])
+
+  const handleCheckinSaved = (row) => setTodayCheckin(row)
+  const handleActivitySaved = (row) => setActivityLogs(prev => [row, ...prev].slice(0, 40))
 
   if (loading) {
     return (
@@ -139,6 +158,12 @@ export default function EndureFreeHome({ progress }) {
           <ActionTile tracker={tracker} navigate={navigate} />
         )}
 
+        {/* TILE — DAILY CHECK-IN (shared signal) */}
+        <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+
+        {/* TILE — REPLACEMENT ACTIVITY (mood before -> after) */}
+        <ActivityLogTile activityLogs={activityLogs} onSaved={handleActivitySaved} />
+
         {/* TILE 5 — SAVINGS / MILESTONES */}
         {tracker && (
           <SavingsMilestonesTile tracker={tracker} navigate={navigate} />
@@ -188,8 +213,203 @@ export default function EndureFreeHome({ progress }) {
         )}
 
       </div>
+
+      <DailyCheckin
+        isOpen={checkinOpen}
+        onClose={() => setCheckinOpen(false)}
+        stage="endure"
+        existing={todayCheckin}
+        onSaved={handleCheckinSaved}
+      />
     </div>
   )
+}
+
+// ===================================================================
+// TILE: TODAY'S CHECK-IN (hero, shared signal)
+// ===================================================================
+function TodayCheckinTile({ checkin, onOpen }) {
+  if (checkin) {
+    const m = moodByScore(checkin.mood_score) || moodByValue(checkin.mood)
+    return (
+      <div style={{ ...styles.tile, ...styles.tileLogged }}>
+        <p style={styles.tileEyebrow}>Today's check-in</p>
+        <div style={styles.checkinSummaryRow}>
+          <span style={{ ...styles.moodPill, background: m?.color || '#B9A07E' }} />
+          <div>
+            <p style={styles.checkinSummaryMood}>
+              {m?.label || 'Noted'}{checkin.felt_pull ? ' \u00b7 the pull showed up' : ''}
+            </p>
+            <p style={styles.checkinSummarySub}>
+              Energy {checkin.energy ?? '\u2013'}/5
+              {checkin.note ? ` \u00b7 \u201c${checkin.note}\u201d` : ''}
+            </p>
+          </div>
+        </div>
+        <button onClick={onOpen} style={styles.checkinEditBtn}>Edit today's check-in</button>
+      </div>
+    )
+  }
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Today's weather</p>
+      <h2 style={styles.tileTitle}>How are you holding up?</h2>
+      <p style={styles.tileBody}>
+        A quiet half-minute. Mood, energy, whether the pull came by. Nobody sees it but you.
+      </p>
+      <button onClick={onOpen} style={styles.checkinCtaBtn}>Check in</button>
+    </div>
+  )
+}
+
+// ===================================================================
+// TILE: REPLACEMENT ACTIVITY (free_activity_logs, new)
+// ===================================================================
+// Captures what the user reached for instead, with mood before -> after.
+// The lift (after minus before) per activity is what powers the Mirror's
+// "you tend to feel lighter after walks" once enough is logged.
+const ACTIVITY_TYPES = [
+  { value: 'walk',      label: 'Walked' },
+  { value: 'reach_out', label: 'Reached out' },
+  { value: 'breathe',   label: 'Breathed' },
+  { value: 'move',      label: 'Moved' },
+  { value: 'create',    label: 'Made something' },
+  { value: 'rest',      label: 'Rested' },
+  { value: 'other',     label: 'Something else' },
+]
+const ACTIVITY_LABEL = ACTIVITY_TYPES.reduce((a, t) => { a[t.value] = t.label; return a }, {})
+
+function activityInsight(logs) {
+  const byType = {}
+  for (const l of logs) {
+    if (l.mood_before == null || l.mood_after == null) continue
+    const t = l.activity_type
+    if (!byType[t]) byType[t] = { sum: 0, n: 0 }
+    byType[t].sum += (l.mood_after - l.mood_before)
+    byType[t].n += 1
+  }
+  let best = null
+  for (const [t, { sum, n }] of Object.entries(byType)) {
+    if (n < 3) continue
+    const lift = sum / n
+    if (lift > 0.3 && (!best || lift > best.lift)) best = { type: t, lift, n }
+  }
+  return best
+}
+
+function MoodMini({ label, value, onChange, disabled }) {
+  return (
+    <div style={styles.moodMiniRow}>
+      <span style={styles.moodMiniLabel}>{label}</span>
+      <div style={styles.moodMiniDots}>
+        {[1, 2, 3, 4, 5].map(n => (
+          <button
+            key={n}
+            onClick={() => onChange(n)}
+            disabled={disabled}
+            style={{ ...styles.moodMiniDot, ...(value && n <= value ? styles.moodMiniDotOn : {}) }}
+            aria-label={`${label} ${n} of 5`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ActivityLogTile({ activityLogs, onSaved }) {
+  const [type, setType] = useState(null)
+  const [before, setBefore] = useState(null)
+  const [after, setAfter] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
+
+  const insight = activityInsight(activityLogs)
+
+  const reset = () => { setType(null); setBefore(null); setAfter(null) }
+
+  const handleSave = async () => {
+    if (saving || !type || !before || !after) return
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: saved, error } = await supabase
+        .from('free_activity_logs')
+        .insert({
+          user_id: user.id, stage: 'endure',
+          activity_type: type, mood_before: before, mood_after: after,
+        })
+        .select().single()
+      if (error) {
+        console.error('Failed to save activity:', error)
+        alert('Could not save. Please try again.')
+        setSaving(false); return
+      }
+      if (onSaved && saved) onSaved(saved)
+      setSaving(false); reset(); setJustSaved(true)
+      setTimeout(() => setJustSaved(false), 2800)
+    } catch (err) {
+      console.error(err); setSaving(false)
+    }
+  }
+
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Instead of using</p>
+      <h2 style={styles.tileTitle}>Did something else today?</h2>
+      <p style={styles.tileBody}>
+        What you reached for instead &mdash; and how it shifted you &mdash; is worth noticing.
+      </p>
+
+      <div style={styles.actChips}>
+        {ACTIVITY_TYPES.map(a => (
+          <button
+            key={a.value}
+            onClick={() => { setType(a.value); setJustSaved(false) }}
+            disabled={saving}
+            style={{ ...styles.actChip, ...(type === a.value ? styles.actChipOn : {}) }}
+          >
+            {a.label}
+          </button>
+        ))}
+      </div>
+
+      {type && (
+        <div style={styles.actBeforeAfter}>
+          <MoodMini label="Felt before" value={before} onChange={setBefore} disabled={saving} />
+          <MoodMini label="And after" value={after} onChange={setAfter} disabled={saving} />
+          <button
+            onClick={handleSave}
+            disabled={saving || !before || !after}
+            style={{ ...styles.actSaveBtn, ...((!before || !after) ? styles.actSaveBtnDim : {}) }}
+          >
+            {saving ? 'Saving\u2026' : 'Save'}
+          </button>
+        </div>
+      )}
+
+      {justSaved && (
+        <p style={styles.actSavedNote}>Logged. That counts &mdash; you did something instead.</p>
+      )}
+
+      {insight && !type && (
+        <p style={styles.actInsight}>
+          You tend to feel lighter after {ACTIVITY_LABEL[insight.type].toLowerCase()}.
+          <span style={styles.actInsightSub}> Based on {insight.n} times.</span>
+        </p>
+      )}
+
+      {!type && !justSaved && !insight && (
+        <p style={styles.tileHelperText}>
+          Even small things count. The pattern of what helps builds over time.
+        </p>
+      )}
+    </div>
+  )
+}
+
+function localDateStr(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 // ===================================================================
@@ -473,6 +693,40 @@ function AnchorsTile({ navigate }) {
 // STYLES
 // ===================================================================
 const styles = {
+  // --- v2 additions: check-in + replacement activity ---
+  tileLogged: { background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A' },
+  checkinSummaryRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' },
+  moodPill: { width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.12)' },
+  checkinSummaryMood: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 2px', lineHeight: 1.3 },
+  checkinSummarySub: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.4 },
+  checkinEditBtn: { background: 'transparent', border: 'none', color: '#3B6D11', fontSize: '12px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', padding: 0 },
+  checkinCtaBtn: {
+    width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    color: '#FAF7F1', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
+  },
+  actChips: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '4px' },
+  actChip: {
+    padding: '12px 10px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '12px',
+    fontSize: '13px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif',
+    cursor: 'pointer', transition: 'all 0.15s', boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
+  },
+  actChipOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: '0.5px solid #241710' },
+  actBeforeAfter: { marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '12px' },
+  moodMiniRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' },
+  moodMiniLabel: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  moodMiniDots: { display: 'flex', gap: '8px' },
+  moodMiniDot: { width: '22px', height: '22px', borderRadius: '50%', background: 'white', border: '1px solid #E0D5C2', cursor: 'pointer', transition: 'all 0.15s', padding: 0 },
+  moodMiniDotOn: { background: '#C8A86A', border: '1px solid #B6924E' },
+  actSaveBtn: {
+    width: '100%', padding: '13px', background: '#854F0B', color: '#FBF6EE', border: 'none',
+    borderRadius: '12px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif', marginTop: '2px',
+  },
+  actSaveBtnDim: { opacity: 0.45, cursor: 'not-allowed' },
+  actSavedNote: { fontSize: '12px', color: '#3B6D11', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '12px 0 0' },
+  actInsight: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, textAlign: 'center', margin: '14px 0 0' },
+  actInsightSub: { display: 'block', fontSize: '11px', color: '#9C8C78', marginTop: '3px' },
+
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',

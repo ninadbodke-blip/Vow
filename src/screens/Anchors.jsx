@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useLang } from '../LanguageContext'
 import { supabase } from '../supabaseClient'
+import BottomNav from '../components/BottomNav'
 
 const MAX_ANCHORS = 3
 
@@ -18,8 +18,28 @@ const RELATIONSHIPS = [
 
 const HEARTBEAT_MESSAGE = "Just wanted to let you know I'm doing okay today."
 
+// Warm, distinct avatar tints per relationship — keeps the list lively.
+const REL_COLORS = {
+  mother: '#C5572C', father: '#8A6A3C', partner: '#B0567A', sibling: '#6E8A6A',
+  friend: '#C8893C', sponsor: '#6B7FA0', counselor: '#8A6FA0', other: '#9C8C78',
+}
+const relColor = (rel) => REL_COLORS[rel] || REL_COLORS.other
+
+const BackIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
+)
+const ProfileIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+  </svg>
+)
+
 export default function Anchors() {
-  const { t } = useLang()
   const navigate = useNavigate()
 
   const [anchors, setAnchors] = useState([])
@@ -131,8 +151,14 @@ const sendHeartbeatTo = (anchor) => {
     <div style={styles.frame}>
       <div style={styles.phone}>
         
-        <div style={styles.header}>
-          <p style={styles.pageTitle}>Anchors</p>
+        <div style={styles.topBar}>
+          <button onClick={() => navigate('/home')} style={styles.iconNavBtn} aria-label="Back to home">
+            <BackIcon />
+          </button>
+          <p style={styles.topTitle}>Anchors</p>
+          <button onClick={() => navigate('/profile')} style={styles.iconNavBtn} aria-label="Profile">
+            <ProfileIcon />
+          </button>
         </div>
 
         <div style={styles.intro}>
@@ -141,7 +167,9 @@ const sendHeartbeatTo = (anchor) => {
             People who steady you in the storm.
           </p>
           <p style={styles.introSubtle}>
-            Up to 3 trusted people. Always private.
+            {anchors.length > 0
+              ? `${anchors.length} of ${MAX_ANCHORS} added · always private`
+              : 'Up to 3 trusted people. Always private.'}
           </p>
         </div>
 
@@ -173,6 +201,7 @@ const sendHeartbeatTo = (anchor) => {
 
         {anchors.length === 0 ? (
           <div style={styles.emptyState}>
+            <div style={styles.emptyMedallion}>⚓</div>
             <p style={styles.emptyText}>
               No anchors yet.<br/>
               Add someone you trust — a parent, partner, or close friend.
@@ -216,11 +245,7 @@ const sendHeartbeatTo = (anchor) => {
           </p>
         </div>
 
-        <div style={styles.tabRow}>
-          <button onClick={() => navigate('/home')} style={styles.tab}>{t('home')}</button>
-          <button style={{...styles.tab, ...styles.tabActive}}>Anchors</button>
-          <button onClick={() => navigate('/profile')} style={styles.tab}>{t('profile')}</button>
-        </div>
+        <BottomNav />
 
         {(showAddModal || editingAnchor) && (
           <AnchorFormModal
@@ -316,15 +341,16 @@ function AnchorCard({ anchor, onEdit, onDelete, onShare }) {
   const initial = anchor.name.charAt(0).toUpperCase()
   const rel = RELATIONSHIPS.find(r => r.value === anchor.relationship) || RELATIONSHIPS[7]
   const whyPreview = anchor.why_note ? anchor.why_note.slice(0, 80) : null
+  const c = relColor(anchor.relationship)
 
   return (
-    <div style={styles.anchorCard}>
+    <div style={{ ...styles.anchorCard, borderLeft: `3px solid ${c}` }}>
       <div style={styles.anchorTop}>
-        <div style={styles.anchorAvatar}>{initial}</div>
+        <div style={{ ...styles.anchorAvatar, background: c }}>{initial}</div>
         <div style={styles.anchorInfo}>
           <p style={styles.anchorName}>
             {anchor.name}
-            <span style={styles.anchorRelChip}>{rel.icon} {rel.label}</span>
+            <span style={{ ...styles.anchorRelChip, background: `${c}1A`, color: c }}>{rel.icon} {rel.label}</span>
           </p>
           <p style={styles.anchorPhone}>{anchor.phone}</p>
         </div>
@@ -527,10 +553,23 @@ const styles = {
   },
   phone: {
     background: '#FAF7F1',
-    maxWidth: '420px', width: '100%',
+    maxWidth: '440px', width: '100%',
     borderRadius: '28px',
-    padding: '2.5rem 1.25rem 1.5rem',
+    padding: '1.5rem 1.25rem 1.5rem',
     boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
+  },
+  topBar: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: '1.25rem',
+  },
+  topTitle: {
+    fontSize: '17px', fontWeight: 500, color: '#2A1F15', margin: 0,
+    fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
+  },
+  iconNavBtn: {
+    background: 'transparent', border: 'none', color: '#854F0B',
+    cursor: 'pointer', padding: '4px 6px', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', minWidth: '34px',
   },
   header: { marginBottom: '1.5rem', padding: '0 4px' },
   pageTitle: {
@@ -606,6 +645,13 @@ const styles = {
   },
 
   emptyState: { textAlign: 'center', padding: '2rem 1rem' },
+  emptyMedallion: {
+    width: '72px', height: '72px', borderRadius: '50%', margin: '0 auto 1rem',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px',
+    background: 'radial-gradient(circle at 50% 40%, #FBF1DD 0%, #F1E3C6 100%)',
+    border: '0.5px solid #E3D2AE',
+    boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.7), 0 4px 14px rgba(133,79,11,0.08)',
+  },
   emptyText: {
     fontSize: '14px', color: '#6B5C4A',
     fontFamily: 'Georgia, serif',

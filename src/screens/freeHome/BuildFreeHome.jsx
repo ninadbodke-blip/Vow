@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import BottomNav from '../../components/BottomNav'
 
 // ===================================================================
@@ -22,6 +23,9 @@ const PULSE_OPTIONS = [
   { value: 'itching', label: 'Itching', helper: 'A tug. Worth noticing.', color: '#C5572C' },
   { value: 'loud', label: 'Loud', helper: 'Hard week. Worth tending to.', color: '#A04C2A' },
 ]
+
+// Ordinal for the Mirror (1 = quietest week, 4 = hardest).
+const PULSE_SCORE = { quiet: 1, stable: 2, itching: 3, loud: 4 }
 
 const MAX_PRACTICES = 5
 
@@ -50,6 +54,8 @@ export default function BuildFreeHome({ progress: initialProgress }) {
   const [progress, setProgress] = useState(initialProgress)
   const [tracker, setTracker] = useState(null)
   const [firstName, setFirstName] = useState('')
+  const [todayCheckin, setTodayCheckin] = useState(null)
+  const [checkinOpen, setCheckinOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -79,6 +85,12 @@ export default function BuildFreeHome({ progress: initialProgress }) {
       if (trackers && trackers.length > 0) {
         setTracker(trackers[0])
       }
+
+      // ---- daily check-in (shared signal; gentle in maintenance) ----
+      const { data: tc } = await supabase
+        .from('free_daily_checkins').select('*')
+        .eq('user_id', user.id).eq('checkin_date', localDateStr()).maybeSingle()
+      if (tc) setTodayCheckin(tc)
 
       setLoading(false)
     }
@@ -120,8 +132,20 @@ export default function BuildFreeHome({ progress: initialProgress }) {
       console.error('Failed to save pulse:', error)
       setProgress(p => ({ ...p, build_pulse_log: currentLog }))
       alert('Could not save. Please try again.')
+      return
     }
+
+    // Mirror visibility: record the weekly pulse as a build_review signal.
+    // (Insert per save; the Mirror reads the latest per week_of.)
+    await supabase.from('free_stage_signals').insert({
+      user_id: user.id,
+      stage: 'build',
+      signal_type: 'build_review',
+      payload: { pulse: value, pulse_score: PULSE_SCORE[value] ?? null, week_of: weekOf },
+    })
   }
+
+  const handleCheckinSaved = (row) => setTodayCheckin(row)
 
   // === Practice handlers ===
   const handlePracticeAdd = async (text) => {
@@ -223,6 +247,9 @@ export default function BuildFreeHome({ progress: initialProgress }) {
           />
         )}
 
+        {/* TILE — DAILY CHECK-IN (gentle, shared signal) */}
+        <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+
         {/* TILE 3 — WEEKLY PULSE CHECK */}
         <PulseCheckTile
           pulseLog={progress.build_pulse_log || []}
@@ -244,8 +271,58 @@ export default function BuildFreeHome({ progress: initialProgress }) {
 
         <BottomNav />
       </div>
+
+      <DailyCheckin
+        isOpen={checkinOpen}
+        onClose={() => setCheckinOpen(false)}
+        stage="build"
+        existing={todayCheckin}
+        onSaved={handleCheckinSaved}
+      />
     </div>
   )
+}
+
+// ===================================================================
+// TILE: TODAY'S CHECK-IN (gentle, shared signal)
+// ===================================================================
+function TodayCheckinTile({ checkin, onOpen }) {
+  if (checkin) {
+    const m = moodByScore(checkin.mood_score) || moodByValue(checkin.mood)
+    return (
+      <div style={{ ...styles.tile, ...styles.tileLogged }}>
+        <p style={styles.tileEyebrow}>Today's check-in</p>
+        <div style={styles.checkinSummaryRow}>
+          <span style={{ ...styles.moodPill, background: m?.color || '#B9A07E' }} />
+          <div>
+            <p style={styles.checkinSummaryMood}>
+              {m?.label || 'Noted'}{checkin.felt_pull ? ' \u00b7 the pull showed up' : ''}
+            </p>
+            <p style={styles.checkinSummarySub}>
+              Energy {checkin.energy ?? '\u2013'}/5
+              {checkin.note ? ` \u00b7 \u201c${checkin.note}\u201d` : ''}
+            </p>
+          </div>
+        </div>
+        <button onClick={onOpen} style={styles.checkinEditBtn}>Edit today's check-in</button>
+      </div>
+    )
+  }
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>A quiet check-in</p>
+      <h2 style={styles.tileTitle}>Want to drop in today?</h2>
+      <p style={styles.tileBody}>
+        Optional, this far in. A half-minute on mood, energy, and how the pull's been &mdash; it keeps your Mirror honest.
+      </p>
+      <button onClick={onOpen} style={styles.checkinCtaBtn}>Check in</button>
+    </div>
+  )
+}
+
+function localDateStr(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 // ===================================================================
@@ -608,6 +685,19 @@ function formatWeekLabel(weekOfStr) {
 // STYLES
 // ===================================================================
 const styles = {
+  // --- v2 additions: gentle daily check-in ---
+  tileLogged: { background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A' },
+  checkinSummaryRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' },
+  moodPill: { width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.12)' },
+  checkinSummaryMood: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 2px', lineHeight: 1.3 },
+  checkinSummarySub: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.4 },
+  checkinEditBtn: { background: 'transparent', border: 'none', color: '#3B6D11', fontSize: '12px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', padding: 0 },
+  checkinCtaBtn: {
+    width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    color: '#FAF7F1', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
+  },
+
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',

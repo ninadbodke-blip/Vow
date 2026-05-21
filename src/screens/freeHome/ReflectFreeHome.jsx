@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import QuickLogModal from './QuickLogModal'
+import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import BottomNav from '../../components/BottomNav'
 
 // ===================================================================
@@ -114,6 +115,11 @@ export default function ReflectFreeHome({ progress }) {
   const [totalLogCount, setTotalLogCount] = useState(0)
   const [recentReflections, setRecentReflections] = useState([])
   const [todayReflectionLogged, setTodayReflectionLogged] = useState(false)
+  const [todayCheckin, setTodayCheckin] = useState(null)
+  const [recentCheckins, setRecentCheckins] = useState([])
+  const [checkinCount, setCheckinCount] = useState(0)
+  const [checkinOpen, setCheckinOpen] = useState(false)
+  const [balanceLatest, setBalanceLatest] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -177,6 +183,29 @@ export default function ReflectFreeHome({ progress }) {
         setTodayReflectionLogged(hasToday)
       }
 
+      // ---- daily check-ins (shared signal) ----
+      const todayStr = localDateStr()
+      const { data: tc } = await supabase
+        .from('free_daily_checkins').select('*')
+        .eq('user_id', user.id).eq('checkin_date', todayStr).maybeSingle()
+      if (tc) setTodayCheckin(tc)
+
+      const { data: rc } = await supabase
+        .from('free_daily_checkins').select('*')
+        .eq('user_id', user.id).order('checkin_date', { ascending: false }).limit(14)
+      if (rc) setRecentCheckins(rc)
+
+      const { count: cc } = await supabase
+        .from('free_daily_checkins').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+      if (cc !== null) setCheckinCount(cc)
+
+      // ---- latest emotional-balance signal ----
+      const { data: bal } = await supabase
+        .from('free_stage_signals').select('*')
+        .eq('user_id', user.id).eq('signal_type', 'reflect_balance')
+        .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (bal) setBalanceLatest(bal)
+
       setLoading(false)
     }
     load()
@@ -194,6 +223,20 @@ export default function ReflectFreeHome({ progress }) {
   const handleReflectionLogged = (newRow) => {
     setRecentReflections(prev => [newRow, ...prev].slice(0, 3))
     setTodayReflectionLogged(true)
+  }
+
+  const handleCheckinSaved = (row) => {
+    const wasNew = !todayCheckin
+    setTodayCheckin(row)
+    setRecentCheckins(prev => {
+      const without = prev.filter(c => c.checkin_date !== row.checkin_date)
+      return [row, ...without].slice(0, 14)
+    })
+    if (wasNew) setCheckinCount(prev => prev + 1)
+  }
+
+  const handleBalanceSaved = (row) => {
+    setBalanceLatest(row)
   }
 
   if (loading) {
@@ -227,6 +270,10 @@ export default function ReflectFreeHome({ progress }) {
 
         <GreetingTile firstName={firstName} substanceLabel={progress.substance_label} />
 
+        <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+
+        <BalanceMetersTile latest={balanceLatest} onSaved={handleBalanceSaved} />
+
         <WeeklyWeighingTile
           currentWeighing={currentWeighing}
           pastWeighings={pastWeighings}
@@ -259,6 +306,13 @@ export default function ReflectFreeHome({ progress }) {
         <BottomNav />
       </div>
 
+      <DailyCheckin
+        isOpen={checkinOpen}
+        onClose={() => setCheckinOpen(false)}
+        stage="reflect"
+        existing={todayCheckin}
+        onSaved={handleCheckinSaved}
+      />
       <QuickLogModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -872,6 +926,140 @@ function RecentReflectionsTile({ reflections }) {
 // ===================================================================
 // HELPERS
 // ===================================================================
+// ===================================================================
+// TILE: TODAY'S CHECK-IN (hero, shared signal)
+// ===================================================================
+function TodayCheckinTile({ checkin, onOpen }) {
+  if (checkin) {
+    const m = moodByScore(checkin.mood_score) || moodByValue(checkin.mood)
+    return (
+      <div style={{ ...styles.tile, ...styles.tileLogged }}>
+        <p style={styles.tileEyebrow}>Today's check-in</p>
+        <div style={styles.checkinSummaryRow}>
+          <span style={{ ...styles.moodPill, background: m?.color || '#B9A07E' }} />
+          <div>
+            <p style={styles.checkinSummaryMood}>
+              {m?.label || 'Noted'}{checkin.felt_pull ? ' \u00b7 the pull showed up' : ''}
+            </p>
+            <p style={styles.checkinSummarySub}>
+              Energy {checkin.energy ?? '\u2013'}/5
+              {checkin.note ? ` \u00b7 \u201c${checkin.note}\u201d` : ''}
+            </p>
+          </div>
+        </div>
+        <button onClick={onOpen} style={styles.checkinEditBtn}>Edit today's check-in</button>
+      </div>
+    )
+  }
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Today's weather</p>
+      <h2 style={styles.tileTitle}>How are you, really?</h2>
+      <p style={styles.tileBody}>
+        A quiet half-minute. Mood, energy, whether the pull came by. Nobody sees it but you.
+      </p>
+      <button onClick={onOpen} style={styles.checkinCtaBtn}>Check in</button>
+    </div>
+  )
+}
+
+// ===================================================================
+// TILE: EMOTIONAL BALANCE METERS (reflect-specific, new)
+// ===================================================================
+// Three spectrums the user marks. Each save inserts a free_stage_signals
+// row (signal_type 'reflect_balance', payload {axis: 1..5}), building a
+// time series the Mirror reads as the push/pull over the contemplation.
+const BALANCE_AXES = [
+  { key: 'guilt_relief', left: 'Guilt', right: 'Relief' },
+  { key: 'control_dependence', left: 'Control', right: 'Dependence' },
+  { key: 'peace_escape', left: 'Peace', right: 'Escape' },
+]
+
+function BalanceMetersTile({ latest, onSaved }) {
+  const init = (k) => latest?.payload?.[k] ?? 3
+  const [vals, setVals] = useState({
+    guilt_relief: init('guilt_relief'),
+    control_dependence: init('control_dependence'),
+    peace_escape: init('peace_escape'),
+  })
+  const [saving, setSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
+
+  const setAxis = (k, v) => {
+    setVals(prev => ({ ...prev, [k]: v }))
+    setJustSaved(false)
+  }
+
+  const handleSave = async () => {
+    if (saving) return
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: saved, error } = await supabase
+        .from('free_stage_signals')
+        .insert({
+          user_id: user.id, stage: 'reflect',
+          signal_type: 'reflect_balance', payload: vals,
+        })
+        .select().single()
+      if (error) {
+        console.error('Failed to save balance:', error)
+        alert('Could not save. Please try again.')
+        setSaving(false); return
+      }
+      if (onSaved) onSaved(saved)
+      setSaving(false); setJustSaved(true)
+      setTimeout(() => setJustSaved(false), 2500)
+    } catch (err) {
+      console.error(err); setSaving(false)
+    }
+  }
+
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Where it sits today</p>
+      <h2 style={styles.tileTitle}>The feeling, on three lines.</h2>
+      <p style={styles.tileBody}>
+        No middle is &ldquo;correct.&rdquo; Just mark where today actually falls.
+      </p>
+
+      <div style={styles.balanceList}>
+        {BALANCE_AXES.map(axis => (
+          <div key={axis.key} style={styles.balanceAxis}>
+            <div style={styles.balanceLabels}>
+              <span>{axis.left}</span><span>{axis.right}</span>
+            </div>
+            <div style={styles.balanceTrack}>
+              <div style={styles.balanceTrackLine} />
+              {[1, 2, 3, 4, 5].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setAxis(axis.key, n)}
+                  disabled={saving}
+                  style={{ ...styles.balanceDot, ...(vals[axis.key] === n ? styles.balanceDotOn : {}) }}
+                  aria-label={`${axis.left} to ${axis.right}, position ${n}`}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={handleSave} disabled={saving} style={styles.balanceSaveBtn}>
+        {saving ? 'Saving\u2026' : justSaved ? 'Saved \u2713' : (latest ? 'Update' : 'Save how it sits')}
+      </button>
+      <p style={styles.tileHelperText}>
+        These build a quiet picture of the push and pull over time.
+      </p>
+    </div>
+  )
+}
+
+function localDateStr(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 function hashString(str) {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
@@ -913,6 +1101,37 @@ function formatDateForDB(date) {
 // STYLES
 // ===================================================================
 const styles = {
+  // --- v2 additions: check-in hero + emotional-balance meters ---
+  checkinSummaryRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' },
+  moodPill: { width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.12)' },
+  checkinSummaryMood: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 2px', lineHeight: 1.3 },
+  checkinSummarySub: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.4 },
+  checkinEditBtn: { background: 'transparent', border: 'none', color: '#3B6D11', fontSize: '12px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', padding: 0 },
+  checkinCtaBtn: {
+    width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    color: '#FAF7F1', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
+  },
+  balanceList: { display: 'flex', flexDirection: 'column', gap: '16px', margin: '4px 0 16px' },
+  balanceAxis: { display: 'flex', flexDirection: 'column', gap: '8px' },
+  balanceLabels: {
+    display: 'flex', justifyContent: 'space-between', fontSize: '12px',
+    color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic',
+  },
+  balanceTrack: { position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 2px' },
+  balanceTrackLine: { position: 'absolute', left: '8px', right: '8px', top: '50%', height: '1px', background: '#E8DFD0' },
+  balanceDot: {
+    position: 'relative', width: '18px', height: '18px', borderRadius: '50%',
+    background: '#FFFFFF', border: '1px solid #DCCFB8', cursor: 'pointer',
+    transition: 'all 0.15s', padding: 0,
+  },
+  balanceDotOn: { background: '#854F0B', border: '1px solid #6E3F08', transform: 'scale(1.25)', boxShadow: '0 2px 6px rgba(80,50,20,0.25)' },
+  balanceSaveBtn: {
+    width: '100%', padding: '13px', background: 'white', color: '#3A2A1C',
+    border: '0.5px solid #D9CBB4', borderRadius: '12px', fontSize: '14px', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.06)',
+  },
+
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',

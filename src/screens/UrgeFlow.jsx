@@ -6,7 +6,11 @@ import { supabase } from '../supabaseClient'
 const TECHNIQUES = [
   { id: 'breath', name: 'Breathe', duration: 90 },
   { id: 'tap', name: 'Tap to focus', duration: 30 },
-  { id: 'cold', name: 'Cold water', duration: 10 },
+  { id: 'dissolve', name: 'Let them go', duration: 0 },
+  { id: 'wipe', name: 'Clear the fog', duration: 0 },
+  { id: 'pulse', name: 'Slow the pulse', duration: 0 },
+  { id: 'unclench', name: 'Unclench', duration: 0 },
+  { id: 'circles', name: 'Slow circles', duration: 0 },
   { id: 'senses', name: '5-4-3-2-1', duration: 0 },
   { id: 'why', name: 'Your why', duration: 0 },
   { id: 'reach', name: 'Reach out', duration: 0 },
@@ -37,7 +41,9 @@ export default function UrgeFlow() {
   const [loading, setLoading] = useState(true)
   const [feedbackIntensity, setFeedbackIntensity] = useState(null)
   const [feedbackTrigger, setFeedbackTrigger] = useState(null)
+  const [passedTechnique, setPassedTechnique] = useState(null)
   const [saving, setSaving] = useState(false)
+  const startedRef = useRef(Date.now())
 
   useEffect(() => {
     async function load() {
@@ -70,13 +76,17 @@ export default function UrgeFlow() {
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
+      const elapsed = Math.max(1, Math.round((Date.now() - startedRef.current) / 1000))
       await supabase.from('urge_logs').insert({
         user_id: user.id,
         tracker_id: trackerId,
         intensity: feedbackIntensity || 'Moderate',
         triggers: feedbackTrigger ? [feedbackTrigger] : [],
-        notes: passed ? 'Rode out the urge' : 'Completed all 6 techniques',
+        notes: passed ? 'Rode out the urge' : 'Worked through the techniques',
         resisted: true,
+        duration_seconds: elapsed,
+        technique_used: passed ? passedTechnique : null,
+        technique_helped: passed ? true : false,
       })
       navigate('/home')
     } catch (err) {
@@ -91,7 +101,10 @@ export default function UrgeFlow() {
   }
 
   const onTechniqueDone = () => setStep('check')
-  const onUrgePassed = () => setStep('feedback')
+  const onUrgePassed = () => {
+    setPassedTechnique(TECHNIQUES[techniqueIdx]?.id ?? null)
+    setStep('feedback')
+  }
   const onUrgeStillHere = () => {
     if (techniqueIdx < TECHNIQUES.length - 1) {
       setTechniqueIdx(techniqueIdx + 1)
@@ -294,7 +307,11 @@ function Technique({ technique, techniqueIdx, profileBio, onDone, onSkip }) {
 
   if (technique.id === 'breath') return <BreathTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'tap') return <TapTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
-  if (technique.id === 'cold') return <ColdTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
+  if (technique.id === 'dissolve') return <DissolveTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
+  if (technique.id === 'wipe') return <WipeTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
+  if (technique.id === 'pulse') return <PulseTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
+  if (technique.id === 'unclench') return <UnclenchTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
+  if (technique.id === 'circles') return <CirclesTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'senses') return <SensesTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'why') return <WhyTechnique stepNum={stepNum} total={total} profileBio={profileBio} onDone={onDone} />
   if (technique.id === 'reach') return <ReachOutTechnique stepNum={stepNum} total={total} onDone={onDone} />
@@ -451,53 +468,381 @@ function TapTechnique({ stepNum, total, onDone, onSkip }) {
   )
 }
 
-// ────────── 3. COLD WATER ──────────
-function ColdTechnique({ stepNum, total, onDone, onSkip }) {
-  const [secondsLeft, setSecondsLeft] = useState(10)
-  const [started, setStarted] = useState(false)
+// ────────── 3. DISSOLVE (sweep the embers away) ──────────
+function DissolveTechnique({ stepNum, total, onDone, onSkip }) {
+  const COUNT = 9
+  const areaRef = useRef(null)
+  const [motes, setMotes] = useState(() =>
+    Array.from({ length: COUNT }).map((_, i) => ({
+      id: i,
+      bx: 15 + Math.random() * 70,
+      by: 16 + Math.random() * 66,
+      phase: Math.random() * Math.PI * 2,
+      alive: true,
+    }))
+  )
+  const [tick, setTick] = useState(0)
+  const [done, setDone] = useState(false)
 
   useEffect(() => {
-    if (!started) return
+    const id = setInterval(() => setTick(t => t + 1), 60)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    if (!done && motes.length && motes.every(m => !m.alive)) {
+      setDone(true)
+      setTimeout(onDone, 900)
+    }
+  }, [motes, done, onDone])
+
+  const remaining = motes.filter(m => m.alive).length
+
+  const dissolveAt = (clientX, clientY) => {
+    const rect = areaRef.current && areaRef.current.getBoundingClientRect()
+    if (!rect) return
+    const px = ((clientX - rect.left) / rect.width) * 100
+    const py = ((clientY - rect.top) / rect.height) * 100
+    setMotes(prev => prev.map(m => {
+      if (!m.alive) return m
+      const ox = m.bx + Math.sin(tick / 8 + m.phase) * 3
+      const oy = m.by + Math.cos(tick / 10 + m.phase) * 3
+      const d = Math.hypot(px - ox, py - oy)
+      return d < 12 ? { ...m, alive: false } : m
+    }))
+  }
+  const onMove = (e) => { if (e.buttons || e.pressure > 0) dissolveAt(e.clientX, e.clientY) }
+
+  return (
+    <div style={styles.center}>
+      <p style={styles.techCount}>{stepNum} of {total} · Let them go</p>
+      <p style={styles.bodyTitle}>{done ? 'All gone.' : 'Brush the embers away.'}</p>
+      <p style={styles.subtle}>
+        {done ? 'One by one, until there were none.' : 'Drag your finger across each one. No rush.'}
+      </p>
+
+      <div
+        ref={areaRef}
+        style={styles.dissolveArea}
+        onPointerDown={(e) => dissolveAt(e.clientX, e.clientY)}
+        onPointerMove={onMove}
+      >
+        {motes.map(m => {
+          const ox = m.bx + Math.sin(tick / 8 + m.phase) * 3
+          const oy = m.by + Math.cos(tick / 10 + m.phase) * 3
+          return (
+            <div key={m.id} style={{
+              ...styles.mote,
+              left: ox + '%', top: oy + '%',
+              ...(m.alive ? {} : styles.moteGone),
+            }} />
+          )
+        })}
+      </div>
+
+      <p style={styles.subtle}>{done ? '' : remaining + ' left'}</p>
+      {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
+    </div>
+  )
+}
+
+// ────────── 4. CLEAR THE FOG (wipe to reveal) ──────────
+function WipeTechnique({ stepNum, total, onDone, onSkip }) {
+  const COLS = 7, ROWS = 5
+  const TOTAL = COLS * ROWS
+  const NEED = Math.round(TOTAL * 0.8)
+  const areaRef = useRef(null)
+  const [cleared, setCleared] = useState(() => new Set())
+  const [done, setDone] = useState(false)
+
+  const clearAt = (clientX, clientY) => {
+    const rect = areaRef.current && areaRef.current.getBoundingClientRect()
+    if (!rect) return
+    const cx = Math.floor(((clientX - rect.left) / rect.width) * COLS)
+    const cy = Math.floor(((clientY - rect.top) / rect.height) * ROWS)
+    if (cx < 0 || cy < 0 || cx >= COLS || cy >= ROWS) return
+    const idx = cy * COLS + cx
+    setCleared(prev => {
+      if (prev.has(idx)) return prev
+      const next = new Set(prev)
+      next.add(idx)
+      if (!done && next.size >= NEED) { setDone(true); setTimeout(onDone, 1100) }
+      return next
+    })
+  }
+  const onMove = (e) => { if (e.buttons || e.pressure > 0) clearAt(e.clientX, e.clientY) }
+
+  return (
+    <div style={styles.center}>
+      <p style={styles.techCount}>{stepNum} of {total} · Clear the fog</p>
+      <p style={styles.bodyTitle}>Wipe it away.</p>
+      <p style={styles.subtle}>Drag across the haze. There's something underneath.</p>
+
+      <div
+        ref={areaRef}
+        style={styles.wipeArea}
+        onPointerDown={(e) => clearAt(e.clientX, e.clientY)}
+        onPointerMove={onMove}
+      >
+        <div style={styles.wipeRevealText}>This is already passing.</div>
+        <div style={styles.wipeGrid}>
+          {Array.from({ length: TOTAL }).map((_, i) => (
+            <div key={i} style={{ ...styles.wipeCell, ...(cleared.has(i) || done ? styles.wipeCellGone : {}) }} />
+          ))}
+        </div>
+      </div>
+
+      <p style={styles.subtle}>{done ? 'Clear.' : 'Keep going.'}</p>
+      {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
+    </div>
+  )
+}
+
+// ────────── 5. SLOW THE PULSE (tap a slowing rhythm) ──────────
+function PulseTechnique({ stepNum, total, onDone, onSkip }) {
+  const NEED = 6
+  const [taps, setTaps] = useState(0)
+  const [phase, setPhase] = useState(0)
+  const cycleRef = useRef(0)
+  const [done, setDone] = useState(false)
+
+  useEffect(() => {
+    let raf
+    let last = performance.now()
+    const loop = (now) => {
+      const period = 2200 + cycleRef.current * 500
+      const dt = now - last
+      last = now
+      setPhase(p => {
+        let np = p + dt / period
+        if (np >= 1) { np -= 1; cycleRef.current += 1 }
+        return np
+      })
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  const wave = Math.sin(phase * Math.PI)
+  const scale = 0.55 + wave * 0.6
+  const glow = 0.2 + wave * 0.5
+
+  const tap = () => {
+    if (done) return
+    const n = taps + 1
+    setTaps(n)
+    if (n >= NEED) { setDone(true); setTimeout(onDone, 900) }
+  }
+
+  return (
+    <div style={styles.center}>
+      <p style={styles.techCount}>{stepNum} of {total} · Slow the pulse</p>
+      <p style={styles.bodyTitle}>{done ? 'Slower now.' : 'Tap each time it fills.'}</p>
+      <p style={styles.subtle}>
+        {done ? 'You brought it down with you.' : 'Every round comes a little slower. Follow it down.'}
+      </p>
+
+      <div style={styles.pulseArea} onPointerDown={tap}>
+        <div style={{
+          ...styles.pulseCore,
+          transform: 'scale(' + scale + ')',
+          boxShadow: '0 0 ' + Math.round(20 + glow * 40) + 'px rgba(122,140,90,' + glow.toFixed(2) + ')',
+        }} />
+      </div>
+
+      <div style={styles.roundDots}>
+        {Array.from({ length: NEED }).map((_, i) => (
+          <div key={i} style={{ ...styles.roundDot, ...(i < taps || done ? styles.roundDotDone : {}) }} />
+        ))}
+      </div>
+      {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
+    </div>
+  )
+}
+
+
+// ────────── 4. UNCLENCH (tension / release) ──────────
+function UnclenchTechnique({ stepNum, total, onDone, onSkip }) {
+  const ROUNDS = 3
+  const CLENCH_S = 5
+  const RELEASE_S = 5
+  const [round, setRound] = useState(0)
+  const [phase, setPhase] = useState('clench')
+  const [clenchHeld, setClenchHeld] = useState(0)
+  const [releaseLeft, setReleaseLeft] = useState(RELEASE_S)
+  const [holding, setHolding] = useState(false)
+  const [done, setDone] = useState(false)
+  const tickRef = useRef(null)
+
+  const startHold = () => {
+    if (phase !== 'clench' || done) return
+    setHolding(true)
+    if (tickRef.current) clearInterval(tickRef.current)
+    tickRef.current = setInterval(() => {
+      setClenchHeld(h => {
+        const next = Math.min(1, h + 0.1 / CLENCH_S)
+        if (next >= 1) {
+          clearInterval(tickRef.current)
+          setHolding(false)
+          setPhase('release')
+          setReleaseLeft(RELEASE_S)
+        }
+        return next
+      })
+    }, 100)
+  }
+  const stopHold = () => {
+    if (phase !== 'clench') return
+    setHolding(false)
+    if (tickRef.current) clearInterval(tickRef.current)
+  }
+
+  useEffect(() => {
+    if (phase !== 'release') return
     const id = setInterval(() => {
-      setSecondsLeft(s => {
+      setReleaseLeft(s => {
         if (s <= 1) {
           clearInterval(id)
-          setTimeout(onDone, 800)
+          if (round + 1 >= ROUNDS) {
+            setDone(true)
+            setTimeout(onDone, 900)
+          } else {
+            setRound(r => r + 1)
+            setClenchHeld(0)
+            setPhase('clench')
+          }
           return 0
         }
         return s - 1
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [started])
+  }, [phase, round])
+
+  useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current) }, [])
+
+  const clenchScale = 1 - clenchHeld * 0.4
+  const releaseT = (RELEASE_S - releaseLeft) / RELEASE_S
+  const releaseScale = 0.6 + releaseT * 0.5
+  const scale = done ? 1.1 : phase === 'clench' ? clenchScale : releaseScale
+  const isClench = phase === 'clench'
 
   return (
     <div style={styles.center}>
-      <p style={styles.techCount}>{stepNum} of {total} · Cold water</p>
-      <div style={styles.softIcon}>💧</div>
-      {!started ? (
-        <>
-          <h3 style={styles.bigTitle}>Splash cold water on your face.</h3>
-          <p style={styles.body}>
-            10 seconds is enough.<br/>
-            Cold activates a reflex that calms your nervous system.
-          </p>
-          <p style={styles.subtle}>If you can't access water, skip this one.</p>
-          <div style={styles.actions}>
-            <button onClick={onSkip} style={{...styles.btn, ...styles.btnSecondary}}>Skip</button>
-            <button onClick={() => setStarted(true)} style={{...styles.btn, ...styles.btnPrimary}}>I'm ready</button>
-          </div>
-        </>
-      ) : (
-        <>
-          <h3 style={styles.bigTitle}>Go now.</h3>
-          <p style={styles.body}>Cold water on your face.<br/>We'll wait.</p>
-          <div style={styles.bigTimer}>{secondsLeft}</div>
-        </>
-      )}
+      <p style={styles.techCount}>{stepNum} of {total} &middot; Unclench</p>
+      <p style={styles.bodyTitle}>
+        {done ? 'Loosened.' : isClench ? 'Press and hold. Tense everything.' : 'Now let go. Completely.'}
+      </p>
+      <p style={styles.subtle}>
+        {done ? 'Your body remembers how to let go.'
+          : isClench ? `Round ${round + 1} of ${ROUNDS} \u2014 squeeze while you hold.`
+          : 'Soften your hands, your jaw, your shoulders.'}
+      </p>
+
+      <div
+        style={styles.clenchArea}
+        onPointerDown={startHold}
+        onPointerUp={stopHold}
+        onPointerLeave={stopHold}
+        onPointerCancel={stopHold}
+      >
+        <div style={{
+          ...styles.clenchBlob,
+          transform: `scale(${scale})`,
+          background: isClench
+            ? `radial-gradient(circle, rgba(197,87,44,${0.22 + clenchHeld * 0.5}) 0%, rgba(197,87,44,0.10) 100%)`
+            : 'radial-gradient(circle, rgba(122,140,90,0.32) 0%, rgba(122,140,90,0.12) 100%)',
+          borderColor: isClench ? 'rgba(197,87,44,0.5)' : 'rgba(122,140,90,0.55)',
+        }} />
+      </div>
+
+      <div style={styles.roundDots}>
+        {Array.from({ length: ROUNDS }).map((_, i) => (
+          <div key={i} style={{
+            ...styles.roundDot,
+            ...(i < round || done ? styles.roundDotDone : {}),
+            ...(i === round && !done ? styles.roundDotActive : {}),
+          }} />
+        ))}
+      </div>
+
+      {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
     </div>
   )
 }
+
+// ────────── 5. SLOW CIRCLES (drag to fill) ──────────
+function CirclesTechnique({ stepNum, total, onDone, onSkip }) {
+  const TARGET = 3600
+  const [progress, setProgress] = useState(0)
+  const [dot, setDot] = useState(null)
+  const [done, setDone] = useState(false)
+  const lastRef = useRef(null)
+  const accRef = useRef(0)
+  const areaRef = useRef(null)
+
+  const move = (e) => {
+    if (done) return
+    const rect = areaRef.current && areaRef.current.getBoundingClientRect()
+    if (!rect) return
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    setDot({ x, y })
+    if (lastRef.current) {
+      const dx = x - lastRef.current.x
+      const dy = y - lastRef.current.y
+      const d = Math.min(28, Math.sqrt(dx * dx + dy * dy))
+      accRef.current += d
+      const p = Math.min(1, accRef.current / TARGET)
+      setProgress(p)
+      if (p >= 1) {
+        setDone(true)
+        setTimeout(onDone, 900)
+      }
+    }
+    lastRef.current = { x, y }
+  }
+  const end = () => { lastRef.current = null; setDot(null) }
+
+  const R = 60
+  const C = 2 * Math.PI * R
+
+  return (
+    <div style={styles.center}>
+      <p style={styles.techCount}>{stepNum} of {total} &middot; Slow circles</p>
+      <p style={styles.bodyTitle}>Trace slow circles.</p>
+      <p style={styles.subtle}>Keep your finger moving, gently. Fill the ring.</p>
+
+      <div
+        ref={areaRef}
+        style={styles.circleArea}
+        onPointerDown={(e) => { lastRef.current = null; move(e) }}
+        onPointerMove={(e) => { if (e.buttons || e.pressure > 0) move(e) }}
+        onPointerUp={end}
+        onPointerLeave={end}
+        onPointerCancel={end}
+      >
+        <svg width="170" height="170" viewBox="0 0 160 160" style={{ pointerEvents: 'none' }}>
+          <circle cx="80" cy="80" r={R} fill="none" stroke="#E8DFD0" strokeWidth="8" />
+          <circle
+            cx="80" cy="80" r={R} fill="none" stroke="#7A8C5A" strokeWidth="8" strokeLinecap="round"
+            strokeDasharray={C} strokeDashoffset={C * (1 - progress)}
+            transform="rotate(-90 80 80)" style={{ transition: 'stroke-dashoffset 0.1s linear' }}
+          />
+          <text x="80" y="87" textAnchor="middle" fontFamily="Georgia, serif" fontSize="20" fill="#2A1F15">
+            {Math.round(progress * 100)}%
+          </text>
+        </svg>
+        {dot && <div style={{ ...styles.circleDot, left: dot.x, top: dot.y }} />}
+      </div>
+
+      <p style={styles.subtle}>{done ? 'Settled.' : 'Slow is the point.'}</p>
+      {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
+    </div>
+  )
+}
+
 
 // ────────── 4. 5-4-3-2-1 SENSES ──────────
 function SensesTechnique({ stepNum, total, onDone, onSkip }) {
@@ -983,6 +1328,65 @@ function FinalMessage({ onDone, saving }) {
 }
 
 const styles = {
+  // ---- revamped interactive urge-breakers (dissolve / wipe / pulse) ----
+  dissolveArea: { position: 'relative', width: '280px', height: '300px', margin: '0.5rem auto 0.75rem', borderRadius: '20px', background: 'radial-gradient(circle at 50% 55%, rgba(197,87,44,0.06), rgba(250,247,241,0))', touchAction: 'none', cursor: 'pointer' },
+  mote: { position: 'absolute', width: '36px', height: '36px', marginLeft: '-18px', marginTop: '-18px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(222,158,98,0.95) 0%, rgba(197,87,44,0.5) 55%, rgba(197,87,44,0) 76%)', transition: 'opacity 0.45s, transform 0.45s', pointerEvents: 'none' },
+  moteGone: { opacity: 0, transform: 'scale(2)' },
+  wipeArea: { position: 'relative', width: '280px', height: '170px', margin: '0.75rem auto', borderRadius: '16px', overflow: 'hidden', touchAction: 'none', cursor: 'pointer', border: '0.5px solid #E8DFD0' },
+  wipeRevealText: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 1.5rem', fontFamily: 'Georgia, serif', fontSize: '19px', fontStyle: 'italic', color: '#2A1F15' },
+  wipeGrid: { position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: 'repeat(5, 1fr)', pointerEvents: 'none' },
+  wipeCell: { background: 'linear-gradient(135deg, #EDE4D4, #E1D5BF)', transition: 'opacity 0.3s' },
+  wipeCellGone: { opacity: 0 },
+  pulseArea: { width: '220px', height: '220px', margin: '0.5rem auto', display: 'flex', alignItems: 'center', justifyContent: 'center', touchAction: 'none', cursor: 'pointer' },
+  pulseCore: { width: '120px', height: '120px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(122,140,90,0.9) 0%, rgba(122,140,90,0.28) 70%)', transition: 'transform 0.06s linear' },
+
+  // ---- new interactive urge-breakers (wave / unclench / circles) ----
+  waveArea: {
+    width: '200px', height: '200px', position: 'relative',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    margin: '0.5rem 0', touchAction: 'none', userSelect: 'none', cursor: 'pointer',
+  },
+  waveOrb: {
+    width: '110px', height: '110px', borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(70,130,150,0.40) 0%, rgba(70,130,150,0.15) 100%)',
+    border: '2px solid rgba(70,130,150,0.5)',
+    transition: 'transform 0.2s ease-out, opacity 0.2s', pointerEvents: 'none',
+  },
+  waveRing: {
+    position: 'absolute', width: '184px', height: '184px', borderRadius: '50%',
+    border: '1px dashed #CFC2AC', opacity: 0.6, transition: 'all 0.2s', pointerEvents: 'none',
+  },
+  waveRingOn: { borderColor: 'rgba(70,130,150,0.55)', opacity: 1 },
+  wavePhase: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0.5rem 0 0.75rem' },
+  waveBarBg: { width: '100%', maxWidth: '240px', height: '6px', background: '#F4ECDD', borderRadius: '3px', overflow: 'hidden', margin: '0 auto' },
+  waveBarFill: { height: '100%', background: 'linear-gradient(90deg, #6FA3B5 0%, #4E8597 100%)', borderRadius: '3px', transition: 'width 0.1s linear' },
+
+  clenchArea: {
+    width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    margin: '0.5rem 0', touchAction: 'none', userSelect: 'none', cursor: 'pointer',
+  },
+  clenchBlob: {
+    width: '130px', height: '130px',
+    borderRadius: '46% 54% 52% 48% / 50% 46% 54% 50%',
+    border: '2px solid rgba(197,87,44,0.5)',
+    transition: 'transform 0.15s ease-out, background 0.3s, border-color 0.3s', pointerEvents: 'none',
+  },
+  roundDots: { display: 'flex', gap: '8px', marginTop: '1.25rem' },
+  roundDot: { width: '8px', height: '8px', borderRadius: '50%', background: '#E0D5C2', transition: 'all 0.2s' },
+  roundDotActive: { background: '#C5572C' },
+  roundDotDone: { background: '#7A8C5A' },
+
+  circleArea: {
+    width: '220px', height: '220px', position: 'relative',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    margin: '0.5rem 0', touchAction: 'none', userSelect: 'none', cursor: 'crosshair',
+  },
+  circleDot: {
+    position: 'absolute', width: '18px', height: '18px', borderRadius: '50%',
+    background: '#7A8C5A', transform: 'translate(-50%, -50%)', pointerEvents: 'none',
+    boxShadow: '0 0 0 4px rgba(122,140,90,0.25)',
+  },
+
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',

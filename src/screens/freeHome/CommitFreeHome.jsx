@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
+import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import { resolveAddictionTypeId } from '../vowPath/utils/addictionTypes'
 
 // ===================================================================
@@ -45,6 +46,10 @@ export default function CommitFreeHome({ progress: initialProgress }) {
   const [progress, setProgress] = useState(initialProgress)
   const [firstName, setFirstName] = useState('')
   const [anchorCount, setAnchorCount] = useState(0)
+  const [todayCheckin, setTodayCheckin] = useState(null)
+  const [checkinOpen, setCheckinOpen] = useState(false)
+  const [confidenceLatest, setConfidenceLatest] = useState(null)
+  const [vowLatest, setVowLatest] = useState(null)
   const [loading, setLoading] = useState(true)
   const [, setTickCount] = useState(0)
   const [savingDate, setSavingDate] = useState(false)
@@ -75,6 +80,25 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
       if (count !== null) setAnchorCount(count)
+
+      // daily check-in (shared signal)
+      const { data: tc } = await supabase
+        .from('free_daily_checkins').select('*')
+        .eq('user_id', user.id).eq('checkin_date', localDateStr()).maybeSingle()
+      if (tc) setTodayCheckin(tc)
+
+      // latest readiness + vow signals
+      const { data: conf } = await supabase
+        .from('free_stage_signals').select('*')
+        .eq('user_id', user.id).eq('signal_type', 'commit_confidence')
+        .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (conf) setConfidenceLatest(conf)
+
+      const { data: vow } = await supabase
+        .from('free_stage_signals').select('*')
+        .eq('user_id', user.id).eq('signal_type', 'commit_vow')
+        .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (vow) setVowLatest(vow)
 
       setLoading(false)
     }
@@ -243,6 +267,10 @@ export default function CommitFreeHome({ progress: initialProgress }) {
     }
   }
 
+  const handleCheckinSaved = (row) => setTodayCheckin(row)
+  const handleConfidenceSaved = (row) => setConfidenceLatest(row)
+  const handleVowSaved = (row) => setVowLatest(row)
+
   if (loading) {
     return (
       <div style={styles.frame}>
@@ -268,6 +296,8 @@ export default function CommitFreeHome({ progress: initialProgress }) {
 
         <GreetingTile firstName={firstName} substanceLabel={progress.substance_label} />
 
+        <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+
         {showSetupTile && (
           <StopDateSetupTile
             prefillValue={progress.endure_starts_at}
@@ -291,6 +321,10 @@ export default function CommitFreeHome({ progress: initialProgress }) {
           />
         )}
 
+        <ReadinessTile latest={confidenceLatest} onSaved={handleConfidenceSaved} />
+
+        <VowTile latest={vowLatest} onSaved={handleVowSaved} />
+
         <PreparationLogTile
           moves={progress.commit_moves || []}
           stopDateISO={progress.endure_starts_at}
@@ -302,8 +336,175 @@ export default function CommitFreeHome({ progress: initialProgress }) {
 
         <BottomNav />
       </div>
+
+      <DailyCheckin
+        isOpen={checkinOpen}
+        onClose={() => setCheckinOpen(false)}
+        stage="commit"
+        existing={todayCheckin}
+        onSaved={handleCheckinSaved}
+      />
     </div>
   )
+}
+
+// ===================================================================
+// TILE: TODAY'S CHECK-IN (hero, shared signal)
+// ===================================================================
+function TodayCheckinTile({ checkin, onOpen }) {
+  if (checkin) {
+    const m = moodByScore(checkin.mood_score) || moodByValue(checkin.mood)
+    return (
+      <div style={{ ...styles.tile, ...styles.tileLogged }}>
+        <p style={styles.tileEyebrow}>Today's check-in</p>
+        <div style={styles.checkinSummaryRow}>
+          <span style={{ ...styles.moodPill, background: m?.color || '#B9A07E' }} />
+          <div>
+            <p style={styles.checkinSummaryMood}>
+              {m?.label || 'Noted'}{checkin.felt_pull ? ' \u00b7 the pull showed up' : ''}
+            </p>
+            <p style={styles.checkinSummarySub}>
+              Energy {checkin.energy ?? '\u2013'}/5
+              {checkin.note ? ` \u00b7 \u201c${checkin.note}\u201d` : ''}
+            </p>
+          </div>
+        </div>
+        <button onClick={onOpen} style={styles.checkinEditBtn}>Edit today's check-in</button>
+      </div>
+    )
+  }
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Today's weather</p>
+      <h2 style={styles.tileTitle}>How are you, really?</h2>
+      <p style={styles.tileBody}>
+        A quiet half-minute. Mood, energy, whether the pull came by. Nobody sees it but you.
+      </p>
+      <button onClick={onOpen} style={styles.checkinCtaBtn}>Check in</button>
+    </div>
+  )
+}
+
+// ===================================================================
+// TILE: READINESS RULER (commit_confidence, new)
+// ===================================================================
+// 1..10 readiness. Each save inserts a free_stage_signals row
+// (signal_type 'commit_confidence', payload {score}) -> trend in Mirror.
+function ReadinessTile({ latest, onSaved }) {
+  const [value, setValue] = useState(latest?.payload?.score ?? 5)
+  const [saving, setSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
+
+  const handleSave = async () => {
+    if (saving) return
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: saved, error } = await supabase
+        .from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_confidence', payload: { score: value } })
+        .select().single()
+      if (error) { console.error(error); alert('Could not save. Please try again.'); setSaving(false); return }
+      if (onSaved) saved && onSaved(saved)
+      setSaving(false); setJustSaved(true); setTimeout(() => setJustSaved(false), 2500)
+    } catch (err) { console.error(err); setSaving(false) }
+  }
+
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Readiness, today</p>
+      <h2 style={styles.tileTitle}>How ready do you feel?</h2>
+      <p style={styles.tileBody}>
+        Not how ready you think you should feel. How ready you actually are, right now.
+      </p>
+
+      <div style={styles.rulerRow}>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+          <button
+            key={n}
+            onClick={() => { setValue(n); setJustSaved(false) }}
+            disabled={saving}
+            style={{ ...styles.rulerSeg, ...(n <= value ? styles.rulerSegOn : {}) }}
+            aria-label={`Readiness ${n} of 10`}
+          />
+        ))}
+      </div>
+      <div style={styles.rulerLabels}>
+        <span>Not yet</span>
+        <span style={styles.rulerValue}>{value}/10</span>
+        <span>Fully ready</span>
+      </div>
+
+      <button onClick={handleSave} disabled={saving} style={styles.ghostSaveBtn}>
+        {saving ? 'Saving\u2026' : justSaved ? 'Saved \u2713' : (latest ? 'Update readiness' : 'Save readiness')}
+      </button>
+      <p style={styles.tileHelperText}>
+        Readiness moves day to day. Marking it shows you which way it's heading.
+      </p>
+    </div>
+  )
+}
+
+// ===================================================================
+// TILE: VOW (commit_vow, new — light free-tier version)
+// ===================================================================
+function VowTile({ latest, onSaved }) {
+  const existingText = latest?.payload?.text || ''
+  const [text, setText] = useState(existingText)
+  const [editing, setEditing] = useState(!existingText)
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (saving || !text.trim()) return
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: saved, error } = await supabase
+        .from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_vow', payload: { text: text.trim() } })
+        .select().single()
+      if (error) { console.error(error); alert('Could not save. Please try again.'); setSaving(false); return }
+      if (onSaved) saved && onSaved(saved)
+      setSaving(false); setEditing(false)
+    } catch (err) { console.error(err); setSaving(false) }
+  }
+
+  if (!editing && existingText) {
+    return (
+      <div style={styles.tile}>
+        <p style={styles.tileEyebrow}>Your vow</p>
+        <p style={styles.vowQuote}>&ldquo;{existingText}&rdquo;</p>
+        <button onClick={() => setEditing(true)} style={styles.checkinEditBtn}>Revise it</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Your vow</p>
+      <h2 style={styles.tileTitle}>What are you committing to?</h2>
+      <p style={styles.tileBody}>
+        One honest line, in your own words. Something to come back to on the hard days.
+      </p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={"I'm doing this because\u2026"}
+        style={styles.vowInput}
+        rows={3}
+        maxLength={280}
+        disabled={saving}
+      />
+      <button onClick={handleSave} disabled={saving || !text.trim()} style={styles.checkinCtaBtn}>
+        {saving ? 'Saving\u2026' : 'Save my vow'}
+      </button>
+    </div>
+  )
+}
+
+function localDateStr(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 // ===================================================================
@@ -785,6 +986,44 @@ function formatDateInput(date) {
 // STYLES
 // ===================================================================
 const styles = {
+  tileLogged: { background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A' },
+  // --- v2 additions: check-in hero + readiness ruler + vow ---
+  checkinSummaryRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' },
+  moodPill: { width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.12)' },
+  checkinSummaryMood: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 2px', lineHeight: 1.3 },
+  checkinSummarySub: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.4 },
+  checkinEditBtn: { background: 'transparent', border: 'none', color: '#3B6D11', fontSize: '12px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', padding: 0 },
+  checkinCtaBtn: {
+    width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    color: '#FAF7F1', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
+  },
+  rulerRow: { display: 'flex', gap: '5px', margin: '4px 0 8px' },
+  rulerSeg: {
+    flex: 1, height: '26px', borderRadius: '6px', background: '#F4ECDD',
+    border: '0.5px solid #E8DFD0', cursor: 'pointer', transition: 'all 0.12s', padding: 0,
+  },
+  rulerSegOn: { background: 'linear-gradient(180deg, #D9B57A 0%, #B6924E 100%)', border: '0.5px solid #A8843F' },
+  rulerLabels: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', marginBottom: '14px',
+  },
+  rulerValue: { color: '#854F0B', fontStyle: 'normal', fontWeight: 500, fontVariantNumeric: 'tabular-nums' },
+  ghostSaveBtn: {
+    width: '100%', padding: '13px', background: 'white', color: '#3A2A1C',
+    border: '0.5px solid #D9CBB4', borderRadius: '12px', fontSize: '14px', fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.06)',
+  },
+  vowQuote: {
+    fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    lineHeight: 1.5, margin: '0 0 12px', padding: '4px 0',
+  },
+  vowInput: {
+    width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '0.5px solid #E0D5C2',
+    borderRadius: '12px', background: 'white', fontSize: '14px', color: '#2A1F15',
+    fontFamily: 'Georgia, serif', lineHeight: 1.5, marginBottom: '12px', outline: 'none', resize: 'vertical',
+  },
+
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
