@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import { isCadenceBypassed } from './utils/vowPathGating'
 import {
   getReclaimDay,
   RECLAIM_TOTAL_DAYS,
@@ -123,8 +124,7 @@ export default function ReclaimDay() {
   }, [dayNumber, dayContent, navigate])
 
   function isDayUnlocked(progressRow, requestedDay) {
-    if (import.meta.env.DEV) return { allowed: true }
-    if (progressRow?.is_pilot_mode) return { allowed: true }
+    if (isCadenceBypassed(progressRow)) return { allowed: true }
     const lastCompleted = progressRow?.last_completed_day || 0
     if (requestedDay <= lastCompleted + 1) return { allowed: true }
     return {

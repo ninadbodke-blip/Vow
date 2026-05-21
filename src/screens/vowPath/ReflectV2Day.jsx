@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import { audioUrl } from './utils/audioUrl'
+import { isCadenceBypassed } from './utils/vowPathGating'
 import { getReflectV2Day, REFLECT_V2_TOTAL_DAYS } from './data/reflectV2Content'
 
 // Mechanic components
@@ -140,8 +142,7 @@ export default function ReflectV2Day() {
   }, [dayNumber, dayContent, navigate])
 
   function isDayUnlocked(progressRow, requestedDay) {
-    if (import.meta.env.DEV) return { allowed: true }
-    if (progressRow?.is_pilot_mode) return { allowed: true }
+    if (isCadenceBypassed(progressRow)) return { allowed: true }
 
     const lastCompleted = progressRow.last_completed_day || 0
     if (requestedDay === 1) return { allowed: true }
@@ -368,7 +369,7 @@ export default function ReflectV2Day() {
             </p>
             <audio
               ref={audioRef}
-              src={dayContent.founderAudio.audioSrc}
+              src={audioUrl(dayContent.founderAudio.audioSrc)}
               onEnded={() => setIsPlaying(false)}
               onError={() => setAudioError(true)}
               preload="none"

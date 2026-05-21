@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import { isCadenceBypassed } from './utils/vowPathGating'
+import { audioUrl } from './utils/audioUrl'
 import {
   getNoticeDay,
   NOTICE_TOTAL_DAYS,
@@ -15,6 +17,7 @@ import usePersistedStep from '../../hooks/usePersistedStep'
 
 const STEP = {
   ARRIVAL: 'arrival',
+  AUDIO: 'audio',
   INTRO: 'intro',
   INTERACTION: 'interaction',
   CLOSING: 'closing',
@@ -35,6 +38,9 @@ export default function NoticeDay() {
   const dayContent = getNoticeDay(dayNumber)
 
   const [step, setStep] = usePersistedStep(`vow_step_notice_${dayNumber}`, STEP.ARRIVAL, { skipPersist: [STEP.CLOSING] })
+  const audioRef = useRef(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [audioError, setAudioError] = useState(false)
   const [progress, setProgress] = useState(null)
   const [substance, setSubstance] = useState(null)
   const [accessLoading, setAccessLoading] = useState(true)
@@ -109,8 +115,7 @@ export default function NoticeDay() {
   }, [dayNumber, dayContent, navigate])
 
   function isDayUnlocked(progressRow, requestedDay) {
-    if (import.meta.env.DEV) return { allowed: true }
-    if (progressRow?.is_pilot_mode) return { allowed: true }
+    if (isCadenceBypassed(progressRow)) return { allowed: true }
 
     const lastCompleted = progressRow.last_completed_day || 0
     if (requestedDay === 1) return { allowed: true }
@@ -141,6 +146,7 @@ export default function NoticeDay() {
 
   const buildStepSequence = () => {
     const seq = [STEP.ARRIVAL]
+    if (dayContent?.founderAudio) seq.push(STEP.AUDIO)
     if (dayContent?.openings) seq.push(STEP.INTRO)
     seq.push(STEP.INTERACTION)
     seq.push(STEP.CLOSING)
@@ -148,6 +154,10 @@ export default function NoticeDay() {
   }
 
   const advance = () => {
+    if (audioRef.current && isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    }
     const sequence = buildStepSequence()
     const idx = sequence.indexOf(step)
     if (idx >= 0 && idx < sequence.length - 1) {
@@ -157,6 +167,10 @@ export default function NoticeDay() {
   }
 
   const goBack = () => {
+    if (audioRef.current && isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    }
     const sequence = buildStepSequence()
     const idx = sequence.indexOf(step)
 
@@ -295,6 +309,69 @@ export default function NoticeDay() {
               Begin
             </button>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ---- AUDIO (A note from Ninad) ----
+  if (step === STEP.AUDIO && dayContent.founderAudio) {
+    const togglePlay = () => {
+      if (!audioRef.current) return
+      if (isPlaying) {
+        audioRef.current.pause()
+        setIsPlaying(false)
+      } else {
+        audioRef.current.play().then(() => {
+          setIsPlaying(true)
+          setAudioError(false)
+        }).catch(() => {
+          setAudioError(true)
+        })
+      }
+    }
+
+    return (
+      <div style={styles.frame}>
+        <div style={styles.phone}>
+          <div style={styles.header}>
+            <button onClick={goBack} style={styles.backBtn}>{getBackLabel()}</button>
+            <div style={{ width: '40px' }}></div>
+            <div style={{ width: '40px' }}></div>
+          </div>
+
+          <div style={styles.audioCard}>
+            <div style={styles.audioLabel}>A note from Ninad</div>
+            <button onClick={togglePlay} style={styles.audioPlayBtn} aria-label={isPlaying ? 'Pause' : 'Play'}>
+              <span style={styles.audioPlayIcon}>{isPlaying ? '❚❚' : '▶'}</span>
+            </button>
+            <p style={styles.audioCaption}>
+              {audioError
+                ? 'Audio not yet available. Read the script below.'
+                : (isPlaying ? 'Playing...' : 'Tap to play')}
+            </p>
+            {dayContent.founderAudio.audioSrc && (
+              <audio
+                ref={audioRef}
+                src={audioUrl(dayContent.founderAudio.audioSrc)}
+                onEnded={() => setIsPlaying(false)}
+                onError={() => setAudioError(true)}
+                preload="none"
+                style={{ display: 'none' }}
+              />
+            )}
+          </div>
+
+          <details style={styles.transcriptDetails}>
+            <summary style={styles.transcriptSummary}>Read the script</summary>
+            <div style={styles.transcriptBody}>
+              {dayContent.founderAudio.transcript.split('\n\n').map((para, i) => (
+                <p key={i} style={styles.transcriptPara}>{para}</p>
+              ))}
+            </div>
+          </details>
+
+          <button onClick={advance} style={styles.primaryBtn}>Continue</button>
         </div>
       </div>
     )
@@ -625,5 +702,63 @@ const styles = {
     fontSize: '15px', fontWeight: 500, cursor: 'pointer',
     fontFamily: 'inherit',
     boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
+  },
+  audioCard: {
+    background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',
+    border: '0.5px solid #E8DFD0',
+    borderRadius: '20px',
+    padding: '2rem 1.5rem',
+    marginBottom: '1rem',
+    textAlign: 'center',
+    boxShadow: '0 4px 16px rgba(80,50,20,0.06)',
+  },
+  audioLabel: {
+    fontSize: '11px', color: '#854F0B',
+    textTransform: 'uppercase', letterSpacing: '0.12em',
+    fontWeight: 500, marginBottom: '1.25rem',
+  },
+  audioPlayBtn: {
+    width: '72px', height: '72px',
+    borderRadius: '50%',
+    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    boxShadow: '0 6px 18px rgba(40,25,10,0.30)',
+    margin: '0 auto',
+  },
+  audioPlayIcon: {
+    color: '#FAF7F1',
+    fontSize: '22px',
+  },
+  audioCaption: {
+    fontSize: '12px', color: '#9C8C78',
+    fontStyle: 'italic',
+    fontFamily: 'Georgia, serif',
+    margin: '1rem 0 0',
+  },
+  transcriptDetails: {
+    marginBottom: '1.5rem',
+    padding: '0 0.5rem',
+  },
+  transcriptSummary: {
+    fontSize: '12px', color: '#854F0B',
+    cursor: 'pointer', textAlign: 'center',
+    padding: '0.5rem 0',
+    fontWeight: 500,
+    listStyle: 'none',
+  },
+  transcriptBody: {
+    marginTop: '0.75rem',
+    padding: '1rem',
+    background: '#FDFBF6',
+    border: '0.5px solid #EFE7D7',
+    borderRadius: '12px',
+  },
+  transcriptPara: {
+    fontSize: '13px', color: '#6B5C4A',
+    fontFamily: 'Georgia, serif',
+    lineHeight: 1.65,
+    margin: '0 0 0.85rem',
   },
 }

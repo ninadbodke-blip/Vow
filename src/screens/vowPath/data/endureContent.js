@@ -43,20 +43,18 @@ export const ENDURE_DAYS = [
     arrivalSubtitle: 'You marked it.',
     artifactType: 'endure_day_1',
     founderAudio: {
-      transcript: `Hi. It's Ninad. Today is Day Zero of Endure.
+      transcript: `Hi. It's Ninad.
 
-If you came here from Commit, you're walking through the date you set yourself. Ten days of preparation are behind you. The infrastructure is built. Today is when the actual change begins.
+You started. Whatever today felt like — and it might have felt like hell — you started, you're here, and right now that is the only thing that matters.
 
-If you came here directly from the Stage Check — meaning you've already stopped, and you're in the early stretch — welcome. You don't need the date because you crossed it already. Endure is for what's happening now.
+I'm going to be honest with you, because I think you'd rather have the truth than a pep talk. This next stretch is the hardest part of the whole thing. Not the most dramatic. The hardest. Your body's adjusting. Your sleep might be wrecked. You might feel anxious, or angry, or just wrong in a way you can't quite point to. That is not a sign you're failing. That's the sign it's working. That's your whole system recalibrating after a long time of running on something else.
 
-What you're walking into is real. The first 72 hours have specific physiology. The first week has its own shape. The first three weeks are different from the rest of the year that follows. This stage is structured around that reality, not around what people wish were true.
+Here's what I need you to know going in. This phase is loud at first, and then it goes quiet — and the quiet is actually the trickier part. I'll talk to you about that when we get there. For right now, while it's loud: you do not have to get through the whole month today. You don't even have to get through tomorrow. You have to get through the next hour. And when that one's done, the next one. That is the real unit of this. Not thirty days. One hour.
 
-Today is a marking. A small ritual that says you crossed. Hold your finger on the screen, count to ten, and the day is set. Then you'll see a map of what to expect in the first three days. The map is reference material — you'll come back to it when something is happening and you want to know if it's normal.
+When the urge comes, and it will, remember it's a wave, not a wall. It rises, it peaks, and if you don't feed it, it breaks. You've got the tools you built in Commit. Use them. They were never decoration. They were for exactly this.
 
-The first three days are the hardest, and the easiest in a strange way. Hardest because your body is in active protest. Easiest because the structure of the protest is well-known. You're not alone in any specific symptom you'll experience over the next 72 hours.
-
-Mark the day. Then walk into it.`,
-      audioSrc: null,
+I'm with you on this part. One hour at a time. Go.`,
+      audioSrc: 'endure/day_01.mp3',
     },
     intro: [
       `Today is Day Zero. The day you stopped, or the day Vow asks you to mark as the start of Endure.`,
@@ -608,20 +606,18 @@ The first three days are different. Walk through them.`,
     arrivalSubtitle: 'Ten days in.',
     artifactType: 'endure_day_10',
     founderAudio: {
-      transcript: `Hi. It's Ninad. Day 10 of Endure.
+      transcript: `Hi. It's Ninad.
 
-You're halfway. Eleven days behind you. Ten days ahead.
+You're about halfway through Endure. If the loud part has died down and you're now in a kind of grey, flat nothing — not in crisis anymore, but nothing really feels good either — then you've landed exactly where I wanted to talk to you.
 
-If you've felt the flatness this week — the food not tasting right, the conversations feeling effortful, the not-funny-ness of things — I want to name that I felt it too in my own first month. I remember thinking, around Day 9 or 10, that I had made the substance the entire dopamine economy of my life without realizing it, and that taking it out had left a kind of grey field where there used to be color.
+This flatness is the part that ends most attempts. Not the crash. The crash is frightening, but it's obvious. You can see it coming and you brace for it. The flatness is sneaky. It doesn't hurt enough to scare you, and it lasts long enough to bore you, and one grey afternoon you think, well, if this is what sober feels like, what's even the point. And you go back. Not because you're weak. Because nobody warned you the grey was coming, or that it ends.
 
-That doesn't last. It's a known stretch. The body has to recalibrate, and recalibration takes weeks, not days. Around Day 14 or 15 things start to come back slowly. By Day 30 most of the basic pleasure machinery is working again. By Day 60 you forget what the flatness felt like.
+So I'm warning you. The grey is temporary. Here's what's actually happening. For a long time, your brain got its good feelings handed to it, so it quietly stopped making as much of its own. Now you've stopped the deliveries, and your own supply hasn't caught back up yet. That gap is the grey. And it closes. Your brain comes back online. Slowly, in patches, not in a straight line — but it comes back.
 
-The work right now isn't to fight the flatness. It's to keep walking through it. Use the witness exercise from yesterday. Use the state-matched responses. Eat real food even when it tastes like nothing. Sleep on a normal schedule even when sleep is weird. Move your body even when nothing feels rewarding.
+Don't try to fix the flatness with a quick hit of something. That only digs the hole deeper. Let the small stuff stay small for now. Walk, sleep, get some sunlight, the boring reliable things. You're not chasing a high. You're just letting the needle climb back up to normal.
 
-The structure you built in Commit was for exactly this. The daily anchors. The replacement engine. The if-then library. None of them are interesting to do right now. They're not supposed to be. They're supposed to be done.
-
-I'm proud of you. Halfway is real. Walk through the next ten days the same way you walked through the first ten.`,
-      audioSrc: null,
+Stay in the grey a little longer. It is not where you're going to live. It's the last stretch of road before the colour comes back. Keep going.`,
+      audioSrc: 'endure/day_10.mp3',
     },
     intro: [
       `Today is Day 10. Halfway through Endure. There is no exercise today other than a single tap of how you are.`,
@@ -1143,20 +1139,20 @@ I'm proud of you. Halfway is real. Walk through the next ten days the same way y
     arrivalSubtitle: 'Twenty-one days.',
     artifactType: 'endure_day_21',
     founderAudio: {
-      transcript: `Hi. It's Ninad. Day 21.
+      transcript: `Hi. It's Ninad.
 
-You're at the end of Endure. Three weeks. Twenty-one days of holding the vow you sealed at the end of Commit.
+Twenty-one days through Endure. The hardest stage in the whole journey, and you're standing at the end of it. I'm going to say this plainly, with no decoration. You did the thing most people don't. You held the vow through the part where it actually hurt.
 
-I want to say something about what twenty-one days actually is.
+Think about where you were three weeks ago. Day one of this stage, in the thick of it, getting through it an hour at a time. And then the grey. And you stayed anyway. Through the loud part and the flat part both. That is not luck, and it is not willpower running on fumes. That's you, choosing the same thing over and over on the days it gave you nothing back. That is the realest kind of strength there is, and almost nobody sees it, because from the outside it doesn't look like anything. I see it. It counts.
 
-It's not a milestone. It's not a graduation. The dopamine system is still recalibrating. The nervous system is still relearning regulation without the substance. The shame work, the witness work, the capital work — all of it continues past today. Endure is the structured part of the early stretch. What comes after is a longer, less structured stretch — the Build stage if you continue with Vow, the rest of your life either way.
+Here's the truth about what comes next, because I won't lie to you even now. It does get easier. But it doesn't become automatic. The work just changes shape — from holding on, to building a life that's actually worth staying sober for. That's the next stage. It's gentler than this one. You've already done the hardest part there is.
 
-But twenty-one days is real. Not because the body is fully healed at twenty-one days. It isn't. It's real because you walked through the structure. You did Day Zero. You did the polyvagal work. You did the AVE protocol. You did the shame statement. You did the capital baseline. You named values. You held the vow on the days when you wanted to break it, and you didn't. That is the data.
+And if you slipped somewhere in here — if it wasn't clean — hear me on this. It doesn't erase any of it. A slip is one point on a long line that's still pointing up. You're still here. You came back. That coming-back is the whole skill. That's what the people who make it actually do.
 
-The vow is what carries the work forward. You sealed it on Commit Day 8. Today, before you close Endure, you'll read it one more time. Not edit it. Read it. The vow has held for twenty-one days. It will continue to hold the same way — through use, through reading, through return.
+You kept a promise to yourself through the hardest weeks of it. Carry that with you. You earned it the hard way.
 
-Read it. Then mark Day 21.`,
-      audioSrc: null,
+I'll see you in Build. Go on — you've more than earned what's next.`,
+      audioSrc: 'endure/day_21.mp3',
     },
     intro: [
       `Today is Day 21. The last day of Endure. There is one exercise — reading your vow, then marking Day 21 with a single tap.`,

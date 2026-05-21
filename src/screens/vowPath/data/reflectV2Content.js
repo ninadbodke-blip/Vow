@@ -33,18 +33,18 @@ export const REFLECT_V2_DAYS = [
     arrivalTitle: 'What brought you here.',
     arrivalSubtitle: 'The single most important question of these three weeks.',
     founderAudio: {
-      audioSrc: '/audio/reflect-v2/day_01.mp3',
-      transcript: `Hi. It's Ninad.
+      audioSrc: 'reflect/day_01.mp3',
+      transcript: `Hi. It's Ninad again.
 
-If you're here, something brought you. Maybe a worry that's been following you around. Maybe someone said something. Maybe a moment last week — or last night — that you can't quite shake.
+You made it to Reflect. I don't say that lightly. A lot of people look once, put the phone down, and that's the end of it. You came back. That matters more than you know right now.
 
-You don't need to know yet whether you'll quit, or cut down, or do nothing. The Vow Stage Check put you here, in Reflect, because you're somewhere between knowing something is off and being ready to act on it. That in-between is exactly where this is built for.
+Here's what these next three weeks are. Reflect is where we stop just glancing at it and actually sit with it. Both sides. What the substance gives you — and it does give you something, I'm not going to pretend it doesn't — and what it takes. We hold both of those at the same time, which is uncomfortable, because most of us have spent years only ever looking at one side at a time.
 
-Twenty-one days. Mostly short. A few longer. Some reading, a lot of small actions, and four moments where you'll write something that matters.
+I want to be straight with you about something. This stage is not going to push you toward quitting. If anyone builds a tool that quietly herds you toward one answer, they're selling you something. Vow isn't. By the end of Reflect you might decide you're ready to change. You might decide you're not. You might decide you need more time. All three of those are real, allowed endings. I mean that completely.
 
-By Day 21, you'll have a picture of yourself you didn't have when you started. Some of it will be uncomfortable. Some of it will be a relief. All of it will be yours.
+Your only job for the next twenty-one days is to be honest in here. Nobody reads what you write. Not me, not anyone. So you can finally stop performing — for your family, for your boss, for yourself — and just say the true thing.
 
-That's the work. Let's begin.`,
+That's the work. I'll be back around the halfway mark. Go on.`,
     },
     intro: [],
     mechanicProps: {
@@ -328,18 +328,18 @@ That's the work. Let's begin.`,
     arrivalTitle: 'Halfway.',
     arrivalSubtitle: 'Ten days down. Eleven to go.',
     founderAudio: {
-      audioSrc: '/audio/reflect-v2/day_10.mp3',
-      transcript: `Hi. It's Ninad. We're halfway.
+      audioSrc: 'reflect/day_10.mp3',
+      transcript: `Hi. It's Ninad.
 
-Ten days. You've named what brought you. You've put numbers on your pattern. You've mapped your triggers, sorted what's true, calculated the time and money this has taken. You've written a letter to a version of yourself from before this began. You've ranked your costs. And you've made a map of what your body has been carrying.
+You're at the halfway point of Reflect. Ten, eleven days in. I wanted to stop you here for a second, because the middle is where people quietly drift off, and I don't want that to be you.
 
-That's a lot. Most people who download an app to look at their substance use don't make it past Day 3. You're at Day 10.
+Think about what you've already done. You looked at the actual numbers. The days, the amounts, maybe the money, maybe the years. That is not a small thing. Most people never let themselves see those numbers laid out, because the numbers are the part that's hard to argue with. You let yourself see them. That took something.
 
-Week 2 from here is heavier than Week 1. The shape of the work changes. Week 1 was looking. Week 2 is feeling. The numbers on Day 5 were data. The body map you did yesterday was data. Two days from now, you'll write again \u2014 to a version of yourself five years from now. Some of what comes up may surprise you.
+Here's a thing I learned the hard way, so you don't have to. The middle of this kind of work feels like nothing is happening. You're not having a big dramatic breakthrough every day. Some days you write two flat sentences, close the app, and feel like you wasted your time. You didn't. This stage was never about breakthroughs. It's about accumulation. You're slowly building an honest picture of your own life, one ordinary day at a time, and the picture only works because you keep showing up to add to it.
 
-The work is working if it's getting harder, not easier. That's how this stage is supposed to land. Stay with it.
+The second half goes deeper. We start looking forward. What changes if you stop. What it costs if you don't. Who you'd be on either side of this. Keep being honest in there. It's working even when it doesn't feel like it's working.
 
-I'll see you on the other side of Day 21.`,
+I'll see you at the end. Keep going.`,
     },
     intro: [],
     mechanicProps: {
@@ -794,16 +794,20 @@ I'll see you on the other side of Day 21.`,
     arrivalTitle: 'Three doors.',
     arrivalSubtitle: 'The last day. Where do you actually stand?',
     founderAudio: {
-      audioSrc: '/audio/reflect-v2/day_21.mp3',
-      transcript: `Hi. It's Ninad, on the last day.
+      audioSrc: 'reflect/day_21.mp3',
+      transcript: `Hi. It's Ninad.
 
-Twenty-one days. You came in not sure what to do. You're standing in a different place now.
+Twenty-one days. You started Reflect not really knowing what it was, and you stayed with it the whole way through. Sit with that for one second before you do anything else, because you're about to rush past it, and it deserves a second.
 
-I want to say something specific, because it matters today: the work of these three weeks was the deciding, not the stopping. Some of you, today, will pick the first door. The Commit door. You're ready to begin the next stage of the path. Others will pick the second door \u2014 the wait. You've looked honestly and you need more time before the decision is yours to make. That's not failure. That's information. The third door is for those of you who, in the looking, decided this isn't for you, or isn't for you yet. That's also a decision. Vow honors that one too.
+Three weeks ago you opened this and you were only willing to look. Now you've done the looking. You held both sides of it. You wrote the true things down. You watched your own mind argue with itself, and you didn't look away. Whatever you decide next, you're deciding it as someone who actually knows what they're choosing. Not someone guessing. Not someone in denial. That is rare. Most people never get this clear.
 
-One more thing. The letter you wrote on Day 17, from your future self to you \u2014 you'll see it on the next screen. I'd suggest reading it before you pick a door. The version of you who wrote it knew things the version of you sitting here right now does not yet know. Let them speak.
+So here's where it goes. In a moment, Vow is going to give you three honest doors, and I want to be completely straight that they carry equal weight. You can decide you're ready to commit to changing. You can decide this isn't the time, and step away — and that is allowed, really allowed, with no guilt trip from me. Or you can decide you need to keep reflecting a while longer.
 
-That's it. Thank you for the work. Whatever door you pick, I'll be on the other side of it.`,
+I am not going to tell you which one to walk through. If I did, I'd be doing the exact thing I built this whole app to never do.
+
+What I'll say is this. Whatever you choose, you are not the same person who opened this three weeks ago. That person couldn't see clearly. You can now. And clarity, once you've got it, is yours to keep. It doesn't go away.
+
+Thank you for letting me walk part of this with you. Go ahead and choose. I'll be here either way.`,
     },
     intro: [
       `Twenty-one days. The work of Reflect closes today.`,

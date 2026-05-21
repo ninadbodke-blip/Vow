@@ -1,8 +1,8 @@
 /**
  * Motivation quotes — daily rotation based on day-of-year.
  * Same quote shown to all users on a given day.
- * 34 quotes total. Cycle restarts every QUOTES.length days.
- * Order is curated for variety: stoic / eastern / modern / original rough rotation.
+ * 60 quotes total. Cycle restarts every QUOTES.length days (~8.5 weeks).
+ * Categories: stoic / eastern / modern / original.
  */
 
 export const QUOTES = [
@@ -209,6 +209,162 @@ export const QUOTES = [
     text: "The work that no one sees is the work that builds the life.",
     attribution: null,
     category: "original",
+  },
+  {
+    id: 35,
+    text: "The Tuesday afternoon use is the one to study. Crisis uses make sense — boredom uses tell the truth.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 36,
+    text: "Cravings have an arrival time and a departure time. Most people negotiate during the wrong half.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 37,
+    text: "Sobriety isn't the absence of wanting. It's getting better at the seven minutes after the wanting peaks.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 38,
+    text: "Most relapses don't begin with a craving. They begin with three skipped nights of sleep and one phone call you didn't return.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 39,
+    text: "Boredom is not your enemy. Boredom is the room the substance was furnishing for you.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 40,
+    text: "From the unreal lead me to the real, from darkness lead me to light, from death lead me to immortality.",
+    attribution: "Brihadaranyaka Upanishad",
+    category: "eastern",
+  },
+  {
+    id: 41,
+    text: "All conditioned things are impermanent. Work out your own salvation with diligence.",
+    attribution: "Gautama Buddha",
+    category: "eastern",
+  },
+  {
+    id: 42,
+    text: "The cure for the pain is in the pain.",
+    attribution: "Rumi",
+    category: "eastern",
+  },
+  {
+    id: 43,
+    text: "The struggle itself toward the heights is enough to fill a man's heart. One must imagine Sisyphus happy.",
+    attribution: "Albert Camus",
+    category: "modern",
+  },
+  {
+    id: 44,
+    text: "When we are no longer able to change a situation, we are challenged to change ourselves.",
+    attribution: "Viktor Frankl",
+    category: "modern",
+  },
+  {
+    id: 45,
+    text: "You are not negotiating with the substance. You are negotiating with the version of yourself who learned to need it.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 46,
+    text: "The morning after is when the body tells the truth the night was hiding.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 47,
+    text: "What you call willpower is mostly the absence of unnecessary decisions.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 48,
+    text: "Quitting is one decision. Staying quit is a thousand.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 49,
+    text: "Most relapses happen in the half-hour between deciding you're fine and proving it.",
+    attribution: null,
+    category: "original",
+  },
+  {
+    id: 50,
+    text: "He who knows that enough is enough will always have enough.",
+    attribution: "Lao Tzu, Tao Te Ching",
+    category: "eastern",
+  },
+  {
+    id: 51,
+    text: "Be a lamp unto yourself.",
+    attribution: "Gautama Buddha",
+    category: "eastern",
+  },
+  {
+    id: 52,
+    text: "The breeze at dawn has secrets to tell you. Don't go back to sleep.",
+    attribution: "Rumi",
+    category: "eastern",
+  },
+  {
+    id: 53,
+    text: "Attention is the beginning of devotion.",
+    attribution: "Mary Oliver",
+    category: "modern",
+  },
+  {
+    id: 54,
+    text: "We tell ourselves stories in order to live.",
+    attribution: "Joan Didion",
+    category: "modern",
+  },
+  {
+    id: 55,
+    text: "You could leave life right now. Let that determine what you do and say and think.",
+    attribution: "Marcus Aurelius",
+    category: "stoic",
+  },
+  {
+    id: 56,
+    text: "If you want to improve, be content to be thought foolish and stupid.",
+    attribution: "Epictetus",
+    category: "stoic",
+  },
+  {
+    id: 57,
+    text: "While we are postponing, life speeds by.",
+    attribution: "Seneca",
+    category: "stoic",
+  },
+  {
+    id: 58,
+    text: "So you were born to feel 'nice'? Instead of doing things and experiencing them?",
+    attribution: "Marcus Aurelius",
+    category: "stoic",
+  },
+  {
+    id: 59,
+    text: "Men are disturbed not by things, but by the opinions they form of them.",
+    attribution: "Epictetus",
+    category: "stoic",
+  },
+  {
+    id: 60,
+    text: "Sometimes even to live is an act of courage.",
+    attribution: "Seneca",
+    category: "stoic",
   },
 ]
 

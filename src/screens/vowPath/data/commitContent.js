@@ -46,22 +46,18 @@ export const COMMIT_DAYS = [
     arrivalSubtitle: 'Where Commit begins.',
     artifactType: 'commit_day_1',
     founderAudio: {
-      transcript: `Hi. It's Ninad. You're at Commit.
+      transcript: `Hi. It's Ninad.
 
-Reflect is behind you. You looked. You weighed. You decided. The work of Commit is different. It's the work of getting ready.
+You chose to commit. I don't want to make a big ceremony out of it, because the ceremony was never the point — what you do after is. But I do want to mark it. You stood in front of three doors and you walked through the hard one. Okay. Let's get to work.
 
-For the next ten days, you're going to build the kit you need to follow through on what you decided. The plans, the scripts, the environment, the vow itself. Most of it is interactive. Almost none of it is journaling. You're building, not reflecting.
+Here's what Commit is, and what it isn't. It is not the part where you quit. Not yet. People get this backwards all the time. They decide to change, and then they try to white-knuckle it starting that same night, no plan, pure willpower — and willpower runs out around nine p.m., and they're back where they started by the weekend. That's not a character flaw. That's just bad preparation.
 
-But today, before any of that, one thing has to be true.
+So we're not doing that. The next ten days are preparation. We build the actual kit before you need it. The plan for the urges, before the urge shows up. The people you'll lean on. The things that fill the space the substance is about to leave. The honest conversations. We get all of it in place while you're calm and clear, so that the tired, tempted version of you later doesn't have to figure it out from scratch in the worst possible moment.
 
-You need a date.
+By the end of these ten days, you'll set a date. A real one. But not today. Today we just start building.
 
-Not "soon." Not "after this thing is over." Not "when I feel ready." A specific date when the substance stops being part of your life. The date is the spine of everything else. Without it, the next nine days have nothing to build toward.
-
-Pick honestly. Pick close enough that the work matters. Pick far enough that you can finish Commit before it arrives.
-
-Today, you set it. Tomorrow, the building begins.`,
-      audioSrc: null, // To be recorded post-May 30
+One thing at a time. I'll talk to you near the end, right before the date. Let's begin.`,
+      audioSrc: 'commit/day_01.mp3',
     },
     intro: [
       `Today is the spine of Commit. Without a date, the next nine days have nothing to build toward.`,
@@ -770,20 +766,20 @@ Pick one from below that has the lowest barrier for you to try. Commit to it for
     arrivalSubtitle: 'What you built. What comes next.',
     artifactType: 'commit_day_10',
     founderAudio: {
-      transcript: `Hi. It's Ninad. One last time before the date.
+      transcript: `Hi. It's Ninad.
 
-You're on Day 10 of Commit. Ten days ago, you came out of Reflect with a decision. Today, the preparation is done.
+This is the one I was building up to. You're at the end of Commit, which means the date is real now. It isn't an idea anymore. It's on the calendar, and it's close.
 
-I want to name what you built.
+I remember this exact spot. The night before. That strange mix of feeling ready and feeling terrified, both at full volume at the same time. If that's what's in your chest right now — good. It means you understand what you're about to do. The people who aren't a little scared here are usually the ones who haven't really decided yet.
 
-You set a date. You named who needed to know. You audited your home, your routine, your phone, your social circle, and you have a specific action list for each. You built a replacement engine — each of your triggers now has a specific replacement action. You wrote if-then plans for situations you can predict. You set four daily anchors that will hold you through the harder days. You rehearsed the conversations. You wrote the vow itself, in your own words, and you sealed it. You named witnesses. You set a cadence for returning to the vow.
+I want to remind you what you've actually got, because the fear is going to try to tell you you're walking in empty-handed. You're not. You spent ten days building. You have a plan for the urges. You already know the specific moments that are going to be hardest, and you've already decided what you'll do inside them. You've got people who know. You've got things to put in the empty hours. None of that is theory. You made it, on purpose, for exactly this.
 
-That's not nothing. Most people who want to change their relationship with a substance never build any of this. They wake up one day and try to stop, and they wake up the next day still using.
+So when the using voice tells you you're not ready — and it will, probably tomorrow — you can answer it honestly. You are ready. Not because you feel strong. You might not feel strong at all. You're ready because you prepared, and preparation is the thing that holds when the feelings don't.
 
-You're at the threshold of Endure. The actual change starts on your stop date. The first weeks will be harder than today. The infrastructure you built is what'll carry you through.
+The vow you're about to make is yours. Not mine. Not the app's. Yours. Say it like you mean it, because you do.
 
-Read your vow tonight. Read it tomorrow morning. Then start.`,
-      audioSrc: null,
+I'll talk to you on the other side, once it's actually started. You've got this part. Go.`,
+      audioSrc: 'commit/day_10.mp3',
     },
     intro: [
       `Today is Day 10. The last day of Commit.`,

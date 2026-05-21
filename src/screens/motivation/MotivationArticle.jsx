@@ -40,16 +40,28 @@ export default function MotivationArticle() {
         {/* ARTICLE */}
         <article style={styles.article}>
           {article.paragraphs.map((para, i) => {
+            // A paragraph is either a plain string or { text, style }.
+            // style === 'anchor' renders the short italic/centered lines the
+            // articles were written around. Plain strings render as normal.
+            const text = typeof para === 'string' ? para : para.text
+            const variant = typeof para === 'string' ? null : para.style
             const isFirst = i === 0
+
+            if (variant === 'anchor') {
+              return (
+                <p key={i} style={styles.anchor}>{text}</p>
+              )
+            }
+
             return (
               <p key={i} style={isFirst ? styles.firstPara : styles.para}>
                 {isFirst ? (
                   <>
-                    <span style={styles.dropCap}>{para.charAt(0)}</span>
-                    {para.slice(1)}
+                    <span style={styles.dropCap}>{text.charAt(0)}</span>
+                    {text.slice(1)}
                   </>
                 ) : (
-                  para
+                  text
                 )}
               </p>
             )
@@ -170,6 +182,17 @@ const styles = {
     lineHeight: 1.85,
     margin: '0 0 1.4rem',
     letterSpacing: '0.005em',
+  },
+  anchor: {
+    fontSize: '18px',
+    color: '#854F0B',
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    lineHeight: 1.6,
+    textAlign: 'center',
+    margin: '2.25rem auto',
+    maxWidth: '430px',
+    letterSpacing: '0.01em',
   },
   dropCap: {
     float: 'left',

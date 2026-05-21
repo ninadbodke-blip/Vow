@@ -26,6 +26,24 @@ export const NOTICE_V2_DAYS = [
     arrivalTitle: 'Lines crossed.',
     arrivalSubtitle: `The lines you said you'd never cross.`,
     artifactType: 'notice_day_1',
+    founderAudio: {
+      audioSrc: 'notice/day_01.mp3',
+      transcript: `Hi. It's Ninad. I'm the person who made this.
+
+I want to tell you why this app exists, and then I'll get out of your way.
+
+I made Vow because I used to be exactly where you are right now. Holding a phone, opening something like this, not totally sure if I was serious or just poking at the idea. And every app I tried wanted to congratulate me. Counters, streaks, little fires, badges. Like I'd won something. I hadn't won anything. I was scared, and I was tired, and the last thing I needed was a cartoon flame telling me I was on a roll.
+
+So Vow doesn't do that. There's no streak to break in here. There's no number you can lose. If you slip, you don't get punished, and you don't get sent back to the start. That was the whole point of building it.
+
+What you're in right now is called Notice. It's small on purpose. We are not asking you to quit anything yet. We're not asking you to promise anything. For these few days, all you're doing is looking. Just paying attention to something you've probably spent a long time not looking at directly.
+
+That's the whole job for now. Look.
+
+I'll talk to you again further in. For now — I'm genuinely glad you opened this. That part is harder than it sounds, and you already did it.
+
+Okay. Go ahead.`,
+    },
     openings: {
       A: {
         intro: `You're here because the Stage Check placed you in Notice. Most people in this stage don't think they have a problem. They've heard the warnings. They've seen the lists of symptoms. None of it has felt like it applies to them.

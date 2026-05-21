@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { QUOTES, getTodayQuote } from './data/quotes'
 import { ARTICLES } from './data/articles'
+import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 
 const ProfileIcon = () => (
@@ -23,6 +24,29 @@ const ProfileIcon = () => (
 export default function MotivationHome() {
   const navigate = useNavigate()
   const [showPast, setShowPast] = useState(false)
+  const [userSubstance, setUserSubstance] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    async function loadSubstance() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('vow_path_progress')
+        .select('primary_substance')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (active && data?.primary_substance) setUserSubstance(data.primary_substance)
+    }
+    loadSubstance()
+    return () => { active = false }
+  }, [])
+
+  // Universal articles (substance === null) show to everyone. Substance-tagged
+  // articles surface only to the user whose primary_substance matches.
+  const visibleArticles = ARTICLES.filter(
+    a => a.substance === null || a.substance === userSubstance
+  )
 
   const todayQuote = getTodayQuote()
   const today = new Date().toLocaleDateString('en-US', {
@@ -61,7 +85,7 @@ export default function MotivationHome() {
         <div style={styles.section}>
           <p style={styles.sectionLabel}>Articles</p>
           <div style={styles.articleList}>
-            {ARTICLES.map(article => (
+            {visibleArticles.map(article => (
               <button
                 key={article.id}
                 onClick={() => navigate(`/motivation/article/${article.slug}`)}

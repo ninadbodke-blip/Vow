@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import { isCadenceBypassed } from './utils/vowPathGating'
 import {
   getBuildDay,
   BUILD_TOTAL_DAYS,
@@ -127,8 +128,7 @@ export default function BuildDay() {
   }, [dayNumber, dayContent, navigate])
 
   function isDayUnlocked(progressRow, requestedDay, week) {
-    if (import.meta.env.DEV) return { allowed: true }
-    if (progressRow?.is_pilot_mode) return { allowed: true }
+    if (isCadenceBypassed(progressRow)) return { allowed: true }
     if (requestedDay <= week) return { allowed: true }
     return {
       allowed: false,
