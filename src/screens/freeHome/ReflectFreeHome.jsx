@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import QuickLogModal from './QuickLogModal'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
+import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
 
 // ===================================================================
@@ -271,6 +272,9 @@ export default function ReflectFreeHome({ progress }) {
         <GreetingTile firstName={firstName} substanceLabel={progress.substance_label} />
 
         <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+
+        {/* JOURNAL (shared) */}
+        <JournalTile stage="reflect" />
 
         <BalanceMetersTile latest={balanceLatest} onSaved={handleBalanceSaved} />
 
@@ -1191,7 +1195,7 @@ const styles = {
     border: '0.5px solid #C2D49A',
   },
   tileEyebrow: {
-    fontSize: '11px', color: '#854F0B',
+    fontSize: '10.5px', color: '#A07A3C',
     textTransform: 'uppercase', letterSpacing: '0.16em',
     fontWeight: 500, fontFamily: 'Georgia, serif',
     margin: '0 0 10px',

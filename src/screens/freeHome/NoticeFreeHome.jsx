@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import QuickLogModal from './QuickLogModal'
-import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
+import DailyCheckin from './DailyCheckin'
+import JournalTile from './JournalTile'
+import { TodayCheckinTile, AwarenessStripTile } from './CheckinTiles'
 import BottomNav from '../../components/BottomNav'
 
 // ===================================================================
@@ -187,6 +189,9 @@ export default function NoticeFreeHome({ progress }) {
         {/* HERO — daily check-in */}
         <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
 
+        {/* JOURNAL (shared) */}
+        <JournalTile stage="notice" />
+
         {/* 7-day awareness strip (mood, not abstinence) */}
         <AwarenessStripTile checkins={recentCheckins} />
 
@@ -248,84 +253,6 @@ function GreetingTile({ firstName, substanceLabel }) {
   )
 }
 
-// ===================================================================
-// TILE: TODAY'S CHECK-IN (hero, new)
-// ===================================================================
-function TodayCheckinTile({ checkin, onOpen }) {
-  if (checkin) {
-    const m = moodByScore(checkin.mood_score) || moodByValue(checkin.mood)
-    return (
-      <div style={{ ...styles.tile, ...styles.tileLogged }}>
-        <p style={styles.tileEyebrow}>Today's check-in</p>
-        <div style={styles.checkinSummaryRow}>
-          <span style={{ ...styles.moodPill, background: m?.color || '#B9A07E' }} />
-          <div>
-            <p style={styles.checkinSummaryMood}>
-              {m?.label || 'Noted'}{checkin.felt_pull ? ' \u00b7 the pull showed up' : ''}
-            </p>
-            <p style={styles.checkinSummarySub}>
-              Energy {checkin.energy ?? '\u2013'}/5
-              {checkin.note ? ` \u00b7 \u201c${checkin.note}\u201d` : ''}
-            </p>
-          </div>
-        </div>
-        <button onClick={onOpen} style={styles.checkinEditBtn}>Edit today's check-in</button>
-      </div>
-    )
-  }
-  return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Today's weather</p>
-      <h2 style={styles.tileTitle}>How are you, really?</h2>
-      <p style={styles.tileBody}>
-        A quiet half-minute. Mood, energy, whether the pull came by. Nobody sees it but you.
-      </p>
-      <button onClick={onOpen} style={styles.quickLogBtn}>Check in</button>
-    </div>
-  )
-}
-
-// ===================================================================
-// TILE: AWARENESS STRIP (7-day, mood-coloured, new)
-// ===================================================================
-function AwarenessStripTile({ checkins }) {
-  const days = buildLast7(checkins)
-  const noticed = days.filter(d => d.checkin).length
-
-  if (noticed === 0) {
-    return (
-      <div style={styles.tile}>
-        <p style={styles.tileEyebrow}>Last 7 days</p>
-        <h3 style={styles.meterEmptyTitle}>Your week will fill in here.</h3>
-        <p style={styles.tileHelperText}>One check-in a day. Noticing is the whole job right now.</p>
-      </div>
-    )
-  }
-
-  return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Last 7 days</p>
-      <div style={styles.stripRow}>
-        {days.map((d, i) => {
-          const m = d.checkin ? moodByScore(d.checkin.mood_score) : null
-          return (
-            <div key={i} style={styles.stripCol}>
-              <div style={{
-                ...styles.stripDot,
-                ...(m ? { background: m.color, border: 'none' } : {}),
-                ...(d.isToday ? styles.stripDotToday : {}),
-              }} />
-              <span style={styles.stripDay}>{d.label}</span>
-            </div>
-          )
-        })}
-      </div>
-      <p style={styles.tileHelperText}>
-        You've noticed {noticed} of the last 7 days. That's the work.
-      </p>
-    </div>
-  )
-}
 
 // ===================================================================
 // TILE: DAILY MIRROR (in-home reflection, gated, new)
@@ -707,7 +634,7 @@ const styles = {
     padding: '18px 18px 16px', boxShadow: '0 4px 16px rgba(80,50,20,0.06)',
   },
   tileLogged: { background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A' },
-  tileEyebrow: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 10px' },
+  tileEyebrow: { fontSize: '10.5px', color: '#A07A3C', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 10px' },
   tileTitle: { fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.3, margin: '0 0 12px' },
   tileBody: { fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 14px' },
   tileSubtitleHeader: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 12px' },
@@ -758,7 +685,7 @@ const styles = {
   meterCount: { fontSize: '38px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1, margin: 0, fontVariantNumeric: 'tabular-nums' },
   meterCountLabel: { fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0 },
   meterDelta: { fontSize: '12px', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 14px' },
-  meterDistHeading: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '8px 0 8px' },
+  meterDistHeading: { fontSize: '10.5px', color: '#A07A3C', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '8px 0 8px' },
   meterDistList: { display: 'flex', flexDirection: 'column', gap: '6px' },
   meterDistRow: { display: 'flex', alignItems: 'center', gap: '10px' },
   meterDistLabel: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', width: '80px', flexShrink: 0 },

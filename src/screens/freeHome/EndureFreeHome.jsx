@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { checkAndMarkMilestones } from '../../milestoneHelpers'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
+import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
 
 // ===================================================================
@@ -43,6 +44,7 @@ export default function EndureFreeHome({ progress }) {
   const [, setTickCount] = useState(0)
   const [toastMilestones, setToastMilestones] = useState([])
   const [showAddPlaceholder, setShowAddPlaceholder] = useState(false)
+  const [slipCount, setSlipCount] = useState(progress.endure_slip_count || 0)
   const [loading, setLoading] = useState(true)
 
   // 100ms tick for live counter animation
@@ -55,6 +57,12 @@ export default function EndureFreeHome({ progress }) {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+
+      // fresh slip count for the slip→Reclaim indicator
+      const { data: vppRow } = await supabase
+        .from('vow_path_progress').select('endure_slip_count')
+        .eq('user_id', user.id).maybeSingle()
+      if (vppRow) setSlipCount(vppRow.endure_slip_count || 0)
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -107,6 +115,51 @@ export default function EndureFreeHome({ progress }) {
   const handleCheckinSaved = (row) => setTodayCheckin(row)
   const handleActivitySaved = (row) => setActivityLogs(prev => [row, ...prev].slice(0, 40))
 
+  const handleUpdateStartDate = async (newISO) => {
+    if (!tracker) return
+    const { error } = await supabase.from('trackers').update({ start_date: newISO }).eq('id', tracker.id)
+    if (error) { console.error('Failed to update start date:', error); alert('Could not update the date. Please try again.'); return }
+    setTracker(prev => ({ ...prev, start_date: newISO }))
+  }
+
+  const handleMoveToReclaim = async () => {
+    if (!window.confirm("Move to Reclaim? It's a gentler space to regroup — your streak and progress stay saved.")) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { error } = await supabase
+      .from('vow_path_progress')
+      .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+    if (error) { console.error('Move to reclaim failed:', error); alert('Could not move. Please try again.'); return }
+    navigate('/home', { replace: true })
+  }
+
+  const handleMoveToBuild = async () => {
+    if (!window.confirm("Move to Build? The work shifts from holding the line to building the life around it — your counter and progress stay.")) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { error } = await supabase
+      .from('vow_path_progress')
+      .update({ free_state: 'build', updated_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+    if (error) { console.error('Move to build failed:', error); alert('Could not move. Please try again.'); return }
+    navigate('/home', { replace: true })
+  }
+
+  // Urge velocity — log the spike/creep signal (feeds the Mirror), then hand
+  // off to the real urge-breaking flow. Captured even if they bail mid-flow.
+  const handleLogUrge = async (velocity) => {
+    if (!tracker) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('free_stage_signals').insert({
+        user_id: user.id, stage: 'endure', signal_type: 'urge_velocity',
+        payload: { velocity, logged_at: new Date().toISOString() },
+      })
+    }
+    navigate(`/urge/${tracker.id}`, { state: { velocity } })
+  }
+
   if (loading) {
     return (
       <div style={styles.frame}>
@@ -145,7 +198,7 @@ export default function EndureFreeHome({ progress }) {
 
         {/* TILE 3 — COUNTER (or set-up prompt if no tracker) */}
         {tracker ? (
-          <CounterTile tracker={tracker} navigate={navigate} />
+          <CounterTile tracker={tracker} navigate={navigate} onUpdateStart={handleUpdateStartDate} />
         ) : (
           <CounterSetupPromptTile
             substanceLabel={progress.substance_label}
@@ -155,11 +208,23 @@ export default function EndureFreeHome({ progress }) {
 
         {/* TILE 4 — URGE / SLIP ACTIONS */}
         {tracker && (
-          <ActionTile tracker={tracker} navigate={navigate} />
+          <ActionTile
+            tracker={tracker}
+            navigate={navigate}
+            slipCount={slipCount}
+            onMoveToReclaim={handleMoveToReclaim}
+            onLogUrge={handleLogUrge}
+          />
         )}
 
         {/* TILE — DAILY CHECK-IN (shared signal) */}
         <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+
+        {/* DAILY VITALS — sleep ledger + head-weather (logs for the Mirror) */}
+        <DailyVitalsTile />
+
+        {/* JOURNAL (shared) */}
+        <JournalTile stage="endure" />
 
         {/* TILE — REPLACEMENT ACTIVITY (mood before -> after) */}
         <ActivityLogTile activityLogs={activityLogs} onSaved={handleActivitySaved} />
@@ -168,6 +233,9 @@ export default function EndureFreeHome({ progress }) {
         {tracker && (
           <SavingsMilestonesTile tracker={tracker} navigate={navigate} />
         )}
+
+        {/* BUILD GATE — locked until the counter reaches 30 days */}
+        {tracker && <BuildGateTile tracker={tracker} onMoveToBuild={handleMoveToBuild} />}
 
         {/* TILE 6 — ANCHORS (stage-relevant for Endure) */}
         <AnchorsTile navigate={navigate} />
@@ -269,14 +337,16 @@ function TodayCheckinTile({ checkin, onOpen }) {
 // The lift (after minus before) per activity is what powers the Mirror's
 // "you tend to feel lighter after walks" once enough is logged.
 const ACTIVITY_TYPES = [
-  { value: 'walk',      label: 'Walked' },
-  { value: 'reach_out', label: 'Reached out' },
-  { value: 'breathe',   label: 'Breathed' },
-  { value: 'move',      label: 'Moved' },
-  { value: 'create',    label: 'Made something' },
-  { value: 'rest',      label: 'Rested' },
-  { value: 'other',     label: 'Something else' },
+  { value: 'moved',    label: 'Moved my body',  icon: '🏃' },
+  { value: 'reached',  label: 'Reached out',    icon: '💬' },
+  { value: 'outside',  label: 'Got outside',    icon: '🌿' },
+  { value: 'made',     label: 'Made something', icon: '🎨' },
+  { value: 'absorbed', label: 'Got absorbed',   icon: '🎧' },
+  { value: 'rested',   label: 'Rested',         icon: '🛋️' },
+  { value: 'other',    label: 'Something else', icon: '✨' },
 ]
+
+const MOOD_FACES = ['😣', '😕', '😐', '🙂', '😄']
 const ACTIVITY_LABEL = ACTIVITY_TYPES.reduce((a, t) => { a[t.value] = t.label; return a }, {})
 
 function activityInsight(logs) {
@@ -310,6 +380,27 @@ function MoodMini({ label, value, onChange, disabled }) {
             style={{ ...styles.moodMiniDot, ...(value && n <= value ? styles.moodMiniDotOn : {}) }}
             aria-label={`${label} ${n} of 5`}
           />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MoodFaces({ label, value, onChange, disabled }) {
+  return (
+    <div style={styles.faceRow}>
+      <span style={styles.faceLabel}>{label}</span>
+      <div style={styles.faceBtns}>
+        {MOOD_FACES.map((f, i) => (
+          <button
+            key={i}
+            onClick={() => onChange(i + 1)}
+            disabled={disabled}
+            style={{ ...styles.faceBtn, ...(value === i + 1 ? styles.faceBtnOn : {}) }}
+            aria-label={`${label} ${i + 1} of 5`}
+          >
+            {f}
+          </button>
         ))}
       </div>
     </div>
@@ -368,15 +459,29 @@ function ActivityLogTile({ activityLogs, onSaved }) {
             disabled={saving}
             style={{ ...styles.actChip, ...(type === a.value ? styles.actChipOn : {}) }}
           >
-            {a.label}
+            <span style={styles.actChipIcon}>{a.icon}</span> {a.label}
           </button>
         ))}
       </div>
 
       {type && (
         <div style={styles.actBeforeAfter}>
-          <MoodMini label="Felt before" value={before} onChange={setBefore} disabled={saving} />
-          <MoodMini label="And after" value={after} onChange={setAfter} disabled={saving} />
+          <MoodFaces label="Before you did it" value={before} onChange={setBefore} disabled={saving} />
+          <MoodFaces label="And after" value={after} onChange={setAfter} disabled={saving} />
+          {before && after && (
+            <div style={styles.shiftRow}>
+              <span style={styles.shiftFace}>{MOOD_FACES[before - 1]}</span>
+              <span style={styles.shiftArrow}>→</span>
+              <span style={styles.shiftFace}>{MOOD_FACES[after - 1]}</span>
+              <span style={styles.shiftDelta}>
+                {after > before
+                  ? `+${after - before} lighter — that's the point`
+                  : after < before
+                    ? "still heavy, and that's okay"
+                    : 'held steady'}
+              </span>
+            </div>
+          )}
           <button
             onClick={handleSave}
             disabled={saving || !before || !after}
@@ -462,9 +567,58 @@ function TrackerPillsTile({ tracker, onAddPress }) {
 }
 
 // ===================================================================
+// TILE: BUILD GATE — Build unlocks at 30 days on the counter
+// ===================================================================
+// Forward progression Endure -> Build is gated on the counter reaching 30
+// days. Users who picked Build directly at onboarding never see this (they're
+// already in free_state 'build'); this only governs the organic step up.
+const BUILD_UNLOCK_DAYS = 30
+
+function BuildGateTile({ tracker, onMoveToBuild }) {
+  if (!tracker) return null
+  const days = Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 86400000)
+  const ready = days >= BUILD_UNLOCK_DAYS
+  const pct = Math.max(0, Math.min(100, Math.round((days / BUILD_UNLOCK_DAYS) * 100)))
+
+  if (ready) {
+    return (
+      <div style={{ ...styles.tile, ...styles.buildReadyTile }}>
+        <p style={styles.tileEyebrow}>A new chapter</p>
+        <h2 style={styles.tileTitle}>You've held {days} days.</h2>
+        <p style={styles.tileBody}>
+          Thirty days is the turn. The work shifts now &mdash; from stopping to building the life that makes staying easier.
+        </p>
+        <button onClick={onMoveToBuild} style={styles.buildMoveBtn}>Move to Build  &rarr;</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Next chapter &middot; locked</p>
+      <h2 style={styles.tileTitle}>Build unlocks at 30 days.</h2>
+      <p style={styles.tileBody}>
+        Hold the line a little longer. When the counter reaches 30 days, the work shifts from stopping to building.
+      </p>
+      <div style={styles.buildGateBarBg}>
+        <div style={{ ...styles.buildGateBarFill, width: `${pct}%` }} />
+      </div>
+      <p style={styles.buildGateText}>{days} of {BUILD_UNLOCK_DAYS} days &middot; {Math.max(0, BUILD_UNLOCK_DAYS - days)} to go</p>
+    </div>
+  )
+}
+
+// ===================================================================
 // TILE: COUNTER
 // ===================================================================
-function CounterTile({ tracker, navigate }) {
+function toLocalInput(d) {
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+function CounterTile({ tracker, navigate, onUpdateStart }) {
+  const [editing, setEditing] = useState(false)
+  const [dtValue, setDtValue] = useState('')
   const startDate = new Date(tracker.start_date)
   const now = new Date()
   let total = Math.floor((now - startDate) / 1000)
@@ -497,9 +651,45 @@ function CounterTile({ tracker, navigate }) {
         <div style={styles.counterIcon}>{tracker.addiction_types.icon}</div>
         <div style={{ flex: 1 }}>
           <p style={styles.counterName}>{tracker.addiction_types.name}</p>
-          <p style={styles.counterSince}>Since {startDateStr}</p>
+          <p style={styles.counterSince}>
+            Since {startDateStr}
+            <button
+              onClick={() => { setDtValue(toLocalInput(startDate)); setEditing(true) }}
+              style={styles.editStartBtn}
+            >
+              edit
+            </button>
+          </p>
         </div>
       </div>
+
+      {editing && (
+        <div style={styles.editStartPanel}>
+          <input
+            type="datetime-local"
+            value={dtValue}
+            max={toLocalInput(new Date())}
+            onChange={(e) => setDtValue(e.target.value)}
+            style={styles.editStartInput}
+          />
+          <div style={styles.editStartBtns}>
+            <button onClick={() => setEditing(false)} style={styles.editStartCancel}>Cancel</button>
+            <button
+              onClick={() => {
+                if (!dtValue) return
+                const d = new Date(dtValue)
+                if (isNaN(d.getTime())) return
+                if (d.getTime() > Date.now()) { alert("That date is in the future — pick one that's already passed."); return }
+                onUpdateStart(d.toISOString())
+                setEditing(false)
+              }}
+              style={styles.editStartSave}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
 
       <p style={styles.stayedLine}>
         Free from <b style={styles.bold}>{tracker.addiction_types.name}</b> for
@@ -574,29 +764,186 @@ function CounterSetupPromptTile({ substanceLabel, navigate }) {
 // ===================================================================
 // TILE: ACTIONS
 // ===================================================================
-function ActionTile({ tracker, navigate }) {
+const SLEEP_OPTIONS = [
+  { key: 'fragmented', label: 'Fragmented' },
+  { key: 'restless',   label: 'Restless' },
+  { key: 'solid',      label: 'Solid' },
+]
+const WEATHER_OPTIONS = [
+  { key: 'heavy_fog',     label: 'Heavy fog' },
+  { key: 'light_fog',     label: 'Light fog' },
+  { key: 'crystal_clear', label: 'Crystal clear' },
+]
+
+// ===================================================================
+// TILE: DAILY VITALS — sleep ledger + withdrawal weather
+// ===================================================================
+// Two substance-agnostic morning reads that, over time, show the nervous
+// system settling. Self-contained (fetches its own user + today's row), one
+// row per day in free_stage_signals signal_type 'daily_vitals'. Feeds Mirror.
+function DailyVitalsTile() {
+  const [sleep, setSleep] = useState(null)
+  const [weather, setWeather] = useState(null)
+  const [rowId, setRowId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [savedToday, setSavedToday] = useState(false)
+  const [editing, setEditing] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('free_stage_signals')
+        .select('id, payload')
+        .eq('user_id', user.id)
+        .eq('stage', 'endure')
+        .eq('signal_type', 'daily_vitals')
+        .eq('payload->>date', localDateStr())
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (cancelled) return
+      const row = data && data[0]
+      if (row) {
+        setRowId(row.id)
+        setSleep(row.payload?.sleep || null)
+        setWeather(row.payload?.weather || null)
+        setSavedToday(true)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const handleSave = async () => {
+    if (saving || !sleep || !weather) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const payload = { sleep, weather, date: localDateStr() }
+    let ok = false
+    if (rowId) {
+      const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId)
+      ok = !error
+    } else {
+      const { data, error } = await supabase
+        .from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'endure', signal_type: 'daily_vitals', payload })
+        .select('id').single()
+      ok = !error && !!data
+      if (ok) setRowId(data.id)
+    }
+    setSaving(false)
+    if (ok) { setSavedToday(true); setEditing(false) }
+    else alert('Could not save. Please try again.')
+  }
+
+  if (savedToday && !editing) {
+    const sl = SLEEP_OPTIONS.find(o => o.key === sleep)
+    const we = WEATHER_OPTIONS.find(o => o.key === weather)
+    return (
+      <div style={styles.vitalsCompact}>
+        <div style={styles.vitalsCompactMain}>
+          <span style={styles.vitalsCompactCheck}>✓</span>
+          <div>
+            <p style={styles.vitalsCompactEyebrow}>Daily vitals · logged</p>
+            <p style={styles.vitalsCompactLine}>{sl ? sl.label : '—'} · {we ? we.label : '—'}</p>
+          </div>
+        </div>
+        <button onClick={() => setEditing(true)} style={styles.vitalsCompactEdit}>Edit</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Daily vitals · this morning</p>
+      <h2 style={styles.tileTitle}>How's the machine running?</h2>
+      <p style={styles.tileBody}>
+        Two quick reads. Over time these show your nervous system settling &mdash; even on the hard days.
+      </p>
+
+      <p style={styles.vitalsQ}>How did your brain rest last night?</p>
+      <div style={styles.vitalsPills}>
+        {SLEEP_OPTIONS.map(o => (
+          <button key={o.key} onClick={() => setSleep(o.key)} disabled={saving}
+            style={{ ...styles.vitalsPill, ...(sleep === o.key ? styles.vitalsPillOn : {}) }}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      <p style={styles.vitalsQ}>What's the weather in your head today?</p>
+      <div style={styles.vitalsPills}>
+        {WEATHER_OPTIONS.map(o => (
+          <button key={o.key} onClick={() => setWeather(o.key)} disabled={saving}
+            style={{ ...styles.vitalsPill, ...(weather === o.key ? styles.vitalsPillOn : {}) }}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      <button onClick={handleSave} disabled={saving || !sleep || !weather}
+        style={{ ...styles.vitalsSaveBtn, ...((!sleep || !weather) ? styles.vitalsSaveBtnDim : {}) }}>
+        {saving ? 'Saving…' : (savedToday ? 'Save changes' : 'Log daily vitals')}
+      </button>
+    </div>
+  )
+}
+
+function ActionTile({ tracker, navigate, slipCount = 0, onMoveToReclaim, onLogUrge }) {
   return (
     <div style={styles.tile}>
       <p style={styles.tileEyebrow}>In the moment</p>
-      <div style={styles.actionsRow}>
-        <button
-          onClick={() => navigate(`/urge/${tracker.id}`)}
-          style={{ ...styles.actionBtn, ...styles.actionUrge }}
-        >
-          <span style={styles.actionIcon}>🌊</span>
-          <span style={styles.actionLabel}>Log an urge</span>
+      <h2 style={styles.tileTitle}>Urge Incoming</h2>
+      <p style={styles.tileBody}>
+        Name how it's coming at you — a sudden spike, or a slow creep. That alone takes some of its power.
+      </p>
+
+      <div style={styles.velocityRow}>
+        <button onClick={() => onLogUrge('spike')} style={{ ...styles.velocityBtn, ...styles.velocitySpike }}>
+          <span style={styles.velocityIcon}>⚡</span>
+          <span style={styles.velocityLabel}>Sudden spike</span>
+          <span style={styles.velocitySub}>a trigger hit</span>
         </button>
-        <button
-          onClick={() => navigate(`/slip/${tracker.id}`)}
-          style={{ ...styles.actionBtn, ...styles.actionSlip }}
-        >
-          <span style={styles.actionIcon}>🫂</span>
-          <span style={styles.actionLabel}>I slipped</span>
+        <button onClick={() => onLogUrge('creep')} style={{ ...styles.velocityBtn, ...styles.velocityCreep }}>
+          <span style={styles.velocityIcon}>🌫️</span>
+          <span style={styles.velocityLabel}>Slow creep</span>
+          <span style={styles.velocitySub}>worn down, tired</span>
         </button>
       </div>
+
+      <button onClick={() => navigate(`/slip/${tracker.id}`)} style={styles.slipFallbackBtn}>
+        I slipped
+      </button>
       <p style={styles.tileHelperText}>
         Urges pass. Slips aren't the end.
       </p>
+
+      {slipCount > 0 && (
+        <div style={styles.slipProgress}>
+          <div style={styles.slipDots}>
+            {[1, 2, 3].map(n => (
+              <span key={n} style={{ ...styles.slipDot, ...(slipCount >= n ? styles.slipDotOn : {}) }} />
+            ))}
+          </div>
+          <span style={styles.slipProgressText}>
+            {Math.min(slipCount, 3)} of 3 slips this stretch
+          </span>
+        </div>
+      )}
+
+      {slipCount >= 3 && (
+        <div style={styles.reclaimNudge}>
+          <p style={styles.reclaimNudgeText}>
+            Three slips this stretch. That's not a failure &mdash; it's a sign the ground shifted under you. Reclaim is a gentler place to regroup, and everything you've built stays exactly where it is. If you're honest with yourself, it might be time to step back.
+          </p>
+          <button onClick={onMoveToReclaim} style={styles.reclaimNudgeBtn}>
+            Move to Reclaim
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -672,17 +1019,22 @@ function SavingsMilestonesTile({ tracker, navigate }) {
 // ===================================================================
 function AnchorsTile({ navigate }) {
   return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Anchors</p>
-      <h3 style={styles.tileTitle}>People you'd call</h3>
-      <p style={styles.tileBody}>
-        The list you'd reach for at midnight when the urge sharpens. Build it
-        now, before you need it.
+    <div style={styles.anchorsTile}>
+      <div style={styles.anchorsTop}>
+        <div style={styles.anchorsGlyph}>
+          <span style={{ ...styles.anchorsDot, background: '#C5572C' }} />
+          <span style={{ ...styles.anchorsDot, background: '#C8893C', marginLeft: '-9px' }} />
+          <span style={{ ...styles.anchorsDot, background: '#6B7FA0', marginLeft: '-9px' }} />
+          <span style={{ ...styles.anchorsDot, background: '#6E8A6A', marginLeft: '-9px' }} />
+        </div>
+        <p style={styles.tileEyebrow}>Anchors</p>
+      </div>
+      <h3 style={styles.anchorsTitle}>The people you'd call.</h3>
+      <p style={styles.anchorsBody}>
+        The few you'd reach for at midnight, when the urge sharpens. Worth
+        lining up before you need them.
       </p>
-      <button
-        onClick={() => navigate('/anchors')}
-        style={styles.anchorsBtn}
-      >
+      <button onClick={() => navigate('/anchors')} style={styles.anchorsBtnNew}>
         Open Anchors
       </button>
     </div>
@@ -693,6 +1045,118 @@ function AnchorsTile({ navigate }) {
 // STYLES
 // ===================================================================
 const styles = {
+  vitalsCompact: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A', borderRadius: '14px', padding: '12px 16px' },
+  vitalsCompactMain: { display: 'flex', alignItems: 'center', gap: '10px' },
+  vitalsCompactCheck: { width: '26px', height: '26px', borderRadius: '50%', background: 'linear-gradient(180deg, #EAF3DE 0%, #DCE9C8 100%)', border: '0.5px solid #C2D49A', color: '#3B6D11', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  vitalsCompactEyebrow: { fontSize: '10px', color: '#5A6B3A', textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'Georgia, serif', margin: '0 0 2px' },
+  vitalsCompactLine: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0 },
+  vitalsCompactEdit: { background: 'transparent', border: 'none', color: '#3B6D11', fontSize: '12.5px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', flexShrink: 0 },
+  // --- urge velocity (spike vs slow creep) ---
+  velocityRow: { display: 'flex', gap: '10px', marginBottom: '10px' },
+  velocityBtn: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '3px', padding: '14px', border: 'none', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', boxShadow: '0 4px 14px rgba(40,25,10,0.12)' },
+  velocitySpike: { background: 'linear-gradient(180deg, #6E3A1C 0%, #3A2415 100%)' },
+  velocityCreep: { background: 'linear-gradient(180deg, #4A4038 0%, #2A241E 100%)' },
+  velocityIcon: { fontSize: '20px', lineHeight: 1 },
+  velocityLabel: { fontSize: '14px', fontWeight: 600, color: '#FAF7F1', fontFamily: 'Georgia, serif' },
+  velocitySub: { fontSize: '11px', color: 'rgba(250,247,241,0.7)', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  slipFallbackBtn: { width: '100%', padding: '11px', background: 'transparent', color: '#9C6B3C', border: '0.5px solid #E0CDB0', borderRadius: '11px', fontSize: '13px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer' },
+
+  // --- daily vitals (sleep ledger + withdrawal weather) ---
+  vitalsQ: { fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '14px 0 8px' },
+  vitalsPills: { display: 'flex', gap: '8px', marginBottom: '4px' },
+  vitalsPill: { flex: 1, padding: '11px 8px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '12px', fontSize: '13px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer', transition: 'all 0.15s', boxShadow: '0 2px 6px rgba(80,50,20,0.04)' },
+  vitalsPillOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: '0.5px solid #241710', boxShadow: '0 4px 12px rgba(40,25,10,0.25)' },
+  vitalsSaveBtn: { marginTop: '14px', width: '100%', padding: '13px', background: '#854F0B', color: '#FBF6EE', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif' },
+  vitalsSaveBtnDim: { opacity: 0.45, cursor: 'not-allowed' },
+
+  // --- build gate (Endure -> Build at 30 days) ---
+  buildReadyTile: { background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A' },
+  buildMoveBtn: { width: '100%', padding: '13px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.22)' },
+  buildGateBarBg: { width: '100%', height: '8px', background: '#F0E8D8', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' },
+  buildGateBarFill: { height: '100%', background: 'linear-gradient(90deg, #C8A86A 0%, #A07A3C 100%)', borderRadius: '4px', transition: 'width 0.4s' },
+  buildGateText: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, textAlign: 'center' },
+
+  // --- counter start-date edit ---
+  editStartBtn: { marginLeft: '8px', background: 'transparent', border: 'none', color: '#A07A3C', fontSize: '11px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', padding: 0, textDecoration: 'underline' },
+  editStartPanel: { marginTop: '12px', padding: '12px', background: '#FBF6EE', border: '0.5px solid #EFE7D7', borderRadius: '12px' },
+  editStartInput: { width: '100%', boxSizing: 'border-box', padding: '10px 12px', background: 'white', border: '0.5px solid #DDCFB6', borderRadius: '10px', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', outline: 'none' },
+  editStartBtns: { display: 'flex', gap: '8px', marginTop: '10px' },
+  editStartCancel: { flex: 1, padding: '10px', background: 'white', border: '0.5px solid #DDCFB6', borderRadius: '10px', color: '#6B5C4A', fontSize: '13px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  editStartSave: { flex: 1, padding: '10px', background: '#854F0B', border: 'none', borderRadius: '10px', color: '#FBF6EE', fontSize: '13px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer' },
+
+  // --- activity mood faces + shift ---
+  actChipIcon: { fontSize: '15px' },
+  faceRow: { marginBottom: '14px' },
+  faceLabel: { display: 'block', fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', marginBottom: '8px' },
+  faceBtns: { display: 'flex', gap: '8px' },
+  faceBtn: { flex: 1, padding: '10px 0', fontSize: '24px', lineHeight: 1, background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '12px', cursor: 'pointer', filter: 'grayscale(0.7) opacity(0.6)', transition: 'all 0.15s' },
+  faceBtnOn: { background: 'linear-gradient(180deg, #FFF8EC 0%, #FBEFD8 100%)', border: '0.5px solid #E0C28C', filter: 'none', transform: 'translateY(-1px)' },
+  shiftRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 14px', background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A', borderRadius: '12px', marginBottom: '12px' },
+  shiftFace: { fontSize: '22px', lineHeight: 1 },
+  shiftArrow: { fontSize: '16px', color: '#7E9B5A' },
+  shiftDelta: { fontSize: '12.5px', color: '#3B6D11', fontFamily: 'Georgia, serif', fontStyle: 'italic', marginLeft: '4px' },
+
+  // --- refined Anchors tile ---
+  anchorsTile: {
+    background: 'linear-gradient(180deg, #FFFBF4 0%, #FBF1E2 100%)',
+    border: '0.5px solid #EEDFC8',
+    borderRadius: '18px',
+    padding: '18px 18px 16px',
+    boxShadow: '0 4px 16px rgba(120,80,30,0.07)',
+  },
+  anchorsTop: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' },
+  anchorsGlyph: { display: 'flex', alignItems: 'center' },
+  anchorsDot: {
+    width: '20px', height: '20px', borderRadius: '50%',
+    border: '1.5px solid #FBF1E2', boxShadow: '0 1px 2px rgba(80,50,20,0.15)',
+  },
+  anchorsTitle: {
+    fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif',
+    fontWeight: 500, lineHeight: 1.3, margin: '0 0 8px',
+  },
+  anchorsBody: {
+    fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 14px',
+  },
+  anchorsBtnNew: {
+    width: '100%', padding: '13px', background: 'rgba(255,255,255,0.7)',
+    color: '#9A4E1A', border: '0.5px solid #E3C9A3', borderRadius: '12px',
+    fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif',
+    boxShadow: '0 2px 8px rgba(120,80,30,0.06)',
+  },
+
+  // --- slip progress + voluntary reclaim (ActionTile) ---
+  slipProgress: {
+    display: 'flex', alignItems: 'center', gap: '10px',
+    marginTop: '14px', paddingTop: '14px', borderTop: '0.5px solid #EFE7D7',
+  },
+  slipDots: { display: 'flex', gap: '5px', flexShrink: 0 },
+  slipDot: {
+    width: '8px', height: '8px', borderRadius: '50%',
+    background: '#E8DFD0', border: '0.5px solid #DDCFB6',
+  },
+  slipDotOn: { background: '#C5572C', border: '0.5px solid #A8461F' },
+  slipProgressText: {
+    fontSize: '11.5px', color: '#8A6A3C', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', lineHeight: 1.4,
+  },
+  reclaimNudge: {
+    marginTop: '14px', padding: '14px', borderRadius: '14px',
+    background: 'linear-gradient(180deg, #FFFBF4 0%, #FBF1E2 100%)',
+    border: '0.5px solid #EAD9BE',
+  },
+  reclaimNudgeText: {
+    fontSize: '12.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', lineHeight: 1.55, margin: '0 0 12px',
+  },
+  reclaimNudgeBtn: {
+    width: '100%', padding: '12px',
+    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    color: '#FAF7F1', border: 'none', borderRadius: '11px',
+    fontSize: '13.5px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+    boxShadow: '0 4px 14px rgba(40,25,10,0.22)',
+  },
+
   // --- v2 additions: check-in + replacement activity ---
   tileLogged: { background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A' },
   checkinSummaryRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' },
@@ -781,10 +1245,10 @@ const styles = {
     boxShadow: '0 4px 16px rgba(80,50,20,0.06)',
   },
   tileEyebrow: {
-    fontSize: '11px', color: '#854F0B',
-    textTransform: 'uppercase', letterSpacing: '0.16em',
+    fontSize: '10.5px', color: '#A07A3C',
+    textTransform: 'uppercase', letterSpacing: '0.12em',
     fontWeight: 500, fontFamily: 'Georgia, serif',
-    margin: '0 0 10px',
+    margin: '0 0 9px',
   },
   tileTitle: {
     fontSize: '20px', color: '#2A1F15',

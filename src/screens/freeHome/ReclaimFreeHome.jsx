@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
+import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
 import { resolveAddictionTypeId } from '../vowPath/utils/addictionTypes'
 
@@ -101,50 +102,39 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
     load()
   }, [])
 
-  // === Reflection save handler ===
-  const handleSaveReflection = async (whatHappened, whatLearned) => {
-    if (!whatHappened?.trim() && !whatLearned?.trim()) return false
-
+  // === Fracture Diagnostic — the core data point ===
+  // Mechanical framing (infrastructure failed, not the person). One categorical
+  // value the Mirror charts and the future AI reflection reads as the clearest
+  // signal: what kind of pressure breaks this person's perimeter.
+  const handleLogFracture = async (fractureType) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return false
-
-    const currentReflections = progress.reclaim_reflections || []
-    const newEntry = {
-      id: `refl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      logged_at: new Date().toISOString(),
-      what_happened: whatHappened?.trim() || null,
-      what_learned: whatLearned?.trim() || null,
-    }
-    const newReflections = [newEntry, ...currentReflections].slice(0, 50)
-
-    setProgress(p => ({ ...p, reclaim_reflections: newReflections }))
-
-    const { error } = await supabase
-      .from('vow_path_progress')
-      .update({
-        reclaim_reflections: newReflections,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', user.id)
-
-    if (error) {
-      console.error('Failed to save reflection:', error)
-      setProgress(p => ({ ...p, reclaim_reflections: currentReflections }))
-      return false
-    }
-
-    // Mirror visibility: record as a reclaim_return signal (no failure framing —
-    // this is "what led here" + "what it showed you", compassionate by design).
-    await supabase.from('free_stage_signals').insert({
+    const { error } = await supabase.from('free_stage_signals').insert({
       user_id: user.id,
       stage: 'reclaim',
       signal_type: 'reclaim_return',
-      payload: {
-        what_happened: whatHappened?.trim() || null,
-        what_learned: whatLearned?.trim() || null,
-      },
+      payload: { fracture_type: fractureType },
     })
+    if (error) {
+      console.error('Failed to log fracture:', error)
+      return false
+    }
     return true
+  }
+
+  // === Kinder-voice reframe — silent, light signal ===
+  // Records which cognitive distortion the user reached for, so the AI can later
+  // notice the shame story they tell themselves after a slip. No friction, no
+  // save button — they just tap to be answered kindly.
+  const handleReframe = async (distortion) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('free_stage_signals').insert({
+      user_id: user.id,
+      stage: 'reclaim',
+      signal_type: 'reclaim_reframe',
+      payload: { distortion },
+    })
   }
 
   const handleCheckinSaved = (row) => setTodayCheckin(row)
@@ -155,11 +145,21 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
     setTransitioning(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
+
+      // Commit owns no live counter — pause the tracker so the user re-sets a
+      // fresh stop date in Commit. Its longest streak is preserved on the row.
+      if (tracker?.id) {
+        await supabase.from('trackers')
+          .update({ is_active: false })
+          .eq('id', tracker.id)
+      }
+
       const { error } = await supabase
         .from('vow_path_progress')
         .update({
           free_state: 'commit',
           endure_starts_at: null,  // clear old stop date — they pick fresh
+          endure_slip_count: 0,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', user.id)
@@ -238,6 +238,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
         .from('vow_path_progress')
         .update({
           free_state: 'endure',
+          endure_slip_count: 0,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', user.id)
@@ -300,16 +301,22 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
           checklistDone={checklistDone}
         />
 
+        {/* TILE 3 — FRACTURE DIAGNOSTIC (core data point) */}
+        <FractureDiagnosticTile onLog={handleLogFracture} />
+
+        {/* TILE 4 — THE KINDER VOICE (anti-AVE reframe) */}
+        <KinderVoiceTile onReframe={handleReframe} />
+
         {/* TILE — GENTLE CHECK-IN (shared signal) */}
         <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
 
-        {/* TILE 3 — REFLECTION (optional) */}
-        <ReflectionTile onSave={handleSaveReflection} />
+        {/* JOURNAL (shared) */}
+        <JournalTile stage="reclaim" />
 
-        {/* TILE 4 — ANCHORS */}
+        {/* TILE 5 — ANCHORS */}
         <AnchorsTile navigate={navigate} anchorCount={anchorCount} />
 
-        {/* TILE 5 — WHEN YOU'RE READY (re-entry CTAs) */}
+        {/* TILE 6 — WHEN YOU'RE READY (re-entry CTAs) */}
         <WhenYoureReadyTile
           onMoveToCommit={handleMoveToCommit}
           onRestartEndure={handleRestartEndure}
@@ -450,87 +457,128 @@ function WhatStillStandsTile({ bio, anchorCount, longestStreakDays, checklistDon
 // ===================================================================
 // TILE: REFLECTION (optional — for processing)
 // ===================================================================
-function ReflectionTile({ onSave }) {
-  const [whatHappened, setWhatHappened] = useState('')
-  const [whatLearned, setWhatLearned] = useState('')
+// ===================================================================
+// TILE: FRACTURE DIAGNOSTIC (core data point)
+// ===================================================================
+// Reframes the slip as a perimeter that gave way under a specific pressure —
+// mechanical, not moral. One categorical tap. This is the richest single
+// signal for both the Mirror ("you break on exhaustion, not sadness") and the
+// future AI reflection.
+const FRACTURES = [
+  { key: 'exhaustion', label: 'Exhaustion', sub: 'Running on empty. Too tired to hold the line.' },
+  { key: 'social',     label: 'Social pressure', sub: 'The people, the place, the moment around you.' },
+  { key: 'emotional',  label: 'Emotional spike', sub: 'A hard feeling surged — anger, grief, dread.' },
+  { key: 'vacuum',     label: 'The vacuum', sub: 'Boredom, an empty evening, nothing to lean on.' },
+]
+
+function FractureDiagnosticTile({ onLog }) {
+  const [selected, setSelected] = useState(null)
   const [saving, setSaving] = useState(false)
-  const [justSaved, setJustSaved] = useState(false)
+  const [done, setDone] = useState(false)
 
-  const canSave = whatHappened.trim().length > 0 || whatLearned.trim().length > 0
-
-  const handleSave = async () => {
-    if (!canSave || saving) return
+  const handleLog = async () => {
+    if (!selected || saving) return
     setSaving(true)
-    const ok = await onSave(whatHappened, whatLearned)
+    const ok = await onLog(selected)
     setSaving(false)
-    if (ok) {
-      setWhatHappened('')
-      setWhatLearned('')
-      setJustSaved(true)
-      setTimeout(() => setJustSaved(false), 4000)
-    } else {
-      alert('Could not save. Please try again.')
-    }
+    if (ok) setDone(true)
+    else alert('Could not save. Please try again.')
+  }
+
+  if (done) {
+    const f = FRACTURES.find(x => x.key === selected)
+    return (
+      <div style={{ ...styles.tile, ...styles.tileLogged }}>
+        <p style={styles.tileEyebrow}>Noted · not a verdict</p>
+        <div style={styles.savedRow}>
+          <span style={styles.savedCheck}>✓</span>
+          <p style={styles.savedText}>
+            {f?.label}. That's a pattern to watch, not a flaw in you. The more honestly you mark these, the clearer the warning signs get next time.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div style={styles.tile}>
-      <style>{`
-        .vow-reflect-textarea::placeholder {
-          color: #9C8C78;
-          font-style: italic;
-        }
-        .vow-reflect-textarea:focus {
-          border-color: #854F0B;
-        }
-      `}</style>
-
-      <p style={styles.tileEyebrow}>If you want</p>
-      <h2 style={styles.tileTitle}>Sit with what happened.</h2>
+      <p style={styles.tileEyebrow}>The diagnostic</p>
+      <h2 style={styles.tileTitle}>What gave way?</h2>
       <p style={styles.tileBody}>
-        Writing it down can help. Both fields are optional. This is just for you.
+        Not "what's wrong with you" — what was the pressure that broke through. One tap. It's how the warning signs get easier to spot.
       </p>
 
-      <p style={styles.reflectLabel}>What happened?</p>
-      <textarea
-        value={whatHappened}
-        onChange={(e) => setWhatHappened(e.target.value)}
-        placeholder="The trigger, the moment, what led up to it..."
-        rows={3}
-        disabled={saving}
-        className="vow-reflect-textarea"
-        style={styles.reflectTextarea}
-      />
-
-      <p style={{ ...styles.reflectLabel, marginTop: '14px' }}>
-        What did it show you?
-      </p>
-      <textarea
-        value={whatLearned}
-        onChange={(e) => setWhatLearned(e.target.value)}
-        placeholder="Something to remember for next time..."
-        rows={3}
-        disabled={saving}
-        className="vow-reflect-textarea"
-        style={styles.reflectTextarea}
-      />
+      <div style={styles.fractureGrid}>
+        {FRACTURES.map(f => (
+          <button
+            key={f.key}
+            onClick={() => setSelected(f.key)}
+            disabled={saving}
+            style={{ ...styles.fractureCell, ...(selected === f.key ? styles.fractureCellOn : {}) }}
+          >
+            <span style={{ ...styles.fractureLabel, ...(selected === f.key ? styles.fractureLabelOn : {}) }}>{f.label}</span>
+            <span style={{ ...styles.fractureSub, ...(selected === f.key ? styles.fractureSubOn : {}) }}>{f.sub}</span>
+          </button>
+        ))}
+      </div>
 
       <button
-        onClick={handleSave}
-        disabled={!canSave || saving}
-        style={{
-          ...styles.reflectSaveBtn,
-          ...(!canSave || saving ? styles.reflectSaveBtnDisabled : {}),
-        }}
+        onClick={handleLog}
+        disabled={!selected || saving}
+        style={{ ...styles.fractureLogBtn, ...(!selected || saving ? styles.fractureLogBtnDim : {}) }}
       >
-        {saving ? 'Saving...' : justSaved ? '✓ Saved' : 'Save reflection'}
+        {saving ? 'Saving…' : 'Log it'}
       </button>
+    </div>
+  )
+}
 
-      {justSaved && (
-        <p style={styles.reflectSavedNote}>
-          You can come back and write more another time.
-        </p>
-      )}
+// ===================================================================
+// TILE: THE KINDER VOICE (anti-AVE reframe — frictionless, self-soothing)
+// ===================================================================
+// The Abstinence Violation Effect lives in the harsh self-talk. Tapping a
+// thought reveals a truer, kinder line. Logs which distortion they reached for
+// (silently) so the AI can later name the shame story — but asks nothing of them.
+const KINDER_PAIRS = [
+  { key: 'catastrophe', harsh: "I've ruined everything.", kind: "One hard day doesn't erase the ones behind it. They still happened." },
+  { key: 'willpower',   harsh: "I have no willpower.", kind: "Willpower didn't fail — you hit a hard moment. That's information, not a verdict." },
+  { key: 'zero',        harsh: "I'm back to square one.", kind: "You're not at zero. You're someone who has done this before, here again." },
+  { key: 'pointless',   harsh: "Why do I even bother?", kind: "Because part of you still wants this. That part just opened the app." },
+]
+
+function KinderVoiceTile({ onReframe }) {
+  const [revealed, setRevealed] = useState({})
+
+  const reveal = (pair) => {
+    setRevealed(prev => {
+      if (prev[pair.key]) return prev
+      if (onReframe) onReframe(pair.key)
+      return { ...prev, [pair.key]: true }
+    })
+  }
+
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>The voice in your head</p>
+      <h2 style={styles.tileTitle}>It's being cruel. Answer it.</h2>
+      <p style={styles.tileBody}>
+        Tap whichever one sounds like you right now. There's a truer line underneath.
+      </p>
+
+      <div style={styles.kinderList}>
+        {KINDER_PAIRS.map(p => (
+          <button
+            key={p.key}
+            onClick={() => reveal(p)}
+            style={{ ...styles.kinderCard, ...(revealed[p.key] ? styles.kinderCardOpen : {}) }}
+          >
+            <span style={styles.kinderHarsh}>"{p.harsh}"</span>
+            {revealed[p.key] && <span style={styles.kinderKind}>{p.kind}</span>}
+          </button>
+        ))}
+      </div>
+
+      <p style={styles.tileHelperText}>Let the kinder one land. Nothing to do here but read.</p>
     </div>
   )
 }
@@ -539,20 +587,26 @@ function ReflectionTile({ onSave }) {
 // TILE: ANCHORS
 // ===================================================================
 function AnchorsTile({ navigate, anchorCount }) {
+  const has = anchorCount > 0
   return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Anchors</p>
-      <h3 style={styles.tileTitle}>Reach out to someone.</h3>
-      <p style={styles.tileBody}>
-        {anchorCount > 0
+    <div style={styles.anchorsTile}>
+      <div style={styles.anchorsTop}>
+        <div style={styles.anchorsGlyph}>
+          <span style={{ ...styles.anchorsDot, background: '#C5572C' }} />
+          <span style={{ ...styles.anchorsDot, background: '#C8893C', marginLeft: '-9px' }} />
+          <span style={{ ...styles.anchorsDot, background: '#6B7FA0', marginLeft: '-9px' }} />
+          <span style={{ ...styles.anchorsDot, background: '#6E8A6A', marginLeft: '-9px' }} />
+        </div>
+        <p style={styles.tileEyebrow}>Anchors</p>
+      </div>
+      <h3 style={styles.anchorsTitle}>Reach out to someone.</h3>
+      <p style={styles.anchorsBody}>
+        {has
           ? `You have ${anchorCount} ${anchorCount === 1 ? 'person' : 'people'} saved. Calling one of them might help right now.`
-          : "If there's someone you trust — a friend, family, a sponsor — consider telling them. Saying it out loud is part of how it gets processed."}
+          : "If there's someone you trust — a friend, family, a sponsor — telling them out loud is part of how it gets processed."}
       </p>
-      <button
-        onClick={() => navigate('/anchors')}
-        style={styles.anchorsBtn}
-      >
-        {anchorCount > 0 ? 'Open Anchors' : 'Set up Anchors'}
+      <button onClick={() => navigate('/anchors')} style={styles.anchorsBtnNew}>
+        {has ? 'Open Anchors' : 'Set up Anchors'}
       </button>
     </div>
   )
@@ -568,7 +622,7 @@ function WhenYoureReadyTile({ onMoveToCommit, onRestartEndure, transitioning, ha
       <p style={styles.readyEyebrow}>When you're ready</p>
       <h3 style={styles.readyTitle}>Choose your re-entry.</h3>
       <p style={styles.readyBody}>
-        Two paths back. There's no rush. These are here when you want them.
+        You don't have to promise forever. Just the next 24 hours. Two paths back — both start the clock fresh from today.
       </p>
 
       <button
@@ -611,6 +665,75 @@ function WhenYoureReadyTile({ onMoveToCommit, onRestartEndure, transitioning, ha
 // STYLES
 // ===================================================================
 const styles = {
+  // --- refined Anchors tile ---
+  anchorsTile: {
+    background: 'linear-gradient(180deg, #FFFBF4 0%, #FBF1E2 100%)',
+    border: '0.5px solid #EEDFC8',
+    borderRadius: '18px',
+    padding: '18px 18px 16px',
+    boxShadow: '0 4px 16px rgba(120,80,30,0.07)',
+  },
+  anchorsTop: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' },
+  anchorsGlyph: { display: 'flex', alignItems: 'center' },
+  anchorsDot: {
+    width: '20px', height: '20px', borderRadius: '50%',
+    border: '1.5px solid #FBF1E2', boxShadow: '0 1px 2px rgba(80,50,20,0.15)',
+  },
+  anchorsTitle: {
+    fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif',
+    fontWeight: 500, lineHeight: 1.3, margin: '0 0 8px',
+  },
+  anchorsBody: {
+    fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 14px',
+  },
+  anchorsBtnNew: {
+    width: '100%', padding: '13px', background: 'rgba(255,255,255,0.7)',
+    color: '#9A4E1A', border: '0.5px solid #E3C9A3', borderRadius: '12px',
+    fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif',
+    boxShadow: '0 2px 8px rgba(120,80,30,0.06)',
+  },
+
+  // --- Fracture Diagnostic ---
+  fractureGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '14px' },
+  fractureCell: {
+    display: 'flex', flexDirection: 'column', gap: '5px', textAlign: 'left',
+    padding: '13px 12px', background: 'white', border: '0.5px solid #E0D5C2',
+    borderRadius: '12px', cursor: 'pointer', transition: 'all 0.15s',
+    boxShadow: '0 2px 6px rgba(80,50,20,0.04)', minHeight: '78px',
+  },
+  fractureCellOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid #241710', boxShadow: '0 4px 14px rgba(40,25,10,0.25)' },
+  fractureLabel: { fontSize: '14px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif' },
+  fractureLabelOn: { color: '#FAF7F1' },
+  fractureSub: { fontSize: '11px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
+  fractureSubOn: { color: 'rgba(250,247,241,0.72)' },
+  fractureLogBtn: {
+    width: '100%', padding: '13px', background: '#854F0B', color: '#FBF6EE', border: 'none',
+    borderRadius: '12px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif',
+  },
+  fractureLogBtnDim: { opacity: 0.45, cursor: 'not-allowed' },
+
+  // --- The Kinder Voice ---
+  kinderList: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' },
+  kinderCard: {
+    display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left', width: '100%',
+    padding: '13px 14px', background: 'white', border: '0.5px solid #E0D5C2',
+    borderRadius: '12px', cursor: 'pointer', transition: 'all 0.18s',
+  },
+  kinderCardOpen: { background: '#FBF6EE', border: '0.5px solid #D9C7A8' },
+  kinderHarsh: { fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
+  kinderKind: { fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.55, borderTop: '0.5px solid #E8DCC2', paddingTop: '8px' },
+
+  // --- shared saved / helper ---
+  savedRow: { display: 'flex', alignItems: 'center', gap: '12px' },
+  savedCheck: {
+    width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+    background: 'linear-gradient(180deg, #EAF3DE 0%, #DCE9C8 100%)', border: '0.5px solid #C2D49A',
+    color: '#3B6D11', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
+  savedText: { fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.5 },
+  tileHelperText: { fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '12px 0 0' },
+
   // --- v2 additions: gentle daily check-in ---
   tileLogged: { background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A' },
   checkinSummaryRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' },
@@ -679,8 +802,8 @@ const styles = {
     boxShadow: '0 4px 16px rgba(80,50,20,0.06)',
   },
   tileEyebrow: {
-    fontSize: '11px', color: '#854F0B',
-    textTransform: 'uppercase', letterSpacing: '0.16em',
+    fontSize: '10.5px', color: '#A07A3C',
+    textTransform: 'uppercase', letterSpacing: '0.12em',
     fontWeight: 500, fontFamily: 'Georgia, serif',
     margin: '0 0 10px',
   },

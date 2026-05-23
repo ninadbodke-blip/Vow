@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useLang } from '../LanguageContext'
 import { supabase } from '../supabaseClient'
 
-const TECHNIQUES = [
+const SPIKE_TECHNIQUES = [
   { id: 'breath', name: 'Breathe', duration: 90 },
   { id: 'tap', name: 'Tap to focus', duration: 30 },
   { id: 'dissolve', name: 'Let them go', duration: 0 },
@@ -12,8 +12,18 @@ const TECHNIQUES = [
   { id: 'unclench', name: 'Unclench', duration: 0 },
   { id: 'circles', name: 'Slow circles', duration: 0 },
   { id: 'senses', name: '5-4-3-2-1', duration: 0 },
-  { id: 'why', name: 'Your why', duration: 0 },
+  { id: 'why', name: 'The wallbreaker', duration: 0 },
   { id: 'reach', name: 'Reach out', duration: 0 },
+]
+
+// Slow-creep track — calmer and diagnostic. A creep is depletion, not a surge,
+// so distraction games patronize it. These name the deficit and redirect.
+const CREEP_TECHNIQUES = [
+  { id: 'halt',           name: 'Name what is low', duration: 0 },
+  { id: 'change_channel', name: 'Change the channel', duration: 0 },
+  { id: 'deploy_defense', name: 'Deploy a defense', duration: 0 },
+  { id: 'why',            name: 'The wallbreaker', duration: 0 },
+  { id: 'reach',          name: 'Reach out', duration: 0 },
 ]
 
 const RELATIONSHIPS = [
@@ -32,18 +42,28 @@ const URGE_MESSAGE = "Hey, I'm having a tough moment. Can you talk?"
 export default function UrgeFlow() {
   const { trackerId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { t } = useLang()
 
-  const [step, setStep] = useState('intro')
+  const initialVelocity = (location.state && location.state.velocity) || null
+  const [velocity, setVelocity] = useState(initialVelocity)
+  const [step, setStep] = useState(initialVelocity ? 'intro' : 'velocity')
   const [techniqueIdx, setTechniqueIdx] = useState(0)
   const [tracker, setTracker] = useState(null)
   const [profileBio, setProfileBio] = useState(null)
   const [loading, setLoading] = useState(true)
   const [feedbackIntensity, setFeedbackIntensity] = useState(null)
-  const [feedbackTrigger, setFeedbackTrigger] = useState(null)
+  const [feedbackTriggers, setFeedbackTriggers] = useState([])
   const [passedTechnique, setPassedTechnique] = useState(null)
   const [saving, setSaving] = useState(false)
   const startedRef = useRef(Date.now())
+
+  const techniques = velocity === 'creep' ? CREEP_TECHNIQUES : SPIKE_TECHNIQUES
+
+  const chooseVelocity = (v) => {
+    setVelocity(v)
+    setStep('intro')
+  }
 
   useEffect(() => {
     async function load() {
@@ -81,7 +101,7 @@ export default function UrgeFlow() {
         user_id: user.id,
         tracker_id: trackerId,
         intensity: feedbackIntensity || 'Moderate',
-        triggers: feedbackTrigger ? [feedbackTrigger] : [],
+        triggers: feedbackTriggers,
         notes: passed ? 'Rode out the urge' : 'Worked through the techniques',
         resisted: true,
         duration_seconds: elapsed,
@@ -102,11 +122,11 @@ export default function UrgeFlow() {
 
   const onTechniqueDone = () => setStep('check')
   const onUrgePassed = () => {
-    setPassedTechnique(TECHNIQUES[techniqueIdx]?.id ?? null)
+    setPassedTechnique(techniques[techniqueIdx]?.id ?? null)
     setStep('feedback')
   }
   const onUrgeStillHere = () => {
-    if (techniqueIdx < TECHNIQUES.length - 1) {
+    if (techniqueIdx < techniques.length - 1) {
       setTechniqueIdx(techniqueIdx + 1)
       setStep('technique')
     } else {
@@ -127,11 +147,13 @@ export default function UrgeFlow() {
   return (
     <div style={styles.frame}>
       <div style={styles.card}>
+        {step === 'velocity' && <VelocityPicker onChoose={chooseVelocity} onCancel={() => navigate('/home')} />}
         {step === 'intro' && <Intro tracker={tracker} onStart={startTechniques} onCancel={() => navigate('/home')} />}
         {step === 'technique' && (
           <Technique
-            technique={TECHNIQUES[techniqueIdx]}
+            technique={techniques[techniqueIdx]}
             techniqueIdx={techniqueIdx}
+            total={techniques.length}
             tracker={tracker}
             profileBio={profileBio}
             onDone={onTechniqueDone}
@@ -143,8 +165,8 @@ export default function UrgeFlow() {
           <Feedback
             intensity={feedbackIntensity}
             setIntensity={setFeedbackIntensity}
-            trigger={feedbackTrigger}
-            setTrigger={setFeedbackTrigger}
+            triggers={feedbackTriggers}
+            setTriggers={setFeedbackTriggers}
             onDone={() => saveAndExit(true)}
             saving={saving}
           />
@@ -244,7 +266,7 @@ function Intro({ onStart, onCancel, tracker }) {
         </div>
       )}
 
-      <p style={styles.subtle}>We'll guide you through 6 short steps. No thinking required.</p>
+      <p style={styles.subtle}>A few short steps, one at a time. No thinking required.</p>
       <div style={styles.actions}>
         <button onClick={onCancel} style={{...styles.btn, ...styles.btnSecondary}}>Not now</button>
         <button onClick={onStart} style={{...styles.btn, ...styles.btnPrimary}}>Begin</button>
@@ -265,7 +287,7 @@ function SemiCircleMeter({ percent }) {
   const filledLength = (percent / 100) * CIRC_LENGTH
 
   return (
-    <svg viewBox="0 0 180 100" style={{ width: '180px', height: '100px' }}>
+    <svg viewBox="0 0 180 100" style={{ width: '180px', height: '100px', display: 'block', margin: '0 auto' }}>
       <path
         d={`M 20 90 A ${RADIUS} ${RADIUS} 0 0 1 160 90`}
         fill="none"
@@ -301,9 +323,172 @@ function SemiCircleMeter({ percent }) {
 }
 
 // ────────── TECHNIQUE ROUTER ──────────
-function Technique({ technique, techniqueIdx, profileBio, onDone, onSkip }) {
+// ────────── VELOCITY PICKER (when not pre-tagged from the home) ──────────
+function VelocityPicker({ onChoose, onCancel }) {
+  return (
+    <div style={styles.center}>
+      <div style={styles.softIcon}>🌊</div>
+      <h2 style={styles.bigTitle}>What kind of urge is this?</h2>
+      <p style={styles.body}>Naming how it is coming at you changes what actually helps.</p>
+      <div style={styles.velocityPickRow}>
+        <button onClick={() => onChoose('spike')} style={styles.velocityPickBtn}>
+          <span style={styles.velocityPickIcon}>⚡</span>
+          <span style={styles.velocityPickLabel}>Sudden spike</span>
+          <span style={styles.velocityPickSub}>A trigger hit. It came on fast and strong.</span>
+        </button>
+        <button onClick={() => onChoose('creep')} style={styles.velocityPickBtn}>
+          <span style={styles.velocityPickIcon}>🌫️</span>
+          <span style={styles.velocityPickLabel}>Slow creep</span>
+          <span style={styles.velocityPickSub}>Worn down. It has been building all evening.</span>
+        </button>
+      </div>
+      <button onClick={onCancel} style={{ ...styles.btn, ...styles.btnSecondary }}>Not now</button>
+    </div>
+  )
+}
+
+// ────────── CREEP: HALT (name the deficit, then several fixes for it) ──────────
+const HALT_OPTIONS = [
+  { key: 'hungry', label: 'Hungry', icon: '🍽️', fixes: [
+    "Eat something with protein or fat — skip the sugar.",
+    "Drink a full glass of water first. Thirst fakes a craving.",
+    "Low blood sugar feels like needing something. Usually it is just food.",
+  ] },
+  { key: 'angry', label: 'Angry', icon: '🔥', fixes: [
+    "Name what you are actually angry about — out loud or on paper.",
+    "Move it out of your body: a brisk walk, push-ups, shake it off.",
+    "Make no decisions for 20 minutes. Anger is a bad advisor.",
+  ] },
+  { key: 'lonely', label: 'Lonely', icon: '🫂', fixes: [
+    "Text one person right now — even just a hello.",
+    "Put yourself near other people: a café, a call, a walk.",
+    "Loneliness wants you alone with the urge. Do not allow it.",
+  ] },
+  { key: 'tired', label: 'Tired', icon: '🌙', fixes: [
+    "Lie down for 20 minutes. This is the big one for slow creeps.",
+    "Lower the lights and the noise. Stop asking your brain to perform.",
+    "Half the time the creep is just exhaustion wearing your name.",
+  ] },
+  { key: 'bored', label: 'Bored', icon: '🪟', fixes: [
+    "Change rooms. A creep needs a still, empty setting.",
+    "Start one tiny task — two dishes, one tidy surface.",
+    "Boredom is the creep's favorite weather. Break the stillness.",
+  ] },
+]
+
+function HALTTechnique({ stepNum, total, onDone, onSkip }) {
+  const [picked, setPicked] = useState(null)
+  const opt = HALT_OPTIONS.find(o => o.key === picked)
+  return (
+    <div style={styles.center}>
+      <p style={styles.techCount}>{stepNum} of {total} · Name what is low</p>
+      <h2 style={styles.bigTitle}>This usually is not the substance.</h2>
+      <p style={styles.body}>A slow creep is almost always one of these underneath. Which is loudest right now?</p>
+      <div style={styles.haltGrid}>
+        {HALT_OPTIONS.map(o => (
+          <button key={o.key} onClick={() => setPicked(o.key)}
+            style={{ ...styles.haltCell, ...(picked === o.key ? styles.haltCellOn : {}) }}>
+            <span style={styles.haltIcon}>{o.icon}</span>
+            <span style={{ ...styles.haltLabel, ...(picked === o.key ? styles.haltLabelOn : {}) }}>{o.label}</span>
+          </button>
+        ))}
+      </div>
+      {opt && (
+        <div style={styles.haltFixes}>
+          {opt.fixes.map((f, i) => (
+            <div key={i} style={styles.haltFixRow}>
+              <span style={styles.haltFixDot}>·</span>
+              <span style={styles.haltFixText}>{f}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={styles.actions}>
+        <button onClick={onSkip} style={{ ...styles.btn, ...styles.btnSecondary }}>Skip</button>
+        <button onClick={onDone} disabled={!picked}
+          style={{ ...styles.btn, ...styles.btnPrimary, ...(!picked ? { opacity: 0.45 } : {}) }}>
+          {picked ? 'Next' : 'Pick one'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ────────── CREEP: CHANGE THE CHANNEL (one of many, per entry) ──────────
+const CHANGE_CHANNEL = [
+  "Step outside for two minutes — even just the doorway.",
+  "Move to a different room and stay there a while.",
+  "Splash cold water on your face. Wake the system up.",
+  "Put on one song and decide nothing until it ends.",
+  "Make a hot drink. The ritual matters more than the drink.",
+  "Tidy one small surface near you — just one.",
+  "Open a window and look at something far away.",
+  "Stretch for sixty seconds. Reach for the ceiling.",
+  "Take the trash out. A pointless errand resets the room.",
+  "Wash two dishes. Not all of them — just two.",
+  "Change the lighting. Lamp on, overhead off.",
+  "Walk to the farthest point in your home and back.",
+  "Change your shirt. A small physical reset.",
+  "Close the app or tab that pulled you here.",
+  "Find five things moving outside a window.",
+]
+
+function ChangeChannelTechnique({ stepNum, total, onDone, onSkip }) {
+  const [idx, setIdx] = useState(() => Math.floor(Math.random() * CHANGE_CHANNEL.length))
+  const another = () => setIdx(i => (i + 1) % CHANGE_CHANNEL.length)
+  return (
+    <div style={styles.center}>
+      <p style={styles.techCount}>{stepNum} of {total} · Change the channel</p>
+      <h2 style={styles.bigTitle}>Break the setting.</h2>
+      <p style={styles.body}>A creep needs a still, unchanging room. Move, and it loses its grip. One thing, right now:</p>
+      <div style={styles.suggestCard}>
+        <p style={styles.suggestText}>{CHANGE_CHANNEL[idx]}</p>
+      </div>
+      <button onClick={another} style={styles.suggestAnother}>Show me another ›</button>
+      <div style={styles.actions}>
+        <button onClick={onSkip} style={{ ...styles.btn, ...styles.btnSecondary }}>Skip</button>
+        <button onClick={onDone} style={{ ...styles.btn, ...styles.btnPrimary }}>Done</button>
+      </div>
+    </div>
+  )
+}
+
+// ────────── CREEP: DEPLOY A DEFENSE (one of many, per entry) ──────────
+const DEPLOY_DEFENSE = [
+  "Decide your next hour out loud, right now. Name the one thing you will do.",
+  "Put the cue physically out of reach before you sit back down.",
+  "Text someone that you will check in with them in an hour.",
+  "Set a 30-minute timer. Promise to reassess only when it rings.",
+  "Eat or drink something before you do anything else.",
+  "Put your shoes on. Just the shoes. Then decide.",
+  "Write the urge down with the time next to it. Watch it age.",
+  "Pick tomorrow-you over tonight-you for this one decision.",
+  "Leave the spot where this usually happens.",
+  "Say the real cost out loud: what does giving in actually buy tonight?",
+]
+
+function DeployDefenseTechnique({ stepNum, total, onDone, onSkip }) {
+  const [idx, setIdx] = useState(() => Math.floor(Math.random() * DEPLOY_DEFENSE.length))
+  const another = () => setIdx(i => (i + 1) % DEPLOY_DEFENSE.length)
+  return (
+    <div style={styles.center}>
+      <p style={styles.techCount}>{stepNum} of {total} · Deploy a defense</p>
+      <h2 style={styles.bigTitle}>Set up the next hour.</h2>
+      <p style={styles.body}>A defense is one small move that makes the hour ahead safer. Try this:</p>
+      <div style={styles.suggestCard}>
+        <p style={styles.suggestText}>{DEPLOY_DEFENSE[idx]}</p>
+      </div>
+      <button onClick={another} style={styles.suggestAnother}>Show me another ›</button>
+      <div style={styles.actions}>
+        <button onClick={onSkip} style={{ ...styles.btn, ...styles.btnSecondary }}>Skip</button>
+        <button onClick={onDone} style={{ ...styles.btn, ...styles.btnPrimary }}>Done</button>
+      </div>
+    </div>
+  )
+}
+
+function Technique({ technique, techniqueIdx, total, profileBio, onDone, onSkip }) {
   const stepNum = techniqueIdx + 1
-  const total = TECHNIQUES.length
 
   if (technique.id === 'breath') return <BreathTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'tap') return <TapTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
@@ -315,6 +500,9 @@ function Technique({ technique, techniqueIdx, profileBio, onDone, onSkip }) {
   if (technique.id === 'senses') return <SensesTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'why') return <WhyTechnique stepNum={stepNum} total={total} profileBio={profileBio} onDone={onDone} />
   if (technique.id === 'reach') return <ReachOutTechnique stepNum={stepNum} total={total} onDone={onDone} />
+  if (technique.id === 'halt') return <HALTTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
+  if (technique.id === 'change_channel') return <ChangeChannelTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
+  if (technique.id === 'deploy_defense') return <DeployDefenseTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   return null
 }
 
@@ -969,7 +1157,7 @@ function WhyTechnique({ stepNum, total, profileBio, onDone }) {
 
   return (
     <div style={styles.center}>
-      <p style={styles.techCount}>{stepNum} of {total} · Your why</p>
+      <p style={styles.techCount}>{stepNum} of {total} · The wallbreaker</p>
 
       {profileBio && (
         <div style={styles.whyBoxCompact}>
@@ -1267,13 +1455,16 @@ function CheckIn({ onPassed, onStill }) {
 }
 
 // ────────── FEEDBACK ──────────
-function Feedback({ intensity, setIntensity, trigger, setTrigger, onDone, saving }) {
+function Feedback({ intensity, setIntensity, triggers: selectedTriggers, setTriggers, onDone, saving }) {
   const intensities = ['Mild', 'Moderate', 'Strong']
-  const triggers = [
-    'Stress', 'Anxiety', 'Boredom', 'Loneliness', 'Frustration',
-    'Fatigue', 'Social', 'Celebration', 'Company', 'Time of day',
-    'Idle time', 'Relationship', 'Financial worries'
+  const TRIGGER_OPTIONS = [
+    'Stress', 'Anxiety', 'Boredom', 'Loneliness', 'Frustration', 'Anger',
+    'Sadness', 'Fatigue', "Can't sleep", 'Hunger', 'Pain', 'Overwhelm',
+    'Conflict', 'Social', 'Peer pressure', 'Celebration', 'Reward', 'Company',
+    'Habit', 'Saw a cue', 'Time of day', 'Idle time', 'Relationship', 'Money worries'
   ]
+  const toggle = (tr) =>
+    setTriggers(prev => prev.includes(tr) ? prev.filter(x => x !== tr) : [...prev, tr])
 
   return (
     <div style={styles.center}>
@@ -1288,11 +1479,13 @@ function Feedback({ intensity, setIntensity, trigger, setTrigger, onDone, saving
           </button>
         ))}
       </div>
-      <p style={{...styles.body, marginTop: '1.5rem'}}>What triggered it?</p>
+      <p style={{...styles.body, marginTop: '1.5rem'}}>
+        What triggered it? <span style={{ opacity: 0.55, fontSize: '13px' }}>pick any that fit</span>
+      </p>
       <div style={styles.tapRow}>
-        {triggers.map(tr => (
-          <button key={tr} onClick={() => setTrigger(tr)}
-            style={{...styles.tapChip, ...(trigger === tr ? styles.tapChipActive : {})}}>
+        {TRIGGER_OPTIONS.map(tr => (
+          <button key={tr} onClick={() => toggle(tr)}
+            style={{...styles.tapChip, ...(selectedTriggers.includes(tr) ? styles.tapChipActive : {})}}>
             {tr}
           </button>
         ))}
@@ -1328,6 +1521,24 @@ function FinalMessage({ onDone, saving }) {
 }
 
 const styles = {
+  velocityPickRow: { display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', margin: '1rem 0 1.5rem' },
+  velocityPickBtn: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '16px 18px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', textAlign: 'left', boxShadow: '0 4px 14px rgba(80,50,20,0.06)', fontFamily: 'inherit' },
+  velocityPickIcon: { fontSize: '24px', lineHeight: 1 },
+  velocityPickLabel: { fontSize: '17px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif' },
+  velocityPickSub: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
+  haltGrid: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', margin: '1rem 0' },
+  haltCell: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '12px 14px', minWidth: '84px', background: '#FFFFFF', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit' },
+  haltCellOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid #241710' },
+  haltIcon: { fontSize: '22px', lineHeight: 1 },
+  haltLabel: { fontSize: '13px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif' },
+  haltLabelOn: { color: '#FAF7F1' },
+  haltFixes: { display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', margin: '0.25rem 0 1rem', textAlign: 'left' },
+  haltFixRow: { display: 'flex', gap: '8px', alignItems: 'flex-start' },
+  haltFixDot: { color: '#C5572C', fontSize: '18px', lineHeight: 1.3, flexShrink: 0 },
+  haltFixText: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.5 },
+  suggestCard: { width: '100%', boxSizing: 'border-box', padding: '20px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', margin: '1rem 0 0.5rem', boxShadow: '0 4px 14px rgba(80,50,20,0.06)' },
+  suggestText: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: 0 },
+  suggestAnother: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '13px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', marginBottom: '1.25rem' },
   // ---- revamped interactive urge-breakers (dissolve / wipe / pulse) ----
   dissolveArea: { position: 'relative', width: '280px', height: '300px', margin: '0.5rem auto 0.75rem', borderRadius: '20px', background: 'radial-gradient(circle at 50% 55%, rgba(197,87,44,0.06), rgba(250,247,241,0))', touchAction: 'none', cursor: 'pointer' },
   mote: { position: 'absolute', width: '36px', height: '36px', marginLeft: '-18px', marginTop: '-18px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(222,158,98,0.95) 0%, rgba(197,87,44,0.5) 55%, rgba(197,87,44,0) 76%)', transition: 'opacity 0.45s, transform 0.45s', pointerEvents: 'none' },

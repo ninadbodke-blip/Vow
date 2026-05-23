@@ -8,8 +8,10 @@ export default function SlipFlow() {
   const navigate = useNavigate()
   const { t } = useLang()
 
-  const [step, setStep] = useState(1) // 1=confirm, 2=acknowledgment, 3=reflection
+  const [step, setStep] = useState(1) // 1=confirm, 2=acknowledgment, 3=reflection, 4=slip result
   const [tracker, setTracker] = useState(null)
+  const [progress, setProgress] = useState(null)   // free-tier state for slip→Reclaim threshold
+  const [slipResult, setSlipResult] = useState(null)
   const [loading, setLoading] = useState(true)
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
@@ -27,6 +29,18 @@ export default function SlipFlow() {
         return
       }
       setTracker(data)
+
+      // Free-tier state — drives the slip→Reclaim threshold (Endure/Build only)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: vpp } = await supabase
+          .from('vow_path_progress')
+          .select('free_state, endure_slip_count')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (vpp) setProgress(vpp)
+      }
+
       setLoading(false)
     }
     load()
@@ -73,6 +87,21 @@ export default function SlipFlow() {
         total_resets: (tracker.total_resets || 0) + 1,
         longest_streak_seconds: newLongest,
       }).eq('id', tracker.id)
+
+      // Slip count — free tier, Endure/Build only. We COUNT only; we no longer
+      // force a move. At 3 slips the Endure/Build home shows a gentle nudge
+      // suggesting Reclaim, and the user chooses. The count resets when they move.
+      const fs = progress?.free_state
+      if (fs === 'endure' || fs === 'build') {
+        const newCount = (progress?.endure_slip_count || 0) + 1
+        await supabase.from('vow_path_progress')
+          .update({ endure_slip_count: newCount, updated_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+        setSlipResult({ count: newCount, suggestReclaim: newCount >= 3 })
+        setSaving(false)
+        setStep(4)
+        return
+      }
 
       navigate('/home')
     } catch (err) {
@@ -180,6 +209,30 @@ export default function SlipFlow() {
                 style={{...styles.btn, ...styles.btnPrimary}}
               >
                 {saving ? '...' : (note ? 'Save & restart' : 'Restart')}
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 4 && (
+          <>
+            <div style={styles.iconCircle}>
+              <span style={{fontSize: '32px'}}>{slipResult?.suggestReclaim ? '🌱' : '🤍'}</span>
+            </div>
+            <h2 style={styles.title}>
+              {slipResult?.suggestReclaim ? 'You showed up. Again.' : 'Logged. You showed up.'}
+            </h2>
+            <p style={styles.body}>
+              {slipResult?.suggestReclaim
+                ? "That's three slips this stretch. Not a verdict — a signal. There's a gentler space called Reclaim waiting on your home screen whenever you're ready; everything you've built stays. No rush, no shame."
+                : `That's ${slipResult?.count} of 3 slips this stretch. A slip isn't the end — what counts is that you came back and logged it honestly. Keep going.`}
+            </p>
+            <div style={styles.actions}>
+              <button
+                onClick={() => navigate('/home', { replace: true })}
+                style={{ ...styles.btn, ...styles.btnPrimary }}
+              >
+                Back to home
               </button>
             </div>
           </>

@@ -28,11 +28,9 @@ const STATE_OPTIONS = [
     label: `I've been clean a while. Building forward.`,
     sublabel: 'The work shifts. From stopping to building.',
   },
-  {
-    id: 'reclaim',
-    label: `I slipped. I'm returning.`,
-    sublabel: 'Coming back. The progress hasn\u2019t been lost.',
-  },
+  // Reclaim is intentionally NOT selectable here — it's only reachable by
+  // progressing through the earlier stages and then slipping. You can't start
+  // a recovery journey in "I relapsed."
 ]
 
 export default function StatePicker() {

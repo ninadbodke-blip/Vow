@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
+import JournalTile from './JournalTile'
 import { resolveAddictionTypeId } from '../vowPath/utils/addictionTypes'
 
 // ===================================================================
@@ -50,6 +51,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [confidenceLatest, setConfidenceLatest] = useState(null)
   const [vowLatest, setVowLatest] = useState(null)
+  const [moves, setMoves] = useState([])   // preparation moves (stored as commit_prep signals)
   const [loading, setLoading] = useState(true)
   const [, setTickCount] = useState(0)
   const [savingDate, setSavingDate] = useState(false)
@@ -99,6 +101,21 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         .eq('user_id', user.id).eq('signal_type', 'commit_vow')
         .order('created_at', { ascending: false }).limit(1).maybeSingle()
       if (vow) setVowLatest(vow)
+
+      // preparation moves — stored as signals, consistent with readiness/vow
+      const { data: prepRows } = await supabase
+        .from('free_stage_signals').select('id, payload, created_at')
+        .eq('user_id', user.id).eq('signal_type', 'commit_prep')
+        .order('created_at', { ascending: false })
+      if (prepRows) {
+        setMoves(prepRows.map(r => ({
+          id: r.id,
+          date: r.payload?.date,
+          category: r.payload?.category,
+          description: r.payload?.description || null,
+          logged_at: r.payload?.logged_at,
+        })))
+      }
 
       setLoading(false)
     }
@@ -154,55 +171,34 @@ export default function CommitFreeHome({ progress: initialProgress }) {
     if (!user) return false
 
     const now = new Date()
-    const newMove = {
-      id: `move_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      logged_at: now.toISOString(),
-      date: formatDateInput(now),
+    const payload = {
       category,
       description: (description || '').trim() || null,
+      date: formatDateInput(now),
+      logged_at: now.toISOString(),
     }
 
-    const currentMoves = progress.commit_moves || []
-    const newMoves = [newMove, ...currentMoves].slice(0, 500)
+    const { data, error } = await supabase
+      .from('free_stage_signals')
+      .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_prep', payload })
+      .select('id').single()
 
-    setProgress(p => ({ ...p, commit_moves: newMoves }))
-
-    const { error } = await supabase
-      .from('vow_path_progress')
-      .update({
-        commit_moves: newMoves,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', user.id)
-
-    if (error) {
+    if (error || !data) {
       console.error('Failed to save move:', error)
-      setProgress(p => ({ ...p, commit_moves: currentMoves }))
       alert('Could not save. Please try again.')
       return false
     }
+    setMoves(prev => [{ id: data.id, ...payload }, ...prev].slice(0, 500))
     return true
   }
 
   const handleDeleteMove = async (id) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const currentMoves = progress.commit_moves || []
-    const newMoves = currentMoves.filter(m => m.id !== id)
-
-    setProgress(p => ({ ...p, commit_moves: newMoves }))
-
-    const { error } = await supabase
-      .from('vow_path_progress')
-      .update({
-        commit_moves: newMoves,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', user.id)
-
+    const prev = moves
+    setMoves(cur => cur.filter(m => m.id !== id))
+    const { error } = await supabase.from('free_stage_signals').delete().eq('id', id)
     if (error) {
       console.error('Failed to delete move:', error)
-      setProgress(p => ({ ...p, commit_moves: currentMoves }))
+      setMoves(prev)
       alert('Could not delete. Please try again.')
     }
   }
@@ -213,28 +209,39 @@ export default function CommitFreeHome({ progress: initialProgress }) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const addictionTypeId = await resolveAddictionTypeId(progress.primary_substance)
+      const now = new Date().toISOString()
 
-      // Only create a tracker when the substance maps to an addiction_types row.
-      // Custom / unmapped substances proceed to Endure without a tracker.
+      // One tracker per substance: reactivate the existing one (its longest
+      // streak is preserved) and restart the clock, or create it if none exists.
       if (addictionTypeId != null) {
-        const { data: existingTrackers } = await supabase
+        const { data: existing } = await supabase
           .from('trackers')
           .select('id')
           .eq('user_id', user.id)
           .eq('addiction_type_id', addictionTypeId)
-          .eq('is_active', true)
+          .order('created_at')
 
-        if (!existingTrackers || existingTrackers.length === 0) {
+        if (existing && existing.length > 0) {
+          const { error: trackerError } = await supabase
+            .from('trackers')
+            .update({ start_date: now, is_active: true, tracker_status: 'active' })
+            .eq('id', existing[0].id)
+          if (trackerError) {
+            console.error('Failed to reactivate tracker:', trackerError)
+            alert('Could not start Endure. Please try again.')
+            setTransitioning(false)
+            return
+          }
+        } else {
           const { error: trackerError } = await supabase
             .from('trackers')
             .insert({
               user_id: user.id,
               addiction_type_id: addictionTypeId,
-              start_date: new Date().toISOString(),
+              start_date: now,
               is_active: true,
               tracker_status: 'active',
             })
-
           if (trackerError) {
             console.error('Failed to create tracker:', trackerError)
             alert('Could not start Endure. Please try again.')
@@ -244,11 +251,14 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         }
       }
 
+      // Endure owns the counter now: clear the Commit countdown and reset slips.
       const { error: progressError } = await supabase
         .from('vow_path_progress')
         .update({
           free_state: 'endure',
-          updated_at: new Date().toISOString(),
+          endure_starts_at: null,
+          endure_slip_count: 0,
+          updated_at: now,
         })
         .eq('user_id', user.id)
 
@@ -267,7 +277,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
     }
   }
 
-  const handleCheckinSaved = (row) => setTodayCheckin(row)
+    const handleCheckinSaved = (row) => setTodayCheckin(row)
   const handleConfidenceSaved = (row) => setConfidenceLatest(row)
   const handleVowSaved = (row) => setVowLatest(row)
 
@@ -298,6 +308,9 @@ export default function CommitFreeHome({ progress: initialProgress }) {
 
         <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
 
+        {/* JOURNAL (shared) */}
+        <JournalTile stage="commit" />
+
         {showSetupTile && (
           <StopDateSetupTile
             prefillValue={progress.endure_starts_at}
@@ -326,7 +339,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         <VowTile latest={vowLatest} onSaved={handleVowSaved} />
 
         <PreparationLogTile
-          moves={progress.commit_moves || []}
+          moves={moves}
           stopDateISO={progress.endure_starts_at}
           onAddMove={handleAddMove}
           onDeleteMove={handleDeleteMove}
@@ -857,15 +870,25 @@ function MoveLogger({ onCancel, onSave }) {
 // SUB: CONTRIBUTION MAP
 // ===================================================================
 function ContributionMap({ moves, stopDateISO }) {
-  // Build a 14-day window ending at stop_date (or today+7 if no stop_date)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const todayStr = formatDateInput(today)
 
-  const endDate = stopDateISO
+  // End the window at stop day (never before today). Start it early enough to
+  // always include today AND every day a move was logged, so prep always shows.
+  const rawEnd = stopDateISO
     ? new Date(stopDateISO + 'T00:00:00')
     : new Date(today.getTime() + 7 * 86400000)
-  const startDate = new Date(endDate.getTime() - 13 * 86400000)
+  const endDate = new Date(Math.max(rawEnd.getTime(), today.getTime()))
+  endDate.setHours(0, 0, 0, 0)
+
+  const moveMs = moves
+    .map(m => Date.parse(m.date + 'T00:00:00'))
+    .filter(n => !Number.isNaN(n))
+  let startMs = Math.min(endDate.getTime() - 13 * 86400000, today.getTime())
+  if (moveMs.length) startMs = Math.min(startMs, Math.min(...moveMs))
+  const startDate = new Date(startMs)
+  startDate.setHours(0, 0, 0, 0)
 
   const days = []
   const cursor = new Date(startDate)
@@ -879,17 +902,16 @@ function ContributionMap({ moves, stopDateISO }) {
     return acc
   }, {})
 
-  const stopDateStr = stopDateISO || formatDateInput(endDate)
+  const stopDateStr = stopDateISO || formatDateInput(rawEnd)
 
-  // Split into 2 rows of 7
-  const row1 = days.slice(0, 7)
-  const row2 = days.slice(7, 14)
+  const rows = []
+  for (let i = 0; i < days.length; i += 7) rows.push(days.slice(i, i + 7))
 
   const startLabel = new Date(days[0] + 'T00:00:00')
     .toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
   const endLabel = endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 
-  const renderSquare = (dateStr, i) => {
+  const renderSquare = (dateStr) => {
     const count = movesByDate[dateStr] || 0
     const isFuture = dateStr > todayStr
     const isToday = dateStr === todayStr
@@ -922,12 +944,11 @@ function ContributionMap({ moves, stopDateISO }) {
       <p style={styles.mapLabel}>Preparation map</p>
 
       <div style={styles.mapGrid}>
-        <div style={styles.mapRow}>
-          {row1.map(renderSquare)}
-        </div>
-        <div style={styles.mapRow}>
-          {row2.map(renderSquare)}
-        </div>
+        {rows.map((row, ri) => (
+          <div key={ri} style={styles.mapRow}>
+            {row.map(renderSquare)}
+          </div>
+        ))}
       </div>
 
       <div style={styles.mapAxisRow}>
@@ -951,22 +972,26 @@ function ContributionMap({ moves, stopDateISO }) {
 // TILE: ANCHORS
 // ===================================================================
 function AnchorsTile({ navigate, anchorCount }) {
+  const has = anchorCount > 0
   return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Anchors</p>
-      <h3 style={styles.tileTitle}>
-        {anchorCount > 0 ? 'Who you\'d call at midnight' : 'Save one person'}
-      </h3>
-      <p style={styles.tileBody}>
-        {anchorCount > 0
+    <div style={styles.anchorsTile}>
+      <div style={styles.anchorsTop}>
+        <div style={styles.anchorsGlyph}>
+          <span style={{ ...styles.anchorsDot, background: '#C5572C' }} />
+          <span style={{ ...styles.anchorsDot, background: '#C8893C', marginLeft: '-9px' }} />
+          <span style={{ ...styles.anchorsDot, background: '#6B7FA0', marginLeft: '-9px' }} />
+          <span style={{ ...styles.anchorsDot, background: '#6E8A6A', marginLeft: '-9px' }} />
+        </div>
+        <p style={styles.tileEyebrow}>Anchors</p>
+      </div>
+      <h3 style={styles.anchorsTitle}>{has ? "Who you'd call at midnight." : 'Save one person.'}</h3>
+      <p style={styles.anchorsBody}>
+        {has
           ? `${anchorCount} ${anchorCount === 1 ? 'person' : 'people'} saved. The list should reflect who's actually in your life.`
-          : 'One trusted person whose name you\'d call if it gets hard. Adding to your anchors counts as a move.'}
+          : "One trusted person you'd call if it gets hard. Lining them up counts as a move."}
       </p>
-      <button
-        onClick={() => navigate('/anchors')}
-        style={styles.anchorsBtn}
-      >
-        {anchorCount > 0 ? 'Open Anchors' : 'Set up Anchors'}
+      <button onClick={() => navigate('/anchors')} style={styles.anchorsBtnNew}>
+        {has ? 'Open Anchors' : 'Set up Anchors'}
       </button>
     </div>
   )
@@ -986,6 +1011,35 @@ function formatDateInput(date) {
 // STYLES
 // ===================================================================
 const styles = {
+  // --- refined Anchors tile ---
+  anchorsTile: {
+    background: 'linear-gradient(180deg, #FFFBF4 0%, #FBF1E2 100%)',
+    border: '0.5px solid #EEDFC8',
+    borderRadius: '18px',
+    padding: '18px 18px 16px',
+    boxShadow: '0 4px 16px rgba(120,80,30,0.07)',
+  },
+  anchorsTop: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' },
+  anchorsGlyph: { display: 'flex', alignItems: 'center' },
+  anchorsDot: {
+    width: '20px', height: '20px', borderRadius: '50%',
+    border: '1.5px solid #FBF1E2', boxShadow: '0 1px 2px rgba(80,50,20,0.15)',
+  },
+  anchorsTitle: {
+    fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif',
+    fontWeight: 500, lineHeight: 1.3, margin: '0 0 8px',
+  },
+  anchorsBody: {
+    fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 14px',
+  },
+  anchorsBtnNew: {
+    width: '100%', padding: '13px', background: 'rgba(255,255,255,0.7)',
+    color: '#9A4E1A', border: '0.5px solid #E3C9A3', borderRadius: '12px',
+    fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif',
+    boxShadow: '0 2px 8px rgba(120,80,30,0.06)',
+  },
+
   tileLogged: { background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A' },
   // --- v2 additions: check-in hero + readiness ruler + vow ---
   checkinSummaryRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' },
@@ -1078,7 +1132,7 @@ const styles = {
     boxShadow: '0 4px 16px rgba(80,50,20,0.06)',
   },
   tileEyebrow: {
-    fontSize: '11px', color: '#854F0B',
+    fontSize: '10.5px', color: '#A07A3C',
     textTransform: 'uppercase', letterSpacing: '0.16em',
     fontWeight: 500, fontFamily: 'Georgia, serif',
     margin: '0 0 10px',

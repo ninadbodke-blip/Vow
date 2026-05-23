@@ -13,6 +13,17 @@ const STAGE_LABELS = {
   reclaim: 'Reclaim',
 }
 
+// Profile stage navigator — like the picker, but it CAN show Reclaim and it
+// respects the 30-day Build gate. Order is the journey order.
+const STAGE_META = [
+  { key: 'notice',  label: 'Notice',  icon: '👁', desc: 'Just watching the pattern. No pressure to change yet.' },
+  { key: 'reflect', label: 'Reflect', icon: '🔍', desc: 'Looking honestly at what it is costing you.' },
+  { key: 'commit',  label: 'Commit',  icon: '🤝', desc: 'Getting ready. Building toward a stop date.' },
+  { key: 'endure',  label: 'Endure',  icon: '🛡', desc: 'The early stretch. Holding the line, day by day.' },
+  { key: 'build',   label: 'Build',   icon: '🌱', desc: 'Past the acute phase. Building the life around it.' },
+  { key: 'reclaim', label: 'Reclaim', icon: '🌊', desc: 'Back after a slip. Nothing you built is lost.' },
+]
+
 export default function Profile() {
   const { lang, setLang } = useLang()
   const navigate = useNavigate()
@@ -28,6 +39,9 @@ export default function Profile() {
   const [nameDraft, setNameDraft] = useState('')
   const [whyDraft, setWhyDraft] = useState('')
   const [showSettings, setShowSettings] = useState(false)
+  const [showStages, setShowStages] = useState(false)
+  const [tracker, setTracker] = useState(null)
+  const [moving, setMoving] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -51,6 +65,15 @@ export default function Profile() {
           .eq('user_id', u.id)
           .maybeSingle()
         if (vpp?.free_state) setStage(vpp.free_state)
+
+        const { data: trk } = await supabase
+          .from('trackers')
+          .select('id, start_date')
+          .eq('user_id', u.id)
+          .eq('is_active', true)
+          .order('created_at')
+          .limit(1)
+        if (trk && trk[0]) setTracker(trk[0])
       } catch (err) {
         console.error(err)
       } finally {
@@ -70,6 +93,70 @@ export default function Profile() {
     await supabase.from('profiles').update({ bio: whyDraft }).eq('id', user.id)
     setProfile({ ...profile, bio: whyDraft })
     setEditingWhy(false)
+  }
+
+  const daysOnTracker = tracker?.start_date
+    ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 86400000)
+    : 0
+  const buildUnlocked = stage === 'build' || stage === 'reclaim' || daysOnTracker >= 30
+
+  const goToStage = async (target) => {
+    if (moving || target === stage) { setShowStages(false); return }
+    const { data: { user: u } } = await supabase.auth.getUser()
+    if (!u) return
+
+    // Build gate — same rule as the Endure home
+    if (target === 'build' && !buildUnlocked) {
+      alert(`Build unlocks once you have held 30 days in Endure. You are at ${daysOnTracker} of 30.`)
+      return
+    }
+
+    // Reclaim — nudge that slips are tracked better via the slip button
+    if (target === 'reclaim') {
+      const ok = window.confirm(`Slips get tracked properly when you record them with the "I slipped" button on your Endure or Build page — that keeps your history and patterns accurate. Move to Reclaim anyway?`)
+      if (!ok) return
+      setMoving(true)
+      await supabase.from('vow_path_progress')
+        .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
+        .eq('user_id', u.id)
+      navigate('/home', { replace: true })
+      return
+    }
+
+    // Backward from a counter stage (Endure/Build) to an earlier stage
+    const backward = (stage === 'endure' || stage === 'build')
+      && (target === 'commit' || target === 'reflect' || target === 'notice')
+    if (backward) {
+      const toReclaim = window.confirm(`Going back usually follows a slip. Reclaim is the gentler space and it keeps your streak intact. Go to Reclaim instead?\n\nOK = go to Reclaim\nCancel = continue going back`)
+      if (toReclaim) {
+        setMoving(true)
+        await supabase.from('vow_path_progress')
+          .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
+          .eq('user_id', u.id)
+        navigate('/home', { replace: true })
+        return
+      }
+      const confirmReset = window.confirm(`Moving to ${STAGE_LABELS[target]} ends your current run — the counter starts fresh when you next enter Endure. Everything you've logged (urges, slips, your longest streak) stays saved. Continue?`)
+      if (!confirmReset) return
+      setMoving(true)
+      if (tracker?.id) await supabase.from('trackers').update({ is_active: false }).eq('id', tracker.id)
+      await supabase.from('vow_path_progress')
+        .update({ free_state: target, endure_starts_at: null, endure_slip_count: 0, updated_at: new Date().toISOString() })
+        .eq('user_id', u.id)
+      navigate('/home', { replace: true })
+      return
+    }
+
+    // Default forward / lateral. Moving to a no-counter stage resets the tracker.
+    setMoving(true)
+    const noCounterStage = target === 'notice' || target === 'reflect' || target === 'commit'
+    if (noCounterStage && tracker?.id) {
+      await supabase.from('trackers').update({ is_active: false }).eq('id', tracker.id)
+    }
+    const patch = { free_state: target, updated_at: new Date().toISOString() }
+    if (noCounterStage) { patch.endure_starts_at = null; patch.endure_slip_count = 0 }
+    await supabase.from('vow_path_progress').update(patch).eq('user_id', u.id)
+    navigate('/home', { replace: true })
   }
 
   const resetLang = () => {
@@ -212,17 +299,46 @@ export default function Profile() {
           <p style={styles.sectionLabel}>Your path</p>
           <div style={styles.pathLinks}>
             <button
-              onClick={() => navigate('/onboarding/state-picker')}
+              onClick={() => setShowStages(s => !s)}
               style={styles.pathRow}
             >
               <div style={styles.pathRowText}>
-                <p style={styles.pathRowLabel}>Reassess where I am</p>
+                <p style={styles.pathRowLabel}>Move to a different stage</p>
                 <p style={styles.pathRowHelper}>
-                  Re-take the readiness check, move to a different path.
+                  Recovery isn't a straight line. Jump to where you actually are.
                 </p>
               </div>
-              <span style={styles.linkArrow}>›</span>
+              <span style={styles.linkArrow}>{showStages ? '⌄' : '›'}</span>
             </button>
+
+            {showStages && (
+              <div style={styles.stageNav}>
+                {STAGE_META.map(st => {
+                  const isCurrent = st.key === stage
+                  const locked = st.key === 'build' && !buildUnlocked
+                  return (
+                    <button
+                      key={st.key}
+                      onClick={() => goToStage(st.key)}
+                      disabled={moving || isCurrent}
+                      style={{ ...styles.stageRow, ...(isCurrent ? styles.stageRowCurrent : {}), ...(locked ? styles.stageRowLocked : {}) }}
+                    >
+                      <div style={{ ...styles.stageCircle, ...(isCurrent ? styles.stageCircleCurrent : {}) }}>
+                        <span>{locked ? '🔒' : st.icon}</span>
+                      </div>
+                      <div style={styles.stageBand}>
+                        <p style={styles.stageRowLabel}>
+                          {st.label}
+                          {isCurrent && <span style={styles.stageHereTag}> · you're here</span>}
+                          {locked && <span style={styles.stageLockTag}> · unlocks at 30 days</span>}
+                        </p>
+                        <p style={styles.stageRowDesc}>{st.desc}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
             <div style={styles.linkDivider}></div>
             <button onClick={signOut} style={styles.pathRow}>
               <div style={styles.pathRowText}>
@@ -257,6 +373,17 @@ export default function Profile() {
 }
 
 const styles = {
+  stageNav: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' },
+  stageRow: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px', background: '#FFFFFF', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
+  stageRowCurrent: { background: 'linear-gradient(180deg, #FBF6EE 0%, #F4EAD8 100%)', border: '0.5px solid #D9C7A8', cursor: 'default' },
+  stageRowLocked: { opacity: 0.72 },
+  stageCircle: { width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', background: 'linear-gradient(180deg, #F4ECDD 0%, #EADFCB 100%)', border: '0.5px solid #E0D5C2' },
+  stageCircleCurrent: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid #241710' },
+  stageBand: { flex: 1, minWidth: 0 },
+  stageRowLabel: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 2px' },
+  stageHereTag: { fontSize: '11px', color: '#854F0B', fontStyle: 'italic', fontWeight: 400 },
+  stageLockTag: { fontSize: '11px', color: '#9C8C78', fontStyle: 'italic', fontWeight: 400 },
+  stageRowDesc: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4, margin: 0 },
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
