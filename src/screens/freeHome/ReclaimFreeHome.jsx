@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import VowBrandMark from '../../components/VowBrandMark'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
@@ -106,17 +107,34 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
   // Mechanical framing (infrastructure failed, not the person). One categorical
   // value the Mirror charts and the future AI reflection reads as the clearest
   // signal: what kind of pressure breaks this person's perimeter.
-  const handleLogFracture = async (fractureType) => {
+  const handleLogFracture = async (fractureType, leak) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return false
     const { error } = await supabase.from('free_stage_signals').insert({
       user_id: user.id,
       stage: 'reclaim',
       signal_type: 'reclaim_return',
-      payload: { fracture_type: fractureType },
+      payload: { fracture_type: fractureType, leak: leak || null },
     })
     if (error) {
       console.error('Failed to log fracture:', error)
+      return false
+    }
+    return true
+  }
+
+  // === Swipe-to-shield micro-contract ===
+  const handleShield = async (windowSel, action) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return false
+    const { error } = await supabase.from('free_stage_signals').insert({
+      user_id: user.id,
+      stage: 'reclaim',
+      signal_type: 'reclaim_shield',
+      payload: { window: windowSel, action },
+    })
+    if (error) {
+      console.error('Failed to log shield:', error)
       return false
     }
     return true
@@ -145,20 +163,21 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
     setTransitioning(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setTransitioning(false); return }
 
-      // Commit owns no live counter — pause the tracker so the user re-sets a
-      // fresh stop date in Commit. Its longest streak is preserved on the row.
+      // Commit owns no live counter — pause the tracker (longest streak preserved
+      // on the row). A tracker hiccup must NOT block the move.
       if (tracker?.id) {
-        await supabase.from('trackers')
-          .update({ is_active: false })
-          .eq('id', tracker.id)
+        const { error: tErr } = await supabase.from('trackers')
+          .update({ is_active: false }).eq('id', tracker.id)
+        if (tErr) console.error('tracker pause failed (continuing):', tErr)
       }
 
       const { error } = await supabase
         .from('vow_path_progress')
         .update({
           free_state: 'commit',
-          endure_starts_at: null,  // clear old stop date — they pick fresh
+          endure_starts_at: null,
           endure_slip_count: 0,
           updated_at: new Date().toISOString(),
         })
@@ -166,15 +185,14 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
 
       if (error) {
         console.error('Failed to move to commit:', error)
-        alert('Could not transition. Please try again.')
+        alert('Could not move to Commit: ' + (error.message || 'please try again.'))
         setTransitioning(false)
         return
       }
-
-      navigate('/home', { replace: true })
+      window.location.assign('/home')
     } catch (err) {
       console.error(err)
-      alert('Something went wrong. Please try again.')
+      alert('Something went wrong: ' + (err?.message || 'please try again.'))
       setTransitioning(false)
     }
   }
@@ -184,76 +202,52 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
     setTransitioning(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setTransitioning(false); return }
+      const now = new Date().toISOString()
       const addictionTypeId = await resolveAddictionTypeId(progress.primary_substance)
 
-      // Only touch trackers when the substance maps to an addiction_types row.
-      // Custom / unmapped substances transition without a tracker.
+      // (Re)start a tracker so the counter runs. Prefer this substance, else the
+      // most recent. Never let a tracker hiccup block the re-entry.
+      let trackerId = null
       if (addictionTypeId != null) {
-        const now = new Date().toISOString()
-
-        // Find or create active tracker
-        const { data: existingTrackers } = await supabase
-          .from('trackers')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('addiction_type_id', addictionTypeId)
-          .eq('is_active', true)
-
-        if (existingTrackers && existingTrackers.length > 0) {
-          // Reset start_date to now (longest_streak_seconds is preserved separately)
-          const { error: trackerError } = await supabase
-            .from('trackers')
-            .update({ start_date: now })
-            .eq('id', existingTrackers[0].id)
-
-          if (trackerError) {
-            console.error('Failed to reset tracker:', trackerError)
-            alert('Could not restart. Please try again.')
-            setTransitioning(false)
-            return
-          }
-        } else {
-          // No active tracker — create one
-          const { error: createError } = await supabase
-            .from('trackers')
-            .insert({
-              user_id: user.id,
-              addiction_type_id: addictionTypeId,
-              start_date: now,
-              is_active: true,
-              tracker_status: 'active',
-            })
-
-          if (createError) {
-            console.error('Failed to create tracker:', createError)
-            alert('Could not restart. Please try again.')
-            setTransitioning(false)
-            return
-          }
-        }
+        const { data: byType } = await supabase.from('trackers').select('id')
+          .eq('user_id', user.id).eq('addiction_type_id', addictionTypeId).order('created_at')
+        if (byType && byType.length > 0) trackerId = byType[0].id
+      }
+      if (!trackerId) {
+        const { data: anyTrk } = await supabase.from('trackers').select('id')
+          .eq('user_id', user.id).order('created_at')
+        if (anyTrk && anyTrk.length > 0) trackerId = anyTrk[0].id
+      }
+      if (trackerId) {
+        const { error: tErr } = await supabase.from('trackers')
+          .update({ start_date: now, is_active: true, tracker_status: 'active' }).eq('id', trackerId)
+        if (tErr) console.error('tracker reactivate failed (continuing):', tErr)
+      } else if (addictionTypeId != null) {
+        const { error: iErr } = await supabase.from('trackers')
+          .insert({ user_id: user.id, addiction_type_id: addictionTypeId, start_date: now, is_active: true, tracker_status: 'active' })
+        if (iErr) console.error('tracker insert failed (continuing):', iErr)
       }
 
-      // Flip free_state to endure
       const { error: progressError } = await supabase
         .from('vow_path_progress')
         .update({
           free_state: 'endure',
           endure_slip_count: 0,
-          updated_at: new Date().toISOString(),
+          updated_at: now,
         })
         .eq('user_id', user.id)
 
       if (progressError) {
         console.error('Failed to update free_state:', progressError)
-        alert('Could not transition. Please try again.')
+        alert('Could not restart Endure: ' + (progressError.message || 'please try again.'))
         setTransitioning(false)
         return
       }
-
-      navigate('/home', { replace: true })
+      window.location.assign('/home')
     } catch (err) {
       console.error(err)
-      alert('Something went wrong. Please try again.')
+      alert('Something went wrong: ' + (err?.message || 'please try again.'))
       setTransitioning(false)
     }
   }
@@ -280,7 +274,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
 
         {/* TOP BAR */}
         <div style={styles.topBar}>
-          <p style={styles.brandLine}>Vow</p>
+          <VowBrandMark />
           <button
             onClick={() => navigate('/profile')}
             style={styles.profileBtn}
@@ -306,6 +300,9 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
 
         {/* TILE 4 — THE KINDER VOICE (anti-AVE reframe) */}
         <KinderVoiceTile onReframe={handleReframe} />
+
+        {/* TILE 5 — SWIPE-TO-SHIELD micro-contract */}
+        <ShieldTile onShield={handleShield} />
 
         {/* TILE — GENTLE CHECK-IN (shared signal) */}
         <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
@@ -400,6 +397,39 @@ function GreetingTile({ firstName }) {
 // ===================================================================
 // TILE: WHAT STILL STANDS (anti-shame, validates preserved work)
 // ===================================================================
+function ActivitySheet({ open, onClose, eyebrow, title, children }) {
+  if (!open) return null
+  return (
+    <div style={styles.sheetBackdrop} onClick={onClose}>
+      <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.sheetHead}>
+          <div style={{ flex: 1 }}>
+            {eyebrow && <p style={styles.sheetEyebrow}>{eyebrow}</p>}
+            <h2 style={styles.sheetTitle}>{title}</h2>
+          </div>
+          <button onClick={onClose} style={styles.sheetClose} aria-label="Close">✕</button>
+        </div>
+        <div>{children}</div>
+      </div>
+    </div>
+  )
+}
+
+function Launcher({ icon, title, summary, done, onOpen }) {
+  return (
+    <button onClick={onOpen} style={styles.launcher}>
+      <div style={styles.launcherTop}>
+        <span style={styles.launcherIcon}>{icon}</span>
+        <span style={{ ...styles.launcherChip, ...(done ? styles.launcherChipDone : {}) }}>
+          {done ? 'Noted ✓' : 'Open ›'}
+        </span>
+      </div>
+      <h2 style={styles.launcherTitle}>{title}</h2>
+      <p style={styles.launcherSummary}>{summary}</p>
+    </button>
+  )
+}
+
 function WhatStillStandsTile({ bio, anchorCount, longestStreakDays, checklistDone }) {
   const items = []
 
@@ -465,121 +495,186 @@ function WhatStillStandsTile({ bio, anchorCount, longestStreakDays, checklistDon
 // signal for both the Mirror ("you break on exhaustion, not sadness") and the
 // future AI reflection.
 const FRACTURES = [
-  { key: 'exhaustion', label: 'Exhaustion', sub: 'Running on empty. Too tired to hold the line.' },
-  { key: 'social',     label: 'Social pressure', sub: 'The people, the place, the moment around you.' },
-  { key: 'emotional',  label: 'Emotional spike', sub: 'A hard feeling surged — anger, grief, dread.' },
-  { key: 'vacuum',     label: 'The vacuum', sub: 'Boredom, an empty evening, nothing to lean on.' },
+  { key: 'exhaustion', label: 'Exhaustion', sub: 'Running on empty.', leaks: ['Too little sleep', 'Overworked', 'Out of willpower', 'Physically unwell'] },
+  { key: 'social',     label: 'Social',     sub: 'The people or the place.', leaks: ["Couldn't say no", 'Wanted to blend in', 'Ambient pressure', 'Felt left out'] },
+  { key: 'emotional',  label: 'Emotion',    sub: 'A hard feeling surged.', leaks: ['Anger', 'Grief or loss', 'Anxiety', 'Loneliness'] },
+  { key: 'vacuum',     label: 'The vacuum', sub: 'Empty time, nothing to lean on.', leaks: ['Dead evening', 'Boredom', 'Procrastinating', 'Reward / celebration'] },
 ]
 
+// Cascading autopsy: tap the breach, then the exact leak. Mechanical, not moral.
 function FractureDiagnosticTile({ onLog }) {
-  const [selected, setSelected] = useState(null)
+  const [open, setOpen] = useState(false)
+  const [primary, setPrimary] = useState(null)
+  const [leak, setLeak] = useState(null)
   const [saving, setSaving] = useState(false)
-  const [done, setDone] = useState(false)
+  const [logged, setLogged] = useState(null)
+
+  const primaryObj = FRACTURES.find(f => f.key === primary)
 
   const handleLog = async () => {
-    if (!selected || saving) return
+    if (!primary || saving) return
     setSaving(true)
-    const ok = await onLog(selected)
+    const ok = await onLog(primary, leak)
     setSaving(false)
-    if (ok) setDone(true)
-    else alert('Could not save. Please try again.')
+    if (ok) {
+      const f = FRACTURES.find(x => x.key === primary)
+      setLogged({ label: f?.label || primary, leak })
+      setOpen(false)
+    } else alert('Could not save. Please try again.')
   }
 
-  if (done) {
-    const f = FRACTURES.find(x => x.key === selected)
-    return (
-      <div style={{ ...styles.tile, ...styles.tileLogged }}>
-        <p style={styles.tileEyebrow}>Noted · not a verdict</p>
-        <div style={styles.savedRow}>
-          <span style={styles.savedCheck}>✓</span>
-          <p style={styles.savedText}>
-            {f?.label}. That's a pattern to watch, not a flaw in you. The more honestly you mark these, the clearer the warning signs get next time.
-          </p>
-        </div>
-      </div>
-    )
-  }
+  const done = !!logged
+  const summary = done
+    ? `${logged.label}${logged.leak ? ` · ${logged.leak}` : ''}`
+    : 'What gave way? Name it — no verdict, just data.'
+
+  const openSheet = () => { setPrimary(null); setLeak(null); setOpen(true) }
 
   return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>The diagnostic</p>
-      <h2 style={styles.tileTitle}>What gave way?</h2>
-      <p style={styles.tileBody}>
-        Not "what's wrong with you" — what was the pressure that broke through. One tap. It's how the warning signs get easier to spot.
-      </p>
-
-      <div style={styles.fractureGrid}>
-        {FRACTURES.map(f => (
-          <button
-            key={f.key}
-            onClick={() => setSelected(f.key)}
-            disabled={saving}
-            style={{ ...styles.fractureCell, ...(selected === f.key ? styles.fractureCellOn : {}) }}
-          >
-            <span style={{ ...styles.fractureLabel, ...(selected === f.key ? styles.fractureLabelOn : {}) }}>{f.label}</span>
-            <span style={{ ...styles.fractureSub, ...(selected === f.key ? styles.fractureSubOn : {}) }}>{f.sub}</span>
-          </button>
-        ))}
-      </div>
-
-      <button
-        onClick={handleLog}
-        disabled={!selected || saving}
-        style={{ ...styles.fractureLogBtn, ...(!selected || saving ? styles.fractureLogBtnDim : {}) }}
-      >
-        {saving ? 'Saving…' : 'Log it'}
-      </button>
-    </div>
+    <>
+      <Launcher icon="🧩" title="What gave way?" summary={summary} done={done} onOpen={openSheet} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="The diagnostic · not a verdict" title="What breached the perimeter?">
+        <p style={styles.sheetLead}>Not what's wrong with you — what was the pressure that broke through. Two taps, and the warning signs get easier to spot.</p>
+        <p style={styles.rcGroupLabel}>The breach</p>
+        <div style={styles.rcGrid2}>
+          {FRACTURES.map(f => (
+            <button key={f.key} onClick={() => { setPrimary(f.key); setLeak(null) }} disabled={saving}
+              style={{ ...styles.rcCell, ...(primary === f.key ? styles.rcCellOn : {}) }}>
+              <span style={{ ...styles.rcCellLabel, ...(primary === f.key ? styles.rcCellTextOn : {}) }}>{f.label}</span>
+              <span style={{ ...styles.rcCellSub, ...(primary === f.key ? styles.rcCellTextOn : {}) }}>{f.sub}</span>
+            </button>
+          ))}
+        </div>
+        {primaryObj && (
+          <>
+            <p style={styles.rcGroupLabel}>The exact leak</p>
+            <div style={styles.rcPillWrap}>
+              {primaryObj.leaks.map(lk => (
+                <button key={lk} onClick={() => setLeak(lk)} disabled={saving}
+                  style={{ ...styles.rcPill, ...(leak === lk ? styles.rcPillOn : {}) }}>{lk}</button>
+              ))}
+            </div>
+          </>
+        )}
+        <button onClick={handleLog} disabled={!primary || saving}
+          style={{ ...styles.sheetSaveBtn, ...(!primary ? styles.saveBtnDim : {}) }}>
+          {saving ? 'Saving…' : 'Log it'}
+        </button>
+      </ActivitySheet>
+    </>
   )
 }
 
-// ===================================================================
-// TILE: THE KINDER VOICE (anti-AVE reframe — frictionless, self-soothing)
-// ===================================================================
-// The Abstinence Violation Effect lives in the harsh self-talk. Tapping a
-// thought reveals a truer, kinder line. Logs which distortion they reached for
-// (silently) so the AI can later name the shame story — but asks nothing of them.
 const KINDER_PAIRS = [
   { key: 'catastrophe', harsh: "I've ruined everything.", kind: "One hard day doesn't erase the ones behind it. They still happened." },
-  { key: 'willpower',   harsh: "I have no willpower.", kind: "Willpower didn't fail — you hit a hard moment. That's information, not a verdict." },
   { key: 'zero',        harsh: "I'm back to square one.", kind: "You're not at zero. You're someone who has done this before, here again." },
+  { key: 'willpower',   harsh: "I have no willpower.", kind: "Willpower didn't fail — you hit a hard moment. That's information, not a verdict." },
   { key: 'pointless',   harsh: "Why do I even bother?", kind: "Because part of you still wants this. That part just opened the app." },
 ]
 
+// Compassion flip: name the shame, then flip it to a kinder, truer voice.
 function KinderVoiceTile({ onReframe }) {
-  const [revealed, setRevealed] = useState({})
+  const [open, setOpen] = useState(false)
+  const [picked, setPicked] = useState(null)
+  const [flipped, setFlipped] = useState(false)
+  const [didReframe, setDidReframe] = useState(false)
 
-  const reveal = (pair) => {
-    setRevealed(prev => {
-      if (prev[pair.key]) return prev
-      if (onReframe) onReframe(pair.key)
-      return { ...prev, [pair.key]: true }
-    })
+  const pickedObj = KINDER_PAIRS.find(p => p.key === picked)
+
+  const flip = () => {
+    if (!picked || flipped) return
+    setFlipped(true)
+    setDidReframe(true)
+    if (onReframe) onReframe(picked)
   }
 
+  const summary = didReframe ? 'You met the cruel voice with a kinder one.' : 'When the voice gets cruel, answer it.'
+  const openSheet = () => { setPicked(null); setFlipped(false); setOpen(true) }
+
   return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>The voice in your head</p>
-      <h2 style={styles.tileTitle}>It's being cruel. Answer it.</h2>
-      <p style={styles.tileBody}>
-        Tap whichever one sounds like you right now. There's a truer line underneath.
-      </p>
+    <>
+      <Launcher icon="🕊️" title="The voice in your head" summary={summary} done={didReframe} onOpen={openSheet} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="The compassion flip" title="It's being cruel. Answer it.">
+        <p style={styles.sheetLead}>Tap the thought that sounds like you right now.</p>
+        <div style={styles.rcPillWrap}>
+          {KINDER_PAIRS.map(p => (
+            <button key={p.key} onClick={() => { setPicked(p.key); setFlipped(false) }}
+              style={{ ...styles.kinderPick, ...(picked === p.key ? styles.kinderPickOn : {}) }}>
+              "{p.harsh}"
+            </button>
+          ))}
+        </div>
+        {pickedObj && !flipped && (
+          <button onClick={flip} style={styles.flipBtn}>Flip to a kinder voice →</button>
+        )}
+        {pickedObj && flipped && (
+          <div style={styles.kindReveal}>
+            <p style={styles.kindRevealText}>{pickedObj.kind}</p>
+          </div>
+        )}
+      </ActivitySheet>
+    </>
+  )
+}
 
-      <div style={styles.kinderList}>
-        {KINDER_PAIRS.map(p => (
-          <button
-            key={p.key}
-            onClick={() => reveal(p)}
-            style={{ ...styles.kinderCard, ...(revealed[p.key] ? styles.kinderCardOpen : {}) }}
-          >
-            <span style={styles.kinderHarsh}>"{p.harsh}"</span>
-            {revealed[p.key] && <span style={styles.kinderKind}>{p.kind}</span>}
-          </button>
-        ))}
-      </div>
+const SHIELD_WINDOWS = ['Next hour', 'Next 12 hours', 'Just today']
+const SHIELD_ACTIONS = ['Go to sleep', 'Step outside', 'Drink water', 'Text my anchor', 'Stay off my phone']
 
-      <p style={styles.tileHelperText}>Let the kinder one land. Nothing to do here but read.</p>
-    </div>
+// Swipe-to-shield: a small promise for a short window, sealed by a deliberate drag.
+function ShieldTile({ onShield }) {
+  const [open, setOpen] = useState(false)
+  const [windowSel, setWindowSel] = useState(null)
+  const [action, setAction] = useState(null)
+  const [slide, setSlide] = useState(0)
+  const [saving, setSaving] = useState(false)
+  const [locked, setLocked] = useState(null)
+
+  const canSlide = !!windowSel && !!action && !saving
+  const done = !!locked
+  const summary = done ? `${locked.window} · ${locked.action} ✓` : 'Lock one small promise for the next stretch.'
+
+  const onSlideChange = async (v) => {
+    if (!canSlide) { setSlide(0); return }
+    setSlide(v)
+    if (v >= 100) {
+      setSaving(true)
+      const ok = await onShield(windowSel, action)
+      setSaving(false)
+      if (ok) { setLocked({ window: windowSel, action }); setOpen(false) }
+      else { alert('Could not save. Please try again.'); setSlide(0) }
+    }
+  }
+
+  const release = () => { if (slide < 100) setSlide(0) }
+  const openSheet = () => { setWindowSel(null); setAction(null); setSlide(0); setOpen(true) }
+
+  return (
+    <>
+      <Launcher icon="🛡️" title="Shield the next stretch" summary={summary} done={done} onOpen={openSheet} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="A micro-contract" title="One promise, sealed by hand">
+        <p style={styles.sheetLead}>You don't have to promise forever — just one small thing, for one short window.</p>
+        <p style={styles.rcGroupLabel}>For the…</p>
+        <div style={styles.rcPillWrap}>
+          {SHIELD_WINDOWS.map(w => (
+            <button key={w} onClick={() => { setWindowSel(w); setSlide(0) }}
+              style={{ ...styles.rcPill, ...(windowSel === w ? styles.rcPillOn : {}) }}>{w}</button>
+          ))}
+        </div>
+        <p style={styles.rcGroupLabel}>I will…</p>
+        <div style={styles.rcPillWrap}>
+          {SHIELD_ACTIONS.map(a => (
+            <button key={a} onClick={() => { setAction(a); setSlide(0) }}
+              style={{ ...styles.rcPill, ...(action === a ? styles.rcPillOn : {}) }}>{a}</button>
+          ))}
+        </div>
+        <div style={{ ...styles.slideTrack, ...(canSlide ? {} : styles.slideTrackDim) }}>
+          <span style={styles.slideLabel}>{slide >= 100 ? 'Sealed ✓' : 'Slide to seal →'}</span>
+          <input type="range" min={0} max={100} value={slide} disabled={!canSlide || saving}
+            onChange={(e) => onSlideChange(parseInt(e.target.value, 10))}
+            onMouseUp={release} onTouchEnd={release} style={styles.slideInput} />
+        </div>
+      </ActivitySheet>
+    </>
   )
 }
 
@@ -618,45 +713,22 @@ function AnchorsTile({ navigate, anchorCount }) {
 function WhenYoureReadyTile({ onMoveToCommit, onRestartEndure, transitioning, hasSubstance }) {
   return (
     <div style={styles.readyTile}>
-      <div style={styles.readyOrnament}>· · ·</div>
       <p style={styles.readyEyebrow}>When you're ready</p>
       <h3 style={styles.readyTitle}>Choose your re-entry.</h3>
       <p style={styles.readyBody}>
-        You don't have to promise forever. Just the next 24 hours. Two paths back — both start the clock fresh from today.
+        You don't have to promise forever — just the next 24 hours. Both paths start the clock fresh from today.
       </p>
-
-      <button
-        onClick={onMoveToCommit}
-        disabled={transitioning}
-        style={{
-          ...styles.readyBtnPrimary,
-          ...(transitioning ? styles.readyBtnDisabled : {}),
-        }}
-      >
-        {transitioning ? 'Moving...' : 'Move to Commit'}
-      </button>
-      <p style={styles.readyBtnHelper}>
-        Set a new stop date. Use the days before to prepare.
-      </p>
-
       {hasSubstance && (
-        <>
-          <div style={styles.readyDivider} />
-          <button
-            onClick={onRestartEndure}
-            disabled={transitioning}
-            style={{
-              ...styles.readyBtnSecondary,
-              ...(transitioning ? styles.readyBtnDisabled : {}),
-            }}
-          >
-            {transitioning ? 'Restarting...' : 'Restart Endure now'}
-          </button>
-          <p style={styles.readyBtnHelper}>
-            Begin again from today. The counter starts fresh.
-          </p>
-        </>
+        <button onClick={onRestartEndure} disabled={transitioning} style={styles.readyPrimaryBtn}>
+          {transitioning ? 'Starting…' : 'Restart Endure now'}
+        </button>
       )}
+      <button onClick={onMoveToCommit} disabled={transitioning} style={styles.readySecondaryBtn}>
+        {transitioning ? 'Moving…' : 'Move to Commit'}
+      </button>
+      <p style={styles.readyHelper}>
+        Restart Endure begins the counter today. Move to Commit lets you set a fresh stop date first.
+      </p>
     </div>
   )
 }
@@ -665,6 +737,44 @@ function WhenYoureReadyTile({ onMoveToCommit, onRestartEndure, transitioning, ha
 // STYLES
 // ===================================================================
 const styles = {
+  launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', marginBottom: '14px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
+  launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
+  launcherIcon: { fontSize: '22px', lineHeight: 1 },
+  launcherChip: { fontSize: '11px', fontWeight: 600, color: 'rgba(250,247,241,0.85)', background: 'rgba(250,247,241,0.12)', border: '0.5px solid rgba(250,247,241,0.22)', borderRadius: '20px', padding: '4px 10px', fontFamily: 'Georgia, serif' },
+  launcherChipDone: { color: '#DFF0C2', background: 'rgba(120,160,60,0.22)', border: '0.5px solid rgba(180,210,130,0.4)' },
+  launcherTitle: { fontSize: '17px', fontWeight: 600, color: '#FAF7F1', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
+  launcherSummary: { fontSize: '12.5px', color: 'rgba(250,247,241,0.72)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.45 },
+  sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
+  sheetCard: { width: '100%', maxWidth: '430px', maxHeight: '88vh', overflowY: 'auto', background: '#FCFAF5', borderRadius: '22px', padding: '20px 20px 22px', boxShadow: '0 24px 70px rgba(40,25,15,0.4)' },
+  sheetHead: { display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' },
+  sheetEyebrow: { fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A07A3C', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
+  sheetTitle: { fontSize: '19px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.25 },
+  sheetClose: { flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'white', color: '#6B5C4A', fontSize: '13px', cursor: 'pointer', lineHeight: 1 },
+  sheetLead: { fontSize: '13.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: '0 0 16px' },
+  sheetSaveBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FBF6EE', border: 'none', borderRadius: '13px', fontSize: '14px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer', marginTop: '4px' },
+  saveBtnDim: { opacity: 0.45, cursor: 'not-allowed' },
+  rcGroupLabel: { fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 8px' },
+  rcGrid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' },
+  rcCell: { display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start', textAlign: 'left', padding: '12px 13px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit' },
+  rcCellOn: { background: 'linear-gradient(180deg, #F5E9D4 0%, #EEDFC2 100%)', border: '1px solid #C99A4E', boxShadow: '0 2px 8px rgba(180,140,70,0.18)' },
+  rcCellLabel: { fontSize: '14px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif' },
+  rcCellSub: { fontSize: '11px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.35 },
+  rcCellTextOn: { color: '#5A3A12' },
+  rcPillWrap: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' },
+  rcPill: { padding: '9px 14px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '20px', fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  rcPillOn: { background: 'linear-gradient(180deg, #F5E9D4 0%, #EEDFC2 100%)', color: '#5A3A12', border: '1px solid #C99A4E' },
+  kinderPick: { width: '100%', textAlign: 'left', padding: '12px 14px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '14px', fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
+  kinderPickOn: { background: 'linear-gradient(180deg, #F5E9D4 0%, #EEDFC2 100%)', color: '#5A3A12', border: '1px solid #C99A4E' },
+  flipBtn: { width: '100%', padding: '12px', background: 'white', color: '#854F0B', border: '0.5px solid #DDCFB6', borderRadius: '12px', fontSize: '13.5px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer', marginTop: '4px' },
+  kindReveal: { background: 'linear-gradient(180deg, #FBF5EA 0%, #F4EAD7 100%)', border: '0.5px solid #E6D4B4', borderRadius: '14px', padding: '16px', marginTop: '6px' },
+  kindRevealText: { fontSize: '15px', color: '#3A2A1C', fontFamily: 'Georgia, serif', lineHeight: 1.55, margin: 0 },
+  slideTrack: { position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '52px', background: 'linear-gradient(180deg, #F3E9D8 0%, #ECDFC6 100%)', border: '0.5px solid #DDCFB6', borderRadius: '26px', marginTop: '6px', overflow: 'hidden' },
+  slideTrackDim: { opacity: 0.5 },
+  slideLabel: { position: 'absolute', fontSize: '13px', color: '#8A6A3A', fontFamily: 'Georgia, serif', fontStyle: 'italic', pointerEvents: 'none' },
+  slideInput: { width: '100%', height: '52px', margin: 0, accentColor: '#854F0B', background: 'transparent', cursor: 'pointer' },
+  readyPrimaryBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FBF6EE', border: 'none', borderRadius: '13px', fontSize: '15px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer', marginBottom: '10px', boxShadow: '0 4px 14px rgba(40,25,10,0.22)' },
+  readySecondaryBtn: { width: '100%', padding: '13px', background: 'white', color: '#854F0B', border: '0.5px solid #DDCFB6', borderRadius: '12px', fontSize: '14px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  readyHelper: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', lineHeight: 1.5, margin: '12px 0 0' },
   // --- refined Anchors tile ---
   anchorsTile: {
     background: 'linear-gradient(180deg, #FFFBF4 0%, #FBF1E2 100%)',

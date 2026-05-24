@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import VowBrandMark from '../../components/VowBrandMark'
 import QuickLogModal from './QuickLogModal'
 import DailyCheckin from './DailyCheckin'
 import JournalTile from './JournalTile'
@@ -178,7 +179,7 @@ export default function NoticeFreeHome({ progress }) {
       <div style={styles.phone}>
 
         <div style={styles.topBar}>
-          <p style={styles.brandLine}>Vow</p>
+          <VowBrandMark />
           <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
@@ -188,6 +189,13 @@ export default function NoticeFreeHome({ progress }) {
 
         {/* HERO — daily check-in */}
         <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+
+        {/* DAILY CAPTURE DECK — launchers open blurred activity cards */}
+        <AutopilotAuditTile />
+
+        <ContextRadarTile />
+
+        <RoiDeltaTile />
 
         {/* JOURNAL (shared) */}
         <JournalTile stage="notice" />
@@ -434,22 +442,304 @@ function WeekMeterTile({ logs }) {
 // ===================================================================
 // TILE: DAILY PROMPT (preserved)
 // ===================================================================
+// ===================================================================
+// ACTIVITY SHEET + LAUNCHER — clean home, options live in floating cards
+// ===================================================================
+function ActivitySheet({ open, onClose, eyebrow, title, children }) {
+  if (!open) return null
+  return (
+    <div style={styles.sheetBackdrop} onClick={onClose}>
+      <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.sheetHead}>
+          <div style={{ flex: 1 }}>
+            {eyebrow && <p style={styles.sheetEyebrow}>{eyebrow}</p>}
+            <h2 style={styles.sheetTitle}>{title}</h2>
+          </div>
+          <button onClick={onClose} style={styles.sheetClose} aria-label="Close">✕</button>
+        </div>
+        <div>{children}</div>
+      </div>
+    </div>
+  )
+}
+
+function Launcher({ icon, title, summary, done, onOpen }) {
+  return (
+    <button onClick={onOpen} style={styles.launcher}>
+      <div style={styles.launcherTop}>
+        <span style={styles.launcherIcon}>{icon}</span>
+        <span style={{ ...styles.launcherChip, ...(done ? styles.launcherChipDone : {}) }}>
+          {done ? 'Logged ✓' : 'Open ›'}
+        </span>
+      </div>
+      <h2 style={styles.launcherTitle}>{title}</h2>
+      <p style={styles.launcherSummary}>{summary}</p>
+    </button>
+  )
+}
+
+// ===================================================================
+// TILE: AUTOPILOT AUDIT — how awake was the choice?
+// ===================================================================
+const AUTOPILOT_LABELS = { 1: 'Total autopilot', 2: 'Mid-flight', 3: 'Fully conscious' }
+
+function AutopilotAuditTile() {
+  const [open, setOpen] = useState(false)
+  const [level, setLevel] = useState(2)
+  const [rowId, setRowId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [savedLevel, setSavedLevel] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('free_stage_signals')
+        .select('id, payload').eq('user_id', user.id).eq('stage', 'notice')
+        .eq('signal_type', 'notice_autopilot').eq('payload->>date', localDateStr())
+        .order('created_at', { ascending: false }).limit(1)
+      if (cancelled) return
+      const row = data && data[0]
+      if (row) { setRowId(row.id); if (row.payload?.level) { setLevel(row.payload.level); setSavedLevel(row.payload.level) } }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const done = savedLevel != null
+  const summary = done ? `Today: ${AUTOPILOT_LABELS[savedLevel]}` : 'How awake were you when it happened today?'
+
+  const handleSave = async () => {
+    if (saving) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const payload = { level, date: localDateStr() }
+    let ok = false
+    if (rowId) { const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId); ok = !error }
+    else {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'notice', signal_type: 'notice_autopilot', payload }).select('id').single()
+      ok = !error && !!data; if (ok) setRowId(data.id)
+    }
+    setSaving(false)
+    if (ok) { setSavedLevel(level); setOpen(false) } else alert('Could not save. Please try again.')
+  }
+
+  return (
+    <>
+      <Launcher icon="🌀" title="Autopilot audit" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="Awareness · today" title="How awake were you?">
+        <p style={styles.sheetLead}>When the habit happened today, how conscious was the choice? No judgment — just notice.</p>
+        <p style={styles.auditCurrent}>{AUTOPILOT_LABELS[level]}</p>
+        <input type="range" min={1} max={3} step={1} value={level}
+          onChange={(e) => setLevel(parseInt(e.target.value, 10))} style={styles.auditSlider} />
+        <div style={styles.auditEnds}>
+          <span>Total autopilot</span>
+          <span>Fully conscious</span>
+        </div>
+        <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
+          {saving ? 'Saving…' : 'Log this'}
+        </button>
+      </ActivitySheet>
+    </>
+  )
+}
+
+// ===================================================================
+// TILE: CONTEXT RADAR — map the perimeter
+// ===================================================================
+const RADAR_LOCATIONS = ['Desk', 'Car', 'Couch', 'Bed', 'Outside']
+const RADAR_COMPANY = ['Alone', 'Partner', 'Coworkers', 'Friends']
+
+function ContextRadarTile() {
+  const [open, setOpen] = useState(false)
+  const [location, setLocation] = useState(null)
+  const [company, setCompany] = useState(null)
+  const [rowId, setRowId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [savedLocation, setSavedLocation] = useState(null)
+  const [savedCompany, setSavedCompany] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('free_stage_signals')
+        .select('id, payload').eq('user_id', user.id).eq('stage', 'notice')
+        .eq('signal_type', 'notice_context').eq('payload->>date', localDateStr())
+        .order('created_at', { ascending: false }).limit(1)
+      if (cancelled) return
+      const row = data && data[0]
+      if (row) {
+        setRowId(row.id)
+        setLocation(row.payload?.location || null); setSavedLocation(row.payload?.location || null)
+        setCompany(row.payload?.company || null); setSavedCompany(row.payload?.company || null)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const done = savedLocation != null && savedCompany != null
+  const summary = done ? `${savedLocation} · ${savedCompany}` : 'Where and with whom did the urge hit?'
+
+  const handleSave = async () => {
+    if (saving || !location || !company) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const payload = { location, company, date: localDateStr() }
+    let ok = false
+    if (rowId) { const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId); ok = !error }
+    else {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'notice', signal_type: 'notice_context', payload }).select('id').single()
+      ok = !error && !!data; if (ok) setRowId(data.id)
+    }
+    setSaving(false)
+    if (ok) { setSavedLocation(location); setSavedCompany(company); setOpen(false) } else alert('Could not save. Please try again.')
+  }
+
+  return (
+    <>
+      <Launcher icon="📍" title="Context radar" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="The perimeter · today" title="Map the environment">
+        <p style={styles.sheetLead}>Where it happens, and who's around. Just mapping the terrain — no judgment.</p>
+        <p style={styles.nGroupLabel}>Where</p>
+        <div style={styles.nPillWrap}>
+          {RADAR_LOCATIONS.map(loc => (
+            <button key={loc} onClick={() => setLocation(loc)} disabled={saving}
+              style={{ ...styles.nPill, ...(location === loc ? styles.nPillOn : {}) }}>{loc}</button>
+          ))}
+        </div>
+        <p style={styles.nGroupLabel}>Who</p>
+        <div style={styles.nPillWrap}>
+          {RADAR_COMPANY.map(co => (
+            <button key={co} onClick={() => setCompany(co)} disabled={saving}
+              style={{ ...styles.nPill, ...(company === co ? styles.nPillOn : {}) }}>{co}</button>
+          ))}
+        </div>
+        <button onClick={handleSave} disabled={saving || !location || !company}
+          style={{ ...styles.sheetSaveBtn, ...((!location || !company) ? styles.saveBtnDim : {}) }}>
+          {saving ? 'Saving…' : 'Log pattern'}
+        </button>
+      </ActivitySheet>
+    </>
+  )
+}
+
+// ===================================================================
+// TILE: ROI DELTA — the real return
+// ===================================================================
+const ROI_BEFORE = ['Stressed', 'Bored', 'Anxious', 'Tired', 'Sad', 'Restless']
+const ROI_AFTER = ['Numb', 'Guilty', 'More anxious', 'Relieved', 'Empty', 'Calmer']
+
+function RoiDeltaTile() {
+  const [open, setOpen] = useState(false)
+  const [before, setBefore] = useState(null)
+  const [after, setAfter] = useState(null)
+  const [rowId, setRowId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [savedBefore, setSavedBefore] = useState(null)
+  const [savedAfter, setSavedAfter] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('free_stage_signals')
+        .select('id, payload').eq('user_id', user.id).eq('stage', 'notice')
+        .eq('signal_type', 'notice_roi').eq('payload->>date', localDateStr())
+        .order('created_at', { ascending: false }).limit(1)
+      if (cancelled) return
+      const row = data && data[0]
+      if (row) {
+        setRowId(row.id)
+        setBefore(row.payload?.before || null); setSavedBefore(row.payload?.before || null)
+        setAfter(row.payload?.after || null); setSavedAfter(row.payload?.after || null)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const done = savedBefore != null && savedAfter != null
+  const summary = done ? `${savedBefore} → ${savedAfter}` : 'What did the habit actually pay back today?'
+
+  const handleSave = async () => {
+    if (saving || !before || !after) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const payload = { before, after, date: localDateStr() }
+    let ok = false
+    if (rowId) { const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId); ok = !error }
+    else {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'notice', signal_type: 'notice_roi', payload }).select('id').single()
+      ok = !error && !!data; if (ok) setRowId(data.id)
+    }
+    setSaving(false)
+    if (ok) { setSavedBefore(before); setSavedAfter(after); setOpen(false) } else alert('Could not save. Please try again.')
+  }
+
+  return (
+    <>
+      <Launcher icon="📉" title="The real return" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="The return · today" title="What did it actually pay back?">
+        <p style={styles.sheetLead}>The habit promises a fix. Notice what it actually delivered an hour later.</p>
+        <p style={styles.nGroupLabel}>Before</p>
+        <div style={styles.nPillWrap}>
+          {ROI_BEFORE.map(b => (
+            <button key={b} onClick={() => setBefore(b)} disabled={saving}
+              style={{ ...styles.nPill, ...(before === b ? styles.nPillOn : {}) }}>{b}</button>
+          ))}
+        </div>
+        <p style={styles.nGroupLabel}>An hour after</p>
+        <div style={styles.nPillWrap}>
+          {ROI_AFTER.map(a => (
+            <button key={a} onClick={() => setAfter(a)} disabled={saving}
+              style={{ ...styles.nPill, ...(after === a ? styles.nPillOn : {}) }}>{a}</button>
+          ))}
+        </div>
+        {before && after && (
+          <div style={styles.roiEquation}>
+            <p style={styles.roiEqText}><strong>{before}</strong> → <strong>{after}</strong></p>
+            <p style={styles.roiEqNote}>That's the actual return.</p>
+          </div>
+        )}
+        <button onClick={handleSave} disabled={saving || !before || !after}
+          style={{ ...styles.sheetSaveBtn, ...((!before || !after) ? styles.saveBtnDim : {}) }}>
+          {saving ? 'Saving…' : 'Log the return'}
+        </button>
+      </ActivitySheet>
+    </>
+  )
+}
+
+// ===================================================================
+// TILE: NOTICE PROMPT — daily question (now launcher + sheet)
+// ===================================================================
 function NoticePromptTile({ todayLogged, onLogged }) {
   const todayKey = new Date().toDateString()
   const promptIdx = Math.abs(hashString(todayKey)) % NOTICE_PROMPTS.length
   const prompt = NOTICE_PROMPTS[promptIdx]
 
-  const [selectedOption, setSelectedOption] = useState(null)
+  const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(todayLogged)
+  const [chosen, setChosen] = useState(null)
 
   const handleSelect = async (option) => {
     if (done || saving) return
-    setSelectedOption(option)
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setSaving(false); return }
       const { data: newRow, error } = await supabase
         .from('free_noticings')
         .insert({
@@ -459,51 +749,35 @@ function NoticePromptTile({ todayLogged, onLogged }) {
         .select().single()
       if (error) {
         console.error('Failed to save noticing:', error)
-        setSaving(false); setSelectedOption(null)
+        setSaving(false)
         alert('Could not save. Please try again.')
         return
       }
-      setDone(true); setSaving(false)
+      setChosen(option); setDone(true); setSaving(false); setOpen(false)
       if (onLogged && newRow) onLogged(newRow)
     } catch (err) {
-      console.error(err); setSaving(false); setSelectedOption(null)
+      console.error(err); setSaving(false)
     }
   }
 
-  if (done) {
-    return (
-      <div style={{ ...styles.tile, ...styles.tileLogged }}>
-        <p style={styles.tileEyebrow}>Today's question</p>
-        <div style={styles.loggedRow}>
-          <span style={styles.checkmark}>&#10003;</span>
-          <p style={styles.loggedText}>You answered today. Come back tomorrow.</p>
-        </div>
-      </div>
-    )
-  }
+  const summary = done
+    ? (chosen ? `You answered: "${chosen}"` : 'Answered today — back tomorrow.')
+    : prompt.question
 
   return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Today's question</p>
-      <h2 style={styles.tileTitle}>{prompt.question}</h2>
-      <div style={styles.optionsGrid}>
-        {prompt.options.map(option => (
-          <button
-            key={option}
-            onClick={() => handleSelect(option)}
-            disabled={saving}
-            style={{
-              ...styles.optionChip,
-              ...(selectedOption === option ? styles.optionChipSelected : {}),
-              ...(saving && selectedOption !== option ? styles.optionChipFading : {}),
-            }}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-      <p style={styles.tileHelperText}>Optional. A side question while you notice.</p>
-    </div>
+    <>
+      <Launcher icon="❔" title="Today's question" summary={summary} done={done} onOpen={() => { if (!done) setOpen(true) }} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="Today's question" title={prompt.question}>
+        <p style={styles.sheetLead}>Optional — a side question while you notice. Tap what fits.</p>
+        <div style={styles.nPillWrap}>
+          {prompt.options.map(option => (
+            <button key={option} onClick={() => handleSelect(option)} disabled={saving} style={styles.nPill}>
+              {option}
+            </button>
+          ))}
+        </div>
+      </ActivitySheet>
+    </>
   )
 }
 
@@ -605,6 +879,37 @@ function computeTopValue(logs, field) {
 // STYLES
 // ===================================================================
 const styles = {
+  // launcher cards (warm dark — the urge-velocity look)
+  launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', marginBottom: '14px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
+  launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
+  launcherIcon: { fontSize: '22px', lineHeight: 1 },
+  launcherChip: { fontSize: '11px', fontWeight: 600, color: 'rgba(250,247,241,0.85)', background: 'rgba(250,247,241,0.12)', border: '0.5px solid rgba(250,247,241,0.22)', borderRadius: '20px', padding: '4px 10px', fontFamily: 'Georgia, serif' },
+  launcherChipDone: { color: '#DFF0C2', background: 'rgba(120,160,60,0.22)', border: '0.5px solid rgba(180,210,130,0.4)' },
+  launcherTitle: { fontSize: '17px', fontWeight: 600, color: '#FAF7F1', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
+  launcherSummary: { fontSize: '12.5px', color: 'rgba(250,247,241,0.72)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.45 },
+  // activity sheet (blurred popup)
+  sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
+  sheetCard: { width: '100%', maxWidth: '430px', maxHeight: '88vh', overflowY: 'auto', background: '#FCFAF5', borderRadius: '22px', padding: '20px 20px 22px', boxShadow: '0 24px 70px rgba(40,25,15,0.4)' },
+  sheetHead: { display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' },
+  sheetEyebrow: { fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A07A3C', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
+  sheetTitle: { fontSize: '19px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.25 },
+  sheetClose: { flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'white', color: '#6B5C4A', fontSize: '13px', cursor: 'pointer', lineHeight: 1 },
+  sheetLead: { fontSize: '13.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: '0 0 16px' },
+  sheetSaveBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FBF6EE', border: 'none', borderRadius: '13px', fontSize: '14px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer', marginTop: '4px' },
+  saveBtnDim: { opacity: 0.45, cursor: 'not-allowed' },
+  // autopilot audit
+  auditCurrent: { fontSize: '20px', color: '#854F0B', fontFamily: 'Georgia, serif', fontWeight: 600, textAlign: 'center', margin: '4px 0 10px' },
+  auditSlider: { width: '100%', accentColor: '#854F0B', margin: '4px 0 6px' },
+  auditEnds: { display: 'flex', justifyContent: 'space-between', marginBottom: '18px', fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif' },
+  // shared select pills (radar / roi / prompt)
+  nGroupLabel: { fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 8px' },
+  nPillWrap: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' },
+  nPill: { padding: '9px 14px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '20px', fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  nPillOn: { background: 'linear-gradient(180deg, #6E3A1C 0%, #3A2415 100%)', color: '#FAF7F1', border: '0.5px solid #3A2415' },
+  // roi equation
+  roiEquation: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '18px', textAlign: 'center', marginBottom: '14px' },
+  roiEqText: { fontSize: '18px', color: '#FAF7F1', fontFamily: 'Georgia, serif', margin: '0 0 6px', lineHeight: 1.3 },
+  roiEqNote: { fontSize: '12.5px', color: '#D9B57A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0 },
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',

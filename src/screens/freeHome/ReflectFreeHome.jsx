@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import VowBrandMark from '../../components/VowBrandMark'
 import QuickLogModal from './QuickLogModal'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
@@ -259,7 +260,7 @@ export default function ReflectFreeHome({ progress }) {
       <div style={styles.phone}>
 
         <div style={styles.topBar}>
-          <p style={styles.brandLine}>Vow</p>
+          <VowBrandMark />
           <button
             onClick={() => navigate('/profile')}
             style={styles.profileBtn}
@@ -277,6 +278,13 @@ export default function ReflectFreeHome({ progress }) {
         <JournalTile stage="reflect" />
 
         <BalanceMetersTile latest={balanceLatest} onSaved={handleBalanceSaved} />
+
+        {/* CONTEMPLATION ENGINE — launchers open blurred activity sheets */}
+        <CompoundingCostTile substanceLabel={progress.substance_label} />
+
+        <RationalizationGridTile />
+
+        <DissonanceTile />
 
         <WeeklyWeighingTile
           currentWeighing={currentWeighing}
@@ -1059,6 +1067,395 @@ function BalanceMetersTile({ latest, onSaved }) {
   )
 }
 
+const COST_HORIZONS = [
+  { label: '2 weeks',  days: 14 },
+  { label: '1 month',  days: 30 },
+  { label: '3 months', days: 91 },
+  { label: '6 months', days: 182 },
+  { label: '9 months', days: 273 },
+  { label: '1 year',   days: 365 },
+  { label: '15 months', days: 456 },
+  { label: '18 months', days: 548 },
+  { label: '2 years',  days: 730 },
+  { label: '3 years',  days: 1095 },
+  { label: '4 years',  days: 1460 },
+  { label: '5 years',  days: 1825 },
+]
+
+const RATIONALIZATIONS = [
+  "I earned it today",
+  "I'll quit next week",
+  "Just one won't hurt",
+  "I need it to sleep",
+  "I'm too stressed",
+  "I can control it",
+  "Everyone does it",
+  "It's not that bad",
+  "I'll make up for it",
+]
+
+const DISSONANCE_VALUES = [
+  'scale my career',
+  'buy a home',
+  'be present for my family',
+  'get my health back',
+  'feel proud of myself',
+  'be free of this',
+]
+
+const DISSONANCE_ACTIONS = [
+  'numb out',
+  'spend my money',
+  'hide from everyone',
+  'waste the night',
+  'break my own word',
+  'escape',
+]
+
+// ===================================================================
+// ACTIVITY SHEET — shared blurred-backdrop popup card
+// ===================================================================
+// Keeps the home clean: every interaction happens in here, never inline.
+function ActivitySheet({ open, onClose, eyebrow, title, children }) {
+  if (!open) return null
+  return (
+    <div style={styles.sheetBackdrop} onClick={onClose}>
+      <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.sheetHead}>
+          <div style={{ flex: 1 }}>
+            {eyebrow && <p style={styles.sheetEyebrow}>{eyebrow}</p>}
+            <h2 style={styles.sheetTitle}>{title}</h2>
+          </div>
+          <button onClick={onClose} style={styles.sheetClose} aria-label="Close">✕</button>
+        </div>
+        <div>{children}</div>
+      </div>
+    </div>
+  )
+}
+
+// Shared launcher — the warm dark card (urge-velocity look). No options inline.
+function Launcher({ icon, title, summary, done, onOpen }) {
+  return (
+    <button onClick={onOpen} style={styles.launcher}>
+      <div style={styles.launcherTop}>
+        <span style={styles.launcherIcon}>{icon}</span>
+        <span style={{ ...styles.launcherChip, ...(done ? styles.launcherChipDone : {}) }}>
+          {done ? 'Logged ✓' : 'Open ›'}
+        </span>
+      </div>
+      <h2 style={styles.launcherTitle}>{title}</h2>
+      <p style={styles.launcherSummary}>{summary}</p>
+    </button>
+  )
+}
+
+// ===================================================================
+// TILE: COMPOUNDING COST — the time machine
+// ===================================================================
+function CompoundingCostTile({ substanceLabel }) {
+  const [open, setOpen] = useState(false)
+  const [cost, setCost] = useState('')
+  const [hours, setHours] = useState('')
+  const [idx, setIdx] = useState(0)
+  const [maxIdx, setMaxIdx] = useState(0)
+  const [rowId, setRowId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [savedCost, setSavedCost] = useState(null)
+  const [savedHours, setSavedHours] = useState(null)
+  const [savedMax, setSavedMax] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('free_stage_signals')
+        .select('id, payload').eq('user_id', user.id).eq('stage', 'reflect')
+        .eq('signal_type', 'reflect_cost')
+        .order('created_at', { ascending: false }).limit(1)
+      if (cancelled) return
+      const row = data && data[0]
+      if (row) {
+        setRowId(row.id)
+        const pl = row.payload || {}
+        if (pl.daily_cost != null) { setCost(String(pl.daily_cost)); setSavedCost(pl.daily_cost) }
+        if (pl.daily_hours != null) { setHours(String(pl.daily_hours)); setSavedHours(pl.daily_hours) }
+        if (pl.max_horizon != null) { setMaxIdx(pl.max_horizon); setSavedMax(pl.max_horizon) }
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const slide = (v) => { setIdx(v); if (v > maxIdx) setMaxIdx(v) }
+
+  const c = parseFloat(cost) || 0
+  const hr = parseFloat(hours) || 0
+  const h = COST_HORIZONS[idx]
+  const totalCost = Math.round(c * h.days)
+  const totalHours = Math.round(hr * h.days)
+  const fullDays = Math.round(totalHours / 24)
+  const hasInput = c > 0 || hr > 0
+  const fmt = (n) => n.toLocaleString('en-IN')
+
+  const done = savedCost != null || savedHours != null
+  const summary = done
+    ? `${savedCost ? `₹${fmt(savedCost)}/day` : ''}${savedCost && savedHours ? ' · ' : ''}${savedHours ? `${savedHours}h/day` : ''}${savedMax != null ? ` — looked ${COST_HORIZONS[savedMax].label} ahead` : ''}`
+    : 'See what a single day really costs, compounded forward.'
+
+  const handleSave = async () => {
+    if (saving || !hasInput) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const finalMax = Math.max(maxIdx, idx)
+    const payload = { daily_cost: c, daily_hours: hr, max_horizon: finalMax }
+    let ok = false
+    if (rowId) {
+      const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId)
+      ok = !error
+    } else {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'reflect', signal_type: 'reflect_cost', payload }).select('id').single()
+      ok = !error && !!data
+      if (ok) setRowId(data.id)
+    }
+    setSaving(false)
+    if (ok) { setSavedCost(c); setSavedHours(hr); setSavedMax(finalMax); setOpen(false) }
+    else alert('Could not save. Please try again.')
+  }
+
+  return (
+    <>
+      <Launcher icon="💸" title="The real cost, over time" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)}
+        eyebrow="The real cost · over time" title="Run the numbers forward">
+        <p style={styles.sheetLead}>
+          Be honest about what a single day{substanceLabel ? ` of ${substanceLabel}` : ''} costs you. Then watch it compound.
+        </p>
+        <div style={styles.costInputs}>
+          <div style={styles.costField}>
+            <label style={styles.costLabel}>Daily cost (₹)</label>
+            <input type="number" inputMode="numeric" value={cost} placeholder="0"
+              onChange={(e) => setCost(e.target.value)} style={styles.costInput} />
+          </div>
+          <div style={styles.costField}>
+            <label style={styles.costLabel}>Hours lost / day</label>
+            <input type="number" inputMode="decimal" value={hours} placeholder="0"
+              onChange={(e) => setHours(e.target.value)} style={styles.costInput} />
+          </div>
+        </div>
+
+        <p style={styles.costHorizonLabel}>Looking ahead: <strong>{h.label}</strong></p>
+        <input type="range" min={0} max={COST_HORIZONS.length - 1} step={1} value={idx}
+          onChange={(e) => slide(parseInt(e.target.value, 10))} style={styles.costSlider} />
+        <div style={styles.costEnds}>
+          <span>{COST_HORIZONS[0].label}</span>
+          <span>{COST_HORIZONS[COST_HORIZONS.length - 1].label}</span>
+        </div>
+
+        {hasInput ? (
+          <div style={styles.costProjection}>
+            <p style={styles.costProjLead}>At this rate, in {h.label} you will</p>
+            {c > 0 && <p style={styles.costProjBig}>spend ₹{fmt(totalCost)}</p>}
+            {hr > 0 && <p style={styles.costProjBig}>lose {fmt(totalHours)} hours</p>}
+            {hr > 0 && <p style={styles.costProjSub}>that's {fmt(fullDays)} full days of your life</p>}
+          </div>
+        ) : (
+          <p style={styles.tileHelperText}>Enter a daily cost or hours to watch it compound.</p>
+        )}
+
+        <button onClick={handleSave} disabled={saving || !hasInput}
+          style={{ ...styles.sheetSaveBtn, ...(!hasInput ? styles.costSaveBtnDim : {}) }}>
+          {saving ? 'Saving…' : 'Save this'}
+        </button>
+      </ActivitySheet>
+    </>
+  )
+}
+
+// ===================================================================
+// TILE: RATIONALIZATION GRID — name the lie
+// ===================================================================
+function RationalizationGridTile() {
+  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState([])
+  const [rowId, setRowId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [savedLies, setSavedLies] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('free_stage_signals')
+        .select('id, payload').eq('user_id', user.id).eq('stage', 'reflect')
+        .eq('signal_type', 'reflect_rationalization').eq('payload->>date', localDateStr())
+        .order('created_at', { ascending: false }).limit(1)
+      if (cancelled) return
+      const row = data && data[0]
+      if (row) { setRowId(row.id); const lies = row.payload?.lies || []; setSelected(lies); setSavedLies(lies) }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const toggle = (lie) => setSelected(prev => prev.includes(lie) ? prev.filter(x => x !== lie) : [...prev, lie])
+
+  const done = savedLies != null
+  const summary = done
+    ? (savedLies.length ? `${savedLies.length} named today — "${savedLies[0]}"${savedLies.length > 1 ? ' …' : ''}` : 'A clear day — no lies logged.')
+    : 'Name the excuses your brain tried to sell you today.'
+
+  const handleSave = async () => {
+    if (saving) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const payload = { lies: selected, date: localDateStr() }
+    let ok = false
+    if (rowId) {
+      const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId)
+      ok = !error
+    } else {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'reflect', signal_type: 'reflect_rationalization', payload }).select('id').single()
+      ok = !error && !!data
+      if (ok) setRowId(data.id)
+    }
+    setSaving(false)
+    if (ok) { setSavedLies(selected); setOpen(false) }
+    else alert('Could not save. Please try again.')
+  }
+
+  return (
+    <>
+      <Launcher icon="🧠" title="Which lies today?" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)}
+        eyebrow="The stories · today" title="Which lies did your brain try to sell you today?">
+        <p style={styles.sheetLead}>
+          Naming the trick drains its power. No judgment — the addiction writes these, not you.
+        </p>
+        <div style={styles.ratGrid}>
+          {RATIONALIZATIONS.map(lie => (
+            <button key={lie} onClick={() => toggle(lie)} disabled={saving}
+              style={{ ...styles.ratPill, ...(selected.includes(lie) ? styles.ratPillOn : {}) }}>
+              {lie}
+            </button>
+          ))}
+        </div>
+        <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
+          {saving ? 'Saving…' : "Log today's friction"}
+        </button>
+      </ActivitySheet>
+    </>
+  )
+}
+
+// ===================================================================
+// TILE: DISSONANCE EQUATION — your want, next to the habit
+// ===================================================================
+function DissonanceTile() {
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState(null)
+  const [action, setAction] = useState(null)
+  const [rowId, setRowId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [savedValue, setSavedValue] = useState(null)
+  const [savedAction, setSavedAction] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('free_stage_signals')
+        .select('id, payload').eq('user_id', user.id).eq('stage', 'reflect')
+        .eq('signal_type', 'reflect_dissonance').eq('payload->>date', localDateStr())
+        .order('created_at', { ascending: false }).limit(1)
+      if (cancelled) return
+      const row = data && data[0]
+      if (row) {
+        setRowId(row.id)
+        setValue(row.payload?.value || null); setSavedValue(row.payload?.value || null)
+        setAction(row.payload?.action || null); setSavedAction(row.payload?.action || null)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const done = savedValue != null && savedAction != null
+  const summary = done
+    ? `Want to ${savedValue} — chose to ${savedAction}.`
+    : 'Put your biggest want right next to the habit.'
+
+  const handleSave = async () => {
+    if (saving || !value || !action) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const payload = { value, action, date: localDateStr() }
+    let ok = false
+    if (rowId) {
+      const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId)
+      ok = !error
+    } else {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'reflect', signal_type: 'reflect_dissonance', payload }).select('id').single()
+      ok = !error && !!data
+      if (ok) setRowId(data.id)
+    }
+    setSaving(false)
+    if (ok) { setSavedValue(value); setSavedAction(action); setOpen(false) }
+    else alert('Could not save. Please try again.')
+  }
+
+  return (
+    <>
+      <Launcher icon="⚖️" title="The friction" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)}
+        eyebrow="Two truths · today" title="The friction">
+        <p style={styles.sheetLead}>
+          These two can't share the same life. Put them side by side.
+        </p>
+
+        <p style={styles.dissLabel}>I deeply want to…</p>
+        <div style={styles.dissGroup}>
+          {DISSONANCE_VALUES.map(v => (
+            <button key={v} onClick={() => setValue(v)} disabled={saving}
+              style={{ ...styles.dissPill, ...(value === v ? styles.dissPillValueOn : {}) }}>{v}</button>
+          ))}
+        </div>
+
+        <p style={styles.dissLabel}>…but today I'm choosing to</p>
+        <div style={styles.dissGroup}>
+          {DISSONANCE_ACTIONS.map(a => (
+            <button key={a} onClick={() => setAction(a)} disabled={saving}
+              style={{ ...styles.dissPill, ...(action === a ? styles.dissPillActionOn : {}) }}>{a}</button>
+          ))}
+        </div>
+
+        {value && action && (
+          <div style={styles.dissEquation}>
+            <p style={styles.dissEqText}>I want to <strong>{value}</strong></p>
+            <p style={styles.dissEqVs}>but today I chose to</p>
+            <p style={styles.dissEqTextAlt}><strong>{action}</strong></p>
+            <p style={styles.dissEqNote}>Something has to give.</p>
+          </div>
+        )}
+
+        <button onClick={handleSave} disabled={saving || !value || !action}
+          style={{ ...styles.sheetSaveBtn, ...((!value || !action) ? styles.costSaveBtnDim : {}) }}>
+          {saving ? 'Saving…' : 'Hold this up'}
+        </button>
+      </ActivitySheet>
+    </>
+  )
+}
+
 function localDateStr(d = new Date()) {
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -1105,6 +1502,51 @@ function formatDateForDB(date) {
 // STYLES
 // ===================================================================
 const styles = {
+  // launcher cards (warm dark — the urge-velocity look)
+  launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', marginBottom: '14px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
+  launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
+  launcherIcon: { fontSize: '22px', lineHeight: 1 },
+  launcherChip: { fontSize: '11px', fontWeight: 600, color: 'rgba(250,247,241,0.85)', background: 'rgba(250,247,241,0.12)', border: '0.5px solid rgba(250,247,241,0.22)', borderRadius: '20px', padding: '4px 10px', fontFamily: 'Georgia, serif' },
+  launcherChipDone: { color: '#DFF0C2', background: 'rgba(120,160,60,0.22)', border: '0.5px solid rgba(180,210,130,0.4)' },
+  launcherTitle: { fontSize: '17px', fontWeight: 600, color: '#FAF7F1', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
+  launcherSummary: { fontSize: '12.5px', color: 'rgba(250,247,241,0.72)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.45 },
+  // activity sheet (blurred popup)
+  sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
+  sheetCard: { width: '100%', maxWidth: '430px', maxHeight: '88vh', overflowY: 'auto', background: '#FCFAF5', borderRadius: '22px', padding: '20px 20px 22px', boxShadow: '0 24px 70px rgba(40,25,15,0.4)' },
+  sheetHead: { display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' },
+  sheetEyebrow: { fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A07A3C', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
+  sheetTitle: { fontSize: '19px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.25 },
+  sheetClose: { flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'white', color: '#6B5C4A', fontSize: '13px', cursor: 'pointer', lineHeight: 1 },
+  sheetLead: { fontSize: '13.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: '0 0 16px' },
+  sheetSaveBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FBF6EE', border: 'none', borderRadius: '13px', fontSize: '14px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer', marginTop: '4px' },
+  // compounding cost (sheet internals)
+  costInputs: { display: 'flex', gap: '10px', marginBottom: '16px' },
+  costField: { flex: 1 },
+  costLabel: { display: 'block', fontSize: '11px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', marginBottom: '6px' },
+  costInput: { width: '100%', boxSizing: 'border-box', padding: '11px 12px', background: 'white', border: '0.5px solid #DDCFB6', borderRadius: '10px', fontSize: '16px', color: '#2A1F15', fontFamily: 'Georgia, serif', outline: 'none' },
+  costHorizonLabel: { fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '4px 0 8px', textAlign: 'center' },
+  costSlider: { width: '100%', accentColor: '#854F0B', margin: '4px 0 6px' },
+  costEnds: { display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif' },
+  costProjection: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '20px', textAlign: 'center', marginBottom: '14px' },
+  costProjLead: { fontSize: '13px', color: 'rgba(250,247,241,0.7)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 8px' },
+  costProjBig: { fontSize: '24px', color: '#FAF7F1', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 2px', lineHeight: 1.2 },
+  costProjSub: { fontSize: '12.5px', color: '#D9B57A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '8px 0 0' },
+  costSaveBtnDim: { opacity: 0.45, cursor: 'not-allowed' },
+  // rationalization grid (sheet internals)
+  ratGrid: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' },
+  ratPill: { padding: '10px 14px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '20px', fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  ratPillOn: { background: 'linear-gradient(180deg, #6E3A1C 0%, #3A2415 100%)', color: '#FAF7F1', border: '0.5px solid #3A2415' },
+  // dissonance (sheet internals)
+  dissLabel: { fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 8px' },
+  dissGroup: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' },
+  dissPill: { padding: '9px 14px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '20px', fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  dissPillValueOn: { background: 'linear-gradient(180deg, #2F5E2A 0%, #1E3D1A 100%)', color: '#FAF7F1', border: '0.5px solid #1E3D1A' },
+  dissPillActionOn: { background: 'linear-gradient(180deg, #6E3A1C 0%, #3A2415 100%)', color: '#FAF7F1', border: '0.5px solid #3A2415' },
+  dissEquation: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '20px', textAlign: 'center', marginBottom: '14px' },
+  dissEqText: { fontSize: '18px', color: '#9FD17F', fontFamily: 'Georgia, serif', margin: '0 0 6px', lineHeight: 1.3 },
+  dissEqVs: { fontSize: '12px', color: 'rgba(250,247,241,0.6)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 6px' },
+  dissEqTextAlt: { fontSize: '18px', color: '#E0975A', fontFamily: 'Georgia, serif', margin: '0 0 10px', lineHeight: 1.3 },
+  dissEqNote: { fontSize: '12.5px', color: '#D9B57A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0 },
   // --- v2 additions: check-in hero + emotional-balance meters ---
   checkinSummaryRow: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' },
   moodPill: { width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.12)' },

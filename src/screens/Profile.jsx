@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../LanguageContext'
 import { supabase } from '../supabaseClient'
 import BottomNav from '../components/BottomNav'
+import VowBrandMark from '../components/VowBrandMark'
+import { resolveAddictionTypeId } from './vowPath/utils/addictionTypes'
 
 const STAGE_LABELS = {
   notice: 'Notice',
@@ -42,6 +44,9 @@ export default function Profile() {
   const [showStages, setShowStages] = useState(false)
   const [tracker, setTracker] = useState(null)
   const [moving, setMoving] = useState(false)
+  const [sheet, setSheet] = useState(null)
+  const [stopDateISO, setStopDateISO] = useState(null)
+  const [primarySubstance, setPrimarySubstance] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -61,10 +66,14 @@ export default function Profile() {
 
         const { data: vpp } = await supabase
           .from('vow_path_progress')
-          .select('free_state')
+          .select('free_state, endure_starts_at, primary_substance')
           .eq('user_id', u.id)
           .maybeSingle()
         if (vpp?.free_state) setStage(vpp.free_state)
+        if (vpp) {
+          setStopDateISO(vpp.endure_starts_at || null)
+          setPrimarySubstance(vpp.primary_substance || null)
+        }
 
         const { data: trk } = await supabase
           .from('trackers')
@@ -100,63 +109,148 @@ export default function Profile() {
     : 0
   const buildUnlocked = stage === 'build' || stage === 'reclaim' || daysOnTracker >= 30
 
-  const goToStage = async (target) => {
-    if (moving || target === stage) { setShowStages(false); return }
-    const { data: { user: u } } = await supabase.auth.getUser()
-    if (!u) return
-
-    // Build gate — same rule as the Endure home
-    if (target === 'build' && !buildUnlocked) {
-      alert(`Build unlocks once you have held 30 days in Endure. You are at ${daysOnTracker} of 30.`)
-      return
-    }
-
-    // Reclaim — nudge that slips are tracked better via the slip button
-    if (target === 'reclaim') {
-      const ok = window.confirm(`Slips get tracked properly when you record them with the "I slipped" button on your Endure or Build page — that keeps your history and patterns accurate. Move to Reclaim anyway?`)
-      if (!ok) return
-      setMoving(true)
-      await supabase.from('vow_path_progress')
-        .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
-        .eq('user_id', u.id)
-      navigate('/home', { replace: true })
-      return
-    }
-
-    // Backward from a counter stage (Endure/Build) to an earlier stage
-    const backward = (stage === 'endure' || stage === 'build')
-      && (target === 'commit' || target === 'reflect' || target === 'notice')
-    if (backward) {
-      const toReclaim = window.confirm(`Going back usually follows a slip. Reclaim is the gentler space and it keeps your streak intact. Go to Reclaim instead?\n\nOK = go to Reclaim\nCancel = continue going back`)
-      if (toReclaim) {
-        setMoving(true)
-        await supabase.from('vow_path_progress')
-          .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
-          .eq('user_id', u.id)
-        navigate('/home', { replace: true })
-        return
-      }
-      const confirmReset = window.confirm(`Moving to ${STAGE_LABELS[target]} ends your current run — the counter starts fresh when you next enter Endure. Everything you've logged (urges, slips, your longest streak) stays saved. Continue?`)
-      if (!confirmReset) return
-      setMoving(true)
-      if (tracker?.id) await supabase.from('trackers').update({ is_active: false }).eq('id', tracker.id)
-      await supabase.from('vow_path_progress')
-        .update({ free_state: target, endure_starts_at: null, endure_slip_count: 0, updated_at: new Date().toISOString() })
-        .eq('user_id', u.id)
-      navigate('/home', { replace: true })
-      return
-    }
-
-    // Default forward / lateral. Moving to a no-counter stage resets the tracker.
+  // Perform a stage change. reset=true deactivates the tracker + clears the
+  // current run (genuine slip). reset=false preserves the counter (curiosity).
+  const applyStage = async (target, { reset = false } = {}) => {
+    if (moving) return
     setMoving(true)
-    const noCounterStage = target === 'notice' || target === 'reflect' || target === 'commit'
-    if (noCounterStage && tracker?.id) {
+    const { data: { user: u } } = await supabase.auth.getUser()
+    if (!u) { setMoving(false); return }
+    if (reset && tracker?.id) {
       await supabase.from('trackers').update({ is_active: false }).eq('id', tracker.id)
     }
     const patch = { free_state: target, updated_at: new Date().toISOString() }
-    if (noCounterStage) { patch.endure_starts_at = null; patch.endure_slip_count = 0 }
+    if (reset) { patch.endure_starts_at = null; patch.endure_slip_count = 0 }
+    if (target === 'reclaim') patch.endure_slip_count = 0
     await supabase.from('vow_path_progress').update(patch).eq('user_id', u.id)
     navigate('/home', { replace: true })
+  }
+
+  // Entering Endure is a real start, never a peek: (re)activate the tracker so
+  // the day-one clock begins. Mirrors the Commit home's Begin Endure.
+  const beginEndureFromCommit = async () => {
+    if (moving) return
+    setMoving(true)
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser()
+      if (!u) { setMoving(false); return }
+      const now = new Date().toISOString()
+      const addictionTypeId = await resolveAddictionTypeId(primarySubstance)
+
+      // Find a tracker to (re)start: prefer the one for this substance, else the
+      // user's most recent tracker — so the counter always has something to run on.
+      let trackerId = null
+      if (addictionTypeId != null) {
+        const { data: byType } = await supabase.from('trackers').select('id')
+          .eq('user_id', u.id).eq('addiction_type_id', addictionTypeId).order('created_at')
+        if (byType && byType.length > 0) trackerId = byType[0].id
+      }
+      if (!trackerId) {
+        const { data: anyTrk } = await supabase.from('trackers').select('id')
+          .eq('user_id', u.id).order('created_at')
+        if (anyTrk && anyTrk.length > 0) trackerId = anyTrk[0].id
+      }
+
+      if (trackerId) {
+        const { error: tErr } = await supabase.from('trackers')
+          .update({ start_date: now, is_active: true, tracker_status: 'active' })
+          .eq('id', trackerId)
+        if (tErr) console.error('tracker reactivate failed:', tErr)
+      } else if (addictionTypeId != null) {
+        const { error: iErr } = await supabase.from('trackers')
+          .insert({ user_id: u.id, addiction_type_id: addictionTypeId, start_date: now, is_active: true, tracker_status: 'active' })
+        if (iErr) console.error('tracker insert failed:', iErr)
+      }
+
+      const { error: pErr } = await supabase.from('vow_path_progress')
+        .update({ free_state: 'endure', endure_starts_at: null, endure_slip_count: 0, updated_at: now })
+        .eq('user_id', u.id)
+      if (pErr) {
+        console.error('free_state update failed:', pErr)
+        alert('Could not start Endure: ' + (pErr.message || 'please try again.'))
+        setMoving(false)
+        return
+      }
+      navigate('/home', { replace: true })
+    } catch (err) {
+      console.error(err)
+      alert('Could not start Endure. Please try again.')
+      setMoving(false)
+    }
+  }
+
+  const goToStage = (target) => {
+    if (moving || target === stage) { setShowStages(false); return }
+
+    // From Reclaim, every move is frictionless (re-entry after a slip). Endure
+    // still (re)starts the clock for real; everything else just switches.
+    if (stage === 'reclaim') {
+      if (target === 'endure') { beginEndureFromCommit(); return }
+      applyStage(target, { reset: false })
+      return
+    }
+
+    // Build gate — same rule as the Endure home
+    if (target === 'build' && !buildUnlocked) {
+      setSheet({
+        title: 'Build is still locked',
+        body: `Build opens once you've held 30 days in Endure. You're at ${daysOnTracker} of 30 — keep going.`,
+        actions: [{ label: 'Got it', run: () => setSheet(null) }],
+      })
+      return
+    }
+
+    // Reclaim — nudge that slips track better via the slip button
+    if (target === 'reclaim') {
+      setSheet({
+        title: 'Moving to Reclaim',
+        body: `Slips get tracked best when you log them with the "I slipped" button on your Endure or Build page — that keeps your history accurate. Move to Reclaim anyway?`,
+        actions: [
+          { label: 'Move to Reclaim', primary: true, run: () => applyStage('reclaim') },
+          { label: 'Not now', run: () => setSheet(null) },
+        ],
+      })
+      return
+    }
+
+    // Into Endure — this STARTS the clock for real (never a peek). Applaud the
+    // move; warn loudly if they're jumping ahead of their chosen stop date.
+    if (target === 'endure') {
+      const stopMs = (stage === 'commit' && stopDateISO)
+        ? new Date(stopDateISO + 'T00:00:00').getTime() : null
+      const beforeStop = stopMs != null && stopMs > Date.now()
+      setSheet({
+        title: beforeStop ? 'Going early? Then go.' : 'Ready to begin Endure?',
+        body: beforeStop
+          ? `You're stepping into Endure ahead of your stop date — and honestly, that's a bold, brilliant move. The second you confirm, your day-one clock starts for real. This isn't a look-around; it's your line in the sand. Claim it.`
+          : `The moment you confirm, your day-one clock starts ticking. This is the real beginning — not a place to peek at. Ready to step in?`,
+        actions: [
+          { label: beforeStop ? 'Yes — start my clock now' : 'Begin Endure', primary: true, run: () => beginEndureFromCommit() },
+          { label: 'Not yet', run: () => setSheet(null) },
+        ],
+      })
+      return
+    }
+
+    // Backward from a counter stage — curiosity vs a genuine slip
+    const backward = (stage === 'endure' || stage === 'build')
+      && (target === 'commit' || target === 'reflect' || target === 'notice')
+    if (backward) {
+      setSheet({
+        title: `Heading to ${STAGE_LABELS[target]}?`,
+        body: `If you're just curious about this stage, look around — your Endure progress stays exactly where it is. If you slipped, Reclaim is the gentler place to land, and it keeps your streak too.`,
+        actions: [
+          { label: 'Just exploring — keep my progress', primary: true, run: () => applyStage(target, { reset: false }) },
+          { label: 'I slipped → go to Reclaim', run: () => applyStage('reclaim') },
+          { label: `I slipped → reset & go to ${STAGE_LABELS[target]}`, danger: true, run: () => applyStage(target, { reset: true }) },
+          { label: 'Cancel', run: () => setSheet(null) },
+        ],
+      })
+      return
+    }
+
+    // Default forward / lateral — no reset
+    applyStage(target, { reset: false })
   }
 
   const resetLang = () => {
@@ -191,7 +285,7 @@ export default function Profile() {
 
         {/* TOP BAR */}
         <div style={styles.topBar}>
-          <p style={styles.brandLine}>Vow</p>
+          <VowBrandMark />
           <button
             onClick={() => setShowSettings(true)}
             style={styles.gearBtn}
@@ -351,6 +445,27 @@ export default function Profile() {
 
         <BottomNav />
 
+        {sheet && (
+          <div style={styles.sheetOverlay} onClick={() => { if (!moving) setSheet(null) }}>
+            <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
+              <h3 style={styles.sheetTitle}>{sheet.title}</h3>
+              <p style={styles.sheetBody}>{sheet.body}</p>
+              <div style={styles.sheetActions}>
+                {sheet.actions.map((a, i) => (
+                  <button
+                    key={i}
+                    onClick={a.run}
+                    disabled={moving}
+                    style={{ ...styles.sheetBtn, ...(a.primary ? styles.sheetBtnPrimary : a.danger ? styles.sheetBtnDanger : styles.sheetBtnGhost) }}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* SETTINGS MODAL */}
         {showSettings && (
           <div style={styles.modal} onClick={() => setShowSettings(false)}>
@@ -373,6 +488,15 @@ export default function Profile() {
 }
 
 const styles = {
+  sheetOverlay: { position: 'fixed', inset: 0, background: 'rgba(36,23,16,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 },
+  sheetCard: { width: '100%', maxWidth: '440px', background: '#FAF7F1', borderRadius: '24px 24px 0 0', padding: '24px 22px 28px', boxShadow: '0 -8px 40px rgba(40,25,10,0.25)' },
+  sheetTitle: { fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 10px' },
+  sheetBody: { fontSize: '14.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 20px' },
+  sheetActions: { display: 'flex', flexDirection: 'column', gap: '10px' },
+  sheetBtn: { width: '100%', padding: '14px', borderRadius: '12px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', border: 'none' },
+  sheetBtnPrimary: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', boxShadow: '0 4px 14px rgba(40,25,10,0.22)' },
+  sheetBtnDanger: { background: '#FBF1EC', color: '#B23B1E', border: '0.5px solid #E6C3B4' },
+  sheetBtnGhost: { background: 'white', color: '#6B5C4A', border: '0.5px solid #DDCFB6' },
   stageNav: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' },
   stageRow: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px', background: '#FFFFFF', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
   stageRowCurrent: { background: 'linear-gradient(180deg, #FBF6EE 0%, #F4EAD8 100%)', border: '0.5px solid #D9C7A8', cursor: 'default' },

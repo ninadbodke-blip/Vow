@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import VowBrandMark from '../../components/VowBrandMark'
 import BottomNav from '../../components/BottomNav'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
@@ -132,9 +133,8 @@ export default function CommitFreeHome({ progress: initialProgress }) {
       ? 'past'
       : 'future'
 
-  const showSetupTile = stopDateState === 'not_set' || editingStopDate
-  const showCountdown = stopDateState === 'future' && !editingStopDate
-  const showArrived = stopDateState === 'past' && !editingStopDate
+  const showCountdown = stopDateState === 'future'
+  const showArrived = stopDateState === 'past'
 
   const handleSaveStopDate = async (dateStr) => {
     setSavingDate(true)
@@ -208,50 +208,36 @@ export default function CommitFreeHome({ progress: initialProgress }) {
     setTransitioning(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const addictionTypeId = await resolveAddictionTypeId(progress.primary_substance)
+      if (!user) { setTransitioning(false); return }
       const now = new Date().toISOString()
+      const addictionTypeId = await resolveAddictionTypeId(progress.primary_substance)
 
-      // One tracker per substance: reactivate the existing one (its longest
-      // streak is preserved) and restart the clock, or create it if none exists.
+      // (Re)start a tracker so the counter has something to run on. Prefer the
+      // one for this substance, else the user's most recent. A tracker hiccup
+      // must NOT block the transition — landing in Endure is what matters.
+      let trackerId = null
       if (addictionTypeId != null) {
-        const { data: existing } = await supabase
-          .from('trackers')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('addiction_type_id', addictionTypeId)
-          .order('created_at')
-
-        if (existing && existing.length > 0) {
-          const { error: trackerError } = await supabase
-            .from('trackers')
-            .update({ start_date: now, is_active: true, tracker_status: 'active' })
-            .eq('id', existing[0].id)
-          if (trackerError) {
-            console.error('Failed to reactivate tracker:', trackerError)
-            alert('Could not start Endure. Please try again.')
-            setTransitioning(false)
-            return
-          }
-        } else {
-          const { error: trackerError } = await supabase
-            .from('trackers')
-            .insert({
-              user_id: user.id,
-              addiction_type_id: addictionTypeId,
-              start_date: now,
-              is_active: true,
-              tracker_status: 'active',
-            })
-          if (trackerError) {
-            console.error('Failed to create tracker:', trackerError)
-            alert('Could not start Endure. Please try again.')
-            setTransitioning(false)
-            return
-          }
-        }
+        const { data: byType } = await supabase.from('trackers').select('id')
+          .eq('user_id', user.id).eq('addiction_type_id', addictionTypeId).order('created_at')
+        if (byType && byType.length > 0) trackerId = byType[0].id
+      }
+      if (!trackerId) {
+        const { data: anyTrk } = await supabase.from('trackers').select('id')
+          .eq('user_id', user.id).order('created_at')
+        if (anyTrk && anyTrk.length > 0) trackerId = anyTrk[0].id
+      }
+      if (trackerId) {
+        const { error: tErr } = await supabase.from('trackers')
+          .update({ start_date: now, is_active: true, tracker_status: 'active' })
+          .eq('id', trackerId)
+        if (tErr) console.error('tracker reactivate failed (continuing):', tErr)
+      } else if (addictionTypeId != null) {
+        const { error: iErr } = await supabase.from('trackers')
+          .insert({ user_id: user.id, addiction_type_id: addictionTypeId, start_date: now, is_active: true, tracker_status: 'active' })
+        if (iErr) console.error('tracker insert failed (continuing):', iErr)
       }
 
-      // Endure owns the counter now: clear the Commit countdown and reset slips.
+      // The transition itself — the only step that gates landing in Endure.
       const { error: progressError } = await supabase
         .from('vow_path_progress')
         .update({
@@ -264,15 +250,15 @@ export default function CommitFreeHome({ progress: initialProgress }) {
 
       if (progressError) {
         console.error('Failed to update free_state:', progressError)
-        alert('Could not transition. Please try again.')
+        alert('Could not start Endure: ' + (progressError.message || 'please try again.'))
         setTransitioning(false)
         return
       }
 
-      navigate('/home', { replace: true })
+      window.location.assign('/home')
     } catch (err) {
       console.error(err)
-      alert('Something went wrong. Please try again.')
+      alert('Something went wrong: ' + (err?.message || 'please try again.'))
       setTransitioning(false)
     }
   }
@@ -294,7 +280,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
       <div style={styles.phone}>
 
         <div style={styles.topBar}>
-          <p style={styles.brandLine}>Vow</p>
+          <VowBrandMark />
           <button
             onClick={() => navigate('/profile')}
             style={styles.profileBtn}
@@ -311,12 +297,13 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         {/* JOURNAL (shared) */}
         <JournalTile stage="commit" />
 
-        {showSetupTile && (
-          <StopDateSetupTile
-            prefillValue={progress.endure_starts_at}
-            onSave={handleSaveStopDate}
-            onCancel={editingStopDate ? () => setEditingStopDate(false) : null}
-            saving={savingDate}
+        {stopDateState === 'not_set' && (
+          <Launcher
+            icon="📅"
+            title="Set your stop date"
+            summary="Pick the day you stop — up to 14 days out."
+            done={false}
+            onOpen={() => setEditingStopDate(true)}
           />
         )}
         {showCountdown && (
@@ -333,10 +320,22 @@ export default function CommitFreeHome({ progress: initialProgress }) {
             transitioning={transitioning}
           />
         )}
+        <StopDateSheet
+          open={editingStopDate}
+          prefillValue={progress.endure_starts_at}
+          onSave={handleSaveStopDate}
+          onClose={() => setEditingStopDate(false)}
+          saving={savingDate}
+        />
 
         <ReadinessTile latest={confidenceLatest} onSaved={handleConfidenceSaved} />
 
         <VowTile latest={vowLatest} onSaved={handleVowSaved} />
+
+        {/* DEFENSIVE ENGINEERING — launchers open blurred cards */}
+        <PerimeterLockTile />
+
+        <FearMatrixTile />
 
         <PreparationLogTile
           moves={moves}
@@ -358,6 +357,75 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         onSaved={handleCheckinSaved}
       />
     </div>
+  )
+}
+
+// ===================================================================
+// ACTIVITY SHEET + LAUNCHER — clean home, options live in floating cards
+// ===================================================================
+function ActivitySheet({ open, onClose, eyebrow, title, children }) {
+  if (!open) return null
+  return (
+    <div style={styles.sheetBackdrop} onClick={onClose}>
+      <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.sheetHead}>
+          <div style={{ flex: 1 }}>
+            {eyebrow && <p style={styles.sheetEyebrow}>{eyebrow}</p>}
+            <h2 style={styles.sheetTitle}>{title}</h2>
+          </div>
+          <button onClick={onClose} style={styles.sheetClose} aria-label="Close">✕</button>
+        </div>
+        <div>{children}</div>
+      </div>
+    </div>
+  )
+}
+
+function Launcher({ icon, title, summary, done, onOpen }) {
+  return (
+    <button onClick={onOpen} style={styles.launcher}>
+      <div style={styles.launcherTop}>
+        <span style={styles.launcherIcon}>{icon}</span>
+        <span style={{ ...styles.launcherChip, ...(done ? styles.launcherChipDone : {}) }}>
+          {done ? 'Logged ✓' : 'Open ›'}
+        </span>
+      </div>
+      <h2 style={styles.launcherTitle}>{title}</h2>
+      <p style={styles.launcherSummary}>{summary}</p>
+    </button>
+  )
+}
+
+// Stop-date picker, now inside a floating card
+function StopDateSheet({ open, prefillValue, onSave, onClose, saving }) {
+  const today = new Date()
+  const max = new Date()
+  max.setDate(today.getDate() + 14)
+  const [selectedDate, setSelectedDate] = useState(prefillValue || '')
+  useEffect(() => { if (open) setSelectedDate(prefillValue || '') }, [open, prefillValue])
+
+  return (
+    <ActivitySheet open={open} onClose={onClose} eyebrow="Stop date" title="When will you stop?">
+      <p style={styles.sheetLead}>
+        Pick a date within the next 14 days. The countdown begins at midnight on that day.
+      </p>
+      <input
+        type="date"
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+        min={formatDateInput(today)}
+        max={formatDateInput(max)}
+        style={styles.dateInput}
+      />
+      <button
+        onClick={() => selectedDate && onSave(selectedDate)}
+        disabled={saving || !selectedDate}
+        style={{ ...styles.sheetSaveBtn, ...((saving || !selectedDate) ? styles.saveBtnDim : {}) }}
+      >
+        {saving ? 'Saving…' : 'Save stop date'}
+      </button>
+      <p style={styles.tileHelperText}>You can change this any time before stop day.</p>
+    </ActivitySheet>
   )
 }
 
@@ -404,9 +472,10 @@ function TodayCheckinTile({ checkin, onOpen }) {
 // 1..10 readiness. Each save inserts a free_stage_signals row
 // (signal_type 'commit_confidence', payload {score}) -> trend in Mirror.
 function ReadinessTile({ latest, onSaved }) {
+  const [open, setOpen] = useState(false)
   const [value, setValue] = useState(latest?.payload?.score ?? 5)
   const [saving, setSaving] = useState(false)
-  const [justSaved, setJustSaved] = useState(false)
+  const savedScore = latest?.payload?.score ?? null
 
   const handleSave = async () => {
     if (saving) return
@@ -418,43 +487,38 @@ function ReadinessTile({ latest, onSaved }) {
         .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_confidence', payload: { score: value } })
         .select().single()
       if (error) { console.error(error); alert('Could not save. Please try again.'); setSaving(false); return }
-      if (onSaved) saved && onSaved(saved)
-      setSaving(false); setJustSaved(true); setTimeout(() => setJustSaved(false), 2500)
+      if (onSaved && saved) onSaved(saved)
+      setSaving(false); setOpen(false)
     } catch (err) { console.error(err); setSaving(false) }
   }
 
+  const done = savedScore != null
+  const summary = done ? `You're at ${savedScore}/10 right now.` : 'Mark how ready you actually feel today.'
+
   return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Readiness, today</p>
-      <h2 style={styles.tileTitle}>How ready do you feel?</h2>
-      <p style={styles.tileBody}>
-        Not how ready you think you should feel. How ready you actually are, right now.
-      </p>
-
-      <div style={styles.rulerRow}>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-          <button
-            key={n}
-            onClick={() => { setValue(n); setJustSaved(false) }}
-            disabled={saving}
-            style={{ ...styles.rulerSeg, ...(n <= value ? styles.rulerSegOn : {}) }}
-            aria-label={`Readiness ${n} of 10`}
-          />
-        ))}
-      </div>
-      <div style={styles.rulerLabels}>
-        <span>Not yet</span>
-        <span style={styles.rulerValue}>{value}/10</span>
-        <span>Fully ready</span>
-      </div>
-
-      <button onClick={handleSave} disabled={saving} style={styles.ghostSaveBtn}>
-        {saving ? 'Saving\u2026' : justSaved ? 'Saved \u2713' : (latest ? 'Update readiness' : 'Save readiness')}
-      </button>
-      <p style={styles.tileHelperText}>
-        Readiness moves day to day. Marking it shows you which way it's heading.
-      </p>
-    </div>
+    <>
+      <Launcher icon="🎯" title="Readiness, today" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="Readiness · today" title="How ready do you feel?">
+        <p style={styles.sheetLead}>
+          Not how ready you think you should feel. How ready you actually are, right now.
+        </p>
+        <div style={styles.rulerRow}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+            <button key={n} onClick={() => setValue(n)} disabled={saving}
+              style={{ ...styles.rulerSeg, ...(n <= value ? styles.rulerSegOn : {}) }}
+              aria-label={`Readiness ${n} of 10`} />
+          ))}
+        </div>
+        <div style={styles.rulerLabels}>
+          <span>Not yet</span>
+          <span style={styles.rulerValue}>{value}/10</span>
+          <span>Fully ready</span>
+        </div>
+        <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
+          {saving ? 'Saving…' : (done ? 'Update readiness' : 'Save readiness')}
+        </button>
+      </ActivitySheet>
+    </>
   )
 }
 
@@ -463,9 +527,11 @@ function ReadinessTile({ latest, onSaved }) {
 // ===================================================================
 function VowTile({ latest, onSaved }) {
   const existingText = latest?.payload?.text || ''
+  const [open, setOpen] = useState(false)
   const [text, setText] = useState(existingText)
-  const [editing, setEditing] = useState(!existingText)
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => { setText(latest?.payload?.text || '') }, [latest])
 
   const handleSave = async () => {
     if (saving || !text.trim()) return
@@ -477,41 +543,29 @@ function VowTile({ latest, onSaved }) {
         .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_vow', payload: { text: text.trim() } })
         .select().single()
       if (error) { console.error(error); alert('Could not save. Please try again.'); setSaving(false); return }
-      if (onSaved) saved && onSaved(saved)
-      setSaving(false); setEditing(false)
+      if (onSaved && saved) onSaved(saved)
+      setSaving(false); setOpen(false)
     } catch (err) { console.error(err); setSaving(false) }
   }
 
-  if (!editing && existingText) {
-    return (
-      <div style={styles.tile}>
-        <p style={styles.tileEyebrow}>Your vow</p>
-        <p style={styles.vowQuote}>&ldquo;{existingText}&rdquo;</p>
-        <button onClick={() => setEditing(true)} style={styles.checkinEditBtn}>Revise it</button>
-      </div>
-    )
-  }
+  const done = !!existingText
+  const summary = done ? `"${existingText}"` : "Write the one line you'll come back to."
 
   return (
-    <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Your vow</p>
-      <h2 style={styles.tileTitle}>What are you committing to?</h2>
-      <p style={styles.tileBody}>
-        One honest line, in your own words. Something to come back to on the hard days.
-      </p>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder={"I'm doing this because\u2026"}
-        style={styles.vowInput}
-        rows={3}
-        maxLength={280}
-        disabled={saving}
-      />
-      <button onClick={handleSave} disabled={saving || !text.trim()} style={styles.checkinCtaBtn}>
-        {saving ? 'Saving\u2026' : 'Save my vow'}
-      </button>
-    </div>
+    <>
+      <Launcher icon="🤝" title="Your vow" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="Your vow" title="What are you committing to?">
+        <p style={styles.sheetLead}>
+          One honest line, in your own words. Something to come back to on the hard days.
+        </p>
+        <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="I'm doing this because…"
+          style={styles.vowInput} rows={3} maxLength={280} disabled={saving} />
+        <button onClick={handleSave} disabled={saving || !text.trim()}
+          style={{ ...styles.sheetSaveBtn, ...(!text.trim() ? styles.saveBtnDim : {}) }}>
+          {saving ? 'Saving…' : (done ? 'Revise my vow' : 'Save my vow')}
+        </button>
+      </ActivitySheet>
+    </>
   )
 }
 
@@ -700,6 +754,189 @@ function StopDateArrivedTile({ stopDate, onBeginEndure, onPickNewDate, transitio
 }
 
 // ===================================================================
+// TILE: PERIMETER LOCK — secure the infrastructure (commit_perimeter)
+// ===================================================================
+const PERIMETER_PROTOCOLS = [
+  { id: 'environment', label: 'Environment cleared', sub: 'Stash and cues removed' },
+  { id: 'anchor', label: 'Anchor notified', sub: 'Someone knows Day 0' },
+  { id: 'day1', label: 'Day 1 planned', sub: 'First 24 hours mapped' },
+  { id: 'triggers', label: 'Triggers mapped', sub: 'You know where it hits' },
+]
+
+function PerimeterLockTile() {
+  const [open, setOpen] = useState(false)
+  const [locked, setLocked] = useState([])
+  const [rowId, setRowId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [savedLocked, setSavedLocked] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('free_stage_signals')
+        .select('id, payload').eq('user_id', user.id).eq('stage', 'commit')
+        .eq('signal_type', 'commit_perimeter')
+        .order('created_at', { ascending: false }).limit(1)
+      if (cancelled) return
+      const row = data && data[0]
+      if (row) { setRowId(row.id); const lk = row.payload?.locked || []; setLocked(lk); setSavedLocked(lk) }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const toggle = (id) => setLocked(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const total = PERIMETER_PROTOCOLS.length
+  const livePct = Math.round((locked.length / total) * 100)
+  const done = savedLocked != null && savedLocked.length > 0
+  const savedPct = done ? Math.round((savedLocked.length / total) * 100) : 0
+  const summary = done
+    ? `Perimeter ${savedPct}% locked · ${savedLocked.length} of ${total}`
+    : 'Lock down your infrastructure before Day 0.'
+
+  const handleSave = async () => {
+    if (saving) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const payload = { locked }
+    let ok = false
+    if (rowId) { const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId); ok = !error }
+    else {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_perimeter', payload }).select('id').single()
+      ok = !error && !!data; if (ok) setRowId(data.id)
+    }
+    setSaving(false)
+    if (ok) { setSavedLocked(locked); setOpen(false) } else alert('Could not save. Please try again.')
+  }
+
+  return (
+    <>
+      <Launcher icon="🔒" title="Perimeter lock" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="Defensive engineering" title="Secure the infrastructure">
+        <p style={styles.sheetLead}>
+          Four protocols to lock down before Day 0. Tap each as you secure it — a vow on unsecured ground is fragile.
+        </p>
+        <div style={styles.perimGrid}>
+          {PERIMETER_PROTOCOLS.map(pr => {
+            const isLocked = locked.includes(pr.id)
+            return (
+              <button key={pr.id} onClick={() => toggle(pr.id)} disabled={saving}
+                style={{ ...styles.perimCell, ...(isLocked ? styles.perimCellLocked : {}) }}>
+                <span style={styles.perimLockIcon}>{isLocked ? '🔒' : '○'}</span>
+                <span style={{ ...styles.perimCellLabel, ...(isLocked ? styles.perimCellLabelOn : {}) }}>{pr.label}</span>
+                <span style={{ ...styles.perimCellSub, ...(isLocked ? styles.perimCellSubOn : {}) }}>{pr.sub}</span>
+              </button>
+            )
+          })}
+        </div>
+        <p style={styles.perimPct}>{livePct}% locked</p>
+        <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
+          {saving ? 'Saving…' : 'Lock it in'}
+        </button>
+      </ActivitySheet>
+    </>
+  )
+}
+
+// ===================================================================
+// TILE: FEAR MITIGATION MATRIX — if/then for Day 0 (commit_fear)
+// ===================================================================
+const FEAR_THREATS = ['Boredom', 'Physical pain', 'Social pressure', 'Emotional crash']
+const FEAR_COUNTERS = ['Call my anchor', 'Ride the 20-min wave', 'Leave the room', 'Go to sleep']
+
+function FearMatrixTile() {
+  const [open, setOpen] = useState(false)
+  const [threat, setThreat] = useState(null)
+  const [mitigation, setMitigation] = useState(null)
+  const [rowId, setRowId] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [savedThreat, setSavedThreat] = useState(null)
+  const [savedMitigation, setSavedMitigation] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('free_stage_signals')
+        .select('id, payload').eq('user_id', user.id).eq('stage', 'commit')
+        .eq('signal_type', 'commit_fear')
+        .order('created_at', { ascending: false }).limit(1)
+      if (cancelled) return
+      const row = data && data[0]
+      if (row) {
+        setRowId(row.id)
+        setThreat(row.payload?.threat || null); setSavedThreat(row.payload?.threat || null)
+        setMitigation(row.payload?.mitigation || null); setSavedMitigation(row.payload?.mitigation || null)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const done = savedThreat != null && savedMitigation != null
+  const summary = done ? `${savedThreat} → ${savedMitigation}` : 'Name your Day 0 risk — and your counter-move.'
+
+  const handleSave = async () => {
+    if (saving || !threat || !mitigation) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const payload = { threat, mitigation }
+    let ok = false
+    if (rowId) { const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId); ok = !error }
+    else {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_fear', payload }).select('id').single()
+      ok = !error && !!data; if (ok) setRowId(data.id)
+    }
+    setSaving(false)
+    if (ok) { setSavedThreat(threat); setSavedMitigation(mitigation); setOpen(false) } else alert('Could not save. Please try again.')
+  }
+
+  return (
+    <>
+      <Launcher icon="🛡️" title="Fear mitigation matrix" summary={summary} done={done} onOpen={() => setOpen(true)} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="Map the threat · Day 0" title="If this hits, then what?">
+        <p style={styles.sheetLead}>
+          The brain panics near Day 0 and pushes you to delay. Name the risk now and pair it with a move — that shrinks its power.
+        </p>
+        <p style={styles.cGroupLabel}>My biggest risk on Day 0 will be…</p>
+        <div style={styles.cPillWrap}>
+          {FEAR_THREATS.map(t => (
+            <button key={t} onClick={() => setThreat(t)} disabled={saving}
+              style={{ ...styles.cPill, ...(threat === t ? styles.cPillThreatOn : {}) }}>{t}</button>
+          ))}
+        </div>
+        <p style={styles.cGroupLabel}>When it hits, I will…</p>
+        <div style={styles.cPillWrap}>
+          {FEAR_COUNTERS.map(co => (
+            <button key={co} onClick={() => setMitigation(co)} disabled={saving}
+              style={{ ...styles.cPill, ...(mitigation === co ? styles.cPillCounterOn : {}) }}>{co}</button>
+          ))}
+        </div>
+        {threat && mitigation && (
+          <div style={styles.cMatrix}>
+            <p style={styles.cMatrixText}>If <strong>{threat}</strong> hits,</p>
+            <p style={styles.cMatrixText}>then I'll <strong>{mitigation.toLowerCase()}</strong>.</p>
+            <p style={styles.cMatrixNote}>The threat is mapped. The plan is sound.</p>
+          </div>
+        )}
+        <button onClick={handleSave} disabled={saving || !threat || !mitigation}
+          style={{ ...styles.sheetSaveBtn, ...((!threat || !mitigation) ? styles.saveBtnDim : {}) }}>
+          {saving ? 'Saving…' : 'Lock the plan'}
+        </button>
+      </ActivitySheet>
+    </>
+  )
+}
+
+// ===================================================================
 // TILE: PREPARATION LOG (the engine)
 // ===================================================================
 function PreparationLogTile({ moves, stopDateISO, onAddMove, onDeleteMove }) {
@@ -735,32 +972,29 @@ function PreparationLogTile({ moves, stopDateISO, onAddMove, onDeleteMove }) {
       </p>
 
       {todayMoves.length > 0 && (
-        <div style={styles.todayMovesList}>
+        <div style={styles.todayChipsWrap}>
           {todayMoves.map(move => {
             const cat = CATEGORY_BY_VALUE[move.category]
             return (
-              <div key={move.id} style={styles.moveRow}>
-                <span style={styles.moveIcon}>{cat?.icon || '·'}</span>
-                <div style={styles.moveContent}>
-                  <p style={styles.moveCategoryLabel}>{cat?.label || move.category}</p>
-                  {move.description && (
-                    <p style={styles.moveDescription}>{move.description}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => onDeleteMove(move.id)}
-                  style={styles.moveDelete}
-                  aria-label="Delete move"
-                >
-                  ✕
-                </button>
-              </div>
+              <span key={move.id} style={styles.todayChip}>
+                <span style={styles.todayChipIcon}>{cat?.icon || '·'}</span>
+                <span style={styles.todayChipLabel}>{cat?.label || move.category}</span>
+                <button onClick={() => onDeleteMove(move.id)} style={styles.todayChipDel} aria-label="Delete move">✕</button>
+              </span>
             )
           })}
         </div>
       )}
 
-      {logging ? (
+      <button onClick={() => setLogging(true)} style={styles.logMoveBtn}>
+        + Log a move
+      </button>
+      <ActivitySheet
+        open={logging}
+        onClose={() => setLogging(false)}
+        eyebrow="Today's preparation"
+        title="What did you do?"
+      >
         <MoveLogger
           onCancel={() => setLogging(false)}
           onSave={async (category, description) => {
@@ -768,11 +1002,7 @@ function PreparationLogTile({ moves, stopDateISO, onAddMove, onDeleteMove }) {
             if (ok) setLogging(false)
           }}
         />
-      ) : (
-        <button onClick={() => setLogging(true)} style={styles.logMoveBtn}>
-          + Log a move
-        </button>
-      )}
+      </ActivitySheet>
 
       {/* Stats row */}
       {totalMoves > 0 && (
@@ -1011,6 +1241,46 @@ function formatDateInput(date) {
 // STYLES
 // ===================================================================
 const styles = {
+  todayChipsWrap: { display: 'flex', flexWrap: 'wrap', gap: '7px', marginBottom: '12px' },
+  todayChip: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 8px 6px 10px', background: '#F6EFDD', border: '0.5px solid #E8DCC4', borderRadius: '16px' },
+  todayChipIcon: { fontSize: '13px', lineHeight: 1 },
+  todayChipLabel: { fontSize: '12px', color: '#5A4A38', fontFamily: 'Georgia, serif' },
+  todayChipDel: { background: 'transparent', border: 'none', color: '#B7A98F', fontSize: '11px', cursor: 'pointer', padding: '0 2px', lineHeight: 1, fontFamily: 'inherit' },
+  perimGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' },
+  perimCell: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '14px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' },
+  perimCellLocked: { background: 'linear-gradient(180deg, #F5E9D4 0%, #EEDFC2 100%)', border: '1px solid #C99A4E', boxShadow: '0 3px 12px rgba(180,140,70,0.18)' },
+  perimLockIcon: { fontSize: '16px', lineHeight: 1, color: '#9C8C78' },
+  perimCellLabel: { fontSize: '13px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif' },
+  perimCellLabelOn: { color: '#5A3A12' },
+  perimCellSub: { fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
+  perimCellSubOn: { color: '#8A7558' },
+  perimPct: { fontSize: '15px', fontWeight: 600, color: '#854F0B', fontFamily: 'Georgia, serif', textAlign: 'center', margin: '0 0 14px' },
+  cGroupLabel: { fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 8px' },
+  cPillWrap: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' },
+  cPill: { padding: '9px 14px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '20px', fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  cPillThreatOn: { background: 'linear-gradient(180deg, #F7E6DA 0%, #F0D3C0 100%)', color: '#8A3B18', border: '1px solid #C5572C' },
+  cPillCounterOn: { background: 'linear-gradient(180deg, #EAF1DD 0%, #DCE8C8 100%)', color: '#3E5C22', border: '1px solid #6E8A4E' },
+  cMatrix: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '18px', textAlign: 'center', marginBottom: '14px' },
+  cMatrixText: { fontSize: '17px', color: '#FAF7F1', fontFamily: 'Georgia, serif', margin: '0 0 4px', lineHeight: 1.3 },
+  cMatrixNote: { fontSize: '12.5px', color: '#D9B57A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '8px 0 0' },
+  // launcher cards (warm dark — the urge-velocity look)
+  launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', marginBottom: '14px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
+  launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
+  launcherIcon: { fontSize: '22px', lineHeight: 1 },
+  launcherChip: { fontSize: '11px', fontWeight: 600, color: 'rgba(250,247,241,0.85)', background: 'rgba(250,247,241,0.12)', border: '0.5px solid rgba(250,247,241,0.22)', borderRadius: '20px', padding: '4px 10px', fontFamily: 'Georgia, serif' },
+  launcherChipDone: { color: '#DFF0C2', background: 'rgba(120,160,60,0.22)', border: '0.5px solid rgba(180,210,130,0.4)' },
+  launcherTitle: { fontSize: '17px', fontWeight: 600, color: '#FAF7F1', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
+  launcherSummary: { fontSize: '12.5px', color: 'rgba(250,247,241,0.72)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.45 },
+  // activity sheet (blurred popup)
+  sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
+  sheetCard: { width: '100%', maxWidth: '430px', maxHeight: '88vh', overflowY: 'auto', background: '#FCFAF5', borderRadius: '22px', padding: '20px 20px 22px', boxShadow: '0 24px 70px rgba(40,25,15,0.4)' },
+  sheetHead: { display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' },
+  sheetEyebrow: { fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A07A3C', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
+  sheetTitle: { fontSize: '19px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.25 },
+  sheetClose: { flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'white', color: '#6B5C4A', fontSize: '13px', cursor: 'pointer', lineHeight: 1 },
+  sheetLead: { fontSize: '13.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: '0 0 16px' },
+  sheetSaveBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FBF6EE', border: 'none', borderRadius: '13px', fontSize: '14px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer', marginTop: '4px' },
+  saveBtnDim: { opacity: 0.45, cursor: 'not-allowed' },
   // --- refined Anchors tile ---
   anchorsTile: {
     background: 'linear-gradient(180deg, #FFFBF4 0%, #FBF1E2 100%)',
@@ -1396,9 +1666,9 @@ const styles = {
     minHeight: '36px',
   },
   chipActive: {
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    border: '0.5px solid #241710',
-    boxShadow: '0 3px 10px rgba(40,25,10,0.2)',
+    background: 'linear-gradient(180deg, #F5E9D4 0%, #EEDFC2 100%)',
+    border: '1px solid #C99A4E',
+    boxShadow: '0 2px 8px rgba(180,140,70,0.18)',
   },
   chipIcon: {
     fontSize: '16px',

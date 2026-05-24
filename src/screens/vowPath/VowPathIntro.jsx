@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import VowPathMark from '../../components/VowPathMark'
 
 // =====================================================================
 // VOW PATH HUB
@@ -153,11 +154,15 @@ export default function VowPathIntro() {
     <div style={styles.frame}>
       <div style={styles.phone}>
 
-        {/* HEADER */}
-        <div style={styles.header}>
+        {/* TOP NAV */}
+        <div style={styles.topRow}>
           <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
-          <p style={styles.headerTitle}>Vow Path</p>
-          <div style={{ width: '60px' }}></div>
+        </div>
+
+        {/* BRAND LOCKUP */}
+        <div style={styles.brandBlock}>
+          <VowPathMark size={58} theme="light" />
+          <p style={styles.brandWord}>Vow Path</p>
         </div>
 
         {/* HERO */}
@@ -347,6 +352,20 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     textTransform: 'uppercase',
     letterSpacing: '0.18em',
+  },
+  topRow: {
+    display: 'flex', alignItems: 'center',
+    marginBottom: '0.5rem',
+  },
+  brandBlock: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    gap: '10px', textAlign: 'center',
+    margin: '0.5rem 0 0.25rem',
+  },
+  brandWord: {
+    fontSize: '23px', fontWeight: 500, color: '#2A1F15',
+    fontFamily: 'Georgia, serif', letterSpacing: '-0.005em',
+    margin: 0, lineHeight: 1,
   },
 
   // HERO

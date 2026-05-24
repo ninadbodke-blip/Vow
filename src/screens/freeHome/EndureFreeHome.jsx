@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import VowBrandMark from '../../components/VowBrandMark'
 import { checkAndMarkMilestones } from '../../milestoneHelpers'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
@@ -90,7 +91,7 @@ export default function EndureFreeHome({ progress }) {
 
         const newOnes = await checkAndMarkMilestones(tr, user.id)
         if (newOnes && newOnes.length > 0) {
-          setToastMilestones(newOnes.map(m => ({ ...m, trackerName: tr.addiction_types.name })))
+          setToastMilestones(newOnes.map(m => ({ ...m, trackerName: tr.addiction_types?.name || 'Your tracker' })))
           setTimeout(() => setToastMilestones([]), 4000)
         }
       }
@@ -131,7 +132,7 @@ export default function EndureFreeHome({ progress }) {
       .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
       .eq('user_id', user.id)
     if (error) { console.error('Move to reclaim failed:', error); alert('Could not move. Please try again.'); return }
-    navigate('/home', { replace: true })
+    window.location.assign('/home')
   }
 
   const handleMoveToBuild = async () => {
@@ -143,7 +144,7 @@ export default function EndureFreeHome({ progress }) {
       .update({ free_state: 'build', updated_at: new Date().toISOString() })
       .eq('user_id', user.id)
     if (error) { console.error('Move to build failed:', error); alert('Could not move. Please try again.'); return }
-    navigate('/home', { replace: true })
+    window.location.assign('/home')
   }
 
   // Urge velocity — log the spike/creep signal (feeds the Mirror), then hand
@@ -174,7 +175,7 @@ export default function EndureFreeHome({ progress }) {
 
         {/* TOP BAR */}
         <div style={styles.topBar}>
-          <p style={styles.brandLine}>Vow</p>
+          <VowBrandMark />
           <button
             onClick={() => navigate('/profile')}
             style={styles.profileBtn}
@@ -549,7 +550,7 @@ function TrackerPillsTile({ tracker, onAddPress }) {
     <div style={styles.pillsRow}>
       {tracker ? (
         <button style={{ ...styles.trackerPill, ...styles.trackerPillActive }}>
-          {tracker.addiction_types.icon} {tracker.addiction_types.name}
+          {tracker.addiction_types?.icon || '·'} {tracker.addiction_types?.name || 'Your tracker'}
         </button>
       ) : (
         <button style={{ ...styles.trackerPill, ...styles.trackerPillEmpty }}>

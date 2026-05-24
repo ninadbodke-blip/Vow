@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
+import VowPathMark from './VowPathMark'
 
 const ICONS = {
   home: (
@@ -32,7 +33,7 @@ const TABS = [
   { key: 'home', label: 'Home', route: '/home', icon: ICONS.home, matchPrefix: false },
   { key: 'mirror', label: 'Mirror', route: '/mirror', icon: ICONS.mirror, matchPrefix: true },
   { key: 'motivation', label: 'Motivation', route: '/motivation', icon: ICONS.motivation, matchPrefix: true },
-  { key: 'path', label: 'Vow Path', route: '/vow-path', icon: ICONS.path, matchPrefix: true },
+  { key: 'path', label: 'Vow Path', route: '/vow-path', icon: <VowPathMark size={24} theme="light" />, matchPrefix: true },
 ]
 
 export default function BottomNav() {

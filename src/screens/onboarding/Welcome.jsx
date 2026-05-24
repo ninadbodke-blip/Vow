@@ -1,255 +1,118 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const slides = [
   {
-    title: 'Welcome to Vow',
-    body: 'It begins as a small flame.',
+    title: 'It begins as a\nquiet decision.',
+    body: 'A single spark against years of autopilot.',
     illustration: 'spark',
   },
   {
-    title: 'Hold it. Tend it.',
-    body: 'Each day, it grows fiercer.',
-    illustration: 'risen',
+    title: 'Willpower is\na finite resource.',
+    body: 'Protect the spark. Build the psychological infrastructure to shield it from the wind.',
+    illustration: 'lantern',
+  },
+  {
+    title: 'Take back\nyour capital.',
+    body: 'Time, energy, identity. Watch the fire grow fierce. Step inside.',
+    illustration: 'furnace',
   },
 ]
 
 // =====================================================================
 // SLIDE 1: small wider flame (Firebase-style proportions)
 // =====================================================================
+// SLIDE 1: the spark — a quiet, pulsing ember.
+// =====================================================================
 function SparkIllustration() {
   return (
-    <svg viewBox="0 0 240 240" style={{ width: '100%', height: '100%' }}>
-      <defs>
-        <radialGradient id="sparkHalo" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="rgba(255,160,80,0.22)" />
-          <stop offset="50%" stopColor="rgba(255,160,80,0.08)" />
-          <stop offset="100%" stopColor="rgba(255,160,80,0)" />
-        </radialGradient>
-        <radialGradient id="sparkOuter" cx="50%" cy="65%">
-          <stop offset="0%" stopColor="#FFB85A" />
-          <stop offset="50%" stopColor="#E8754A" />
-          <stop offset="100%" stopColor="#A93B1A" />
-        </radialGradient>
-        <radialGradient id="sparkCore" cx="50%" cy="60%">
-          <stop offset="0%" stopColor="#FFF6D0" />
-          <stop offset="50%" stopColor="#FFD06A" />
-          <stop offset="100%" stopColor="#FFA040" />
-        </radialGradient>
-      </defs>
-
-      {/* Outer halo */}
-      <circle cx="120" cy="125" r="110" fill="url(#sparkHalo)" />
-
-      {/* Soft glow around flame */}
-      <ellipse cx="120" cy="130" rx="55" ry="62" fill="rgba(255,176,80,0.12)" />
-      <ellipse cx="120" cy="130" rx="38" ry="48" fill="rgba(255,200,100,0.16)" />
-
-      {/* Outer flame — wider Firebase-style teardrop */}
-      <path
-        d="M 120 55
-           C 92 78, 70 112, 70 148
-           C 70 175, 92 192, 120 194
-           C 148 192, 170 175, 170 148
-           C 170 112, 148 78, 120 55 Z"
-        fill="url(#sparkOuter)"
-      />
-
-      {/* Inner bright core */}
-      <path
-        d="M 120 80
-           C 102 98, 90 122, 90 150
-           C 90 168, 102 180, 120 182
-           C 138 180, 150 168, 150 150
-           C 150 122, 138 98, 120 80 Z"
-        fill="url(#sparkCore)"
-      />
-
-      {/* Bright center column */}
-      <ellipse cx="120" cy="140" rx="10" ry="24" fill="#FFFCE8" opacity="0.7" />
+    <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} xmlns="http://www.w3.org/2000/svg">
+      {/* Outer ambient glow */}
+      <circle cx="50" cy="50" r="20" fill="#854F0B" opacity="0.2">
+        <animate attributeName="r" values="18; 26; 18" dur="3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.1; 0.3; 0.1" dur="3s" repeatCount="indefinite" />
+      </circle>
+      {/* Inner spark */}
+      <circle cx="50" cy="50" r="8" fill="#D9B57A">
+        <animate attributeName="r" values="7; 10; 7" dur="1.5s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.7; 1; 0.7" dur="1.5s" repeatCount="indefinite" />
+      </circle>
     </svg>
   )
 }
 
 // =====================================================================
-// SLIDE 2: horizontal hand from the side, flame floating above the palm.
-// Single cohesive silhouette. Gap of ~45px between flame base & palm.
+// SLIDE 2: the lantern — a shielded flame, infrastructure around it.
 // =====================================================================
-function RisenIllustration() {
+function LanternIllustration() {
   return (
-    <svg viewBox="0 0 240 240" style={{ width: '100%', height: '100%' }}>
-      <defs>
-        <radialGradient id="risenBg" cx="50%" cy="35%">
-          <stop offset="0%" stopColor="rgba(255,140,60,0.32)" />
-          <stop offset="50%" stopColor="rgba(255,140,60,0.08)" />
-          <stop offset="100%" stopColor="rgba(255,140,60,0)" />
-        </radialGradient>
-
-        <radialGradient id="risenOuter" cx="50%" cy="75%">
-          <stop offset="0%" stopColor="#FFB840" />
-          <stop offset="35%" stopColor="#F87830" />
-          <stop offset="70%" stopColor="#C5331A" />
-          <stop offset="100%" stopColor="#6A1408" />
-        </radialGradient>
-        <radialGradient id="risenMid" cx="50%" cy="70%">
-          <stop offset="0%" stopColor="#FFE680" />
-          <stop offset="50%" stopColor="#FFA040" />
-          <stop offset="100%" stopColor="#D03818" />
-        </radialGradient>
-        <radialGradient id="risenCore" cx="50%" cy="65%">
-          <stop offset="0%" stopColor="#FFFCE8" />
-          <stop offset="50%" stopColor="#FFE068" />
-          <stop offset="100%" stopColor="#FFB040" />
-        </radialGradient>
-
-        {/* Hand gradient — anchored to SVG coords, NOT bounding box.
-            Light at the top (where the flame hits), dark below. */}
-        <linearGradient
-          id="handGrad"
-          x1="0" y1="230"
-          x2="0" y2="140"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop offset="0%" stopColor="#3A2208" />
-          <stop offset="100%" stopColor="#B86A24" />
-        </linearGradient>
-
-        <radialGradient id="palmGlow" cx="50%" cy="0%">
-          <stop offset="0%" stopColor="rgba(255,180,80,0.5)" />
-          <stop offset="100%" stopColor="rgba(255,180,80,0)" />
-        </radialGradient>
-      </defs>
-
-      {/* Warm backdrop */}
-      <circle cx="120" cy="90" r="115" fill="url(#risenBg)" />
-
-      {/* =========== THE FLAME =========== */}
-
-      {/* Outer aura */}
-      <path
-        d="M 60 138
-           Q 45 80, 95 25
-           Q 115 5, 140 0
-           Q 158 14, 168 48
-           Q 200 70, 205 138
-           Q 195 156, 165 156
-           Q 130 158, 95 156
-           Q 62 152, 60 138 Z"
-        fill="rgba(255,140,60,0.16)"
-      />
-
-      {/* Main outer flame body */}
-      <path
-        d="M 138 12
-           C 102 30, 75 70, 75 115
-           C 75 138, 102 148, 132 148
-           C 162 148, 188 138, 188 115
-           C 188 70, 162 30, 138 12 Z"
-        fill="url(#risenOuter)"
-      />
-
-      {/* Right secondary tongue */}
-      <path
-        d="M 170 60
-           Q 192 35, 200 12
-           Q 196 38, 192 70
-           Q 200 92, 182 102
-           Q 168 98, 170 60 Z"
-        fill="url(#risenMid)"
-      />
-
-      {/* Left secondary tongue */}
-      <path
-        d="M 82 100
-           Q 62 80, 58 55
-           Q 65 78, 76 90
-           Q 74 110, 82 112 Z"
-        fill="url(#risenMid)"
-      />
-
-      {/* Mid flame layer */}
-      <path
-        d="M 138 30
-           C 110 48, 88 82, 88 120
-           C 88 140, 110 148, 132 148
-           C 154 148, 174 140, 174 120
-           C 174 82, 158 48, 138 30 Z"
-        fill="url(#risenMid)"
-      />
-
-      {/* Hot inner core */}
-      <path
-        d="M 138 52
-           C 118 68, 100 98, 100 128
-           C 100 142, 116 148, 132 148
-           C 148 148, 162 142, 162 128
-           C 162 98, 152 68, 138 52 Z"
-        fill="url(#risenCore)"
-      />
-
-      {/* White-hot central column */}
-      <ellipse cx="134" cy="105" rx="7" ry="28" fill="#FFFCE8" opacity="0.85" />
-
-      {/* Rising sparks */}
-      <circle cx="98" cy="28" r="1.5" fill="rgba(255,210,130,0.7)" />
-      <circle cx="172" cy="38" r="1.3" fill="rgba(255,210,130,0.6)" />
-      <circle cx="125" cy="6" r="1" fill="rgba(255,210,130,0.5)" />
-      <circle cx="158" cy="18" r="0.9" fill="rgba(255,210,130,0.55)" />
-      <circle cx="78" cy="52" r="0.7" fill="rgba(255,210,130,0.35)" />
-      <circle cx="195" cy="78" r="1" fill="rgba(255,210,130,0.45)" />
-      <circle cx="108" cy="42" r="0.6" fill="rgba(255,210,130,0.3)" />
-      <circle cx="180" cy="96" r="0.7" fill="rgba(255,210,130,0.4)" />
-
-      {/* Palm glow halo — warm light from flame falling on the hand */}
-      <ellipse cx="135" cy="175" rx="85" ry="15" fill="url(#palmGlow)" />
-
-      {/* =========== THE HAND — single cohesive silhouette =========== */}
-
-      <path
-        d="M -10 235
-           L -10 200
-           L 55 200
-           Q 70 200, 82 195
-           Q 92 190, 100 187
-
-           Q 103 178, 110 172
-           Q 118 168, 124 172
-           Q 130 178, 128 185
-           Q 126 188, 122 188
-
-           L 170 188
-
-           Q 182 188, 192 180
-           Q 206 165, 206 148
-           Q 204 138, 194 140
-           Q 184 144, 180 156
-           Q 176 172, 168 182
-           Q 160 188, 150 190
-
-           Q 148 200, 152 215
-           Q 150 228, 138 232
-           Q 110 235, 70 233
-           L -10 233 Z"
-        fill="url(#handGrad)"
-      />
-
-      {/* Highlight along top of palm where flame hits */}
-      <ellipse cx="138" cy="186" rx="28" ry="2" fill="rgba(255,200,120,0.4)" />
-
-      {/* Thumb tip catches light */}
-      <ellipse cx="122" cy="172" rx="4" ry="1.5" fill="rgba(255,200,120,0.4)" />
-
-      {/* Finger curl crest catches light */}
-      <ellipse cx="200" cy="145" rx="6" ry="2" fill="rgba(255,200,120,0.45)" />
-
-      {/* Subtle light line along top of forearm */}
-      <path
-        d="M -10 200 L 55 200 Q 70 200, 82 195"
-        stroke="rgba(255,200,120,0.22)"
-        strokeWidth="1.5"
-        fill="none"
-      />
+    <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} xmlns="http://www.w3.org/2000/svg">
+      {/* Lantern structure */}
+      <path d="M 30 20 L 70 20 L 80 80 L 20 80 Z" fill="none" stroke="#6B5C4A" strokeWidth="2" opacity="0.6" />
+      <path d="M 20 80 L 80 80" stroke="#6B5C4A" strokeWidth="4" fill="none" />
+      <path d="M 40 20 L 50 8 L 60 20" fill="none" stroke="#6B5C4A" strokeWidth="2" />
+      <path d="M 35 20 L 35 80 M 65 20 L 65 80" stroke="#6B5C4A" strokeWidth="1" opacity="0.3" fill="none" />
+      {/* Shielded flame (contained morph) */}
+      <path d="M50 45 Q55 65 50 75 Q45 65 50 45" fill="#D9B57A">
+        <animate attributeName="d" values="M50 45 Q55 65 50 75 Q45 65 50 45; M50 40 Q58 65 50 75 Q42 65 50 40; M50 45 Q55 65 50 75 Q45 65 50 45" dur="2s" repeatCount="indefinite" />
+      </path>
     </svg>
+  )
+}
+
+// =====================================================================
+// SLIDE 3: the furnace — a roaring, multi-layered fire.
+// =====================================================================
+function FurnaceIllustration() {
+  return (
+    <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} xmlns="http://www.w3.org/2000/svg">
+      {/* Back flame (clay, slow) */}
+      <path d="M50 15 Q70 50 50 90 Q30 50 50 15" fill="#854F0B" opacity="0.8">
+        <animate attributeName="d" values="M50 15 Q70 50 50 90 Q30 50 50 15; M45 20 Q75 45 50 90 Q25 55 45 20; M55 20 Q65 55 50 90 Q35 45 55 20; M50 15 Q70 50 50 90 Q30 50 50 15" dur="1.8s" repeatCount="indefinite" />
+      </path>
+      {/* Core flame (gold, fast) */}
+      <path d="M50 35 Q65 65 50 90 Q35 65 50 35" fill="#D9B57A">
+        <animate attributeName="d" values="M50 35 Q65 65 50 90 Q35 65 50 35; M52 30 Q60 60 50 90 Q30 70 52 30; M48 30 Q70 70 50 90 Q40 60 48 30; M50 35 Q65 65 50 90 Q35 65 50 35" dur="1.2s" repeatCount="indefinite" />
+      </path>
+      {/* Inner hot spark (cream, rapid flicker) */}
+      <path d="M50 55 Q55 75 50 90 Q45 75 50 55" fill="#FAF7F1">
+        <animate attributeName="d" values="M50 55 Q55 75 50 90 Q45 75 50 55; M48 50 Q58 70 50 90 Q42 70 48 50; M50 55 Q55 75 50 90 Q45 75 50 55" dur="0.8s" repeatCount="indefinite" />
+      </path>
+    </svg>
+  )
+}
+
+// =====================================================================
+function IgniteButton({ onIgnite }) {
+  const [progress, setProgress] = useState(0)
+  const timer = useRef(null)
+
+  const clear = () => { if (timer.current) { clearInterval(timer.current); timer.current = null } }
+  const start = () => {
+    if (timer.current) return
+    timer.current = setInterval(() => {
+      setProgress(p => {
+        const n = p + 2 // ~1.5s to fill (30ms x 50 steps)
+        if (n >= 100) { clear(); onIgnite(); return 100 }
+        return n
+      })
+    }, 30)
+  }
+  const stop = () => { clear(); setProgress(p => (p >= 100 ? 100 : 0)) }
+  useEffect(() => () => clear(), [])
+
+  const holding = progress > 0 && progress < 100
+  return (
+    <button
+      style={styles.igniteBtn}
+      onPointerDown={start}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+    >
+      <span style={{ ...styles.igniteFill, width: `${progress}%` }} />
+      <span style={styles.igniteLabel}>{holding ? 'Igniting…' : 'Hold to Ignite'}</span>
+    </button>
   )
 }
 
@@ -257,29 +120,39 @@ export default function Welcome() {
   const navigate = useNavigate()
   const [idx, setIdx] = useState(0)
 
-  const next = () => {
-    if (idx < slides.length - 1) {
-      setIdx(idx + 1)
-    } else {
-      navigate('/signup')
-    }
-  }
-
+  const isLast = idx === slides.length - 1
+  const next = () => { if (!isLast) setIdx(idx + 1) }
   const skip = () => navigate('/signup')
+  const ignite = () => navigate('/signup')
 
   const slide = slides[idx]
+  const lit = slides.length > 1 ? idx / (slides.length - 1) : 1
 
   return (
     <div style={styles.frame}>
-      <div style={styles.card}>
+      <div
+        style={{
+          ...styles.glow,
+          opacity: 0.18 + lit * 0.5,
+          transform: `translate(-50%, -50%) scale(${0.8 + lit * 0.55})`,
+        }}
+      />
+
+      <div style={styles.shell}>
         <button onClick={skip} style={styles.skipBtn}>Skip</button>
 
         <div style={styles.illustration}>
           {slide.illustration === 'spark' && <SparkIllustration />}
-          {slide.illustration === 'risen' && <RisenIllustration />}
+          {slide.illustration === 'lantern' && <LanternIllustration />}
+          {slide.illustration === 'furnace' && <FurnaceIllustration />}
         </div>
 
-        <h1 style={styles.title}>
+        <h1
+          style={{
+            ...styles.title,
+            textShadow: `0 0 ${10 + lit * 26}px rgba(255,190,110,${0.12 + lit * 0.4})`,
+          }}
+        >
           {slide.title.split('\n').map((line, i) => (
             <span key={i} style={{ display: 'block' }}>{line}</span>
           ))}
@@ -288,19 +161,15 @@ export default function Welcome() {
 
         <div style={styles.dots}>
           {slides.map((_, i) => (
-            <div
-              key={i}
-              style={{
-                ...styles.dot,
-                ...(i === idx ? styles.dotActive : {}),
-              }}
-            />
+            <div key={i} style={{ ...styles.dot, ...(i === idx ? styles.dotActive : {}) }} />
           ))}
         </div>
 
-        <button onClick={next} style={styles.nextBtn}>
-          {idx === slides.length - 1 ? 'Get started' : 'Continue →'}
-        </button>
+        {isLast ? (
+          <IgniteButton onIgnite={ignite} />
+        ) : (
+          <button onClick={next} style={styles.continueBtn}>Continue →</button>
+        )}
       </div>
     </div>
   )
@@ -309,30 +178,45 @@ export default function Welcome() {
 const styles = {
   frame: {
     minHeight: '100vh',
-    background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
-    padding: '2rem 1rem',
+    background:
+      'radial-gradient(900px 520px at 50% 6%, rgba(197,87,44,0.16), transparent 60%), ' +
+      'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    padding: '2rem 1.5rem',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    position: 'relative',
+    overflow: 'hidden',
   },
-  card: {
-    background: '#FAF7F1',
-    maxWidth: '420px',
+  glow: {
+    position: 'absolute',
+    top: '42%',
+    left: '50%',
+    width: '520px',
+    height: '520px',
+    borderRadius: '50%',
+    background:
+      'radial-gradient(circle, rgba(255,176,80,0.5) 0%, rgba(255,140,60,0.12) 45%, rgba(255,140,60,0) 72%)',
+    pointerEvents: 'none',
+    transition: 'opacity 0.6s ease, transform 0.6s ease',
+    zIndex: 0,
+  },
+  shell: {
+    position: 'relative',
+    zIndex: 1,
+    maxWidth: '430px',
     width: '100%',
-    minHeight: '620px',
-    borderRadius: '28px',
-    padding: '2rem 2rem 2.5rem',
-    boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
+    minHeight: '600px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    position: 'relative',
+    paddingTop: '1.25rem',
   },
   skipBtn: {
     position: 'absolute',
-    top: '1.5rem',
-    right: '1.5rem',
+    top: 0,
+    right: 0,
     background: 'transparent',
     border: 'none',
     color: '#9C8C78',
@@ -343,23 +227,24 @@ const styles = {
     letterSpacing: '0.02em',
   },
   illustration: {
-    width: '240px',
-    height: '240px',
-    margin: '2.5rem auto 1.75rem',
+    width: '230px',
+    height: '230px',
+    margin: '2.75rem auto 1.75rem',
   },
   title: {
-    fontSize: '28px',
+    fontSize: '27px',
     fontWeight: 500,
-    color: '#2A1F15',
+    color: '#FAF7F1',
     margin: '0 0 1rem',
     fontFamily: 'Georgia, serif',
     textAlign: 'center',
     lineHeight: 1.25,
     letterSpacing: '-0.01em',
+    transition: 'text-shadow 0.6s ease',
   },
   body: {
     fontSize: '15px',
-    color: '#6B5C4A',
+    color: '#9C8C78',
     margin: '0 0 auto',
     textAlign: 'center',
     lineHeight: 1.6,
@@ -377,26 +262,58 @@ const styles = {
     width: '8px',
     height: '8px',
     borderRadius: '50%',
-    background: '#DDCFB6',
+    background: 'rgba(250,247,241,0.22)',
     transition: 'all 0.3s',
   },
   dotActive: {
-    background: '#3A2A1C',
+    background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)',
     width: '24px',
     borderRadius: '4px',
   },
-  nextBtn: {
+  continueBtn: {
     width: '100%',
     padding: '15px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    background: 'transparent',
     color: '#FAF7F1',
-    border: 'none',
+    border: '0.5px solid rgba(250,247,241,0.3)',
     borderRadius: '14px',
     fontSize: '14px',
     fontWeight: 500,
     cursor: 'pointer',
     fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
     letterSpacing: '0.02em',
+  },
+  igniteBtn: {
+    position: 'relative',
+    overflow: 'hidden',
+    width: '100%',
+    padding: '16px',
+    background: 'rgba(250,247,241,0.04)',
+    border: '1px solid #B89456',
+    borderRadius: '14px',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    touchAction: 'none',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+  },
+  igniteFill: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)',
+    transition: 'width 0.03s linear',
+    zIndex: 0,
+  },
+  igniteLabel: {
+    position: 'relative',
+    zIndex: 1,
+    fontSize: '15px',
+    fontWeight: 600,
+    color: '#FAF7F1',
+    fontFamily: 'Georgia, serif',
+    letterSpacing: '0.03em',
+    textShadow: '0 1px 3px rgba(40,20,5,0.55)',
   },
 }
