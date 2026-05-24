@@ -9,7 +9,7 @@ export default function VowBrandMark({ size = 20, theme = 'light' }) {
   const color = theme === 'dark' ? '#FAF7F1' : '#2A1F15'
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
-      <AnimatedVowFlame size={size} />
+      <AnimatedVowFlame size={size} theme={theme} />
       <span
         style={{
           fontFamily: 'Georgia, serif',
