@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
+import PageTransition from './components/PageTransition'
 import { LanguageProvider, useLang } from './LanguageContext'
 import { supabase } from './supabaseClient'
 import LanguageSelector from './screens/onboarding/LanguageSelector'
@@ -51,6 +53,7 @@ import MirrorScreen from './screens/mirror/MirrorScreen'
 
 function AppRoutes() {
   const { lang } = useLang()
+  const location = useLocation()
   const [session, setSession] = useState(undefined)
   const [hasOnboardingProgress, setHasOnboardingProgress] = useState(undefined)
 
@@ -98,7 +101,9 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
+    <AnimatePresence mode="wait">
+      <PageTransition key={location.pathname}>
+        <Routes location={location}>
       <Route path="/a/:token" element={<AnchorPublic />} />
 
       {/* ===== ROOT REDIRECT ===== */}
@@ -197,6 +202,8 @@ function AppRoutes() {
       {/* ===== MIRROR ===== */}
       <Route path="/mirror" element={session ? <MirrorScreen /> : <Navigate to="/welcome" />} />
     </Routes>
+      </PageTransition>
+    </AnimatePresence>
   )
 }
 

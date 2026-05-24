@@ -210,6 +210,30 @@ export default function CommitFreeHome({ progress: initialProgress }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setTransitioning(false); return }
       const now = new Date().toISOString()
+
+      // RESUME PATH: a live streak already running + Endure begun before means the
+      // user reached Endure/Build, wandered back here to look around, and is now
+      // returning. Keep the clock running — never restart it, never relock Build.
+      const { data: liveTrk } = await supabase.from('trackers')
+        .select('id').eq('user_id', user.id).eq('is_active', true).order('created_at').limit(1)
+      if (liveTrk && liveTrk.length) {
+        const { data: ev } = await supabase.from('free_stage_signals')
+          .select('id').eq('user_id', user.id)
+          .or('signal_type.eq.endure_began,stage.eq.endure,stage.eq.build').limit(1)
+        if (ev && ev.length) {
+          const { error: rErr } = await supabase.from('vow_path_progress')
+            .update({ free_state: 'endure', updated_at: now }).eq('user_id', user.id)
+          if (rErr) {
+            console.error('resume endure failed:', rErr)
+            alert('Could not return to Endure: ' + (rErr.message || 'please try again.'))
+            setTransitioning(false)
+            return
+          }
+          window.location.assign('/home')
+          return
+        }
+      }
+
       const addictionTypeId = await resolveAddictionTypeId(progress.primary_substance)
 
       // (Re)start a tracker so the counter has something to run on. Prefer the
@@ -254,6 +278,11 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         setTransitioning(false)
         return
       }
+
+      // Mark that Endure has genuinely begun — future re-entries resume this streak.
+      await supabase.from('free_stage_signals').insert({
+        user_id: user.id, stage: 'endure', signal_type: 'endure_began', payload: { began_at: now },
+      })
 
       window.location.assign('/home')
     } catch (err) {

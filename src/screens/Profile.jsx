@@ -47,6 +47,7 @@ export default function Profile() {
   const [sheet, setSheet] = useState(null)
   const [stopDateISO, setStopDateISO] = useState(null)
   const [primarySubstance, setPrimarySubstance] = useState(null)
+  const [hasBegunEndure, setHasBegunEndure] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -83,6 +84,23 @@ export default function Profile() {
           .order('created_at')
           .limit(1)
         if (trk && trk[0]) setTracker(trk[0])
+
+        // Has Endure already begun at least once? If so, returning to Endure
+        // after looking around an earlier stage must RESUME the live streak —
+        // never restart the clock or relock Build. Onboarding activates the
+        // tracker, so is_active alone can't tell us this; we look for real
+        // Endure history (current stage, the begin-marker, or any endure/build signal).
+        let begun = vpp?.free_state === 'endure' || vpp?.free_state === 'build'
+        if (!begun) {
+          const { data: ev } = await supabase
+            .from('free_stage_signals')
+            .select('id')
+            .eq('user_id', u.id)
+            .or('signal_type.eq.endure_began,stage.eq.endure,stage.eq.build')
+            .limit(1)
+          begun = !!(ev && ev.length)
+        }
+        setHasBegunEndure(begun)
       } catch (err) {
         console.error(err)
       } finally {
@@ -171,12 +189,37 @@ export default function Profile() {
         setMoving(false)
         return
       }
+      // Mark that Endure has genuinely begun — future re-entries will RESUME this
+      // streak instead of restarting it. Generic signal, no migration. Best-effort.
+      await supabase.from('free_stage_signals').insert({
+        user_id: u.id, stage: 'endure', signal_type: 'endure_began', payload: { began_at: now },
+      })
       navigate('/home', { replace: true })
     } catch (err) {
       console.error(err)
       alert('Could not start Endure. Please try again.')
       setMoving(false)
     }
+  }
+
+  // Resume Endure WITHOUT restarting the clock. Used when a live streak already
+  // exists — the user reached Endure/Build, wandered back to an earlier stage to
+  // look around, and is now returning. start_date is left untouched, so the
+  // streak continues unbroken and Build stays unlocked.
+  const resumeEndure = async () => {
+    if (moving) return
+    setMoving(true)
+    const { data: { user: u } } = await supabase.auth.getUser()
+    if (!u) { setMoving(false); return }
+    if (tracker?.id) {
+      await supabase.from('trackers')
+        .update({ is_active: true, tracker_status: 'active' })
+        .eq('id', tracker.id)
+    }
+    await supabase.from('vow_path_progress')
+      .update({ free_state: 'endure', updated_at: new Date().toISOString() })
+      .eq('user_id', u.id)
+    navigate('/home', { replace: true })
   }
 
   const goToStage = (target) => {
@@ -213,9 +256,15 @@ export default function Profile() {
       return
     }
 
-    // Into Endure — this STARTS the clock for real (never a peek). Applaud the
-    // move; warn loudly if they're jumping ahead of their chosen stop date.
+    // Into Endure.
     if (target === 'endure') {
+      // A live streak already running + Endure begun before → this is a RESUME
+      // after exploring an earlier stage. Keep the clock, no ceremony, no relock.
+      if (tracker && hasBegunEndure) { resumeEndure(); return }
+
+      // Genuine first start — the line-in-the-sand ceremony, which starts the
+      // clock for real. Applaud the move; warn if they're jumping ahead of their
+      // chosen stop date.
       const stopMs = (stage === 'commit' && stopDateISO)
         ? new Date(stopDateISO + 'T00:00:00').getTime() : null
       const beforeStop = stopMs != null && stopMs > Date.now()
