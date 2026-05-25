@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import { canEnterReclaim } from './utils/stageAccess'
 import {
   RECLAIM_DAYS,
   RECLAIM_TOTAL_DAYS,
@@ -35,7 +36,7 @@ export default function ReclaimOverview() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'reclaim') {
+      if (!canEnterReclaim(progressRow)) {
         setAccessDenied(true)
         setLoaded(true)
         return

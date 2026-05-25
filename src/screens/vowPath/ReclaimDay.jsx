@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { isCadenceBypassed } from './utils/vowPathGating'
+import { canEnterReclaim, isReclaimVisit } from './utils/stageAccess'
 import {
   getReclaimDay,
   RECLAIM_TOTAL_DAYS,
@@ -66,7 +67,7 @@ export default function ReclaimDay() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'reclaim') {
+      if (!canEnterReclaim(progressRow)) {
         setAccessDenied(true)
         setAccessReason('You are not currently in Reclaim.')
         setAccessLoading(false)
@@ -189,7 +190,7 @@ export default function ReclaimDay() {
       }
 
       const wasLatestDay = dayNumber > (progress?.last_completed_day || 0)
-      if (wasLatestDay) {
+      if (wasLatestDay && !isReclaimVisit(progress)) {
         await supabase
           .from('vow_path_progress')
           .update({
@@ -231,6 +232,13 @@ export default function ReclaimDay() {
         console.error('Failed to save Day 5 artifact:', artifactError)
         alert('Could not save. Please try again.')
         setSaving(false)
+        return
+      }
+
+      // A relapse-support visit (Reclaim isn't your assigned stage) must not
+      // re-route your journey. Save the work, then return to the hub.
+      if (isReclaimVisit(progress)) {
+        navigate('/vow-path')
         return
       }
 

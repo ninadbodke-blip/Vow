@@ -34,3 +34,14 @@ export function isExploringPastStage(progressRow, stageKey) {
   if (cur < 0 || tgt < 0) return false
   return tgt < cur
 }
+// Reclaim is relapse support — reachable by any Vow Path user, not only
+// someone assigned to it. Opening it as support (when it isn't your assigned
+// stage) is a "visit": it must never rewrite your real day position and never
+// auto-transition your stage on completion — it just returns you to the hub.
+export function canEnterReclaim(progressRow) {
+  return !!(progressRow && progressRow.current_stage)
+}
+
+export function isReclaimVisit(progressRow) {
+  return !!(progressRow && progressRow.current_stage && progressRow.current_stage !== 'reclaim')
+}

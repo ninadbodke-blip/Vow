@@ -64,9 +64,9 @@ export default function VowPathIntro() {
     const status = getStageStatus(stageKey)
     if (status === 'pre_assessment' || status === 'locked') return
     if (status === 'relapse_support') {
-      // Reclaim is reached by re-checking in after a slip — a recent slip
-      // routes you there via the scoring matrix, without disturbing progress.
-      navigate('/vow-path/check')
+      // Reclaim opens directly as relapse support. If it isn't your assigned
+      // stage, the Reclaim screens treat it as a non-destructive visit.
+      navigate('/vow-path/reclaim')
       return
     }
     if (status === 'current') {
@@ -99,13 +99,12 @@ export default function VowPathIntro() {
       <div style={styles.phone}>
 
         {/* ---- HEADER ---- */}
-        <div style={styles.header}>
+        <div style={styles.topBar}>
           <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
-          <div style={styles.brandLockup}>
-            <VowPathMark size={20} theme="light" />
-            <span style={styles.wordmark}>Vow Path</span>
-          </div>
-          <div style={{ width: '60px' }} />
+        </div>
+        <div style={styles.brand}>
+          <VowPathMark size={40} theme="light" />
+          <span style={styles.wordmark}>Vow Path</span>
         </div>
 
         {/* ---- HERO ---- */}
@@ -300,11 +299,11 @@ const styles = {
   },
 
   // ---- HEADER ----
-  header: {
+  topBar: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '1.6rem',
+    justifyContent: 'flex-start',
+    paddingTop: '0.25rem',
   },
   backBtn: {
     background: 'transparent',
@@ -318,17 +317,19 @@ const styles = {
     minWidth: '60px',
     textAlign: 'left',
   },
-  brandLockup: {
+  brand: {
     display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
-    gap: '8px',
+    gap: '0.6rem',
+    margin: '1.5rem 0 2.5rem',
   },
   wordmark: {
-    fontSize: '11px',
+    fontSize: '14px',
     fontWeight: 600,
-    color: '#9C8C78',
+    color: '#6B5C4A',
     textTransform: 'uppercase',
-    letterSpacing: '0.28em',
+    letterSpacing: '0.30em',
     fontFamily: SANS,
   },
 
@@ -554,7 +555,7 @@ const styles = {
 
   // ---- THE SANCTUARY ----
   sanctuary: {
-    display: 'block', width: '100%', textAlign: 'left',
+    display: 'block', width: '100%', boxSizing: 'border-box', textAlign: 'left',
     marginTop: '2.5rem', padding: '1.8rem 1.6rem',
     borderRadius: '18px', border: '1px dashed #C5572C',
     background: 'rgba(197,87,44,0.05)', cursor: 'pointer',
@@ -585,7 +586,7 @@ const styles = {
   // ---- CTA ----
   ctaBlock: { marginTop: '2.25rem', padding: '0 0.25rem' },
   primaryCta: {
-    width: '100%', padding: '18px',
+    width: '100%', boxSizing: 'border-box', padding: '18px',
     background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
     color: '#FAF7F1', border: 'none', borderRadius: '16px',
     fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: SANS,
@@ -596,7 +597,7 @@ const styles = {
     textAlign: 'center', margin: '0.85rem 0 0', lineHeight: 1.5,
   },
   tertiaryCta: {
-    width: '100%', padding: '14px', background: 'transparent', color: '#854F0B',
+    width: '100%', boxSizing: 'border-box', padding: '14px', background: 'transparent', color: '#854F0B',
     border: '0.5px solid #DDCFB6', borderRadius: '14px', fontSize: '13px',
     fontWeight: 500, cursor: 'pointer', fontFamily: SANS, fontStyle: 'italic',
   },
