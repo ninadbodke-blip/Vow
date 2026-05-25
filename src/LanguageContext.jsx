@@ -68,7 +68,7 @@ export const translations = {
 }
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState(() => localStorage.getItem('vow_lang') || null)
+  const [lang, setLang] = useState(() => localStorage.getItem('vow_lang') || 'en')
 
   useEffect(() => {
     if (lang) localStorage.setItem('vow_lang', lang)

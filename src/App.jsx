@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import PageTransition from './components/PageTransition'
-import { LanguageProvider, useLang } from './LanguageContext'
+import { LanguageProvider } from './LanguageContext'
 import { supabase } from './supabaseClient'
-import LanguageSelector from './screens/onboarding/LanguageSelector'
 import SignUp from './screens/onboarding/SignUp'
 import AddictionPicker from './screens/onboarding/AddictionPicker'
 import StatePicker from './screens/onboarding/StatePicker'
@@ -52,7 +51,6 @@ import MotivationArticle from './screens/motivation/MotivationArticle'
 import MirrorScreen from './screens/mirror/MirrorScreen'
 
 function AppRoutes() {
-  const { lang } = useLang()
   const location = useLocation()
   const [session, setSession] = useState(undefined)
   const [hasOnboardingProgress, setHasOnboardingProgress] = useState(undefined)
@@ -110,7 +108,6 @@ function AppRoutes() {
       <Route
         path="/"
         element={
-          !lang ? <LanguageSelector /> :
           !session ? <Navigate to="/welcome" /> :
           hasOnboardingProgress ? <Navigate to="/home" /> :
           <Navigate to="/onboarding/addiction" />
@@ -120,7 +117,6 @@ function AppRoutes() {
       <Route
         path="/welcome"
         element={
-          !lang ? <Navigate to="/" /> :
           session ? <Navigate to="/home" /> :
           <Welcome />
         }
