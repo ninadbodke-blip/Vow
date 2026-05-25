@@ -134,29 +134,32 @@ export default function CommitOverview() {
           </button>
         </div>
 
-        <div style={styles.summaryCard}>
-          <p style={styles.summaryLabel}>Your journey</p>
-          <p style={styles.summaryNumbers}>
-            <span style={styles.summaryBig}>{totalCompleted}</span>
-            <span style={styles.summarySlash}> / </span>
-            <span style={styles.summaryTotal}>{COMMIT_TOTAL_DAYS}</span>
+                <div style={styles.tallyBlock}>
+          <p style={styles.tallyEyebrow}>Your journey</p>
+          <p style={styles.tallyLine}>
+            You have gathered <span style={styles.tallyEmph}>{totalCompleted}</span> of {COMMIT_TOTAL_DAYS} days.
           </p>
-          <p style={styles.summarySubtitle}>
+          <div style={styles.tallyMarks}>
+            {Array.from({ length: COMMIT_TOTAL_DAYS }).map((_, i) => {
+              const n = i + 1
+              const done = n <= totalCompleted
+              const today = !done && n === lastCompleted + 1
+              return (
+                <span key={i} style={{
+                  ...styles.tallyMark,
+                  color: done ? '#D9B57A' : today ? '#854F0B' : '#C9BBA3',
+                  opacity: done || today ? 1 : 0.7,
+                }}>{done ? '✦' : today ? '✧' : '·'}</span>
+              )
+            })}
+          </div>
+          <p style={styles.tallySubtitle}>
             {totalCompleted === 0
               ? 'Begin with Day 1.'
               : totalCompleted === COMMIT_TOTAL_DAYS
                 ? 'Commit is complete.'
                 : `Day ${lastCompleted + 1} is next.`}
           </p>
-
-          <div style={styles.progressBar}>
-            <div
-              style={{
-                ...styles.progressFill,
-                width: `${(totalCompleted / COMMIT_TOTAL_DAYS) * 100}%`,
-              }}
-            ></div>
-          </div>
         </div>
 
         {isPilotOrDev && (
@@ -178,58 +181,45 @@ export default function CommitOverview() {
                 <p style={styles.phaseSubtitle}>{phase.subtitle}</p>
               </div>
 
-              <div style={styles.dayList}>
+                            <div style={styles.threadWrap}>
+                <div style={styles.thread} />
                 {phaseDays.map((day) => {
                   const status = getDayStatus(day.day)
                   const tappable = isDayTappable(day.day)
-
+                  const isToday = status === STATUS.CURRENT
+                  const isDone = status === STATUS.COMPLETED
+                  const isLocked = status === STATUS.LOCKED && !tappable
                   return (
                     <button
                       key={day.day}
                       onClick={() => handleDayTap(day.day)}
                       disabled={!tappable}
                       style={{
-                        ...styles.dayRow,
-                        ...(status === STATUS.COMPLETED ? styles.dayRowCompleted : {}),
-                        ...(status === STATUS.CURRENT ? styles.dayRowCurrent : {}),
-                        ...(status === STATUS.LOCKED && !tappable ? styles.dayRowLocked : {}),
-                        ...(status === STATUS.LOCKED && tappable ? styles.dayRowLockedBypass : {}),
+                        ...styles.threadRow,
+                        ...(isToday ? styles.threadRowToday : {}),
+                        ...(isLocked ? styles.threadRowLocked : {}),
+                        cursor: tappable ? 'pointer' : 'not-allowed',
                       }}
                     >
-                      <div style={styles.dayNumber}>
-                        <span style={styles.dayNumberText}>
-                          {String(day.day).padStart(2, '0')}
-                        </span>
-                      </div>
-
-                      <div style={styles.dayContent}>
-                        <p style={{
-                          ...styles.dayTitle,
-                          ...(status === STATUS.LOCKED && !tappable ? styles.dayTitleLocked : {}),
-                        }}>
-                          {day.arrivalTitle}
-                        </p>
+                      <span style={{
+                        ...styles.threadNode,
+                        color: (isDone || isToday) ? '#D9B57A' : '#C9BBA3',
+                        background: isToday ? 'transparent' : '#FAF7F1',
+                      }}>{(isDone || isToday) ? '✦' : '·'}</span>
+                      <span style={styles.threadContent}>
+                        {isToday && <span style={styles.todayEyebrow}>Today's work</span>}
+                        <span style={{
+                          ...styles.threadTitle,
+                          ...(isToday ? styles.threadTitleToday : {}),
+                          ...(isDone ? styles.threadTitleDone : {}),
+                        }}>{day.arrivalTitle}</span>
                         {day.arrivalSubtitle && (
-                          <p style={{
-                            ...styles.daySubtitle,
-                            ...(status === STATUS.LOCKED && !tappable ? styles.daySubtitleLocked : {}),
-                          }}>
-                            {day.arrivalSubtitle}
-                          </p>
+                          <span style={{
+                            ...styles.threadSubtitle,
+                            ...(isToday ? styles.threadSubtitleToday : {}),
+                          }}>{day.arrivalSubtitle}</span>
                         )}
-                      </div>
-
-                      <div style={styles.dayStatus}>
-                        {status === STATUS.COMPLETED && (
-                          <div style={styles.statusCheck}>✓</div>
-                        )}
-                        {status === STATUS.CURRENT && (
-                          <div style={styles.statusCurrent}>Today</div>
-                        )}
-                        {status === STATUS.LOCKED && !tappable && (
-                          <div style={styles.statusLocked}>🔒</div>
-                        )}
-                      </div>
+                      </span>
                     </button>
                   )
                 })}
@@ -244,6 +234,26 @@ export default function CommitOverview() {
 }
 
 const styles = {
+  tallyBlock: { textAlign: 'center', margin: '0 0 2rem', padding: '0.5rem 0' },
+  tallyEyebrow: { fontSize: '11px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, margin: '0 0 0.75rem' },
+  tallyLine: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 1rem', lineHeight: 1.4 },
+  tallyEmph: { color: '#854F0B', fontStyle: 'normal', fontWeight: 500 },
+  tallyMarks: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', margin: '0 0 0.85rem' },
+  tallyMark: { fontSize: '15px', lineHeight: 1 },
+  tallySubtitle: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0 },
+  threadWrap: { position: 'relative', paddingLeft: '2px' },
+  thread: { position: 'absolute', left: '15px', top: '14px', bottom: '14px', width: '1.5px', background: '#D9B57A', opacity: 0.45, zIndex: 0 },
+  threadRow: { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: '12px', width: '100%', background: 'transparent', border: 'none', textAlign: 'left', padding: '11px 4px', fontFamily: 'inherit' },
+  threadRowToday: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '16px', margin: '6px 0', boxShadow: '0 10px 24px -10px rgba(40,25,10,0.45)' },
+  threadRowLocked: { opacity: 0.3 },
+  threadNode: { width: '28px', flexShrink: 0, textAlign: 'center', fontSize: '14px', lineHeight: '1.5' },
+  threadContent: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '1px' },
+  todayEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500 },
+  threadTitle: { fontSize: '15px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
+  threadTitleToday: { color: '#FAF7F1' },
+  threadTitleDone: { color: '#9C8C78', fontStyle: 'italic', fontWeight: 400 },
+  threadSubtitle: { fontSize: '12px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
+  threadSubtitleToday: { color: '#CBBA98' },
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',

@@ -163,7 +163,7 @@ export default function LibraryDeepRead() {
             <span style={styles.metaItem}>{content.readMinutes} min read</span>
           </div>
 
-          <div style={styles.heroOrnament}>· · ·</div>
+          <div style={styles.heroOrnament}>✧ · ✦ · ✧</div>
         </div>
 
         {/* ARTICLE */}
@@ -175,7 +175,7 @@ export default function LibraryDeepRead() {
               <section key={sectionIdx} style={styles.section}>
                 {section.displayHeading && (
                   <div style={styles.sectionHeadingWrap}>
-                    <div style={styles.sectionOrnament}>· · ·</div>
+                    <div style={styles.sectionOrnament}>✧ · ✦ · ✧</div>
                     <h2 style={styles.sectionHeading}>{formatHeading(section.displayHeading)}</h2>
                   </div>
                 )}
@@ -204,8 +204,19 @@ export default function LibraryDeepRead() {
           })}
         </article>
 
-        {/* ENDING ORNAMENT */}
-        <div style={styles.endOrnament}>· · ·</div>
+        {/* THE SEAL */}
+        <div style={styles.sealBlock}>
+          <div style={styles.sealOrnament}>✧ · ✦ · ✧</div>
+          <div style={styles.sealArch} aria-hidden="true">
+            <svg viewBox="0 0 64 64" width="50" height="50">
+              <circle cx="32" cy="32" r="30" fill="none" stroke="#D9B57A" strokeWidth="1" opacity="0.45" />
+              <path d="M18 47 L18 30 A14 14 0 0 1 46 30 L46 47" fill="none" stroke="#D9B57A" strokeWidth="2" strokeLinecap="round" />
+              <path d="M32 22 L35.5 31 L32 40 L28.5 31 Z" fill="#D9B57A" />
+            </svg>
+          </div>
+          <p style={styles.sealLabel}>The reading is sealed.</p>
+          <button onClick={() => navigate(-1)} style={styles.sealBtn}>Return</button>
+        </div>
       </div>
     </div>
   )
@@ -339,8 +350,8 @@ const styles = {
   },
   heroOrnament: {
     fontSize: '14px',
-    color: '#C5AE8A',
-    letterSpacing: '0.5em',
+    color: '#D9B57A',
+    letterSpacing: '0.4em',
     marginTop: '0.25rem',
   },
 
@@ -361,8 +372,8 @@ const styles = {
   },
   sectionOrnament: {
     fontSize: '12px',
-    color: '#C5AE8A',
-    letterSpacing: '0.5em',
+    color: '#D9B57A',
+    letterSpacing: '0.4em',
     marginBottom: '1rem',
   },
   sectionHeading: {
@@ -416,6 +427,11 @@ const styles = {
     margin: '2.5rem 0 1rem',
   },
 
+  sealBlock: { textAlign: 'center', margin: '3rem auto 1rem', maxWidth: '340px' },
+  sealOrnament: { fontSize: '14px', color: '#D9B57A', letterSpacing: '0.4em', marginBottom: '1.5rem' },
+  sealArch: { display: 'flex', justifyContent: 'center', marginBottom: '1rem' },
+  sealLabel: { fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, margin: '0 0 1.5rem' },
+  sealBtn: { padding: '12px 32px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '14px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.06em', boxShadow: '0 4px 14px rgba(40,25,10,0.25)' },
   notFound: { textAlign: 'center', padding: '3rem 1rem' },
   notFoundTitle: {
     fontSize: '20px', color: '#2A1F15',

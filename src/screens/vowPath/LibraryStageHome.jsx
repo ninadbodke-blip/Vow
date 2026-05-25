@@ -154,11 +154,22 @@ export default function LibraryStageHome() {
           <p style={styles.subtitle}>{config.subtitle}</p>
           <div style={styles.heroDivider}></div>
           <p style={styles.progressNote}>
-            <strong style={{ color: '#854F0B', fontVariantNumeric: 'tabular-nums' }}>
-              {unlockedCount}
-            </strong>
-            {' '}of {config.totalDays} chapters unlocked
+            You have unlocked <span style={styles.progressEmph}>{unlockedCount}</span> of {config.totalDays} manuscripts.
           </p>
+          <div style={styles.tallyMarks}>
+            {Array.from({ length: config.totalDays }).map((_, i) => {
+              const n = i + 1
+              const done = isUnlocked(n)
+              const next = !done && isUnlocked(n - 1)
+              return (
+                <span key={i} style={{
+                  ...styles.tallyMark,
+                  color: done ? '#D9B57A' : next ? '#854F0B' : '#C9BBA3',
+                  opacity: done || next ? 1 : 0.7,
+                }}>{done ? '✦' : next ? '✧' : '·'}</span>
+              )
+            })}
+          </div>
         </div>
 
         {/* CHAPTERS — grouped or flat */}
@@ -169,10 +180,12 @@ export default function LibraryStageHome() {
             return (
               <div key={group.title} style={styles.groupSection}>
                 <div style={styles.groupHeader}>
+                  <div style={styles.groupOrnament}>✧ · ✦ · ✧</div>
                   <p style={styles.groupTitle}>{group.title}</p>
                   <p style={styles.groupSubtitle}>{group.subtitle}</p>
                 </div>
                 <div style={styles.dayList}>
+                  <div style={styles.thread} />
                   {groupDays.map(dr => (
                     <DayRow
                       key={dr.day}
@@ -189,6 +202,7 @@ export default function LibraryStageHome() {
         ) : (
           <div style={styles.flatSection}>
             <div style={styles.dayList}>
+              <div style={styles.thread} />
               {dayList.map(dr => (
                 <DayRow
                   key={dr.day}
@@ -213,44 +227,24 @@ function DayRow({ dr, stage, unlocked, navigate }) {
       onClick={() => unlocked ? navigate(`/library/${stage}/day/${dr.day}`) : null}
       disabled={!unlocked}
       style={{
-        ...styles.dayRow,
-        ...(unlocked ? {} : styles.dayRowLocked),
+        ...styles.tocRow,
+        ...(unlocked ? {} : styles.tocRowLocked),
+        cursor: unlocked ? 'pointer' : 'default',
       }}
     >
-      <div style={styles.dayNum}>
-        <span style={{
-          ...styles.dayNumText,
-          ...(unlocked ? {} : styles.dayNumTextLocked),
-        }}>
-          {String(dr.day).padStart(2, '0')}
+      <span style={{ ...styles.tocNode, color: unlocked ? '#D9B57A' : '#C9BBA3' }}>
+        {unlocked ? '✦' : '·'}
+      </span>
+      <span style={styles.tocBody}>
+        <span style={styles.tocTitleRow}>
+          <span style={styles.tocTitle}>{dr.title}</span>
+          <span style={styles.tocLeader} />
+          <span style={unlocked ? styles.tocMinutes : styles.tocAwaiting}>
+            {unlocked ? `${dr.readMinutes} min` : 'Awaiting'}
+          </span>
         </span>
-      </div>
-
-      <div style={styles.dayContent}>
-        <p style={{
-          ...styles.dayTitle,
-          ...(unlocked ? {} : styles.dayTitleLocked),
-        }}>
-          {dr.title}
-        </p>
-        <p style={{
-          ...styles.daySubtitle,
-          ...(unlocked ? {} : styles.daySubtitleLocked),
-        }}>
-          {dr.subtitle}
-        </p>
-      </div>
-
-      <div style={styles.dayMeta}>
-        {unlocked ? (
-          <>
-            <span style={styles.dayMinutes}>{dr.readMinutes} min</span>
-            <span style={styles.dayArrow}>›</span>
-          </>
-        ) : (
-          <span style={styles.dayLockIcon}>🔒</span>
-        )}
-      </div>
+        <span style={styles.tocSubtitle}>{dr.subtitle}</span>
+      </span>
     </button>
   )
 }
@@ -353,16 +347,17 @@ const styles = {
     marginBottom: '2rem',
   },
   groupHeader: {
-    marginBottom: '0.85rem',
-    paddingLeft: '4px',
+    textAlign: 'center',
+    marginBottom: '1.25rem',
+    marginTop: '0.5rem',
   },
   groupTitle: {
-    fontSize: '13px',
-    color: '#2A1F15',
+    fontSize: '12px',
+    color: '#854F0B',
     fontFamily: 'Georgia, serif',
     fontWeight: 500,
     textTransform: 'uppercase',
-    letterSpacing: '0.14em',
+    letterSpacing: '0.22em',
     margin: '0 0 4px',
   },
   groupSubtitle: {
@@ -374,9 +369,10 @@ const styles = {
     lineHeight: 1.5,
   },
   dayList: {
+    position: 'relative',
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '4px',
   },
   dayRow: {
     display: 'flex', alignItems: 'center',
@@ -462,6 +458,21 @@ const styles = {
     opacity: 0.5,
   },
 
+  progressEmph: { color: '#854F0B', fontVariantNumeric: 'tabular-nums', fontStyle: 'normal', fontWeight: 500 },
+  tallyMarks: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '7px', margin: '0.9rem auto 0', maxWidth: '320px' },
+  tallyMark: { fontSize: '14px', lineHeight: 1 },
+  groupOrnament: { fontSize: '12px', color: '#D9B57A', letterSpacing: '0.4em', marginBottom: '0.6rem' },
+  thread: { position: 'absolute', left: '15px', top: '14px', bottom: '14px', width: '1.5px', background: '#D9B57A', opacity: 0.4, zIndex: 0 },
+  tocRow: { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: '12px', width: '100%', background: 'transparent', border: 'none', textAlign: 'left', padding: '11px 4px', fontFamily: 'inherit' },
+  tocRowLocked: { opacity: 0.3 },
+  tocNode: { width: '28px', flexShrink: 0, textAlign: 'center', fontSize: '14px', lineHeight: '1.5', background: '#FAF7F1' },
+  tocBody: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '1px' },
+  tocTitleRow: { display: 'flex', alignItems: 'baseline', gap: 0 },
+  tocTitle: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.3 },
+  tocLeader: { flex: 1, borderBottom: '1px dotted #CDB791', margin: '0 8px 5px', minWidth: '14px' },
+  tocMinutes: { fontSize: '11px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontVariantNumeric: 'tabular-nums', flexShrink: 0 },
+  tocAwaiting: { fontSize: '10px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 500, flexShrink: 0, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  tocSubtitle: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
   errorBlock: { textAlign: 'center', padding: '3rem 1rem' },
   errorTitle: {
     fontSize: '20px', color: '#2A1F15',

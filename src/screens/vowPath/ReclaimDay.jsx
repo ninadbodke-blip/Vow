@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { isCadenceBypassed } from './utils/vowPathGating'
-import { canEnterReclaim, isReclaimVisit } from './utils/stageAccess'
 import {
   getReclaimDay,
   RECLAIM_TOTAL_DAYS,
@@ -67,7 +66,7 @@ export default function ReclaimDay() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!canEnterReclaim(progressRow)) {
+      if (!progressRow || progressRow.current_stage !== 'reclaim') {
         setAccessDenied(true)
         setAccessReason('You are not currently in Reclaim.')
         setAccessLoading(false)
@@ -190,7 +189,7 @@ export default function ReclaimDay() {
       }
 
       const wasLatestDay = dayNumber > (progress?.last_completed_day || 0)
-      if (wasLatestDay && !isReclaimVisit(progress)) {
+      if (wasLatestDay) {
         await supabase
           .from('vow_path_progress')
           .update({
@@ -232,13 +231,6 @@ export default function ReclaimDay() {
         console.error('Failed to save Day 5 artifact:', artifactError)
         alert('Could not save. Please try again.')
         setSaving(false)
-        return
-      }
-
-      // A relapse-support visit (Reclaim isn't your assigned stage) must not
-      // re-route your journey. Save the work, then return to the hub.
-      if (isReclaimVisit(progress)) {
-        navigate('/vow-path')
         return
       }
 
@@ -315,8 +307,8 @@ export default function ReclaimDay() {
             <div style={{ width: '40px' }}></div>
           </div>
           <div style={styles.arrivalContent}>
-            <div style={styles.dayLabel}>{dayLabel}</div>
-            <h1 style={styles.arrivalTitle}>{dayContent.arrivalTitle}</h1>
+            <div style={{ ...styles.dayLabel, letterSpacing: '0.3em', marginBottom: '1.75rem' }}>{dayLabel}</div>
+            <h1 style={{ ...styles.arrivalTitle, fontSize: '38px', fontStyle: 'italic', lineHeight: 1.18 }}>{dayContent.arrivalTitle}</h1>
             {dayContent.arrivalSubtitle && (
               <p style={styles.arrivalSubtitle}>{dayContent.arrivalSubtitle}</p>
             )}
@@ -412,8 +404,14 @@ export default function ReclaimDay() {
           </div>
 
           <div style={styles.closingHeaderBlock}>
-            <div style={styles.savedIcon}>✓</div>
-            <p style={styles.savedLabel}>Saved</p>
+                      <div style={styles.sealWrap} aria-hidden="true">
+            <svg viewBox="0 0 64 64" width="54" height="54">
+              <circle cx="32" cy="32" r="30" fill="none" stroke="#D9B57A" strokeWidth="1" opacity="0.45" />
+              <path d="M18 47 L18 30 A14 14 0 0 1 46 30 L46 47" fill="none" stroke="#D9B57A" strokeWidth="2" strokeLinecap="round" />
+              <path d="M32 22 L35.5 31 L32 40 L28.5 31 Z" fill="#D9B57A" />
+            </svg>
+          </div>
+          <p style={styles.sealLabel}>The artifact is sealed.</p>
           </div>
 
           {dayContent.closingLine && (
@@ -533,6 +531,8 @@ const styles = {
     alignItems: 'center',
     marginTop: '1rem', marginBottom: '1.25rem',
   },
+  sealWrap: { margin: '0 auto 1.1rem', display: 'flex', justifyContent: 'center' },
+  sealLabel: { fontSize: '12px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, margin: 0 },
   savedIcon: {
     width: '48px', height: '48px', borderRadius: '50%',
     background: 'linear-gradient(180deg, #EAF3DE 0%, #DCE9C8 100%)',

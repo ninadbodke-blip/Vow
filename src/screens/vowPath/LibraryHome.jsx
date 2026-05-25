@@ -100,65 +100,63 @@ export default function LibraryHome() {
 
         {/* HERO */}
         <div style={styles.hero}>
-          <div style={styles.heroOrnament}>· · ·</div>
+          <div style={styles.heroOrnament}>· ✦ ·</div>
           <h1 style={styles.title}>The Library</h1>
           <p style={styles.subtitle}>
             Companion essays for every day of the path. The science, the traditions,
             the reasoning underneath the work.
           </p>
-          <div style={styles.heroOrnament}>· · ·</div>
+          <div style={styles.heroOrnament}>· ✦ ·</div>
         </div>
 
-        {/* STAGE TILES */}
-        <div style={styles.tilesGrid}>
+        {/* THE ARCHIVE SHELVES */}
+        <div style={styles.shelfWrap}>
+          <div style={styles.thread} />
           {STAGES.map(stage => {
             const isActive = stage.status === 'active'
             const reached = isActive && isStageReached(stage.key)
-
+            const isActiveText = isActive && progress?.current_stage === stage.key
             return (
               <button
                 key={stage.key}
                 onClick={() => isActive ? navigate(`/library/${stage.key}`) : null}
                 disabled={!isActive}
                 style={{
-                  ...styles.tile,
-                  ...(isActive ? {} : styles.tileComingSoon),
+                  ...styles.shelfRow,
+                  ...(isActiveText ? styles.shelfRowActive : {}),
+                  ...(!isActive ? styles.shelfRowSoon : {}),
+                  cursor: isActive ? 'pointer' : 'default',
                 }}
               >
-                <div style={styles.tileTop}>
-                  <p style={{
-                    ...styles.tileLabel,
-                    ...(isActive ? {} : styles.tileLabelComingSoon),
-                  }}>
-                    {stage.label}
-                  </p>
-                  {isActive && (
-                    <span style={styles.tileChapters}>
-                      {stage.chapters} {stage.chapters === 1 ? 'chapter' : 'chapters'}
-                    </span>
-                  )}
-                  {!isActive && (
-                    <span style={styles.tileChaptersSoon}>Coming soon</span>
-                  )}
-                </div>
-
-                <p style={{
-                  ...styles.tileSubtitle,
-                  ...(isActive ? {} : styles.tileSubtitleComingSoon),
-                }}>
-                  {stage.subtitle}
-                </p>
-
-                {isActive && (
-                  <div style={styles.tileFooter}>
-                    {reached ? (
-                      <span style={styles.tileStatusReached}>Reached</span>
-                    ) : (
-                      <span style={styles.tileStatusLocked}>Read what's ahead</span>
+                <span style={{
+                  ...styles.shelfNode,
+                  color: (isActiveText || reached) ? '#D9B57A' : '#C9BBA3',
+                  background: isActiveText ? 'transparent' : '#FAF7F1',
+                }}>{(isActiveText || reached) ? '✦' : '·'}</span>
+                <span style={styles.shelfBody}>
+                  {isActiveText && <span style={styles.shelfEyebrowActive}>The active text</span>}
+                  {!isActive && <span style={styles.shelfEyebrowSoon}>Awaiting translation</span>}
+                  <span style={styles.shelfTitleRow}>
+                    <span style={{
+                      ...styles.shelfTitle,
+                      ...(isActiveText ? styles.shelfTitleActive : {}),
+                      ...(!isActive ? styles.shelfTitleSoon : {}),
+                    }}>{stage.label}</span>
+                    {isActive && (
+                      <span style={{ ...styles.shelfChapters, ...(isActiveText ? styles.shelfChaptersActive : {}) }}>
+                        {stage.chapters} {stage.chapters === 1 ? 'chapter' : 'chapters'}
+                      </span>
                     )}
-                    <span style={styles.tileArrow}>›</span>
-                  </div>
-                )}
+                  </span>
+                  <span style={{
+                    ...styles.shelfSubtitle,
+                    ...(isActiveText ? styles.shelfSubtitleActive : {}),
+                    ...(!isActive ? styles.shelfSubtitleSoon : {}),
+                  }}>{stage.subtitle}</span>
+                  {isActive && !isActiveText && (
+                    <span style={styles.shelfStatus}>{reached ? 'The volume is open.' : "Read what's ahead"}</span>
+                  )}
+                </span>
               </button>
             )
           })}
@@ -355,6 +353,25 @@ const styles = {
     color: '#854F0B',
     fontWeight: 500,
   },
+  shelfWrap: { position: 'relative', paddingLeft: '2px', marginBottom: '1.5rem' },
+  thread: { position: 'absolute', left: '15px', top: '16px', bottom: '16px', width: '1.5px', background: '#D9B57A', opacity: 0.45, zIndex: 0 },
+  shelfRow: { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: '12px', width: '100%', background: 'transparent', border: 'none', textAlign: 'left', padding: '14px 4px', fontFamily: 'inherit' },
+  shelfRowActive: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '18px 16px', margin: '6px 0', boxShadow: '0 10px 24px -10px rgba(40,25,10,0.45)' },
+  shelfRowSoon: { opacity: 0.3 },
+  shelfNode: { width: '28px', flexShrink: 0, textAlign: 'center', fontSize: '14px', lineHeight: '1.5' },
+  shelfBody: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px', paddingTop: '1px' },
+  shelfEyebrowActive: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  shelfEyebrowSoon: { fontSize: '10px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  shelfTitleRow: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px' },
+  shelfTitle: { fontSize: '19px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2, letterSpacing: '-0.01em' },
+  shelfTitleActive: { color: '#FAF7F1' },
+  shelfTitleSoon: { color: '#9C8C78' },
+  shelfChapters: { fontSize: '11px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 500, flexShrink: 0, fontVariantNumeric: 'tabular-nums' },
+  shelfChaptersActive: { color: '#D9B57A' },
+  shelfSubtitle: { fontSize: '13.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55 },
+  shelfSubtitleActive: { color: '#CBBA98' },
+  shelfSubtitleSoon: { color: '#9C8C78' },
+  shelfStatus: { fontSize: '12px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', marginTop: '2px' },
   footerNote: {
     textAlign: 'center',
     padding: '1rem 1rem 0',

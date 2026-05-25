@@ -302,7 +302,7 @@ export default function NoticeDay() {
             <div style={{ width: '40px' }}></div>
           </div>
           <div style={styles.arrivalContent}>
-            <div style={styles.dayLabel}>Day {dayNumber}</div>
+            <div style={styles.dayLabel}>Day {String(dayNumber).padStart(2, '0')}</div>
             <h1 style={styles.arrivalTitle}>{dayContent.arrivalTitle}</h1>
             {dayContent.arrivalSubtitle && (
               <p style={styles.arrivalSubtitle}>{dayContent.arrivalSubtitle}</p>
@@ -402,7 +402,9 @@ export default function NoticeDay() {
 
           <div style={styles.readingBlock}>
             {introParagraphs.map((para, i) => (
-              <p key={i} style={styles.readingPara}>{para}</p>
+              (i === 0 && para)
+                ? <p key={i} style={styles.readingPara}><span style={styles.dropCap}>{para.charAt(0)}</span>{para.slice(1)}</p>
+                : <p key={i} style={styles.readingPara}>{para}</p>
             ))}
           </div>
 
@@ -455,8 +457,14 @@ export default function NoticeDay() {
     return (
       <div style={styles.frame}>
         <div style={{ ...styles.phone, ...styles.centeredPhone }}>
-          <div style={styles.savedIcon}>✓</div>
-          <p style={styles.savedLabel}>Saved</p>
+          <div style={styles.sealWrap} aria-hidden="true">
+            <svg viewBox="0 0 64 64" width="54" height="54">
+              <circle cx="32" cy="32" r="30" fill="none" stroke="#D9B57A" strokeWidth="1" opacity="0.45" />
+              <path d="M18 47 L18 30 A14 14 0 0 1 46 30 L46 47" fill="none" stroke="#D9B57A" strokeWidth="2" strokeLinecap="round" />
+              <path d="M32 22 L35.5 31 L32 40 L28.5 31 Z" fill="#D9B57A" />
+            </svg>
+          </div>
+          <p style={styles.sealLabel}>The artifact is sealed.</p>
           <div style={styles.closingDivider}></div>
           <p style={styles.closingLine}>{dayContent.closingTitle}</p>
           {dayContent.closingBody && (
@@ -474,7 +482,7 @@ export default function NoticeDay() {
             onClick={() => navigate('/vow-path/notice')}
             style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
           >
-            {isFinalDay ? 'Back to overview' : 'Close'}
+            Return to the path
           </button>
         </div>
       </div>
@@ -547,16 +555,19 @@ const styles = {
     minWidth: '60px', textAlign: 'left',
   },
   dayLabel: {
-    fontSize: '12px', color: '#854F0B',
-    textTransform: 'uppercase', letterSpacing: '0.16em',
-    fontWeight: 500, marginBottom: '1rem',
+    fontSize: '11px', color: '#854F0B',
+    textTransform: 'uppercase', letterSpacing: '0.3em',
+    fontWeight: 500, marginBottom: '1.75rem',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   arrivalTitle: {
-    fontSize: '34px', color: '#2A1F15',
+    fontSize: '38px', color: '#2A1F15',
     margin: '0 0 1rem',
     fontFamily: 'Georgia, serif',
     fontWeight: 500,
-    lineHeight: 1.2,
+    fontStyle: 'italic',
+    lineHeight: 1.18,
+    letterSpacing: '-0.01em',
   },
   arrivalSubtitle: {
     fontSize: '16px', color: '#6B5C4A',
@@ -611,6 +622,16 @@ const styles = {
     fontFamily: 'Georgia, serif',
     lineHeight: 1.8,
     margin: '0 0 1.35rem',
+  },
+  dropCap: {
+    float: 'left', fontFamily: 'Georgia, serif', fontSize: '52px',
+    lineHeight: 0.82, color: '#854F0B', fontWeight: 500, margin: '4px 10px 0 0',
+  },
+  sealWrap: { margin: '0 auto 1.1rem', display: 'flex', justifyContent: 'center' },
+  sealLabel: {
+    fontSize: '12px', color: '#854F0B', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', textTransform: 'uppercase', letterSpacing: '0.2em',
+    fontWeight: 500, margin: 0,
   },
   savedIcon: {
     width: '56px', height: '56px',
