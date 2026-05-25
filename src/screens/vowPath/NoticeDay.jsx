@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { isCadenceBypassed } from './utils/vowPathGating'
+import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
 import { audioUrl } from './utils/audioUrl'
 import {
   getNoticeDay,
@@ -73,7 +74,7 @@ export default function NoticeDay() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'notice') {
+      if (!canEnterStage(progressRow, 'notice')) {
         setAccessDenied(true)
         setAccessReason('You have not started Notice yet.')
         setAccessLoading(false)
@@ -116,6 +117,7 @@ export default function NoticeDay() {
 
   function isDayUnlocked(progressRow, requestedDay) {
     if (isCadenceBypassed(progressRow)) return { allowed: true }
+    if (isExploringPastStage(progressRow, 'notice')) return { allowed: true }
 
     const lastCompleted = progressRow.last_completed_day || 0
     if (requestedDay === 1) return { allowed: true }
@@ -214,7 +216,7 @@ export default function NoticeDay() {
       }
 
       const wasLatestDay = dayNumber > (progress?.last_completed_day || 0)
-      if (wasLatestDay) {
+      if (wasLatestDay && !isExploringPastStage(progress, 'notice')) {
         await supabase
           .from('vow_path_progress')
           .update({

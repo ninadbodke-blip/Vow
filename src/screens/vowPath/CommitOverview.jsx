@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
 import {
   COMMIT_DAYS,
   COMMIT_TOTAL_DAYS,
@@ -35,7 +36,7 @@ export default function CommitOverview() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'commit') {
+      if (!canEnterStage(progressRow, 'commit')) {
         setAccessDenied(true)
         setLoaded(true)
         return
@@ -72,6 +73,7 @@ export default function CommitOverview() {
   const isDayTappable = (dayNum) => {
     if (import.meta.env.DEV) return true
     if (progress?.is_pilot_mode) return true
+    if (isExploringPastStage(progress, 'commit')) return true
     const status = getDayStatus(dayNum)
     return status === STATUS.COMPLETED || status === STATUS.CURRENT
   }

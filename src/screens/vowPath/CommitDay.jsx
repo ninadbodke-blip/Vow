@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { audioUrl } from './utils/audioUrl'
 import { isCadenceBypassed } from './utils/vowPathGating'
+import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
 import { getCommitDay, COMMIT_TOTAL_DAYS } from './data/commitContent'
 import { transitionFromCommit } from './utils/stageTransitions'
 
@@ -82,7 +83,7 @@ export default function CommitDay() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'commit') {
+      if (!canEnterStage(progressRow, 'commit')) {
         setAccessDenied(true)
         setAccessReason('You have not started Commit yet.')
         setAccessLoading(false)
@@ -125,6 +126,7 @@ export default function CommitDay() {
 
   function isDayUnlocked(progressRow, requestedDay) {
     if (isCadenceBypassed(progressRow)) return { allowed: true }
+    if (isExploringPastStage(progressRow, 'commit')) return { allowed: true }
 
     const lastCompleted = progressRow.last_completed_day || 0
     if (requestedDay === 1) return { allowed: true }
@@ -223,7 +225,7 @@ export default function CommitDay() {
       }
 
       const wasLatestDay = dayNumber > (progress?.last_completed_day || 0)
-      if (wasLatestDay) {
+      if (wasLatestDay && !isExploringPastStage(progress, 'commit')) {
         const updates = {
           last_completed_day: dayNumber,
           last_completed_at: new Date().toISOString(),

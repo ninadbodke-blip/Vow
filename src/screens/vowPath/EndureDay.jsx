@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { audioUrl } from './utils/audioUrl'
 import { isCadenceBypassed } from './utils/vowPathGating'
+import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
 import { getEndureDay, ENDURE_TOTAL_DAYS } from './data/endureContent'
 import { transitionFromEndure } from './utils/stageTransitions'
 
@@ -96,7 +97,7 @@ export default function EndureDay() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'endure') {
+      if (!canEnterStage(progressRow, 'endure')) {
         setAccessDenied(true)
         setAccessReason('You have not started Endure yet.')
         setAccessLoading(false)
@@ -139,6 +140,7 @@ export default function EndureDay() {
 
   function isDayUnlocked(progressRow, requestedDay) {
     if (isCadenceBypassed(progressRow)) return { allowed: true }
+    if (isExploringPastStage(progressRow, 'endure')) return { allowed: true }
 
     const lastCompleted = progressRow.last_completed_day || 0
     if (requestedDay === 1) return { allowed: true }
@@ -237,7 +239,7 @@ export default function EndureDay() {
       }
 
       const wasLatestDay = dayNumber > (progress?.last_completed_day || 0)
-      if (wasLatestDay) {
+      if (wasLatestDay && !isExploringPastStage(progress, 'endure')) {
         const updates = {
           last_completed_day: dayNumber,
           last_completed_at: new Date().toISOString(),

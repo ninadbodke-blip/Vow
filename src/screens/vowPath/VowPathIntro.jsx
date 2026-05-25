@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
-import VowPathMark from '../../components/VowPathMark'
+import { STAGE_ORDER } from './utils/stageAccess'
 
 // =====================================================================
 // VOW PATH HUB
@@ -117,24 +117,30 @@ export default function VowPathIntro() {
   const getStageStatus = (stageKey) => {
     if (!hasAssessment) return 'pre_assessment'
     if (stageKey === currentStage) return 'current'
-    if (visitedStages.has(stageKey)) return 'visited'
-    return 'locked'
+    // Reclaim is not a sequential stage — it's relapse support, always available.
+    if (stageKey === 'reclaim') return 'relapse_support'
+    const ci = STAGE_ORDER.indexOf(currentStage)
+    const ti = STAGE_ORDER.indexOf(stageKey)
+    if (ti >= 0 && ci >= 0 && ti < ci) return 'visited'   // past stage — explorable
+    return 'locked'   // future stage
   }
 
   const handleStageTap = (stageKey) => {
     const status = getStageStatus(stageKey)
     if (status === 'pre_assessment' || status === 'locked') return
+    if (status === 'relapse_support') {
+      // Reclaim is reached by re-checking in after a slip — a recent slip
+      // routes you there via the scoring matrix, without disturbing progress.
+      navigate('/vow-path/check')
+      return
+    }
     if (status === 'current') {
       navigate(`/vow-path/${stageKey}`)
       return
     }
     if (status === 'visited') {
-      if (STAGES_WITH_LIBRARY.includes(stageKey)) {
-        navigate(`/library/${stageKey}`)
-      } else {
-        // Build/Reclaim don't have library yet — fall back to overview
-        navigate(`/vow-path/${stageKey}`)
-      }
+      // Past stage — open it fully for exploration.
+      navigate(`/vow-path/${stageKey}`)
     }
   }
 
@@ -154,15 +160,11 @@ export default function VowPathIntro() {
     <div style={styles.frame}>
       <div style={styles.phone}>
 
-        {/* TOP NAV */}
-        <div style={styles.topRow}>
+        {/* HEADER */}
+        <div style={styles.header}>
           <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
-        </div>
-
-        {/* BRAND LOCKUP */}
-        <div style={styles.brandBlock}>
-          <VowPathMark size={58} theme="light" />
-          <p style={styles.brandWord}>Vow Path</p>
+          <p style={styles.headerTitle}>Vow Path</p>
+          <div style={{ width: '60px' }}></div>
         </div>
 
         {/* HERO */}
@@ -209,12 +211,13 @@ export default function VowPathIntro() {
         <div style={styles.tilesBlock}>
           {STAGES.map((stage) => {
             const status = getStageStatus(stage.key)
-            const isTappable = status === 'current' || status === 'visited'
+            const isTappable = status === 'current' || status === 'visited' || status === 'relapse_support'
 
             const tileStyle = {
               ...styles.tile,
               ...(status === 'current' ? styles.tileCurrent : {}),
               ...(status === 'visited' ? styles.tileVisited : {}),
+              ...(status === 'relapse_support' ? styles.tileRelapse : {}),
               ...(status === 'locked' ? styles.tileLocked : {}),
               ...(status === 'pre_assessment' ? styles.tilePreAssessment : {}),
               ...(isTappable ? {} : { cursor: 'default' }),
@@ -272,7 +275,10 @@ export default function VowPathIntro() {
                     <span style={styles.tagCurrent}>Continue</span>
                   )}
                   {status === 'visited' && (
-                    <span style={styles.tagVisited}>Review</span>
+                    <span style={styles.tagVisited}>Revisit</span>
+                  )}
+                  {status === 'relapse_support' && (
+                    <span style={styles.tagRelapse}>Support</span>
                   )}
                   {status === 'locked' && (
                     <span style={styles.lockIcon}>🔒</span>
@@ -352,20 +358,6 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     textTransform: 'uppercase',
     letterSpacing: '0.18em',
-  },
-  topRow: {
-    display: 'flex', alignItems: 'center',
-    marginBottom: '0.5rem',
-  },
-  brandBlock: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    gap: '10px', textAlign: 'center',
-    margin: '0.5rem 0 0.25rem',
-  },
-  brandWord: {
-    fontSize: '23px', fontWeight: 500, color: '#2A1F15',
-    fontFamily: 'Georgia, serif', letterSpacing: '-0.005em',
-    margin: 0, lineHeight: 1,
   },
 
   // HERO
@@ -495,6 +487,11 @@ const styles = {
   tilePreAssessment: {
     cursor: 'default',
   },
+  tileRelapse: {
+    background: 'linear-gradient(180deg, #FCF7F4 0%, #F6EDE7 100%)',
+    border: '0.5px dashed #D8C3B6',
+    boxShadow: '0 2px 8px rgba(120,80,60,0.06)',
+  },
   accentBar: {
     position: 'absolute',
     left: 0,
@@ -583,6 +580,17 @@ const styles = {
     color: '#854F0B',
     background: '#F4ECDD',
     border: '0.5px solid #E0D5C2',
+    padding: '5px 11px',
+    borderRadius: '999px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+  },
+  tagRelapse: {
+    fontSize: '10px',
+    fontWeight: 500,
+    color: '#8A5A44',
+    background: '#F3E7E0',
+    border: '0.5px solid #E2CFC4',
     padding: '5px 11px',
     borderRadius: '999px',
     textTransform: 'uppercase',

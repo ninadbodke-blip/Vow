@@ -3,214 +3,43 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../../LanguageContext'
 import { supabase } from '../../supabaseClient'
 
-function DemonFace({ selected }) {
-  if (selected) {
-    return (
-      <div style={demonStyles.selectedWrap}>
-        <div style={demonStyles.selectedIcon}>{selected.icon}</div>
-        <p style={demonStyles.selectedName}>{selected.name}</p>
-        <p style={demonStyles.tapToChange}>Tap to change</p>
-      </div>
-    )
-  }
-
+function BlackHole({ selected, lit }) {
+  const glow = lit || !!selected
   return (
     <svg viewBox="0 0 240 240" style={{ width: '100%', height: '100%' }}>
       <defs>
-        <radialGradient id="auraOuter" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="rgba(180,30,20,0.18)" />
-          <stop offset="60%" stopColor="rgba(180,30,20,0.05)" />
-          <stop offset="100%" stopColor="rgba(180,30,20,0)" />
+        <radialGradient id="voidGrad" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="#000000" />
+          <stop offset="52%" stopColor="#0A0705" />
+          <stop offset="80%" stopColor="#1C140D" />
+          <stop offset="100%" stopColor="#2A1F15" />
         </radialGradient>
-        <linearGradient id="bodyDark" x1="0.5" y1="0" x2="0.5" y2="1">
-          <stop offset="0%" stopColor="#3A0A0A" />
-          <stop offset="55%" stopColor="#1A0404" />
-          <stop offset="100%" stopColor="#080000" />
-        </linearGradient>
-        <linearGradient id="hornGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1A0202" />
-          <stop offset="50%" stopColor="#2A0808" />
-          <stop offset="100%" stopColor="#4A0E0E" />
-        </linearGradient>
-        <radialGradient id="eyeGlow" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#FFF0A0" />
-          <stop offset="20%" stopColor="#FFB040" />
-          <stop offset="55%" stopColor="#E8401A" />
-          <stop offset="85%" stopColor="#8A1010" />
-          <stop offset="100%" stopColor="#3A0202" />
-        </radialGradient>
-        <radialGradient id="eyeHalo" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="rgba(255,140,40,0.45)" />
-          <stop offset="100%" stopColor="rgba(255,140,40,0)" />
+        <radialGradient id="holeHalo" cx="50%" cy="50%">
+          <stop offset="58%" stopColor="rgba(217,181,122,0)" />
+          <stop offset="84%" stopColor="rgba(217,181,122,0.5)" />
+          <stop offset="100%" stopColor="rgba(217,181,122,0)" />
         </radialGradient>
       </defs>
-
-      {/* Outer red aura */}
-      <circle cx="120" cy="125" r="118" fill="url(#auraOuter)" />
-
-      {/* Smoke wisps - left */}
-      <path
-        d="M 35 220 Q 50 180 40 140 Q 55 160 45 110"
-        stroke="rgba(60,20,10,0.2)"
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path
-        d="M 60 230 Q 75 200 70 175"
-        stroke="rgba(60,20,10,0.12)"
-        strokeWidth="1"
-        fill="none"
-        strokeLinecap="round"
-      />
-
-      {/* Smoke wisps - right */}
-      <path
-        d="M 205 220 Q 190 180 200 140 Q 185 160 195 110"
-        stroke="rgba(60,20,10,0.2)"
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path
-        d="M 180 230 Q 165 200 170 175"
-        stroke="rgba(60,20,10,0.12)"
-        strokeWidth="1"
-        fill="none"
-        strokeLinecap="round"
-      />
-
-      {/* Left horn - long, curved back */}
-      <path
-        d="M 72 92
-           Q 50 65, 32 36
-           Q 27 28, 35 30
-           Q 50 50, 65 75
-           Q 70 85, 72 92 Z"
-        fill="url(#hornGrad)"
-      />
-
-      {/* Right horn */}
-      <path
-        d="M 168 92
-           Q 190 65, 208 36
-           Q 213 28, 205 30
-           Q 190 50, 175 75
-           Q 170 85, 168 92 Z"
-        fill="url(#hornGrad)"
-      />
-
-      {/* Horn glints */}
-      <path
-        d="M 40 48 Q 36 40, 36 32"
-        stroke="rgba(200,80,40,0.45)"
-        strokeWidth="1"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path
-        d="M 200 48 Q 204 40, 204 32"
-        stroke="rgba(200,80,40,0.45)"
-        strokeWidth="1"
-        fill="none"
-        strokeLinecap="round"
-      />
-
-      {/* Main head - angular silhouette */}
-      <path
-        d="M 72 92
-           L 62 130
-           Q 60 165, 80 195
-           Q 100 215, 120 222
-           Q 140 215, 160 195
-           Q 180 165, 178 130
-           L 168 92
-           Q 145 80, 120 80
-           Q 95 80, 72 92 Z"
-        fill="url(#bodyDark)"
-      />
-
-      {/* Face contour shadows (cheeks) */}
-      <path
-        d="M 78 155 Q 88 200, 120 220 Q 100 205, 86 165 Z"
-        fill="rgba(0,0,0,0.5)"
-      />
-      <path
-        d="M 162 155 Q 152 200, 120 220 Q 140 205, 154 165 Z"
-        fill="rgba(0,0,0,0.5)"
-      />
-
-      {/* Eye halos */}
-      <ellipse cx="95" cy="135" rx="24" ry="16" fill="url(#eyeHalo)" />
-      <ellipse cx="145" cy="135" rx="24" ry="16" fill="url(#eyeHalo)" />
-
-      {/* Eyes - angular almond */}
-      <path
-        d="M 78 132
-           Q 90 124, 110 132
-           Q 110 141, 100 143
-           Q 85 143, 78 138 Z"
-        fill="url(#eyeGlow)"
-      />
-      <path
-        d="M 162 132
-           Q 150 124, 130 132
-           Q 130 141, 140 143
-           Q 155 143, 162 138 Z"
-        fill="url(#eyeGlow)"
-      />
-
-      {/* Eye bright spots */}
-      <ellipse cx="95" cy="132" rx="3" ry="2" fill="#FFF6D0" opacity="0.9" />
-      <ellipse cx="145" cy="132" rx="3" ry="2" fill="#FFF6D0" opacity="0.9" />
-
-      {/* Vertical slit pupils */}
-      <path d="M 95 127 Q 96.5 134, 95 141 Q 93.5 134, 95 127 Z" fill="#000" />
-      <path d="M 145 127 Q 146.5 134, 145 141 Q 143.5 134, 145 127 Z" fill="#000" />
-
-      {/* Brow ridge shadows */}
-      <path d="M 75 121 Q 95 115, 115 124 Q 95 128, 75 126 Z" fill="#000" opacity="0.65" />
-      <path d="M 125 124 Q 145 115, 165 121 Q 145 128, 125 128 Z" fill="#000" opacity="0.65" />
-
-      {/* Jagged fang-mouth */}
-      <path
-        d="M 88 175
-           L 92 185 L 98 175 L 102 185 L 108 175 L 112 185 L 118 175 L 122 185
-           L 128 175 L 132 185 L 138 175 L 142 185 L 148 175 L 152 184
-           Q 135 196, 120 197 Q 105 196, 88 175 Z"
-        fill="#000"
-        opacity="0.95"
-      />
-
-      {/* Mouth inner depth */}
-      <path
-        d="M 100 185 Q 120 193, 140 185 Q 130 196, 120 196 Q 110 196, 100 185 Z"
-        fill="#1A0204"
-      />
+      <circle cx="120" cy="120" r="116" fill="url(#holeHalo)" opacity={glow ? 1 : 0} style={{ transition: 'opacity 0.5s ease' }} />
+      <circle cx="120" cy="120" r="92" fill="url(#voidGrad)" />
+      <circle cx="120" cy="120" r="92" fill="none" stroke={glow ? '#D9B57A' : '#3A2A1C'} strokeWidth={glow ? 3 : 2} opacity={glow ? 0.95 : 0.55} style={{ transition: 'stroke 0.5s ease, opacity 0.5s ease' }} />
+      <circle cx="120" cy="120" r="62" fill="none" stroke="rgba(217,181,122,0.16)" strokeWidth="1">
+        <animate attributeName="opacity" values="0.10; 0.28; 0.10" dur="3.4s" repeatCount="indefinite" />
+        <animate attributeName="r" values="60; 66; 60" dur="3.4s" repeatCount="indefinite" />
+      </circle>
+      {selected && (
+        <text x="120" y="120" textAnchor="middle" dominantBaseline="central" fontSize="62">{selected.icon}</text>
+      )}
     </svg>
   )
 }
 
-const demonStyles = {
-  selectedWrap: {
-    width: '100%', height: '100%',
-    display: 'flex', flexDirection: 'column',
-    alignItems: 'center', justifyContent: 'center',
-    background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',
-    border: '2px solid #C5572C',
-    borderRadius: '50%',
-    boxShadow: '0 8px 24px rgba(197,87,44,0.2)',
-  },
-  selectedIcon: { fontSize: '64px', marginBottom: '8px' },
-  selectedName: {
-    fontSize: '16px', fontWeight: 600, color: '#2A1F15',
-    fontFamily: 'Georgia, serif', margin: 0,
-  },
-  tapToChange: {
-    fontSize: '11px', color: '#9C8C78',
-    margin: '4px 0 0', fontStyle: 'italic',
-  },
+const holeStyles = {
+  nameWrap: { textAlign: 'center', margin: '0 0 1.5rem' },
+  selectedName: { fontSize: '16px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0.25rem 0 0' },
+  hint: { fontSize: '12px', color: '#9C8C78', fontStyle: 'italic', margin: '0.25rem 0 0', fontFamily: 'Georgia, serif' },
 }
+
 
 export default function AddictionPicker({ onboardingDone }) {
   const { t } = useLang()
@@ -223,7 +52,7 @@ export default function AddictionPicker({ onboardingDone }) {
   const [error, setError] = useState(null)
   const [showFounderMessage, setShowFounderMessage] = useState(false)
   const [showAddictionList, setShowAddictionList] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [lighting, setLighting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -255,7 +84,7 @@ export default function AddictionPicker({ onboardingDone }) {
 
   const handleNext = async () => {
     if (!selected) {
-      setError('Tap the face above to name your vice.')
+      setError('Tap the void above to name it.')
       return
     }
 
@@ -300,10 +129,27 @@ export default function AddictionPicker({ onboardingDone }) {
     }
   }
 
-  const filteredAddictions = addictions.filter(a => {
-    if (!searchQuery) return true
-    return a.name.toLowerCase().includes(searchQuery.toLowerCase())
-  })
+  // Curated pilot list. Each entry maps to whatever real addiction_types row
+  // exists; MDMA + Ecstasy collapse into one. Everything else stays hidden.
+  const ALLOWED = [
+    { match: ['cigarette', 'smok', 'nicotine', 'tobacco'] },
+    { match: ['marijuana', 'cannabis', 'weed'] },
+    { match: ['alcohol'] },
+    { match: ['mdma', 'ecstasy', 'molly'], display: 'MDMA / Ecstasy' },
+    { match: ['heroin'] },
+    { match: ['porn'] },
+    { match: ['gambl', 'betting'] },
+  ]
+  const displayList = []
+  const usedIds = new Set()
+  for (const entry of ALLOWED) {
+    const row = addictions.find(r => {
+      if (usedIds.has(r.id)) return false
+      const hay = ((r.name || '') + ' ' + (r.slug || '')).toLowerCase()
+      return entry.match.some(m => hay.includes(m))
+    })
+    if (row) { usedIds.add(row.id); displayList.push(entry.display ? { ...row, name: entry.display } : row) }
+  }
 
   if (loading) {
     return (
@@ -317,22 +163,31 @@ export default function AddictionPicker({ onboardingDone }) {
     <div style={styles.frame}>
       <div style={styles.card}>
         <h1 style={styles.title}>
-          Which vice do you vow to address?
+          What's pulling at you?
         </h1>
         <p style={styles.subtitle}>
-          Tap the face below to name it.
+          Tap the void to light it up — then name it.
         </p>
 
         <button
-          onClick={() => setShowAddictionList(true)}
+          onClick={() => {
+            if (selected) { setShowAddictionList(true); return }
+            setLighting(true)
+            setTimeout(() => setShowAddictionList(true), 420)
+          }}
           style={styles.demonBtn}
-          aria-label="Pick your vice"
+          aria-label="Light it up"
         >
-          <DemonFace selected={selected} />
+          <BlackHole selected={selected} lit={lighting} />
         </button>
 
-        {!selected && (
-          <p style={styles.hintText}>Tap to choose</p>
+        {selected ? (
+          <div style={holeStyles.nameWrap}>
+            <p style={holeStyles.selectedName}>{selected.name}</p>
+            <p style={holeStyles.hint}>Tap to change</p>
+          </div>
+        ) : (
+          <p style={styles.hintText}>{lighting ? 'Lighting it up…' : 'Tap to light it up'}</p>
         )}
 
         {error && <div style={styles.err}>{error}</div>}
@@ -345,35 +200,26 @@ export default function AddictionPicker({ onboardingDone }) {
             ...(selected && !saving ? styles.btnPrimary : styles.btnDisabled),
           }}
         >
-          {saving ? 'Saving...' : (selected ? 'Continue' : 'Pick first')}
+          {saving ? 'Saving...' : (selected ? 'Continue' : 'Light it up first')}
         </button>
       </div>
 
       {/* ADDICTION LIST MODAL */}
       {showAddictionList && (
-        <div style={styles.listModal} onClick={() => setShowAddictionList(false)}>
+        <div style={styles.listModal} onClick={() => { setShowAddictionList(false); setLighting(false) }}>
           <div style={styles.listSheet} onClick={(e) => e.stopPropagation()}>
             <div style={styles.sheetHandle}></div>
-            <p style={styles.sheetTitle}>Pick your vice</p>
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={styles.searchInput}
-              autoFocus
-            />
+            <p style={styles.sheetTitle}>Name what's pulling at you</p>
             <div style={styles.listGrid}>
-              {filteredAddictions.length === 0 ? (
-                <p style={styles.emptyMsg}>No matches found.</p>
+              {displayList.length === 0 ? (
+                <p style={styles.emptyMsg}>Options didn't load — please refresh.</p>
               ) : (
-                filteredAddictions.map(a => (
+                displayList.map(a => (
                   <button
                     key={a.id}
                     onClick={() => {
                       setSelected(a)
                       setShowAddictionList(false)
-                      setSearchQuery('')
                       setError(null)
                     }}
                     style={styles.listItem}
@@ -384,10 +230,7 @@ export default function AddictionPicker({ onboardingDone }) {
                 ))
               )}
             </div>
-            <button
-              onClick={() => setShowAddictionList(false)}
-              style={styles.closeSheet}
-            >
+            <button onClick={() => { setShowAddictionList(false); setLighting(false) }} style={styles.closeSheet}>
               Close
             </button>
           </div>
@@ -398,21 +241,18 @@ export default function AddictionPicker({ onboardingDone }) {
       {showFounderMessage && (
         <div style={founderStyles.modal}>
           <div style={founderStyles.modalCard}>
-            <div style={founderStyles.waveIcon}>👋</div>
-            <h3 style={founderStyles.title}>Welcome to Vow.</h3>
+            <div style={founderStyles.flame} aria-hidden="true">
+              <svg viewBox="0 0 24 32" width="26" height="34">
+                <path d="M12 1 C 13 8, 20 10, 18 19 C 17.5 26, 12 31, 12 31 C 12 31, 6.5 26, 6 19 C 4 10, 11 8, 12 1 Z" fill="#D9B57A" />
+                <path d="M12 12 C 13 16, 15 18, 14 23 C 13.5 27, 12 30, 12 30 C 12 30, 10.5 27, 10 23 C 9 18, 11 16, 12 12 Z" fill="#FBE3B8" />
+              </svg>
+            </div>
             <p style={founderStyles.body}>
-              I built this app after battling substance abuse for 15 years.
-              With the support of my loved ones, I was able to overcome it.
+              It took me 15 years to put this down, and I couldn't have done it alone. This app is the hand I wish I'd had sooner.
             </p>
-            <p style={founderStyles.bodyEmphasis}>
-              I'm sharing this to remind you — it's not impossible.<br />
-              You can do this too.
-            </p>
-            <div style={founderStyles.signature}>— Ninad, founder</div>
-            <button
-              onClick={() => setShowFounderMessage(false)}
-              style={founderStyles.btn}
-            >
+            <p style={founderStyles.welcome}>Welcome.</p>
+            <div style={founderStyles.signature}>— Ninad</div>
+            <button onClick={() => setShowFounderMessage(false)} style={founderStyles.btn}>
               Begin
             </button>
           </div>
@@ -631,6 +471,8 @@ const founderStyles = {
     textAlign: 'center',
   },
   waveIcon: { fontSize: '40px', marginBottom: '1rem' },
+  flame: { display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' },
+  welcome: { fontSize: '16px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 1.25rem' },
   title: {
     fontSize: '22px', fontWeight: 600, color: '#2A1F15',
     margin: '0 0 1rem', fontFamily: 'Georgia, serif',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
 import {
   REFLECT_V2_DAYS as REFLECT_DAYS,
   REFLECT_V2_TOTAL_DAYS as REFLECT_TOTAL_DAYS,
@@ -37,7 +38,7 @@ export default function ReflectOverview() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'reflect') {
+      if (!canEnterStage(progressRow, 'reflect')) {
         setAccessDenied(true)
         setLoaded(true)
         return
@@ -75,6 +76,7 @@ export default function ReflectOverview() {
   const isDayTappable = (dayNum) => {
     if (import.meta.env.DEV) return true
     if (progress?.is_pilot_mode) return true
+    if (isExploringPastStage(progress, 'reflect')) return true
     const status = getDayStatus(dayNum)
     return status === STATUS.COMPLETED || status === STATUS.CURRENT
   }

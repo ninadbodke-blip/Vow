@@ -3,18 +3,18 @@ import { useNavigate } from 'react-router-dom'
 
 const slides = [
   {
-    title: 'It begins as a\nquiet decision.',
-    body: 'A single spark against years of autopilot.',
+    title: 'It begins\nquietly.',
+    body: 'One decision. One spark.',
     illustration: 'spark',
   },
   {
-    title: 'Willpower is\na finite resource.',
-    body: 'Protect the spark. Build the psychological infrastructure to shield it from the wind.',
+    title: "Willpower fades.\nSystems don't.",
+    body: "We'll build yours.",
     illustration: 'lantern',
   },
   {
-    title: 'Take back\nyour capital.',
-    body: 'Time, energy, identity. Watch the fire grow fierce. Step inside.',
+    title: 'Reclaim\nwhat it took.',
+    body: 'Time. Energy. You. Step in.',
     illustration: 'furnace',
   },
 ]
@@ -121,9 +121,21 @@ export default function Welcome() {
   const [idx, setIdx] = useState(0)
 
   const isLast = idx === slides.length - 1
-  const next = () => { if (!isLast) setIdx(idx + 1) }
+  const next = () => setIdx(i => (i < slides.length - 1 ? i + 1 : i))
+  const prev = () => setIdx(i => (i > 0 ? i - 1 : i))
   const skip = () => navigate('/signup')
   const ignite = () => navigate('/signup')
+
+  // Swipe left = forward, right = back. Taps (dx ~ 0) pass through to buttons.
+  const swipeX = useRef(null)
+  const onSwipeStart = (e) => { swipeX.current = e.clientX }
+  const onSwipeEnd = (e) => {
+    if (swipeX.current == null) return
+    const dx = e.clientX - swipeX.current
+    swipeX.current = null
+    if (Math.abs(dx) < 45) return
+    if (dx < 0) next(); else prev()
+  }
 
   const slide = slides[idx]
   const lit = slides.length > 1 ? idx / (slides.length - 1) : 1
@@ -138,7 +150,7 @@ export default function Welcome() {
         }}
       />
 
-      <div style={styles.shell}>
+      <div style={styles.shell} onPointerDown={onSwipeStart} onPointerUp={onSwipeEnd} onPointerLeave={() => { swipeX.current = null }}>
         <button onClick={skip} style={styles.skipBtn}>Skip</button>
 
         <div style={styles.illustration}>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { isCadenceBypassed } from './utils/vowPathGating'
+import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
 import {
   getBuildDay,
   BUILD_TOTAL_DAYS,
@@ -60,7 +61,7 @@ export default function BuildDay() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'build') {
+      if (!canEnterStage(progressRow, 'build')) {
         setAccessDenied(true)
         setAccessReason('You have not reached Build yet.')
         setAccessLoading(false)
@@ -129,6 +130,7 @@ export default function BuildDay() {
 
   function isDayUnlocked(progressRow, requestedDay, week) {
     if (isCadenceBypassed(progressRow)) return { allowed: true }
+    if (isExploringPastStage(progressRow, 'build')) return { allowed: true }
     if (requestedDay <= week) return { allowed: true }
     return {
       allowed: false,
@@ -195,7 +197,7 @@ export default function BuildDay() {
       }
 
       const wasLatestDay = dayNumber > (progress?.last_completed_day || 0)
-      if (wasLatestDay) {
+      if (wasLatestDay && !isExploringPastStage(progress, 'build')) {
         await supabase
           .from('vow_path_progress')
           .update({

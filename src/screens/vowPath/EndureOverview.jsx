@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
 import {
   ENDURE_DAYS,
   ENDURE_TOTAL_DAYS,
@@ -35,7 +36,7 @@ export default function EndureOverview() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'endure') {
+      if (!canEnterStage(progressRow, 'endure')) {
         setAccessDenied(true)
         setLoaded(true)
         return
@@ -72,6 +73,7 @@ export default function EndureOverview() {
   const isDayTappable = (dayNum) => {
     if (import.meta.env.DEV) return true
     if (progress?.is_pilot_mode) return true
+    if (isExploringPastStage(progress, 'endure')) return true
     const status = getDayStatus(dayNum)
     return status === STATUS.COMPLETED || status === STATUS.CURRENT
   }
