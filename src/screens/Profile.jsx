@@ -337,64 +337,55 @@ export default function Profile() {
           <VowBrandMark />
           <button
             onClick={() => setShowSettings(true)}
-            style={styles.gearBtn}
+            style={styles.settingsLink}
             aria-label="Settings"
           >
-            ⚙
+            Settings
           </button>
         </div>
 
-        {/* IDENTITY CARD */}
-        <div style={styles.identityCard}>
-          <div style={styles.avatar}>
+        {/* THE FRONTISPIECE */}
+        <div style={styles.frontispiece}>
+          <div style={styles.monogram}>
             {(profile?.full_name || 'V').charAt(0).toUpperCase()}
           </div>
-          <div style={styles.identityText}>
-            {editingName ? (
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                <input
-                  value={nameDraft}
-                  onChange={(e) => setNameDraft(e.target.value)}
-                  style={styles.inlineInput}
-                  autoFocus
-                />
-                <button onClick={saveName} style={styles.miniBtn}>✓</button>
+          {editingName ? (
+            <div style={styles.nameEditWrap}>
+              <input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                style={styles.nameInput}
+                autoFocus
+              />
+              <div style={styles.nameEditActions}>
+                <button onClick={saveName} style={styles.nameSave}>Save</button>
                 <button
                   onClick={() => { setEditingName(false); setNameDraft(profile?.full_name || '') }}
-                  style={styles.miniBtnSecondary}
+                  style={styles.nameCancel}
                 >
-                  ✕
+                  Cancel
                 </button>
               </div>
-            ) : (
-              <>
-                <div style={styles.nameLine}>
-                  <span style={styles.nameText}>
-                    {profile?.full_name || 'Your name'}
-                  </span>
-                  <button
-                    onClick={() => setEditingName(true)}
-                    style={styles.editIcon}
-                    aria-label="Edit name"
-                  >
-                    ✎
-                  </button>
-                </div>
-                <p style={styles.emailText}>{user?.email}</p>
-                {stage && (
-                  <span style={styles.stageBadge}>{STAGE_LABELS[stage]} path</span>
-                )}
-              </>
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              <button onClick={() => setEditingName(true)} style={styles.nameBtn} aria-label="Edit name">
+                <span style={styles.frontName}>{profile?.full_name || 'Your name'}</span>
+              </button>
+              <p style={styles.frontEmail}>{user?.email}</p>
+              {stage && (
+                <p style={styles.frontStage}>{STAGE_LABELS[stage]} path</p>
+              )}
+            </>
+          )}
         </div>
 
-        {/* WHY I STARTED */}
-        <div style={styles.whySection}>
+        {/* THE EPIGRAPH — the vow */}
+        <div style={styles.epigraphSection}>
           <p style={styles.sectionLabel}>Why I started</p>
 
           {editingWhy ? (
-            <div style={styles.whyEditCard}>
+            <div style={styles.whyEditWrap}>
               <textarea
                 value={whyDraft}
                 onChange={(e) => setWhyDraft(e.target.value)}
@@ -406,91 +397,112 @@ export default function Profile() {
               <div style={styles.whyEditActions}>
                 <button
                   onClick={() => { setEditingWhy(false); setWhyDraft(profile?.bio || '') }}
-                  style={styles.btnGhost}
+                  style={styles.epLinkMuted}
                 >
                   Cancel
                 </button>
-                <button onClick={saveWhy} style={styles.btnDark}>Save</button>
+                <button onClick={saveWhy} style={styles.epLink}>Save</button>
               </div>
             </div>
           ) : fullBio ? (
-            <div style={styles.whyCard}>
-              <p style={styles.whyText}>
-                {showFullWhy ? fullBio : (bioPreview + (hasMore ? '...' : ''))}
+            <div style={styles.epigraph}>
+              <p style={styles.epigraphText}>
+                <span style={styles.epigraphDropCap}>{(showFullWhy ? fullBio : bioPreview).charAt(0)}</span>
+                {(showFullWhy ? fullBio : (bioPreview + (hasMore ? '…' : ''))).slice(1)}
               </p>
-              <div style={styles.whyFooter}>
+              <div style={styles.epigraphFooter}>
                 {hasMore && (
-                  <button onClick={() => setShowFullWhy(!showFullWhy)} style={styles.whyLink}>
+                  <button onClick={() => setShowFullWhy(!showFullWhy)} style={styles.epLink}>
                     {showFullWhy ? 'Show less' : 'Read more'}
                   </button>
                 )}
-                <button onClick={() => setEditingWhy(true)} style={styles.whyLinkMuted}>
+                <button onClick={() => setEditingWhy(true)} style={styles.epLinkMuted}>
                   Edit
                 </button>
               </div>
             </div>
           ) : (
-            <button onClick={() => setEditingWhy(true)} style={styles.whyEmptyBtn}>
-              <span style={{ fontSize: '18px', marginRight: '8px' }}>✎</span>
-              Write your why
+            <button onClick={() => setEditingWhy(true)} style={styles.epEmptyBtn}>
+              <span style={styles.epEmptyPlus}>+</span>
+              <span style={styles.epEmptyText}>Inscribe your vow…</span>
             </button>
           )}
         </div>
 
+        {/* THE LEDGER */}
+        {stage && (
+          <div style={styles.ledger}>
+            <div style={styles.ledgerCol}>
+              <p style={styles.ledgerNum}>{daysOnTracker}</p>
+              <p style={styles.ledgerLabel}>Days on the path</p>
+            </div>
+            <div style={styles.ledgerDivider} />
+            <div style={styles.ledgerCol}>
+              <p style={styles.ledgerWord}>{STAGE_LABELS[stage]}</p>
+              <p style={styles.ledgerLabel}>Current stage</p>
+            </div>
+          </div>
+        )}
+
         {/* YOUR PATH */}
         <div style={styles.section}>
           <p style={styles.sectionLabel}>Your path</p>
-          <div style={styles.pathLinks}>
-            <button
-              onClick={() => setShowStages(s => !s)}
-              style={styles.pathRow}
-            >
-              <div style={styles.pathRowText}>
-                <p style={styles.pathRowLabel}>Move to a different stage</p>
-                <p style={styles.pathRowHelper}>
-                  Recovery isn't a straight line. Jump to where you actually are.
-                </p>
-              </div>
-              <span style={styles.linkArrow}>{showStages ? '⌄' : '›'}</span>
-            </button>
+          <button onClick={() => setShowStages(s => !s)} style={styles.moveRow}>
+            <span style={styles.moveRowText}>
+              <span style={styles.moveRowLabel}>Move to a different stage</span>
+              <span style={styles.moveRowHelper}>
+                Recovery isn't a straight line. Jump to where you actually are.
+              </span>
+            </span>
+            <span style={styles.moveArrow}>{showStages ? '⌄' : '›'}</span>
+          </button>
 
-            {showStages && (
-              <div style={styles.stageNav}>
-                {STAGE_META.map(st => {
-                  const isCurrent = st.key === stage
-                  const locked = st.key === 'build' && !buildUnlocked
-                  return (
-                    <button
-                      key={st.key}
-                      onClick={() => goToStage(st.key)}
-                      disabled={moving || isCurrent}
-                      style={{ ...styles.stageRow, ...(isCurrent ? styles.stageRowCurrent : {}), ...(locked ? styles.stageRowLocked : {}) }}
-                    >
-                      <div style={{ ...styles.stageCircle, ...(isCurrent ? styles.stageCircleCurrent : {}) }}>
-                        <span>{locked ? '🔒' : st.icon}</span>
-                      </div>
-                      <div style={styles.stageBand}>
-                        <p style={styles.stageRowLabel}>
-                          {st.label}
-                          {isCurrent && <span style={styles.stageHereTag}> · you're here</span>}
-                          {locked && <span style={styles.stageLockTag}> · unlocks at 30 days</span>}
-                        </p>
-                        <p style={styles.stageRowDesc}>{st.desc}</p>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-            <div style={styles.linkDivider}></div>
-            <button onClick={signOut} style={styles.pathRow}>
-              <div style={styles.pathRowText}>
-                <p style={{ ...styles.pathRowLabel, color: '#B23B3B' }}>Sign out</p>
-              </div>
-              <span style={styles.linkArrow}>›</span>
-            </button>
-          </div>
+          {showStages && (
+            <div style={styles.threadWrap}>
+              <div style={styles.thread} />
+              {STAGE_META.map((st, i) => {
+                const isCurrent = st.key === stage
+                const locked = st.key === 'build' && !buildUnlocked
+                return (
+                  <button
+                    key={st.key}
+                    onClick={() => goToStage(st.key)}
+                    disabled={moving || isCurrent}
+                    style={{
+                      ...styles.threadRow,
+                      ...(isCurrent ? styles.threadRowCurrent : {}),
+                      ...(locked ? styles.threadRowLocked : {}),
+                      cursor: (moving || isCurrent) ? 'default' : 'pointer',
+                    }}
+                  >
+                    <span style={{
+                      ...styles.threadNode,
+                      ...(isCurrent ? styles.threadNodeCurrent : {}),
+                      background: isCurrent ? 'transparent' : '#FAF7F1',
+                    }}>{String(i + 1).padStart(2, '0')}</span>
+                    <span style={styles.threadBody}>
+                      {isCurrent && <span style={styles.currentEyebrow}>Your current chapter</span>}
+                      <span style={{
+                        ...styles.threadLabel,
+                        ...(isCurrent ? styles.threadLabelCurrent : {}),
+                      }}>
+                        {st.label}
+                        {locked && <span style={styles.lockTag}> · unlocks at 30 days</span>}
+                      </span>
+                      <span style={{
+                        ...styles.threadDesc,
+                        ...(isCurrent ? styles.threadDescCurrent : {}),
+                      }}>{st.desc}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
+
+        {/* THE COLOPHON */}
+        <button onClick={signOut} style={styles.colophon}>Sign out of this volume</button>
 
         <BottomNav />
 
@@ -537,6 +549,62 @@ export default function Profile() {
 }
 
 const styles = {
+  settingsLink: { background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.18em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', padding: '6px 4px' },
+
+  frontispiece: { textAlign: 'center', padding: '1.5rem 0 1.75rem' },
+  monogram: { width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 auto 1.25rem', boxShadow: '0 6px 18px -4px rgba(40,25,10,0.4)' },
+  nameBtn: { background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0, margin: '0 auto', display: 'inline-block' },
+  frontName: { fontSize: '32px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.015em', borderBottom: '1px dotted #C8AE83', paddingBottom: '3px' },
+  nameEditWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' },
+  nameInput: { background: 'transparent', border: 'none', borderBottom: '1.5px solid #854F0B', fontSize: '26px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, textAlign: 'center', outline: 'none', padding: '2px 4px', width: '80%', maxWidth: '280px' },
+  nameEditActions: { display: 'flex', gap: '20px', justifyContent: 'center' },
+  nameSave: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  nameCancel: { background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  frontEmail: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0.9rem 0 0' },
+  frontStage: { fontSize: '10px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, margin: '0.6rem 0 0', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+
+  epigraphSection: { marginBottom: '1.5rem' },
+  whyEditWrap: { marginTop: '0.5rem' },
+  epigraph: { paddingLeft: '18px', borderLeft: '1.5px solid #D9B57A', marginTop: '0.85rem' },
+  epigraphText: { fontSize: '16px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6, margin: 0 },
+  epigraphDropCap: { float: 'left', fontFamily: 'Georgia, serif', fontStyle: 'normal', fontSize: '44px', lineHeight: 0.85, color: '#854F0B', fontWeight: 500, margin: '4px 9px 0 0' },
+  epigraphFooter: { display: 'flex', gap: '20px', marginTop: '1rem', paddingLeft: '18px' },
+  epLink: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.14em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', padding: 0 },
+  epLinkMuted: { background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.14em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', padding: 0 },
+  epEmptyBtn: { display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '16px 18px', marginTop: '0.85rem', background: 'transparent', border: '1px dashed #D9C7A6', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' },
+  epEmptyPlus: { fontSize: '20px', color: '#D9B57A', lineHeight: 1 },
+  epEmptyText: { fontSize: '14px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+
+  ledger: { display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 0 2rem', padding: '1.25rem 0', borderTop: '0.5px solid #E8DFD0', borderBottom: '0.5px solid #E8DFD0' },
+  ledgerCol: { flex: 1, textAlign: 'center' },
+  ledgerNum: { fontSize: '34px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0, lineHeight: 1, fontVariantNumeric: 'tabular-nums' },
+  ledgerWord: { fontSize: '24px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0, lineHeight: 1.1 },
+  ledgerLabel: { fontSize: '10px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 500, margin: '0.6rem 0 0', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  ledgerDivider: { width: '0.5px', alignSelf: 'stretch', background: '#E8DFD0' },
+
+  moveRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', width: '100%', padding: '4px 2px', background: 'transparent', border: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', marginTop: '0.5rem' },
+  moveRowText: { display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, minWidth: 0 },
+  moveRowLabel: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500 },
+  moveRowHelper: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
+  moveArrow: { fontSize: '18px', color: '#854F0B', flexShrink: 0 },
+
+  threadWrap: { position: 'relative', paddingLeft: '2px', marginTop: '1rem' },
+  thread: { position: 'absolute', left: '17px', top: '14px', bottom: '14px', width: '1.5px', background: '#D9B57A', opacity: 0.4, zIndex: 0 },
+  threadRow: { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: '14px', width: '100%', background: 'transparent', border: 'none', textAlign: 'left', padding: '11px 4px', fontFamily: 'inherit' },
+  threadRowCurrent: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '16px', margin: '6px 0', boxShadow: '0 10px 24px -10px rgba(40,25,10,0.45)' },
+  threadRowLocked: { opacity: 0.3 },
+  threadNode: { width: '30px', flexShrink: 0, textAlign: 'center', fontSize: '12px', fontWeight: 500, color: '#854F0B', fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums', lineHeight: '1.6', paddingTop: '1px' },
+  threadNodeCurrent: { color: '#D9B57A' },
+  threadBody: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px', paddingTop: '1px' },
+  currentEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  threadLabel: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.3 },
+  threadLabelCurrent: { color: '#FAF7F1' },
+  lockTag: { fontSize: '10px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  threadDesc: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
+  threadDescCurrent: { color: '#CBBA98' },
+
+  colophon: { display: 'block', margin: '2.5rem auto 1rem', background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.22em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+
   sheetOverlay: { position: 'fixed', inset: 0, background: 'rgba(36,23,16,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 },
   sheetCard: { width: '100%', maxWidth: '440px', background: '#FAF7F1', borderRadius: '24px 24px 0 0', padding: '24px 22px 28px', boxShadow: '0 -8px 40px rgba(40,25,10,0.25)' },
   sheetTitle: { fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 10px' },
