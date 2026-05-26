@@ -10,9 +10,7 @@ const ICONS = {
   ),
   mirror: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="6" y1="20" x2="6" y2="10" />
-      <line x1="12" y1="20" x2="12" y2="6" />
-      <line x1="18" y1="20" x2="18" y2="13" />
+      <path d="M12 3l1.9 6.1L20 11l-6.1 1.9L12 19l-1.9-6.1L4 11l6.1-1.9L12 3z" />
     </svg>
   ),
   motivation: (
@@ -31,7 +29,7 @@ const ICONS = {
 
 const TABS = [
   { key: 'home', label: 'Home', route: '/home', icon: ICONS.home, matchPrefix: false },
-  { key: 'mirror', label: 'Mirror', route: '/mirror', icon: ICONS.mirror, matchPrefix: true },
+  { key: 'mirror', label: 'Oracle', route: '/mirror', icon: ICONS.mirror, matchPrefix: true },
   { key: 'motivation', label: 'Motivation', route: '/motivation', icon: ICONS.motivation, matchPrefix: true },
   { key: 'path', label: 'Vow Path', route: '/vow-path', icon: <VowPathMark size={24} theme="light" />, matchPrefix: true },
 ]

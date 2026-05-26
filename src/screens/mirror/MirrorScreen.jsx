@@ -75,7 +75,7 @@ function weeklyReflection({ ciWeek, energyAvg, urge, grew }) {
       : `The pull came sharp and sudden this week, and each time it passed without you.`)
   }
   if (grew > 0) s.push(`And you left ${grew} ${grew === 1 ? 'mark' : 'marks'} of who you're becoming.`)
-  if (!s.length) return "A quiet week — little logged, and that's allowed. The Mirror keeps the longer view for whenever you return."
+  if (!s.length) return "A quiet week — little logged, and that's allowed. The Oracle keeps the longer view for whenever you return."
   return s.join(' ')
 }
 
@@ -102,7 +102,7 @@ function SundaySeal({ summary }) {
     return (
       <div style={styles.vaultCard}>
         <p style={styles.sealGlyph}>🔒</p>
-        <p style={styles.vaultTextItalic}>Gathering this week's evidence.<br />The Mirror unlocks on Sunday.</p>
+        <p style={styles.vaultTextItalic}>Gathering this week's evidence.<br />The Oracle unlocks on Sunday.</p>
       </div>
     )
   }
@@ -143,7 +143,7 @@ function OracleOfVow({ reflection }) {
       <div style={styles.oracleHead}>
         <span style={styles.oracleGlyph}>✦</span>
         <div>
-          <p style={styles.oracleEyebrow}>Oracle of Vow</p>
+          <p style={styles.oracleEyebrow}>This week’s reading</p>
           <p style={styles.oracleTitle}>{live ? 'This week, read closely.' : 'A weekly reflection, written for you.'}</p>
         </div>
       </div>
@@ -348,7 +348,7 @@ export default function MirrorScreen() {
           <div style={styles.emptyBlock}>
             <div style={styles.ornament}>· · ·</div>
             <p style={styles.eyebrow}>Nothing to reflect yet</p>
-            <h1 style={styles.emptyTitle}>Your Mirror fills as you log.</h1>
+            <h1 style={styles.emptyTitle}>Your Oracle fills as you log.</h1>
             <p style={styles.emptyBody}>Check in, notice the pull, name what you're building. Come back in a week — the longer view will have formed here.</p>
             <div style={styles.ornament}>· · ·</div>
           </div>
@@ -356,7 +356,7 @@ export default function MirrorScreen() {
           <>
             <div style={styles.lead}>
               <p style={styles.leadEyebrow}>The longer view</p>
-              <h1 style={styles.pageTitle}>The Mirror</h1>
+              <h1 style={styles.pageTitle}>Oracle of Vow</h1>
               <p style={styles.pageSubtitle}>{firstName ? `${firstName}, the patterns underneath — gathered over time.` : 'The patterns underneath — gathered over time.'}</p>
             </div>
 
@@ -375,8 +375,8 @@ export default function MirrorScreen() {
               </div>
             ) : (
               <>
-                <SundaySeal summary={summary} />
                 <OracleOfVow reflection={aiReflection} />
+                <SundaySeal summary={summary} />
               </>
             )}
 
@@ -473,7 +473,7 @@ export default function MirrorScreen() {
               </div>
             )}
 
-            <p style={styles.footnote}>The Mirror reflects only what you log. It grows quieter or richer with you.</p>
+            <p style={styles.footnote}>The Oracle reflects only what you log. It grows quieter or richer with you.</p>
           </>
         )}
 
