@@ -5,6 +5,7 @@ import VowBrandMark from '../../components/VowBrandMark'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
+import StageWayfinder from './StageWayfinder'
 
 // ===================================================================
 // BUILD-FREE HOME  (Maintenance stage)
@@ -54,6 +55,26 @@ const ProfileIcon = () => (
 // ===================================================================
 // MAIN COMPONENT
 // ===================================================================
+const HoursGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </svg>
+)
+const AlertGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13 3L5 13h5l-1 8 8-10h-5l1-8z" />
+  </svg>
+)
+const AnchorGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="5" r="2.4" />
+    <path d="M12 7.4V21" />
+    <path d="M5 13a7 7 0 0 0 14 0" />
+    <path d="M8 12H4M20 12h-4" />
+  </svg>
+)
+
 export default function BuildFreeHome({ progress: initialProgress }) {
   const navigate = useNavigate()
 
@@ -68,6 +89,10 @@ export default function BuildFreeHome({ progress: initialProgress }) {
   const [blindspotToday, setBlindspotToday] = useState(null)
   const [ledger, setLedger] = useState([])
   const [loading, setLoading] = useState(true)
+  const [surfaceOpen, setSurfaceOpen] = useState(false)
+  const [crucibleOpen, setCrucibleOpen] = useState(false)
+  const [capitalOpen, setCapitalOpen] = useState(false)
+  const [actionOpen, setActionOpen] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -226,51 +251,169 @@ export default function BuildFreeHome({ progress: initialProgress }) {
     )
   }
 
+  const hour = new Date().getHours()
+  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
+  let cDays = 0, cClock = '00:00:00'
+  if (tracker) {
+    const elapsed = Math.max(0, nowTs - new Date(tracker.start_date).getTime())
+    const totalSec = Math.floor(elapsed / 1000)
+    cDays = Math.floor(totalSec / 86400)
+    const pad = (n) => String(n).padStart(2, '0')
+    cClock = `${pad(Math.floor((totalSec % 86400) / 3600))}:${pad(Math.floor((totalSec % 3600) / 60))}:${pad(totalSec % 60)}`
+  }
+  const weekOf = formatDateForDB(getMondayOfWeek(new Date()))
+  const forgedThisWeek = ledger.some(r => r.payload && r.payload.week_of === weekOf)
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
 
+        {/* WAYFINDING HEADER */}
         <div style={styles.topBar}>
           <VowBrandMark />
+          <StageWayfinder progress={progress} />
           <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
         </div>
 
-        <GreetingTile firstName={firstName} substanceLabel={progress.substance_label} />
+        {/* HERO — weekly identity work (dark vault) */}
+        <div style={styles.hero}>
+          <p style={styles.heroEyebrow}>Build · This week</p>
+          <p style={styles.heroGreeting}>{greet}{firstName ? `, ${firstName}` : ''}.</p>
 
-        {tracker ? (
-          <SlimCounterTile tracker={tracker} nowTs={nowTs} />
-        ) : (
-          <SetupPromptTile substanceLabel={progress.substance_label} navigate={navigate} />
-        )}
+          {tracker && (
+            <div style={styles.heroSlimRow}>
+              <span style={styles.heroSlimDot} />
+              <span style={styles.heroSlimDays}>{cDays} {cDays === 1 ? 'day' : 'days'}</span>
+              <span style={styles.heroSlimClock}>{cClock}</span>
+              <span style={styles.heroSlimFree}>free</span>
+            </div>
+          )}
 
-        <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+          <div style={styles.heroWeekBeat}>
+            <p style={styles.heroWeekLabel}>This week's proof</p>
+            {forgedThisWeek ? (
+              <div style={styles.heroDoneRow}>
+                <span style={styles.heroDoneTick}>✓</span>
+                <span style={styles.heroDoneText}>Forged this week.</span>
+                <button onClick={() => setCrucibleOpen(true)} style={styles.heroUpdate}>The ledger</button>
+              </div>
+            ) : (
+              <>
+                <p style={styles.heroReflection}>Forge an undeniable proof of who you are now — and name what it cost.</p>
+                <button onClick={() => setCrucibleOpen(true)} style={styles.heroCta}>Forge this week's proof</button>
+              </>
+            )}
+          </div>
 
-        <JournalTile stage="build" />
+          <div style={styles.heroCheckinRow}>
+            {todayCheckin ? (
+              <>
+                <span style={styles.heroDoneTick}>✓</span>
+                <span style={styles.heroDoneText}>You’ve checked in today.</span>
+                <button onClick={() => setCheckinOpen(true)} style={styles.heroUpdate}>Update</button>
+              </>
+            ) : (
+              <button onClick={() => setCheckinOpen(true)} style={styles.heroCheckinBtn}>Check in for today</button>
+            )}
+          </div>
+        </div>
 
-        <CapitalDrainTile latest={allocationLatest} onSave={handleSaveAllocation} />
+        {/* SECTION — stay sharp (the daily drift-scans) */}
+        <div style={styles.sectionWrap}>
+          <div style={styles.sectionHeader}>
+            <p style={styles.sectionTitle}>Stay sharp</p>
+            <p style={styles.sectionHint}>Complacency creeps in quietly. Catch the drift before it moves.</p>
+          </div>
+          <StressPillarsTile today={pillarsToday} onSave={handleSavePillars} />
+          <BlindspotRadarTile today={blindspotToday} onSave={handleSaveBlindspot} />
+        </div>
 
-        <StressPillarsTile today={pillarsToday} onSave={handleSavePillars} />
+        {/* SECTION — in your words */}
+        <div style={styles.sectionWrap}>
+          <div style={styles.sectionHeader}>
+            <p style={styles.sectionTitle}>In your words</p>
+          </div>
+          <JournalTile stage="build" />
+        </div>
 
-        <CrucibleTile ledger={ledger} onForge={handleForge} />
+        {/* TOOLS — glyph toolkit */}
+        <div style={styles.sectionWrap}>
+          <p style={styles.toolkitLabel}>Tools</p>
+          <div style={styles.toolkit}>
+            <button onClick={() => setCapitalOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><HoursGlyph /></span>
+              <span style={styles.toolLabel}>Where your hours go</span>
+            </button>
+            <button onClick={() => { if (tracker) setActionOpen(true) }} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><AlertGlyph /></span>
+              <span style={styles.toolLabel}>If it hits</span>
+            </button>
+            <button onClick={() => navigate('/anchors')} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><AnchorGlyph /></span>
+              <span style={styles.toolLabel}>Anchors</span>
+            </button>
+          </div>
+        </div>
 
-        <BlindspotRadarTile today={blindspotToday} onSave={handleSaveBlindspot} />
-
-        <AnchorsTile navigate={navigate} />
-
-        {tracker && (
-          <ActionTile
-            tracker={tracker}
-            navigate={navigate}
-            slipCount={progress.endure_slip_count || 0}
-            onMoveToReclaim={handleMoveToReclaim}
-            onLogUrge={handleLogUrge}
-          />
-        )}
+        {/* WHAT'S SURFACING — collapsible */}
+        <div style={styles.sectionWrap}>
+          <button onClick={() => setSurfaceOpen(o => !o)} style={styles.surfaceToggle}>
+            <span style={styles.surfaceToggleText}>
+              <span style={styles.sectionTitle}>What’s surfacing</span>
+              <span style={styles.surfaceHint}>The proofs you’ve forged, stacking up</span>
+            </span>
+            <span style={styles.surfaceChevron}>{surfaceOpen ? '⌄' : '›'}</span>
+          </button>
+          {surfaceOpen && (
+            <div style={styles.surfaceBody}>
+              <div style={styles.tile}>
+                <p style={styles.tileEyebrow}>The ledger</p>
+                <h3 style={styles.tileTitle}>
+                  {ledger.length === 0 ? 'No proofs forged yet.' : `${ledger.length} ${ledger.length === 1 ? 'proof' : 'proofs'} forged.`}
+                </h3>
+                <p style={styles.tileBody}>
+                  {ledger.length === 0
+                    ? 'Each week, forge one proof of who you are now. They stack into an identity you can point to.'
+                    : 'The most recent:'}
+                </p>
+                {ledger.length > 0 && (
+                  <p style={styles.surfaceLedgerProof}>“{ledger[0].payload?.proof || ledger[0].payload?.text}”</p>
+                )}
+              </div>
+              <button onClick={() => navigate('/mirror')} style={styles.oracleLink}>
+                Your full reflection lives in the Oracle <span style={styles.oracleLinkArrow}>→</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         <BottomNav />
       </div>
+
+      {/* HERO CTA: the crucible (controlled) */}
+      <CrucibleTile ledger={ledger} onForge={handleForge} open={crucibleOpen} onClose={() => setCrucibleOpen(false)} />
+
+      {/* TOOL: where your hours go (controlled) */}
+      <CapitalDrainTile latest={allocationLatest} onSave={handleSaveAllocation} open={capitalOpen} onClose={() => setCapitalOpen(false)} />
+
+      {/* TOOL: if it hits (floating) */}
+      {actionOpen && tracker && (
+        <div style={styles.sheetBackdrop} onClick={() => setActionOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setActionOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <ActionTile
+              tracker={tracker}
+              navigate={navigate}
+              slipCount={progress.endure_slip_count || 0}
+              onMoveToReclaim={handleMoveToReclaim}
+              onLogUrge={handleLogUrge}
+            />
+          </div>
+        </div>
+      )}
 
       <DailyCheckin
         isOpen={checkinOpen}
@@ -428,8 +571,7 @@ function SetupPromptTile({ substanceLabel, navigate }) {
 // ===================================================================
 // MECHANIC 1: THE CAPITAL DRAIN (risk management)
 // ===================================================================
-function CapitalDrainTile({ latest, onSave }) {
-  const [open, setOpen] = useState(false)
+function CapitalDrainTile({ latest, onSave, open, onClose }) {
   const initBuckets = () => CAPITAL_BUCKETS.reduce((a, b) => {
     a[b.key] = (latest && latest.payload && latest.payload[b.key] != null) ? latest.payload[b.key] : 0
     return a
@@ -455,60 +597,48 @@ function CapitalDrainTile({ latest, onSave }) {
     setSaving(true)
     const ok = await onSave(buckets)
     setSaving(false)
-    if (ok) setOpen(false)
+    if (ok) onClose()
     else alert('Could not save. Please try again.')
   }
 
-  const idleLatest = latest && latest.payload ? (latest.payload.idle ?? 0) : null
-  const summary = latest
-    ? (idleLatest === 0
-        ? 'Board secured · all 14 reclaimed hours deployed'
-        : `${idleLatest}h still unsecured — high-risk vacuum`)
-    : 'Distribute your 14 reclaimed hours into what holds you.'
-
   return (
-    <>
-      <Launcher icon="⏳" title="The capital drain"
-        summary={summary} done={!!latest && idleLatest === 0} onOpen={() => setOpen(true)} />
+    <ActivitySheet open={open} onClose={onClose}
+      eyebrow="Risk management" title="Where do this week's hours go?">
+      <p style={styles.sheetLead}>
+        Recovery hands you back roughly 14 hours a week. Unstructured, unspoken-for time is
+        where relapse lives. Deploy every hour — leave none idle.
+      </p>
 
-      <ActivitySheet open={open} onClose={() => setOpen(false)}
-        eyebrow="Risk management" title="Where do this week's hours go?">
-        <p style={styles.sheetLead}>
-          Recovery hands you back roughly 14 hours a week. Unstructured, unspoken-for time is
-          where relapse lives. Deploy every hour — leave none idle.
-        </p>
+      <div style={{ ...styles.cdPool, ...(secured ? styles.cdPoolSafe : {}) }}>
+        <span style={styles.cdPoolNum}>{idle}h</span>
+        <span style={{ ...styles.cdPoolLabel, ...(secured ? styles.cdPoolLabelSafe : styles.cdPoolLabelRisk) }}>
+          {secured ? 'Secured — nothing idle' : 'Unsecured idle time (high relapse risk)'}
+        </span>
+      </div>
 
-        <div style={{ ...styles.cdPool, ...(secured ? styles.cdPoolSafe : {}) }}>
-          <span style={styles.cdPoolNum}>{idle}h</span>
-          <span style={{ ...styles.cdPoolLabel, ...(secured ? styles.cdPoolLabelSafe : styles.cdPoolLabelRisk) }}>
-            {secured ? 'Secured — nothing idle' : 'Unsecured idle time (high relapse risk)'}
-          </span>
-        </div>
-
-        <div style={styles.cdBucketList}>
-          {CAPITAL_BUCKETS.map(b => (
-            <div key={b.key} style={styles.cdBucketRow}>
-              <span style={styles.cdBucketIcon}>{b.icon}</span>
-              <div style={styles.cdBucketInfo}>
-                <span style={styles.cdBucketLabel}>{b.label}</span>
-                <span style={styles.cdBucketSub}>{b.sub}</span>
-              </div>
-              <div style={styles.cdStepper}>
-                <button onClick={() => bump(b.key, -1)}
-                  style={{ ...styles.cdStepBtn, ...((buckets[b.key] || 0) <= 0 ? styles.cdStepBtnDim : {}) }}>−</button>
-                <span style={styles.cdStepVal}>{buckets[b.key] || 0}h</span>
-                <button onClick={() => bump(b.key, 1)}
-                  style={{ ...styles.cdStepBtn, ...(allocated >= HOUR_POOL ? styles.cdStepBtnDim : {}) }}>+</button>
-              </div>
+      <div style={styles.cdBucketList}>
+        {CAPITAL_BUCKETS.map(b => (
+          <div key={b.key} style={styles.cdBucketRow}>
+            <span style={styles.cdBucketIcon}>{b.icon}</span>
+            <div style={styles.cdBucketInfo}>
+              <span style={styles.cdBucketLabel}>{b.label}</span>
+              <span style={styles.cdBucketSub}>{b.sub}</span>
             </div>
-          ))}
-        </div>
+            <div style={styles.cdStepper}>
+              <button onClick={() => bump(b.key, -1)}
+                style={{ ...styles.cdStepBtn, ...((buckets[b.key] || 0) <= 0 ? styles.cdStepBtnDim : {}) }}>−</button>
+              <span style={styles.cdStepVal}>{buckets[b.key] || 0}h</span>
+              <button onClick={() => bump(b.key, 1)}
+                style={{ ...styles.cdStepBtn, ...(allocated >= HOUR_POOL ? styles.cdStepBtnDim : {}) }}>+</button>
+            </div>
+          </div>
+        ))}
+      </div>
 
-        <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
-          {saving ? 'Saving…' : secured ? 'Lock the board ✓' : 'Save (still unsecured)'}
-        </button>
-      </ActivitySheet>
-    </>
+      <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
+        {saving ? 'Saving…' : secured ? 'Lock the board ✓' : 'Save (still unsecured)'}
+      </button>
+    </ActivitySheet>
   )
 }
 
@@ -635,11 +765,10 @@ function StressPillarsTile({ today, onSave }) {
 // ===================================================================
 // MECHANIC 3: THE CRUCIBLE (identity ledger)
 // ===================================================================
-function CrucibleTile({ ledger, onForge }) {
-  const [open, setOpen] = useState(false)
+function CrucibleTile({ ledger, onForge, open, onClose }) {
   const [proof, setProof] = useState('')
   const [cost, setCost] = useState('')
-  const [step, setStep] = useState(0) // 0 idle, 1 heat, 2 strike, 3 forging
+  const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
 
   const ready = proof.trim().length > 0
@@ -652,63 +781,52 @@ function CrucibleTile({ ledger, onForge }) {
     setSaving(true)
     const ok = await onForge({ proof, cost })
     setSaving(false)
-    if (ok) { setProof(''); setCost(''); setStep(0); setOpen(false) }
+    if (ok) { setProof(''); setCost(''); setStep(0); onClose() }
     else { setStep(0); alert('Could not forge. Please try again.') }
   }
 
-  const weekOf = formatDateForDB(getMondayOfWeek(new Date()))
-  const forgedThisWeek = ledger.some(r => r.payload && r.payload.week_of === weekOf)
-  const summary = ledger.length
-    ? `${ledger.length} ${ledger.length === 1 ? 'proof' : 'proofs'} in the ledger`
-    : 'Forge an undeniable proof of who you are now.'
-
   return (
-    <>
-      <Launcher icon="⚒️" title="The crucible"
-        summary={summary} done={forgedThisWeek} onOpen={() => setOpen(true)} />
+    <ActivitySheet open={open} onClose={onClose}
+      eyebrow="Identity ledger" title="Forge a proof.">
+      <p style={styles.sheetLead}>
+        A new self isn't built by doing good things — it's forged by paying the cost of
+        refusing the old one. Name the proof, then name what it cost.
+      </p>
 
-      <ActivitySheet open={open} onClose={() => setOpen(false)}
-        eyebrow="Identity ledger" title="Forge a proof.">
-        <p style={styles.sheetLead}>
-          A new self isn't built by doing good things — it's forged by paying the cost of
-          refusing the old one. Name the proof, then name what it cost.
-        </p>
+      <label style={styles.cruLabel}>The proof</label>
+      <input type="text" value={proof} onChange={(e) => { setProof(e.target.value); setStep(0) }}
+        placeholder="e.g. Stayed calm when it escalated" maxLength={120} style={styles.cruInput} />
 
-        <label style={styles.cruLabel}>The proof</label>
-        <input type="text" value={proof} onChange={(e) => { setProof(e.target.value); setStep(0) }}
-          placeholder="e.g. Stayed calm when it escalated" maxLength={120} style={styles.cruInput} />
+      <label style={styles.cruLabel}>The cost</label>
+      <input type="text" value={cost} onChange={(e) => { setCost(e.target.value); setStep(0) }}
+        placeholder="e.g. Swallowed my pride, rejected the easy out" maxLength={120} style={styles.cruInput} />
 
-        <label style={styles.cruLabel}>The cost</label>
-        <input type="text" value={cost} onChange={(e) => { setCost(e.target.value); setStep(0) }}
-          placeholder="e.g. Swallowed my pride, rejected the easy out" maxLength={120} style={styles.cruInput} />
+      <div style={styles.cruPips}>
+        {[0, 1, 2].map(i => (
+          <span key={i} style={{ ...styles.cruPip, ...(step > i ? styles.cruPipOn : {}) }} />
+        ))}
+      </div>
 
-        <div style={styles.cruPips}>
-          {[0, 1, 2].map(i => (
-            <span key={i} style={{ ...styles.cruPip, ...(step > i ? styles.cruPipOn : {}) }} />
-          ))}
+      <button onClick={tapForge} disabled={!ready || saving}
+        style={{ ...styles.cruForgeBtn, ...((!ready || saving) ? styles.cruForgeBtnDim : {}) }}>
+        {saving ? 'Forging…' : `${forgeLabels[step] || 'Forge it in'} · ${stepHint}`}
+      </button>
+
+      {ledger.length > 0 && (
+        <div style={styles.cruLedger}>
+          <p style={styles.cruLedgerHead}>The ledger</p>
+          {ledger.map(r => {
+            const pl = r.payload || {}
+            return (
+              <div key={r.id} style={styles.cruLedgerItem}>
+                <span style={styles.cruLedgerProof}>{pl.proof || pl.text}</span>
+                {pl.cost ? <span style={styles.cruLedgerCost}>Cost — {pl.cost}</span> : null}
+              </div>
+            )
+          })}
         </div>
-
-        <button onClick={tapForge} disabled={!ready || saving}
-          style={{ ...styles.cruForgeBtn, ...((!ready || saving) ? styles.cruForgeBtnDim : {}) }}>
-          {saving ? 'Forging…' : `${forgeLabels[step] || 'Forge it in'} · ${stepHint}`}
-        </button>
-
-        {ledger.length > 0 && (
-          <div style={styles.cruLedger}>
-            <p style={styles.cruLedgerHead}>The ledger</p>
-            {ledger.map(r => {
-              const p = r.payload || {}
-              return (
-                <div key={r.id} style={styles.cruLedgerItem}>
-                  <span style={styles.cruLedgerProof}>{p.proof || p.text}</span>
-                  {p.cost ? <span style={styles.cruLedgerCost}>Cost — {p.cost}</span> : null}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </ActivitySheet>
-    </>
+      )}
+    </ActivitySheet>
   )
 }
 
@@ -879,6 +997,43 @@ function formatDateForDB(date) {
 // STYLES
 // ===================================================================
 const styles = {
+  hero: { background: 'linear-gradient(170deg, #3A2A1C 0%, #241710 100%)', borderRadius: '22px', padding: '24px 22px 22px', margin: '6px 0 28px', boxShadow: '0 16px 36px -12px rgba(40,25,10,0.5)' },
+  heroEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 14px' },
+  heroGreeting: { fontSize: '15px', color: 'rgba(250,247,241,0.7)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 14px' },
+  heroSlimRow: { display: 'inline-flex', alignItems: 'center', gap: '9px', padding: '7px 14px', background: 'rgba(217,181,122,0.10)', border: '0.5px solid rgba(217,181,122,0.25)', borderRadius: '999px', margin: '0 0 18px' },
+  heroSlimDot: { width: '7px', height: '7px', borderRadius: '50%', background: '#9FD17F', flexShrink: 0, boxShadow: '0 0 0 3px rgba(159,209,127,0.18)' },
+  heroSlimDays: { fontSize: '13px', fontWeight: 500, color: '#FAF7F1', fontFamily: 'Georgia, serif' },
+  heroSlimClock: { fontSize: '12px', color: '#D9B57A', fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em' },
+  heroSlimFree: { fontSize: '11px', color: 'rgba(250,247,241,0.6)', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  heroWeekBeat: { marginBottom: '2px' },
+  heroWeekLabel: { fontSize: '11px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.16em', fontFamily: 'Georgia, serif', margin: '0 0 10px' },
+  heroReflection: { fontSize: '20px', color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4, margin: '0 0 20px' },
+  heroCta: { display: 'inline-block', padding: '13px 26px', background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)', color: '#2A1710', border: 'none', borderRadius: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 14px rgba(0,0,0,0.2)' },
+  heroDoneRow: { display: 'flex', alignItems: 'center', gap: '10px' },
+  heroDoneTick: { width: '24px', height: '24px', borderRadius: '50%', border: '1px solid rgba(217,181,122,0.6)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 },
+  heroDoneText: { fontSize: '14px', color: 'rgba(250,247,241,0.85)', fontFamily: 'Georgia, serif', fontStyle: 'italic', flex: 1 },
+  heroUpdate: { background: 'transparent', border: 'none', color: '#D9B57A', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', flexShrink: 0 },
+  heroCheckinRow: { display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', paddingTop: '16px', borderTop: '1px solid rgba(217,181,122,0.2)' },
+  heroCheckinBtn: { width: '100%', padding: '12px', background: 'transparent', border: '1px solid rgba(217,181,122,0.45)', color: '#D9B57A', borderRadius: '11px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif' },
+  sectionWrap: { marginBottom: '28px' },
+  sectionHeader: { marginBottom: '14px', paddingLeft: '2px' },
+  sectionTitle: { fontSize: '13px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: 0 },
+  sectionHint: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 0', lineHeight: 1.45 },
+  toolkitLabel: { fontSize: '13px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 16px', paddingLeft: '2px' },
+  toolkit: { display: 'flex', gap: '8px', justifyContent: 'center' },
+  toolBtn: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '16px 6px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' },
+  toolIcon: { color: '#854F0B', display: 'flex' },
+  toolLabel: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.3 },
+  surfaceToggle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 2px', background: 'transparent', border: 'none', borderTop: '1px solid rgba(217,194,138,0.4)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' },
+  surfaceToggleText: { display: 'flex', flexDirection: 'column', gap: '5px' },
+  surfaceHint: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  surfaceChevron: { fontSize: '18px', color: '#854F0B', flexShrink: 0 },
+  surfaceBody: { marginTop: '8px' },
+  surfaceLedgerProof: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4, margin: '4px 0 0' },
+  oracleLink: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', marginTop: '8px', padding: '14px', background: 'transparent', border: 'none', borderTop: '1px solid rgba(217,194,138,0.4)', color: '#854F0B', fontSize: '13px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
+  oracleLinkArrow: { fontSize: '14px' },
+  toolSheetWrap: { width: '100%', maxWidth: '430px', maxHeight: '90vh', overflowY: 'auto' },
+  toolSheetClose: { display: 'block', marginLeft: 'auto', marginBottom: '10px', width: '32px', height: '32px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'white', color: '#6B5C4A', fontSize: '13px', cursor: 'pointer', lineHeight: 1 },
   // --- launchers (floating-card triggers) ---
   launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
   launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
