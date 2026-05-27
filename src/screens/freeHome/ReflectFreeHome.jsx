@@ -6,6 +6,7 @@ import QuickLogModal from './QuickLogModal'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
+import StageWayfinder from './StageWayfinder'
 
 // ===================================================================
 // REFLECT-FREE HOME
@@ -104,6 +105,39 @@ const ProfileIcon = () => (
   </svg>
 )
 
+const REFLECT_REFLECTIONS = [
+  'Two things can be true: it helps you, and it costs you.',
+  'You don’t have to decide today. Just look honestly.',
+  'Ambivalence isn’t weakness. It’s the sound of weighing something real.',
+  'The cost is easy to look past. Look at it anyway.',
+  'What it gives you is real. So is what it takes. Hold both.',
+  'You’re allowed to want it and to want to be free of it.',
+  'Clarity comes from looking, not from forcing an answer.',
+]
+
+const LogGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 8.5v7M8.5 12h7" />
+  </svg>
+)
+const WeighGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 4v15" />
+    <path d="M7 20h10" />
+    <path d="M4 8h16" />
+    <path d="M4 8l-2.5 5h5z" />
+    <path d="M20 8l-2.5 5h5z" />
+  </svg>
+)
+const BalanceGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 15a8 8 0 0 1 16 0" />
+    <path d="M12 15l4-4" />
+    <circle cx="12" cy="15" r="1.3" fill="currentColor" stroke="none" />
+  </svg>
+)
+
 // ===================================================================
 // MAIN COMPONENT
 // ===================================================================
@@ -124,6 +158,9 @@ export default function ReflectFreeHome({ progress }) {
   const [balanceLatest, setBalanceLatest] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [surfaceOpen, setSurfaceOpen] = useState(false)
+  const [weighingOpen, setWeighingOpen] = useState(false)
+  const [balanceOpen, setBalanceOpen] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -255,68 +292,132 @@ export default function ReflectFreeHome({ progress }) {
   })
   const showMemoryTile = totalLogCount >= MEMORY_UNLOCK_AT && eligibleMemoryLogs.length > 0
 
+  const hour = new Date().getHours()
+  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  const reflection = REFLECT_REFLECTIONS[new Date().getDate() % REFLECT_REFLECTIONS.length]
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
 
+        {/* WAYFINDING HEADER */}
         <div style={styles.topBar}>
           <VowBrandMark />
-          <button
-            onClick={() => navigate('/profile')}
-            style={styles.profileBtn}
-            aria-label="Profile"
-          >
+          <StageWayfinder progress={progress} />
+          <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
         </div>
 
-        <GreetingTile firstName={firstName} substanceLabel={progress.substance_label} />
+        {/* HERO — today (dark vault, stateful) */}
+        <div style={styles.hero}>
+          <p style={styles.heroEyebrow}>Reflect · Today</p>
+          <p style={styles.heroGreeting}>{greet}{firstName ? `, ${firstName}` : ''}.</p>
+          <p style={styles.heroReflection}>{reflection}</p>
+          {todayCheckin ? (
+            <div style={styles.heroDoneRow}>
+              <span style={styles.heroDoneTick}>✓</span>
+              <span style={styles.heroDoneText}>You’ve checked in today.</span>
+              <button onClick={() => setCheckinOpen(true)} style={styles.heroUpdate}>Update</button>
+            </div>
+          ) : (
+            <button onClick={() => setCheckinOpen(true)} style={styles.heroCta}>Check in for today</button>
+          )}
+        </div>
 
-        <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+        {/* SECTION — the daily examination */}
+        <div style={styles.sectionWrap}>
+          <div style={styles.sectionHeader}>
+            <p style={styles.sectionTitle}>Look closer</p>
+            <p style={styles.sectionHint}>The honest weighing — both what it gives you and what it takes.</p>
+          </div>
+          <CompoundingCostTile substanceLabel={progress.substance_label} />
+          <RationalizationGridTile />
+          <DissonanceTile />
+          <ReflectPromptTile
+            todayLogged={todayReflectionLogged}
+            onLogged={handleReflectionLogged}
+          />
+        </div>
 
-        {/* JOURNAL (shared) */}
-        <JournalTile stage="reflect" />
+        {/* SECTION — reflect */}
+        <div style={styles.sectionWrap}>
+          <div style={styles.sectionHeader}>
+            <p style={styles.sectionTitle}>In your words</p>
+          </div>
+          <JournalTile stage="reflect" />
+        </div>
 
-        <BalanceMetersTile latest={balanceLatest} onSaved={handleBalanceSaved} />
+        {/* TOOLS — glyph toolkit */}
+        <div style={styles.sectionWrap}>
+          <p style={styles.toolkitLabel}>Tools</p>
+          <div style={styles.toolkit}>
+            <button onClick={() => setModalOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><LogGlyph /></span>
+              <span style={styles.toolLabel}>Log a moment</span>
+            </button>
+            <button onClick={() => setWeighingOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><WeighGlyph /></span>
+              <span style={styles.toolLabel}>Where it sits today</span>
+            </button>
+            <button onClick={() => setBalanceOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><BalanceGlyph /></span>
+              <span style={styles.toolLabel}>Balance meter</span>
+            </button>
+          </div>
+        </div>
 
-        {/* CONTEMPLATION ENGINE — launchers open blurred activity sheets */}
-        <CompoundingCostTile substanceLabel={progress.substance_label} />
-
-        <RationalizationGridTile />
-
-        <DissonanceTile />
-
-        <WeeklyWeighingTile
-          currentWeighing={currentWeighing}
-          pastWeighings={pastWeighings}
-          onSaved={handleWeighingSaved}
-        />
-
-        <QuickLogTile
-          logs={logs}
-          totalLogCount={totalLogCount}
-          onOpen={() => setModalOpen(true)}
-        />
-
-        <TrajectoryMirrorTile
-          logs={logs}
-          totalLogCount={totalLogCount}
-          onOpenLog={() => setModalOpen(true)}
-        />
-
-        {showMemoryTile && <WhatYouNotedBeforeTile logs={eligibleMemoryLogs} />}
-
-        <ReflectPromptTile
-          todayLogged={todayReflectionLogged}
-          onLogged={handleReflectionLogged}
-        />
-
-        {recentReflections.length > 0 && (
-          <RecentReflectionsTile reflections={recentReflections} />
-        )}
+        {/* WHAT'S SURFACING — collapsible insights */}
+        <div style={styles.sectionWrap}>
+          <button onClick={() => setSurfaceOpen(o => !o)} style={styles.surfaceToggle}>
+            <span style={styles.surfaceToggleText}>
+              <span style={styles.sectionTitle}>What’s surfacing</span>
+              <span style={styles.surfaceHint}>Your trajectory, what you noted before, your answers</span>
+            </span>
+            <span style={styles.surfaceChevron}>{surfaceOpen ? '⌄' : '›'}</span>
+          </button>
+          {surfaceOpen && (
+            <div style={styles.surfaceBody}>
+              <TrajectoryMirrorTile
+                logs={logs}
+                totalLogCount={totalLogCount}
+                onOpenLog={() => setModalOpen(true)}
+              />
+              {showMemoryTile && <WhatYouNotedBeforeTile logs={eligibleMemoryLogs} />}
+              {recentReflections.length > 0 && <RecentReflectionsTile reflections={recentReflections} />}
+              <button onClick={() => navigate('/mirror')} style={styles.oracleLink}>
+                Your full reflection lives in the Oracle <span style={styles.oracleLinkArrow}>→</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         <BottomNav />
       </div>
+
+      {/* TOOL: Where it sits today (the weekly weighing) */}
+      {weighingOpen && (
+        <div style={styles.sheetBackdrop} onClick={() => setWeighingOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setWeighingOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <WeeklyWeighingTile
+              currentWeighing={currentWeighing}
+              pastWeighings={pastWeighings}
+              onSaved={handleWeighingSaved}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* TOOL: Balance meter */}
+      {balanceOpen && (
+        <div style={styles.sheetBackdrop} onClick={() => setBalanceOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setBalanceOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <BalanceMetersTile latest={balanceLatest} onSaved={handleBalanceSaved} />
+          </div>
+        </div>
+      )}
 
       <DailyCheckin
         isOpen={checkinOpen}
@@ -1502,6 +1603,33 @@ function formatDateForDB(date) {
 // STYLES
 // ===================================================================
 const styles = {
+  hero: { background: 'linear-gradient(170deg, #3A2A1C 0%, #241710 100%)', borderRadius: '22px', padding: '24px 22px 22px', margin: '6px 0 28px', boxShadow: '0 16px 36px -12px rgba(40,25,10,0.5)' },
+  heroEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 14px' },
+  heroGreeting: { fontSize: '15px', color: 'rgba(250,247,241,0.7)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 10px' },
+  heroReflection: { fontSize: '23px', color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.35, margin: '0 0 22px', letterSpacing: '-0.01em' },
+  heroCta: { display: 'inline-block', padding: '13px 26px', background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)', color: '#2A1710', border: 'none', borderRadius: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 14px rgba(0,0,0,0.2)' },
+  heroDoneRow: { display: 'flex', alignItems: 'center', gap: '10px' },
+  heroDoneTick: { width: '24px', height: '24px', borderRadius: '50%', border: '1px solid rgba(217,181,122,0.6)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 },
+  heroDoneText: { fontSize: '14px', color: 'rgba(250,247,241,0.85)', fontFamily: 'Georgia, serif', fontStyle: 'italic', flex: 1 },
+  heroUpdate: { background: 'transparent', border: 'none', color: '#D9B57A', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', flexShrink: 0 },
+  sectionWrap: { marginBottom: '28px' },
+  sectionHeader: { marginBottom: '14px', paddingLeft: '2px' },
+  sectionTitle: { fontSize: '13px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: 0 },
+  sectionHint: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 0', lineHeight: 1.45 },
+  toolkitLabel: { fontSize: '13px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 16px', paddingLeft: '2px' },
+  toolkit: { display: 'flex', gap: '12px', justifyContent: 'center' },
+  toolBtn: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '18px 10px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' },
+  toolIcon: { color: '#854F0B', display: 'flex' },
+  toolLabel: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.3 },
+  surfaceToggle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 2px', background: 'transparent', border: 'none', borderTop: '1px solid rgba(217,194,138,0.4)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' },
+  surfaceToggleText: { display: 'flex', flexDirection: 'column', gap: '5px' },
+  surfaceHint: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  surfaceChevron: { fontSize: '18px', color: '#854F0B', flexShrink: 0 },
+  surfaceBody: { marginTop: '8px' },
+  oracleLink: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', marginTop: '8px', padding: '14px', background: 'transparent', border: 'none', borderTop: '1px solid rgba(217,194,138,0.4)', color: '#854F0B', fontSize: '13px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
+  oracleLinkArrow: { fontSize: '14px' },
+  toolSheetWrap: { width: '100%', maxWidth: '430px', maxHeight: '90vh', overflowY: 'auto' },
+  toolSheetClose: { display: 'block', marginLeft: 'auto', marginBottom: '10px', width: '32px', height: '32px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'white', color: '#6B5C4A', fontSize: '13px', cursor: 'pointer', lineHeight: 1 },
   // launcher cards (warm dark — the urge-velocity look)
   launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', marginBottom: '14px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
   launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },

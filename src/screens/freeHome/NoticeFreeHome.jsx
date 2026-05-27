@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import StageWayfinder from './StageWayfinder'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import VowBrandMark from '../../components/VowBrandMark'
@@ -97,26 +98,12 @@ const AnchorGlyph = () => (
     <path d="M12 7.2V21M5 13a7 7 0 0 0 14 0M3 13h2m14 0h2" />
   </svg>
 )
-const ChevronDown = () => (
-  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 9l6 6 6-6" />
-  </svg>
-)
 const EyeGlyph = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
     <circle cx="12" cy="12" r="2.6" />
   </svg>
 )
-
-const STAGE_MAP = [
-  { key: 'notice', label: 'Notice', blurb: 'See the pattern, without pressure.' },
-  { key: 'reflect', label: 'Reflect', blurb: 'Weigh what it really costs you.' },
-  { key: 'commit', label: 'Commit', blurb: 'Draw the line, on your terms.' },
-  { key: 'endure', label: 'Endure', blurb: 'Hold the line, one day at a time.' },
-  { key: 'build', label: 'Build', blurb: 'Rebuild the life around it.' },
-  { key: 'reclaim', label: 'Reclaim', blurb: 'Find your feet again after a slip.' },
-]
 
 function localDateStr(d = new Date()) {
   const pad = (n) => String(n).padStart(2, '0')
@@ -143,7 +130,6 @@ export default function NoticeFreeHome({ progress }) {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [mapOpen, setMapOpen] = useState(false)
   const [surfaceOpen, setSurfaceOpen] = useState(false)
 
   useEffect(() => {
@@ -222,7 +208,6 @@ export default function NoticeFreeHome({ progress }) {
   const hour = new Date().getHours()
   const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
   const reflection = NOTICE_REFLECTIONS[new Date().getDate() % NOTICE_REFLECTIONS.length]
-  const stageIdx = Math.max(0, STAGE_MAP.findIndex(st => st.key === progress.free_state))
 
   return (
     <div style={styles.frame}>
@@ -231,19 +216,7 @@ export default function NoticeFreeHome({ progress }) {
         {/* WAYFINDING HEADER */}
         <div style={styles.topBar}>
           <VowBrandMark />
-          <button onClick={() => setMapOpen(true)} style={styles.breadcrumb} aria-label="Where you are">
-            <span style={styles.breadcrumbDots}>
-              {STAGE_MAP.map((st, i) => (
-                <span key={st.key} style={{ ...styles.breadcrumbDot, color: i === stageIdx ? '#D9B57A' : '#CDBFA8' }}>
-                  {i === stageIdx ? '•' : '·'}
-                </span>
-              ))}
-            </span>
-            <span style={styles.breadcrumbName}>
-              Where you are
-              <ChevronDown />
-            </span>
-          </button>
+          <StageWayfinder progress={progress} />
           <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
@@ -326,45 +299,6 @@ export default function NoticeFreeHome({ progress }) {
 
         <BottomNav />
       </div>
-
-      {/* STAGE MAP — wayfinding */}
-      {mapOpen && (
-        <div style={styles.sheetBackdrop} onClick={() => setMapOpen(false)}>
-          <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.sheetHead}>
-              <div>
-                <p style={styles.sheetEyebrow}>Where you are</p>
-                <h3 style={styles.sheetTitle}>The 6-stage journey</h3>
-              </div>
-              <button onClick={() => setMapOpen(false)} style={styles.sheetClose}>✕</button>
-            </div>
-            <div style={styles.mapThreadWrap}>
-              <div style={styles.mapThread} />
-              {STAGE_MAP.map((st, i) => {
-                const isCurrent = st.key === progress.free_state
-                return (
-                  <button
-                    key={st.key}
-                    onClick={() => { if (!isCurrent) navigate('/onboarding/state-picker') }}
-                    disabled={isCurrent}
-                    style={{ ...styles.mapRow, ...(isCurrent ? styles.mapRowCurrent : {}), cursor: isCurrent ? 'default' : 'pointer' }}
-                  >
-                    <span style={{ ...styles.mapNode, ...(isCurrent ? styles.mapNodeCurrent : {}), background: isCurrent ? 'transparent' : '#FCFAF5' }}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <span style={styles.mapBody}>
-                      {isCurrent && <span style={styles.mapEyebrowCurrent}>You’re here</span>}
-                      <span style={{ ...styles.mapLabel, ...(isCurrent ? styles.mapLabelCurrent : {}) }}>{st.label}</span>
-                      <span style={{ ...styles.mapBlurb, ...(isCurrent ? styles.mapBlurbCurrent : {}) }}>{st.blurb}</span>
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-            <p style={styles.mapFootnote}>Move to any stage whenever it fits where you actually are.</p>
-          </div>
-        </div>
-      )}
 
       <DailyCheckin
         isOpen={checkinOpen}
@@ -1154,11 +1088,6 @@ function computeTopValue(logs, field) {
 // ===================================================================
 const styles = {
   // launcher cards (warm dark — the urge-velocity look)
-  breadcrumb: { background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '4px 10px' },
-  breadcrumbDots: { display: 'flex', alignItems: 'center', gap: '5px', lineHeight: 1 },
-  breadcrumbDot: { fontSize: '11px', lineHeight: 1 },
-  breadcrumbName: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
-  breadcrumbChevron: { fontSize: '11px', color: '#9C8C78' },
 
   hero: { background: 'linear-gradient(170deg, #3A2A1C 0%, #241710 100%)', borderRadius: '22px', padding: '24px 22px 22px', margin: '6px 0 28px', boxShadow: '0 16px 36px -12px rgba(40,25,10,0.5)' },
   heroEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 14px' },
@@ -1195,19 +1124,6 @@ const styles = {
   catchHint: { fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', letterSpacing: '0.04em' },
   catchMsg: { fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, textAlign: 'center', margin: '14px 4px 4px' },
 
-  mapThreadWrap: { position: 'relative', paddingLeft: '2px', margin: '4px 0 8px' },
-  mapThread: { position: 'absolute', left: '17px', top: '14px', bottom: '14px', width: '1.5px', background: '#D9B57A', opacity: 0.4, zIndex: 0 },
-  mapRow: { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: '14px', width: '100%', background: 'transparent', border: 'none', textAlign: 'left', padding: '11px 4px', fontFamily: 'inherit' },
-  mapRowCurrent: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '16px', margin: '6px 0', boxShadow: '0 10px 24px -10px rgba(40,25,10,0.45)' },
-  mapNode: { width: '30px', flexShrink: 0, textAlign: 'center', fontSize: '12px', fontWeight: 500, color: '#854F0B', fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums', lineHeight: '1.6', paddingTop: '1px' },
-  mapNodeCurrent: { color: '#D9B57A' },
-  mapBody: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px', paddingTop: '1px' },
-  mapEyebrowCurrent: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  mapLabel: { fontSize: '16px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500 },
-  mapLabelCurrent: { color: '#FAF7F1' },
-  mapBlurb: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
-  mapBlurbCurrent: { color: '#CBBA98' },
-  mapFootnote: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '12px 0 2px', lineHeight: 1.45 },
 
   launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', marginBottom: '14px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
   launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
