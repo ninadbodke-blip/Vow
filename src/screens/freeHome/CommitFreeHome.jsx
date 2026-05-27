@@ -22,6 +22,10 @@ const MOVE_CATEGORIES = [
   { value: 'asked_support',   icon: '📞',  label: 'Asked for support' },
   { value: 'made_plan',       icon: '🎯',  label: 'Made a plan' },
   { value: 'learned',         icon: '📚',  label: 'Learned something' },
+  { value: 'removed_trigger', icon: '🧹',  label: 'Removed a trigger' },
+  { value: 'rehearsed_no',    icon: '🚫',  label: 'Rehearsed saying no' },
+  { value: 'set_reward',      icon: '🎁',  label: 'Lined up a reward' },
+  { value: 'wrote_it_down',   icon: '✍️',  label: 'Wrote it down' },
 ]
 
 const CATEGORY_BY_VALUE = MOVE_CATEGORIES.reduce((acc, c) => {
@@ -500,9 +504,19 @@ function TodayCheckinTile({ checkin, onOpen }) {
 // ===================================================================
 // 1..10 readiness. Each save inserts a free_stage_signals row
 // (signal_type 'commit_confidence', payload {score}) -> trend in Mirror.
+const READINESS_BLOCKERS = [
+  'Cravings still strong',
+  'Not sure I can do it',
+  'Stress is too high',
+  'No support lined up yet',
+  'Afraid of what I’ll lose',
+  'Nothing — I’m ready',
+]
+
 function ReadinessTile({ latest, onSaved }) {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState(latest?.payload?.score ?? 5)
+  const [blocker, setBlocker] = useState(latest?.payload?.blocker ?? null)
   const [saving, setSaving] = useState(false)
   const savedScore = latest?.payload?.score ?? null
 
@@ -513,7 +527,7 @@ function ReadinessTile({ latest, onSaved }) {
       const { data: { user } } = await supabase.auth.getUser()
       const { data: saved, error } = await supabase
         .from('free_stage_signals')
-        .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_confidence', payload: { score: value } })
+        .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_confidence', payload: { score: value, blocker } })
         .select().single()
       if (error) { console.error(error); alert('Could not save. Please try again.'); setSaving(false); return }
       if (onSaved && saved) onSaved(saved)
@@ -543,6 +557,13 @@ function ReadinessTile({ latest, onSaved }) {
           <span style={styles.rulerValue}>{value}/10</span>
           <span>Fully ready</span>
         </div>
+        <p style={styles.cGroupLabel}>What's the biggest thing in the way?</p>
+        <div style={styles.cPillWrap}>
+          {READINESS_BLOCKERS.map(b => (
+            <button key={b} onClick={() => setBlocker(b)} disabled={saving}
+              style={{ ...styles.cPill, ...(blocker === b ? styles.cPillThreatOn : {}) }}>{b}</button>
+          ))}
+        </div>
         <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
           {saving ? 'Saving…' : (done ? 'Update readiness' : 'Save readiness')}
         </button>
@@ -554,6 +575,8 @@ function ReadinessTile({ latest, onSaved }) {
 // ===================================================================
 // TILE: VOW (commit_vow, new — light free-tier version)
 // ===================================================================
+const VOW_STARTERS = ['I’m doing this because', 'I’m done with', 'What I’ll get back is', 'The person I want to be']
+
 function VowTile({ latest, onSaved }) {
   const existingText = latest?.payload?.text || ''
   const [open, setOpen] = useState(false)
@@ -587,6 +610,13 @@ function VowTile({ latest, onSaved }) {
         <p style={styles.sheetLead}>
           One honest line, in your own words. Something to come back to on the hard days.
         </p>
+        <div style={styles.vowStarters}>
+          {VOW_STARTERS.map(st => (
+            <button key={st} type="button" disabled={saving}
+              onClick={() => setText(t => (t.trim() ? t.trimEnd() + ' ' : '') + st + ' ')}
+              style={styles.vowStarterChip}>{st}…</button>
+          ))}
+        </div>
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="I'm doing this because…"
           style={styles.vowInput} rows={3} maxLength={280} disabled={saving} />
         <button onClick={handleSave} disabled={saving || !text.trim()}
@@ -787,9 +817,13 @@ function StopDateArrivedTile({ stopDate, onBeginEndure, onPickNewDate, transitio
 // ===================================================================
 const PERIMETER_PROTOCOLS = [
   { id: 'environment', label: 'Environment cleared', sub: 'Stash and cues removed' },
+  { id: 'access', label: 'Access cut off', sub: 'Sources and suppliers blocked' },
   { id: 'anchor', label: 'Anchor notified', sub: 'Someone knows Day 0' },
   { id: 'day1', label: 'Day 1 planned', sub: 'First 24 hours mapped' },
   { id: 'triggers', label: 'Triggers mapped', sub: 'You know where it hits' },
+  { id: 'times', label: 'High-risk hours flagged', sub: 'You know when it hits' },
+  { id: 'money', label: 'Money guarded', sub: 'Spending paths limited' },
+  { id: 'reward', label: 'A reward lined up', sub: 'Something to aim toward' },
 ]
 
 function PerimeterLockTile() {
@@ -875,16 +909,19 @@ function PerimeterLockTile() {
 // ===================================================================
 // TILE: FEAR MITIGATION MATRIX — if/then for Day 0 (commit_fear)
 // ===================================================================
-const FEAR_THREATS = ['Boredom', 'Physical pain', 'Social pressure', 'Emotional crash']
-const FEAR_COUNTERS = ['Call my anchor', 'Ride the 20-min wave', 'Leave the room', 'Go to sleep']
+const FEAR_THREATS = ['Boredom', 'Physical pain', 'Social pressure', 'Emotional crash', 'A celebration', 'Loneliness', 'A fight or stress', 'The old place or routine', 'A sudden craving', "Can't sleep"]
+const FEAR_SIGNS = ['Restlessness', 'A "just once" thought', 'Reaching for my phone', 'Bargaining with myself', 'Pulling away from people', 'A spike of stress']
+const FEAR_COUNTERS = ['Call my anchor', 'Ride the 20-min wave', 'Leave the room', 'Go to sleep', 'Move my body', 'Text someone now', 'Re-read my vow', 'Eat and drink water']
 
 function FearMatrixTile() {
   const [open, setOpen] = useState(false)
   const [threat, setThreat] = useState(null)
+  const [sign, setSign] = useState(null)
   const [mitigation, setMitigation] = useState(null)
   const [rowId, setRowId] = useState(null)
   const [saving, setSaving] = useState(false)
   const [savedThreat, setSavedThreat] = useState(null)
+  const [savedSign, setSavedSign] = useState(null)
   const [savedMitigation, setSavedMitigation] = useState(null)
 
   useEffect(() => {
@@ -901,6 +938,7 @@ function FearMatrixTile() {
       if (row) {
         setRowId(row.id)
         setThreat(row.payload?.threat || null); setSavedThreat(row.payload?.threat || null)
+        setSign(row.payload?.sign || null); setSavedSign(row.payload?.sign || null)
         setMitigation(row.payload?.mitigation || null); setSavedMitigation(row.payload?.mitigation || null)
       }
     }
@@ -908,15 +946,15 @@ function FearMatrixTile() {
     return () => { cancelled = true }
   }, [])
 
-  const done = savedThreat != null && savedMitigation != null
+  const done = savedThreat != null && savedSign != null && savedMitigation != null
   const summary = done ? `${savedThreat} → ${savedMitigation}` : 'Name your Day 0 risk — and your counter-move.'
 
   const handleSave = async () => {
-    if (saving || !threat || !mitigation) return
+    if (saving || !threat || !sign || !mitigation) return
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSaving(false); return }
-    const payload = { threat, mitigation }
+    const payload = { threat, sign, mitigation }
     let ok = false
     if (rowId) { const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId); ok = !error }
     else {
@@ -925,7 +963,7 @@ function FearMatrixTile() {
       ok = !error && !!data; if (ok) setRowId(data.id)
     }
     setSaving(false)
-    if (ok) { setSavedThreat(threat); setSavedMitigation(mitigation); setOpen(false) } else alert('Could not save. Please try again.')
+    if (ok) { setSavedThreat(threat); setSavedSign(sign); setSavedMitigation(mitigation); setOpen(false) } else alert('Could not save. Please try again.')
   }
 
   return (
@@ -942,6 +980,13 @@ function FearMatrixTile() {
               style={{ ...styles.cPill, ...(threat === t ? styles.cPillThreatOn : {}) }}>{t}</button>
           ))}
         </div>
+        <p style={styles.cGroupLabel}>The first sign it's coming will be…</p>
+        <div style={styles.cPillWrap}>
+          {FEAR_SIGNS.map(sg => (
+            <button key={sg} onClick={() => setSign(sg)} disabled={saving}
+              style={{ ...styles.cPill, ...(sign === sg ? styles.cPillSignOn : {}) }}>{sg}</button>
+          ))}
+        </div>
         <p style={styles.cGroupLabel}>When it hits, I will…</p>
         <div style={styles.cPillWrap}>
           {FEAR_COUNTERS.map(co => (
@@ -949,15 +994,16 @@ function FearMatrixTile() {
               style={{ ...styles.cPill, ...(mitigation === co ? styles.cPillCounterOn : {}) }}>{co}</button>
           ))}
         </div>
-        {threat && mitigation && (
+        {threat && sign && mitigation && (
           <div style={styles.cMatrix}>
-            <p style={styles.cMatrixText}>If <strong>{threat}</strong> hits,</p>
+            <p style={styles.cMatrixText}>If <strong>{threat}</strong> hits</p>
+            <p style={styles.cMatrixText}>— first sign, <strong>{sign.toLowerCase()}</strong> —</p>
             <p style={styles.cMatrixText}>then I'll <strong>{mitigation.toLowerCase()}</strong>.</p>
             <p style={styles.cMatrixNote}>The threat is mapped. The plan is sound.</p>
           </div>
         )}
-        <button onClick={handleSave} disabled={saving || !threat || !mitigation}
-          style={{ ...styles.sheetSaveBtn, ...((!threat || !mitigation) ? styles.saveBtnDim : {}) }}>
+        <button onClick={handleSave} disabled={saving || !threat || !sign || !mitigation}
+          style={{ ...styles.sheetSaveBtn, ...((!threat || !sign || !mitigation) ? styles.saveBtnDim : {}) }}>
           {saving ? 'Saving…' : 'Lock the plan'}
         </button>
       </ActivitySheet>
@@ -1292,6 +1338,9 @@ const styles = {
   cMatrix: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '18px', textAlign: 'center', marginBottom: '14px' },
   cMatrixText: { fontSize: '17px', color: '#FAF7F1', fontFamily: 'Georgia, serif', margin: '0 0 4px', lineHeight: 1.3 },
   cMatrixNote: { fontSize: '12.5px', color: '#D9B57A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '8px 0 0' },
+  cPillSignOn: { background: 'linear-gradient(180deg, #F3E9D4 0%, #E8D6B0 100%)', color: '#7A5320', border: '1px solid #C49A52' },
+  vowStarters: { display: 'flex', flexWrap: 'wrap', gap: '8px', margin: '0 0 12px' },
+  vowStarterChip: { background: '#FFFFFF', border: '0.5px solid #DDCFB6', borderRadius: '16px', padding: '7px 12px', fontSize: '12.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', cursor: 'pointer' },
   // launcher cards (warm dark — the urge-velocity look)
   launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', marginBottom: '14px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
   launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },

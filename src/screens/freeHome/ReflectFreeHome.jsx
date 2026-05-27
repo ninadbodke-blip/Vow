@@ -177,7 +177,7 @@ export default function ReflectFreeHome({ progress }) {
       else if (profile?.full_name) setFirstName(profile.full_name.split(' ')[0])
       else if (user.email) setFirstName(user.email.split('@')[0])
 
-      const weekOfStr = formatDateForDB(getMondayOfWeek(new Date()))
+      const weekOfStr = formatDateForDB(new Date())
       const { data: weighings } = await supabase
         .from('free_reflect_weighings')
         .select('*')
@@ -478,7 +478,7 @@ function WeeklyWeighingTile({ currentWeighing, pastWeighings, onSaved }) {
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const weekOfStr = formatDateForDB(getMondayOfWeek(new Date()))
+      const weekOfStr = formatDateForDB(new Date())
 
       const { data: saved, error } = await supabase
         .from('free_reflect_weighings')
@@ -557,7 +557,7 @@ function WeeklyWeighingTile({ currentWeighing, pastWeighings, onSaved }) {
         }
       `}</style>
 
-      <p style={styles.tileEyebrow}>This week</p>
+      <p style={styles.tileEyebrow}>Today</p>
       <h2 style={styles.tileTitle}>How are you weighing it?</h2>
 
       <div style={styles.weighingValueDisplay}>
@@ -585,7 +585,7 @@ function WeeklyWeighingTile({ currentWeighing, pastWeighings, onSaved }) {
       <textarea
         value={journalText}
         onChange={(e) => setJournalText(e.target.value)}
-        placeholder="What's true this week? 2-4 sentences."
+        placeholder="What's true today? 2-4 sentences."
         rows={3}
         disabled={saving}
         className="vow-journal-textarea"
@@ -605,14 +605,14 @@ function WeeklyWeighingTile({ currentWeighing, pastWeighings, onSaved }) {
           : justSaved
             ? '✓ Saved'
             : isUpdate
-              ? "Update this week's weighing"
-              : "Save this week's weighing"}
+              ? "Update today's weighing"
+              : "Save today's weighing"}
       </button>
 
       <p style={styles.tileHelperText}>
         {isUpdate
-          ? `Last updated ${formatRelativeTime(currentWeighing.updated_at)} · Editable until next Monday.`
-          : 'One entry per week. Editable any time until next Monday.'}
+          ? `Last updated ${formatRelativeTime(currentWeighing.updated_at)} · Editable until midnight.`
+          : 'One entry per day. Editable any time today.'}
       </p>
 
       {trajectoryData.length >= 2 && (
@@ -681,17 +681,17 @@ function WeighingTrajectoryChart({ dataPoints }) {
   const first = dataPoints[0].weighing_value
   const last = dataPoints[dataPoints.length - 1].weighing_value
   const delta = last - first
-  const weeks = dataPoints.length
+  const days = dataPoints.length
 
   let summary, summaryColor
   if (delta > 0) {
-    summary = `▲ ${delta} points toward stopping over ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`
+    summary = `▲ ${delta} points toward stopping over ${days} ${days === 1 ? 'day' : 'days'}`
     summaryColor = '#3B6D11'
   } else if (delta < 0) {
-    summary = `▼ ${Math.abs(delta)} points toward keeping over ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`
+    summary = `▼ ${Math.abs(delta)} points toward keeping over ${days} ${days === 1 ? 'day' : 'days'}`
     summaryColor = '#854F0B'
   } else {
-    summary = `Steady over ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`
+    summary = `Steady over ${days} ${days === 1 ? 'day' : 'days'}`
     summaryColor = '#9C8C78'
   }
 
@@ -1193,6 +1193,12 @@ const RATIONALIZATIONS = [
   "Everyone does it",
   "It's not that bad",
   "I'll make up for it",
+  "I've had a hard day",
+  "I deserve a break",
+  "It's the only thing that helps",
+  "I'll start fresh tomorrow",
+  "No one will know",
+  "I'm not as bad as others",
 ]
 
 const DISSONANCE_VALUES = [
@@ -1202,6 +1208,10 @@ const DISSONANCE_VALUES = [
   'get my health back',
   'feel proud of myself',
   'be free of this',
+  'be a better parent',
+  'sleep properly again',
+  'trust myself again',
+  'save real money',
 ]
 
 const DISSONANCE_ACTIONS = [
@@ -1211,7 +1221,12 @@ const DISSONANCE_ACTIONS = [
   'waste the night',
   'break my own word',
   'escape',
+  'put it off again',
+  'lie to myself',
+  'lose the morning',
 ]
+
+const DISSONANCE_DRIFT = ['Further from it', 'Slipping back', 'Standing still', 'Inching closer', 'Closer to it']
 
 // ===================================================================
 // ACTIVITY SHEET — shared blurred-backdrop popup card
@@ -1382,9 +1397,11 @@ function CompoundingCostTile({ substanceLabel }) {
 function RationalizationGridTile() {
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState([])
+  const [loudest, setLoudest] = useState(null)
   const [rowId, setRowId] = useState(null)
   const [saving, setSaving] = useState(false)
   const [savedLies, setSavedLies] = useState(null)
+  const [savedLoudest, setSavedLoudest] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -1397,7 +1414,7 @@ function RationalizationGridTile() {
         .order('created_at', { ascending: false }).limit(1)
       if (cancelled) return
       const row = data && data[0]
-      if (row) { setRowId(row.id); const lies = row.payload?.lies || []; setSelected(lies); setSavedLies(lies) }
+      if (row) { setRowId(row.id); const lies = row.payload?.lies || []; setSelected(lies); setSavedLies(lies); setLoudest(row.payload?.loudest || null); setSavedLoudest(row.payload?.loudest || null) }
     }
     load()
     return () => { cancelled = true }
@@ -1415,7 +1432,7 @@ function RationalizationGridTile() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSaving(false); return }
-    const payload = { lies: selected, date: localDateStr() }
+    const payload = { lies: selected, loudest: selected.includes(loudest) ? loudest : null, date: localDateStr() }
     let ok = false
     if (rowId) {
       const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId)
@@ -1427,7 +1444,7 @@ function RationalizationGridTile() {
       if (ok) setRowId(data.id)
     }
     setSaving(false)
-    if (ok) { setSavedLies(selected); setOpen(false) }
+    if (ok) { setSavedLies(selected); setSavedLoudest(selected.includes(loudest) ? loudest : null); setOpen(false) }
     else alert('Could not save. Please try again.')
   }
 
@@ -1447,6 +1464,19 @@ function RationalizationGridTile() {
             </button>
           ))}
         </div>
+        {selected.length > 0 && (
+          <>
+            <p style={styles.dissLabel}>Which one was loudest today?</p>
+            <div style={styles.ratGrid}>
+              {selected.map(lie => (
+                <button key={lie} onClick={() => setLoudest(lie)} disabled={saving}
+                  style={{ ...styles.ratPill, ...(loudest === lie ? styles.ratPillOn : {}) }}>
+                  {lie}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
           {saving ? 'Saving…' : "Log today's friction"}
         </button>
@@ -1462,10 +1492,12 @@ function DissonanceTile() {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState(null)
   const [action, setAction] = useState(null)
+  const [drift, setDrift] = useState(null)
   const [rowId, setRowId] = useState(null)
   const [saving, setSaving] = useState(false)
   const [savedValue, setSavedValue] = useState(null)
   const [savedAction, setSavedAction] = useState(null)
+  const [savedDrift, setSavedDrift] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -1482,23 +1514,24 @@ function DissonanceTile() {
         setRowId(row.id)
         setValue(row.payload?.value || null); setSavedValue(row.payload?.value || null)
         setAction(row.payload?.action || null); setSavedAction(row.payload?.action || null)
+        setDrift(row.payload?.drift || null); setSavedDrift(row.payload?.drift || null)
       }
     }
     load()
     return () => { cancelled = true }
   }, [])
 
-  const done = savedValue != null && savedAction != null
+  const done = savedValue != null && savedAction != null && savedDrift != null
   const summary = done
     ? `Want to ${savedValue} — chose to ${savedAction}.`
     : 'Put your biggest want right next to the habit.'
 
   const handleSave = async () => {
-    if (saving || !value || !action) return
+    if (saving || !value || !action || !drift) return
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSaving(false); return }
-    const payload = { value, action, date: localDateStr() }
+    const payload = { value, action, drift, date: localDateStr() }
     let ok = false
     if (rowId) {
       const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId)
@@ -1510,7 +1543,7 @@ function DissonanceTile() {
       if (ok) setRowId(data.id)
     }
     setSaving(false)
-    if (ok) { setSavedValue(value); setSavedAction(action); setOpen(false) }
+    if (ok) { setSavedValue(value); setSavedAction(action); setSavedDrift(drift); setOpen(false) }
     else alert('Could not save. Please try again.')
   }
 
@@ -1548,8 +1581,20 @@ function DissonanceTile() {
           </div>
         )}
 
-        <button onClick={handleSave} disabled={saving || !value || !action}
-          style={{ ...styles.sheetSaveBtn, ...((!value || !action) ? styles.costSaveBtnDim : {}) }}>
+        {value && action && (
+          <>
+            <p style={styles.dissLabel}>Today, on balance, that moved you…</p>
+            <div style={styles.dissGroup}>
+              {DISSONANCE_DRIFT.map(d => (
+                <button key={d} onClick={() => setDrift(d)} disabled={saving}
+                  style={{ ...styles.dissPill, ...(drift === d ? styles.dissPillValueOn : {}) }}>{d}</button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <button onClick={handleSave} disabled={saving || !value || !action || !drift}
+          style={{ ...styles.sheetSaveBtn, ...((!value || !action || !drift) ? styles.costSaveBtnDim : {}) }}>
           {saving ? 'Saving…' : 'Hold this up'}
         </button>
       </ActivitySheet>
