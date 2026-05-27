@@ -58,6 +58,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
   const [loading, setLoading] = useState(true)
   const [transitioning, setTransitioning] = useState(false)
   const [forkOpen, setForkOpen] = useState(false)
+  const [reentryOpen, setReentryOpen] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -327,32 +328,38 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
         <SectionLabel title="In your words" />
         <JournalTile stage="reclaim" />
 
-        {/* TOOLS */}
-        <SectionLabel title="Tools" />
-        <div style={styles.toolkit}>
-          <button type="button" style={styles.toolBtn} onClick={() => setForkOpen(true)}>
-            <span style={styles.toolIcon}><ForkGlyph /></span>
-            <span style={styles.toolLabel}>Where was the fork?</span>
-          </button>
-          <button type="button" style={styles.toolBtn} onClick={() => navigate('/anchors')}>
-            <span style={styles.toolIcon}><AnchorGlyph /></span>
-            <span style={styles.toolLabel}>{anchorCount > 0 ? `Anchors · ${anchorCount}` : 'Anchors'}</span>
-          </button>
+        {/* TOOLS — glyph toolkit (matches other stages) */}
+        <div>
+          <p style={styles.toolkitLabel}>Tools</p>
+          <div style={styles.toolkit}>
+            <button onClick={() => setForkOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><ForkGlyph /></span>
+              <span style={styles.toolLabel}>Where was the fork?</span>
+            </button>
+            <button onClick={() => navigate('/anchors')} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><AnchorGlyph /></span>
+              <span style={styles.toolLabel}>Anchors</span>
+            </button>
+            <button onClick={() => setReentryOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><ReclaimGlyph /></span>
+              <span style={styles.toolLabel}>Reclaim</span>
+            </button>
+          </div>
         </div>
-
-        {/* WHEN YOU'RE READY */}
-        <SectionLabel title="When you're ready" />
-        <WhenYoureReadyTile
-          onMoveToCommit={handleMoveToCommit}
-          onRestartEndure={handleRestartEndure}
-          transitioning={transitioning}
-          hasSubstance={!!progress.primary_substance}
-        />
 
         <BottomNav />
       </div>
 
       <ForkTile open={forkOpen} onClose={() => setForkOpen(false)} onSave={handleLogChain} />
+
+      <ReentrySheet
+        open={reentryOpen}
+        onClose={() => setReentryOpen(false)}
+        onMoveToCommit={handleMoveToCommit}
+        onRestartEndure={handleRestartEndure}
+        transitioning={transitioning}
+        hasSubstance={!!progress.primary_substance}
+      />
     </div>
   )
 }
@@ -466,21 +473,26 @@ function GreetingTile({ firstName }) {
 // TILE: WHAT STILL STANDS (anti-shame, validates preserved work)
 // ===================================================================
 const ForkGlyph = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="6" cy="6" r="2" />
-    <circle cx="6" cy="18" r="2" />
-    <circle cx="18" cy="8" r="2" />
-    <path d="M6 8v8" />
-    <path d="M18 10c0 4-4 4-8 6" />
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 21v-6" />
+    <path d="M12 15c0-4-6-4-6-8V3" />
+    <path d="M12 15c0-4 6-4 6-8V3" />
   </svg>
 )
 
 const AnchorGlyph = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="4" r="2" />
-    <path d="M12 6v14" />
-    <path d="M8 10h8" />
-    <path d="M4 14c0 4 4 6 8 6s8-2 8-6" />
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="5" r="2.4" />
+    <path d="M12 7.4V21" />
+    <path d="M5 13a7 7 0 0 0 14 0" />
+    <path d="M8 12H4M20 12h-4" />
+  </svg>
+)
+
+const ReclaimGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12a9 9 0 1 1-3.4-7" />
+    <path d="M21 3v5h-5" />
   </svg>
 )
 
@@ -600,6 +612,24 @@ function ForkTile({ open, onClose, onSave }) {
       <button onClick={handleSave} disabled={!ready || saving}
         style={{ ...styles.sheetSaveBtn, ...(!ready ? styles.saveBtnDim : {}) }}>
         {saving ? 'Saving…' : 'Save the map'}
+      </button>
+    </ActivitySheet>
+  )
+}
+
+function ReentrySheet({ open, onClose, onMoveToCommit, onRestartEndure, transitioning, hasSubstance }) {
+  return (
+    <ActivitySheet open={open} onClose={onClose} eyebrow="When you're ready" title="Choose your re-entry.">
+      <p style={styles.sheetLead}>
+        Just the next 24 hours — both paths start the clock fresh from today.
+      </p>
+      {hasSubstance && (
+        <button onClick={onRestartEndure} disabled={transitioning} style={styles.readyPrimaryBtn}>
+          {transitioning ? 'Starting…' : 'Restart Endure now'}
+        </button>
+      )}
+      <button onClick={onMoveToCommit} disabled={transitioning} style={styles.readySecondaryBtn}>
+        {transitioning ? 'Moving…' : 'Move to Commit'}
       </button>
     </ActivitySheet>
   )
@@ -956,10 +986,11 @@ const styles = {
   forkPickWrap: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' },
   forkPick: { padding: '8px 14px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '18px', fontSize: '12.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer' },
   forkPickOn: { background: 'linear-gradient(180deg, #6E3A1C 0%, #3A2415 100%)', color: '#FAF7F1', border: '0.5px solid #3A2415' },
-  toolkit: { display: 'flex', gap: '10px' },
-  toolBtn: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '16px 10px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(80,50,20,0.05)' },
-  toolIcon: { width: '34px', height: '34px', borderRadius: '50%', background: '#F3EADB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#854F0B' },
-  toolLabel: { fontSize: '12px', color: '#5A4A38', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.3 },
+  toolkitLabel: { fontSize: '13px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 16px', paddingLeft: '2px' },
+  toolkit: { display: 'flex', gap: '8px', justifyContent: 'center' },
+  toolBtn: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '16px 6px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' },
+  toolIcon: { color: '#854F0B', display: 'flex' },
+  toolLabel: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.3 },
   openPanel: { background: 'linear-gradient(180deg, #FBF4E8 0%, #F6ECDC 100%)', border: '0.5px solid #ECDFC8', borderRadius: '22px', padding: '22px 22px 20px', boxShadow: '0 6px 20px rgba(120,80,30,0.08)' },
   openEyebrow: { fontSize: '10.5px', color: '#B0894A', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 10px' },
   openTitle: { fontSize: '24px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.25, margin: '0 0 10px' },
