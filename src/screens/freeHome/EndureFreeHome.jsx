@@ -61,6 +61,34 @@ const AnchorGlyph = () => (
   </svg>
 )
 
+// Dark-hero counter jar: number + unit with a gold fill that rises as it ticks.
+function HeroCell({ n, u, fill, accent, hideIfZero }) {
+  const isHidden = hideIfZero && (!n || n === 0 || n === '00')
+  return (
+    <div style={styles.heroJar}>
+      {!isHidden && (
+        <div style={{
+          ...styles.heroJarFill,
+          height: `${Math.min(fill || 0, 100)}%`,
+          background: accent
+            ? 'linear-gradient(180deg, rgba(217,181,122,0.30) 0%, rgba(240,202,130,0.72) 100%)'
+            : 'linear-gradient(180deg, rgba(217,181,122,0.16) 0%, rgba(217,181,122,0.50) 100%)',
+        }} />
+      )}
+      <div style={styles.heroJarContent}>
+        {isHidden ? (
+          <p style={{ ...styles.heroJarU, marginTop: '12px' }}>—</p>
+        ) : (
+          <>
+            <p style={{ ...styles.heroJarN, ...(accent ? styles.heroJarNAccent : {}) }}>{n}</p>
+            <p style={styles.heroJarU}>{u}</p>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function EndureFreeHome({ progress }) {
   const navigate = useNavigate()
 
@@ -81,6 +109,9 @@ export default function EndureFreeHome({ progress }) {
   const [vowLatest, setVowLatest] = useState(null)
   const [recommitToday, setRecommitToday] = useState(null)
   const [recommitHistory, setRecommitHistory] = useState([])
+  const [editingStart, setEditingStart] = useState(false)
+  const [dtValue, setDtValue] = useState('')
+  const [activityOpen, setActivityOpen] = useState(false)
 
   // 100ms tick for live counter animation
   useEffect(() => {
@@ -251,17 +282,34 @@ export default function EndureFreeHome({ progress }) {
   const hour = new Date().getHours()
   const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
-  let daysFree = 0, hh = '00', mm = '00', ss = '00', sinceStr = ''
+  let daysFree = 0, startDate = null, sinceStr = ''
+  let yearsN = 0, monthsN = 0, daysN = 0, hoursN = '00', minsN = '00', secsN = '00'
+  let yFill = 0, moFill = 0, dFill = 0, hFill = 0, miFill = 0, sFill = 0
   if (tracker) {
-    const startDate = new Date(tracker.start_date)
-    let totalSec = Math.floor((Date.now() - startDate.getTime()) / 1000)
-    if (totalSec < 0) totalSec = 0
-    daysFree = Math.floor(totalSec / 86400)
+    startDate = new Date(tracker.start_date)
+    const now = new Date()
+    let total = Math.floor((now - startDate) / 1000)
+    if (total < 0) total = 0
+    const secs = total % 60; total = Math.floor(total / 60)
+    const mins = total % 60; total = Math.floor(total / 60)
+    const hours = total % 24; total = Math.floor(total / 24)
+    const totalDays = total
+    daysFree = totalDays
+    yearsN = Math.floor(totalDays / 365)
+    const remAfterY = totalDays - yearsN * 365
+    monthsN = Math.floor(remAfterY / 30)
+    daysN = remAfterY - monthsN * 30
     const pad = (n) => String(n).padStart(2, '0')
-    hh = pad(Math.floor((totalSec % 86400) / 3600))
-    mm = pad(Math.floor((totalSec % 3600) / 60))
-    ss = pad(totalSec % 60)
-    sinceStr = startDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    hoursN = pad(hours); minsN = pad(mins); secsN = pad(secs)
+    const ms = now.getMilliseconds()
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    yFill = (yearsN / 10) * 100
+    moFill = (monthsN / 12) * 100
+    dFill = (daysN / daysInMonth) * 100
+    hFill = (hours / 24) * 100
+    miFill = (mins / 60) * 100
+    sFill = ((secs * 1000 + ms) / 60000) * 100
+    sinceStr = startDate.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
   const recommitDaysCount = new Set(recommitHistory.map(r => r.payload?.date).filter(Boolean)).size
 
@@ -285,19 +333,38 @@ export default function EndureFreeHome({ progress }) {
 
           {tracker ? (
             <>
-              <div style={styles.heroBigDays}>
-                <span style={styles.heroBigDaysN}>{daysFree}</span>
-                <span style={styles.heroBigDaysU}>{daysFree === 1 ? 'day free' : 'days free'}</span>
+              <p style={styles.heroStayed}>Free from <b style={styles.heroStayedB}>{tracker.addiction_types.name}</b> for</p>
+              <div style={styles.heroJarGrid}>
+                <HeroCell n={yearsN} u={yearsN === 1 ? 'year' : 'years'} fill={yFill} hideIfZero />
+                <HeroCell n={monthsN} u="months" fill={moFill} />
+                <HeroCell n={daysN} u="days" fill={dFill} />
+                <div style={styles.heroJarRow2}>
+                  <HeroCell n={hoursN} u="hours" fill={hFill} />
+                  <HeroCell n={minsN} u="mins" fill={miFill} />
+                  <HeroCell n={secsN} u="secs" fill={sFill} accent />
+                </div>
               </div>
-              <div style={styles.heroCountGrid}>
-                {[{ n: hh, u: 'hrs' }, { n: mm, u: 'mins' }, { n: ss, u: 'secs' }].map((c, i) => (
-                  <div key={i} style={styles.heroCountCell}>
-                    <p style={styles.heroCountN}>{c.n}</p>
-                    <p style={styles.heroCountU}>{c.u}</p>
+              <div style={styles.heroSinceRow}>
+                <span style={styles.heroSinceLabel}>Since {sinceStr}</span>
+                <button onClick={() => { setDtValue(toLocalInput(startDate)); setEditingStart(true) }} style={styles.heroEditBtn}>edit</button>
+              </div>
+              {editingStart && (
+                <div style={styles.heroEditPanel}>
+                  <input type="datetime-local" value={dtValue} max={toLocalInput(new Date())}
+                    onChange={(e) => setDtValue(e.target.value)} style={styles.heroEditInput} />
+                  <div style={styles.heroEditBtns}>
+                    <button onClick={() => setEditingStart(false)} style={styles.heroEditCancel}>Cancel</button>
+                    <button onClick={() => {
+                      if (!dtValue) return
+                      const d = new Date(dtValue)
+                      if (isNaN(d.getTime())) return
+                      if (d.getTime() > Date.now()) { alert("That date is in the future — pick one that's already passed."); return }
+                      handleUpdateStartDate(d.toISOString())
+                      setEditingStart(false)
+                    }} style={styles.heroEditSave}>Save</button>
                   </div>
-                ))}
-              </div>
-              <p style={styles.heroSinceLabel}>Free from {tracker.addiction_types.name} since {sinceStr}</p>
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -334,7 +401,14 @@ export default function EndureFreeHome({ progress }) {
               onLogUrge={handleLogUrge}
             />
           )}
-          <ActivityLogTile activityLogs={activityLogs} onSaved={handleActivitySaved} />
+          <button onClick={() => setActivityOpen(true)} style={styles.activityLauncher}>
+            <div style={styles.activityLauncherTop}>
+              <span style={styles.activityLauncherIcon}>✨</span>
+              <span style={styles.activityLauncherChip}>Log ›</span>
+            </div>
+            <h3 style={styles.activityLauncherTitle}>Did something else instead?</h3>
+            <p style={styles.activityLauncherSub}>Tap to log what you reached for, and how it shifted your mood.</p>
+          </button>
         </div>
 
         {/* SECTION — in your words */}
@@ -424,6 +498,16 @@ export default function EndureFreeHome({ progress }) {
         )}
 
       </div>
+
+      {/* SHEET: replacement activity (floating card) */}
+      {activityOpen && (
+        <div style={styles.sheetBackdrop} onClick={() => setActivityOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setActivityOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <ActivityLogTile activityLogs={activityLogs} onSaved={handleActivitySaved} />
+          </div>
+        </div>
+      )}
 
       {/* TOOL: Your vow */}
       {vowOpen && (
@@ -1340,6 +1424,29 @@ function VowTool({ vowLatest, tracker, recommitToday, recommitHistory, onVowSave
 // STYLES
 // ===================================================================
 const styles = {
+  heroStayed: { fontSize: '14px', color: 'rgba(250,247,241,0.8)', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '4px 0 12px' },
+  heroStayedB: { color: '#D9B57A', fontWeight: 600, fontStyle: 'normal' },
+  heroJarGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '7px', margin: '4px 0 14px' },
+  heroJarRow2: { gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '7px' },
+  heroJar: { position: 'relative', overflow: 'hidden', background: 'rgba(217,181,122,0.06)', border: '0.5px solid rgba(217,181,122,0.18)', borderRadius: '12px', padding: '12px 4px 10px', textAlign: 'center', minHeight: '54px' },
+  heroJarFill: { position: 'absolute', bottom: 0, left: 0, right: 0, transition: 'height 0.25s cubic-bezier(0.4, 0, 0.2, 1)', pointerEvents: 'none', zIndex: 0 },
+  heroJarContent: { position: 'relative', zIndex: 1 },
+  heroJarN: { fontSize: '22px', fontWeight: 500, color: '#FAF7F1', lineHeight: 1, margin: 0, fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums' },
+  heroJarNAccent: { color: '#F0CA82' },
+  heroJarU: { fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#D9B57A', margin: '5px 0 0' },
+  heroSinceRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
+  heroEditBtn: { background: 'transparent', border: 'none', color: '#D9B57A', fontSize: '11px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', padding: 0, textDecoration: 'underline' },
+  heroEditPanel: { marginTop: '12px', padding: '12px', background: 'rgba(0,0,0,0.22)', border: '0.5px solid rgba(217,181,122,0.25)', borderRadius: '12px' },
+  heroEditInput: { width: '100%', boxSizing: 'border-box', padding: '10px 12px', background: 'rgba(250,247,241,0.96)', border: '0.5px solid #DDCFB6', borderRadius: '10px', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', outline: 'none' },
+  heroEditBtns: { display: 'flex', gap: '8px', marginTop: '10px' },
+  heroEditCancel: { flex: 1, padding: '10px', background: 'transparent', border: '0.5px solid rgba(217,181,122,0.4)', borderRadius: '10px', color: '#D9B57A', fontSize: '13px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  heroEditSave: { flex: 1, padding: '10px', background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)', border: 'none', borderRadius: '10px', color: '#2A1710', fontSize: '13px', fontWeight: 600, fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  activityLauncher: { display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '18px', padding: '16px 18px', boxShadow: '0 4px 16px rgba(80,50,20,0.06)', fontFamily: 'inherit' },
+  activityLauncherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' },
+  activityLauncherIcon: { fontSize: '20px', lineHeight: 1 },
+  activityLauncherChip: { fontSize: '11px', fontWeight: 600, color: '#854F0B', background: '#F6EFDD', border: '0.5px solid #E8DCC4', borderRadius: '20px', padding: '4px 10px', fontFamily: 'Georgia, serif' },
+  activityLauncherTitle: { fontSize: '16px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
+  activityLauncherSub: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.45 },
   sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
   hero: { background: 'linear-gradient(170deg, #3A2A1C 0%, #241710 100%)', borderRadius: '22px', padding: '24px 22px 22px', margin: '6px 0 28px', boxShadow: '0 16px 36px -12px rgba(40,25,10,0.5)' },
   heroEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 14px' },
