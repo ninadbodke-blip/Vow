@@ -202,16 +202,16 @@ export default function BuildFreeHome({ progress: initialProgress }) {
   }
 
   // === The Crucible (forge proof + cost into the ledger) ===
-  const handleForge = async ({ proof, cost }) => {
-    if (!proof.trim()) return false
+  const handleForge = async ({ kind, did, instead }) => {
+    if (!did.trim()) return false
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return false
     const weekOf = formatDateForDB(getMondayOfWeek(new Date()))
     const { data: saved, error } = await supabase.from('free_stage_signals').insert({
       user_id: user.id, stage: 'build', signal_type: 'build_evidence',
-      payload: { proof: proof.trim(), cost: cost.trim(), week_of: weekOf, forged_at: new Date().toISOString() },
+      payload: { kind: kind || null, proof: did.trim(), instead: instead.trim(), week_of: weekOf, forged_at: new Date().toISOString() },
     }).select().single()
-    if (error) { console.error('Failed to forge:', error); return false }
+    if (error) { console.error('Failed to save evidence:', error); return false }
     setLedger(prev => [saved, ...prev].slice(0, 12))
     return true
   }
@@ -297,13 +297,13 @@ export default function BuildFreeHome({ progress: initialProgress }) {
             {forgedThisWeek ? (
               <div style={styles.heroDoneRow}>
                 <span style={styles.heroDoneTick}>✓</span>
-                <span style={styles.heroDoneText}>Forged this week.</span>
-                <button onClick={() => setCrucibleOpen(true)} style={styles.heroUpdate}>The ledger</button>
+                <span style={styles.heroDoneText}>Logged this week.</span>
+                <button onClick={() => setCrucibleOpen(true)} style={styles.heroUpdate}>The evidence</button>
               </div>
             ) : (
               <>
-                <p style={styles.heroReflection}>Forge an undeniable proof of who you are now — and name what it cost.</p>
-                <button onClick={() => setCrucibleOpen(true)} style={styles.heroCta}>Forge this week's proof</button>
+                <p style={styles.heroReflection}>What did you do this week that the old you wouldn't have? One honest moment is enough.</p>
+                <button onClick={() => setCrucibleOpen(true)} style={styles.heroCta}>Add this week's proof</button>
               </>
             )}
           </div>
@@ -765,62 +765,80 @@ function StressPillarsTile({ today, onSave }) {
 // ===================================================================
 // MECHANIC 3: THE CRUCIBLE (identity ledger)
 // ===================================================================
+const PROOF_KINDS = [
+  'Showed up', 'Stayed honest', 'Handled it sober',
+  'Kept my word', 'Chose the hard thing', 'Set a boundary', 'Stayed calm',
+]
+
 function CrucibleTile({ ledger, onForge, open, onClose }) {
-  const [proof, setProof] = useState('')
-  const [cost, setCost] = useState('')
-  const [step, setStep] = useState(0)
+  const [kind, setKind] = useState(null)
+  const [did, setDid] = useState('')
+  const [instead, setInstead] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const ready = proof.trim().length > 0
-  const forgeLabels = ['Heat the iron', 'Strike', 'Forge it in']
-  const stepHint = step === 0 ? 'Tap 1 of 3' : step === 1 ? 'Tap 2 of 3' : 'Tap 3 of 3'
+  const ready = did.trim().length > 0
 
-  const tapForge = async () => {
+  const handleAdd = async () => {
     if (!ready || saving) return
-    if (step < 2) { setStep(step + 1); return }
     setSaving(true)
-    const ok = await onForge({ proof, cost })
+    const ok = await onForge({ kind, did, instead })
     setSaving(false)
-    if (ok) { setProof(''); setCost(''); setStep(0); onClose() }
-    else { setStep(0); alert('Could not forge. Please try again.') }
+    if (ok) { setKind(null); setDid(''); setInstead(''); onClose() }
+    else alert('Could not save. Please try again.')
   }
 
   return (
     <ActivitySheet open={open} onClose={onClose}
-      eyebrow="Identity ledger" title="Forge a proof.">
+      eyebrow="Evidence" title="What did you do this week that the old you wouldn't have?">
       <p style={styles.sheetLead}>
-        A new self isn't built by doing good things — it's forged by paying the cost of
-        refusing the old one. Name the proof, then name what it cost.
+        Staying free isn't only avoiding the old thing — it's quietly becoming someone who doesn't reach for it. Catch one real moment. It stacks into proof you can't argue with.
       </p>
 
-      <label style={styles.cruLabel}>The proof</label>
-      <input type="text" value={proof} onChange={(e) => { setProof(e.target.value); setStep(0) }}
-        placeholder="e.g. Stayed calm when it escalated" maxLength={120} style={styles.cruInput} />
-
-      <label style={styles.cruLabel}>The cost</label>
-      <input type="text" value={cost} onChange={(e) => { setCost(e.target.value); setStep(0) }}
-        placeholder="e.g. Swallowed my pride, rejected the easy out" maxLength={120} style={styles.cruInput} />
-
-      <div style={styles.cruPips}>
-        {[0, 1, 2].map(i => (
-          <span key={i} style={{ ...styles.cruPip, ...(step > i ? styles.cruPipOn : {}) }} />
+      <label style={styles.cruLabel}>What kind of moment?</label>
+      <div style={styles.proofKinds}>
+        {PROOF_KINDS.map(k => (
+          <button key={k} type="button" onClick={() => setKind(kind === k ? null : k)}
+            style={{ ...styles.proofKindChip, ...(kind === k ? styles.proofKindChipOn : {}) }}>{k}</button>
         ))}
       </div>
 
-      <button onClick={tapForge} disabled={!ready || saving}
+      <label style={styles.cruLabel}>What did you do?</label>
+      <input type="text" value={did} onChange={(e) => setDid(e.target.value)}
+        placeholder="e.g. Stayed for the hard conversation instead of walking out"
+        maxLength={140} style={styles.cruInput} />
+
+      <label style={styles.cruLabel}>What would the old you have done? <span style={styles.cruOptional}>optional</span></label>
+      <input type="text" value={instead} onChange={(e) => setInstead(e.target.value)}
+        placeholder="e.g. Bailed, or numbed it out"
+        maxLength={140} style={styles.cruInput} />
+
+      {did.trim() && (
+        <div style={styles.proofPreview}>
+          <p style={styles.proofPreviewLine}>
+            {kind && <span style={styles.proofPreviewKind}>{kind} — </span>}{did.trim()}
+          </p>
+          {instead.trim() && (
+            <p style={styles.proofPreviewInstead}>The old me would have {instead.trim().toLowerCase()}.</p>
+          )}
+        </div>
+      )}
+
+      <button onClick={handleAdd} disabled={!ready || saving}
         style={{ ...styles.cruForgeBtn, ...((!ready || saving) ? styles.cruForgeBtnDim : {}) }}>
-        {saving ? 'Forging…' : `${forgeLabels[step] || 'Forge it in'} · ${stepHint}`}
+        {saving ? 'Saving…' : 'Add to the evidence'}
       </button>
 
       {ledger.length > 0 && (
         <div style={styles.cruLedger}>
-          <p style={styles.cruLedgerHead}>The ledger</p>
+          <p style={styles.cruLedgerHead}>The evidence — {ledger.length} {ledger.length === 1 ? 'proof' : 'proofs'}</p>
           {ledger.map(r => {
             const pl = r.payload || {}
+            const sec = pl.instead || pl.cost
             return (
               <div key={r.id} style={styles.cruLedgerItem}>
-                <span style={styles.cruLedgerProof}>{pl.proof || pl.text}</span>
-                {pl.cost ? <span style={styles.cruLedgerCost}>Cost — {pl.cost}</span> : null}
+                {pl.kind && <span style={styles.cruLedgerKind}>{pl.kind}</span>}
+                <span style={styles.cruLedgerProof}>{pl.proof || pl.did || pl.text}</span>
+                {sec ? <span style={styles.cruLedgerCost}>Instead of — {sec}</span> : null}
               </div>
             )
           })}
@@ -997,6 +1015,15 @@ function formatDateForDB(date) {
 // STYLES
 // ===================================================================
 const styles = {
+  proofKinds: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' },
+  proofKindChip: { padding: '9px 13px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '20px', fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  proofKindChipOn: { background: 'linear-gradient(180deg, #6E3A1C 0%, #3A2415 100%)', color: '#FAF7F1', border: '0.5px solid #3A2415' },
+  cruOptional: { color: '#9C8C78', fontStyle: 'italic', textTransform: 'none', letterSpacing: 0, fontWeight: 400 },
+  proofPreview: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '14px', padding: '16px', margin: '0 0 14px', textAlign: 'center' },
+  proofPreviewLine: { fontSize: '16px', color: '#FAF7F1', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.4 },
+  proofPreviewKind: { color: '#D9B57A', fontWeight: 600 },
+  proofPreviewInstead: { fontSize: '12.5px', color: '#D9B57A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '8px 0 0', lineHeight: 1.4 },
+  cruLedgerKind: { fontSize: '10px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'Georgia, serif', fontWeight: 600 },
   hero: { background: 'linear-gradient(170deg, #3A2A1C 0%, #241710 100%)', borderRadius: '22px', padding: '24px 22px 22px', margin: '6px 0 28px', boxShadow: '0 16px 36px -12px rgba(40,25,10,0.5)' },
   heroEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 14px' },
   heroGreeting: { fontSize: '15px', color: 'rgba(250,247,241,0.7)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 14px' },
@@ -1035,7 +1062,7 @@ const styles = {
   toolSheetWrap: { width: '100%', maxWidth: '430px', maxHeight: '90vh', overflowY: 'auto' },
   toolSheetClose: { display: 'block', marginLeft: 'auto', marginBottom: '10px', width: '32px', height: '32px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'white', color: '#6B5C4A', fontSize: '13px', cursor: 'pointer', lineHeight: 1 },
   // --- launchers (floating-card triggers) ---
-  launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
+  launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', marginBottom: '14px', fontFamily: 'inherit' },
   launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
   launcherIcon: { fontSize: '22px', lineHeight: 1 },
   launcherChip: { fontSize: '11px', fontWeight: 600, color: 'rgba(250,247,241,0.85)', background: 'rgba(250,247,241,0.12)', border: '0.5px solid rgba(250,247,241,0.22)', borderRadius: '20px', padding: '4px 10px', fontFamily: 'Georgia, serif' },
