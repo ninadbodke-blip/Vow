@@ -57,6 +57,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [transitioning, setTransitioning] = useState(false)
+  const [forkOpen, setForkOpen] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -153,6 +154,28 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
       signal_type: 'reclaim_reframe',
       payload: { distortion },
     })
+  }
+
+  const handleLogReach = async (needs, alt) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return false
+    const { error } = await supabase.from('free_stage_signals').insert({
+      user_id: user.id, stage: 'reclaim', signal_type: 'reclaim_need',
+      payload: { needs, alternative: (alt || '').trim() || null, logged_at: new Date().toISOString() },
+    })
+    if (error) { console.error('Failed to save need:', error); return false }
+    return true
+  }
+
+  const handleLogChain = async (steps, forkStep) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return false
+    const { error } = await supabase.from('free_stage_signals').insert({
+      user_id: user.id, stage: 'reclaim', signal_type: 'reclaim_chain',
+      payload: { steps, fork_step: forkStep || null, logged_at: new Date().toISOString() },
+    })
+    if (error) { console.error('Failed to save chain:', error); return false }
+    return true
   }
 
   const handleCheckinSaved = (row) => setTodayCheckin(row)
@@ -296,17 +319,26 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
         {/* RIGHT NOW */}
         <SectionLabel title="Right now" hint="No verdict here — just a place to set it down." />
         <FractureDiagnosticTile onLog={handleLogFracture} />
+        <ReachingForTile onSave={handleLogReach} />
         <KinderVoiceTile onReframe={handleReframe} />
         <ShieldTile onShield={handleShield} />
 
         {/* IN YOUR WORDS */}
         <SectionLabel title="In your words" />
-        <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
         <JournalTile stage="reclaim" />
 
-        {/* WHAT HOLDS YOU */}
-        <SectionLabel title="What holds you" />
-        <AnchorsTile navigate={navigate} anchorCount={anchorCount} />
+        {/* TOOLS */}
+        <SectionLabel title="Tools" />
+        <div style={styles.toolkit}>
+          <button type="button" style={styles.toolBtn} onClick={() => setForkOpen(true)}>
+            <span style={styles.toolIcon}><ForkGlyph /></span>
+            <span style={styles.toolLabel}>Where was the fork?</span>
+          </button>
+          <button type="button" style={styles.toolBtn} onClick={() => navigate('/anchors')}>
+            <span style={styles.toolIcon}><AnchorGlyph /></span>
+            <span style={styles.toolLabel}>{anchorCount > 0 ? `Anchors · ${anchorCount}` : 'Anchors'}</span>
+          </button>
+        </div>
 
         {/* WHEN YOU'RE READY */}
         <SectionLabel title="When you're ready" />
@@ -320,13 +352,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
         <BottomNav />
       </div>
 
-      <DailyCheckin
-        isOpen={checkinOpen}
-        onClose={() => setCheckinOpen(false)}
-        stage="reclaim"
-        existing={todayCheckin}
-        onSaved={handleCheckinSaved}
-      />
+      <ForkTile open={forkOpen} onClose={() => setForkOpen(false)} onSave={handleLogChain} />
     </div>
   )
 }
@@ -439,6 +465,146 @@ function GreetingTile({ firstName }) {
 // ===================================================================
 // TILE: WHAT STILL STANDS (anti-shame, validates preserved work)
 // ===================================================================
+const ForkGlyph = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="6" cy="6" r="2" />
+    <circle cx="6" cy="18" r="2" />
+    <circle cx="18" cy="8" r="2" />
+    <path d="M6 8v8" />
+    <path d="M18 10c0 4-4 4-8 6" />
+  </svg>
+)
+
+const AnchorGlyph = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="4" r="2" />
+    <path d="M12 6v14" />
+    <path d="M8 10h8" />
+    <path d="M4 14c0 4 4 6 8 6s8-2 8-6" />
+  </svg>
+)
+
+const REACH_NEEDS = [
+  'Relief from stress', 'To escape', 'A lift or energy', 'Connection',
+  'To quiet my mind', 'To celebrate', 'To feel less',
+]
+
+// ===================================================================
+// TILE: WHAT WERE YOU REACHING FOR (the need beneath the slip)
+// ===================================================================
+function ReachingForTile({ onSave }) {
+  const [open, setOpen] = useState(false)
+  const [needs, setNeeds] = useState([])
+  const [alt, setAlt] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState(null)
+
+  const toggle = (n) => setNeeds(prev => (prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n]))
+  const ready = needs.length > 0
+
+  const handleSave = async () => {
+    if (!ready || saving) return
+    setSaving(true)
+    const ok = await onSave(needs, alt)
+    setSaving(false)
+    if (ok) { setDone({ needs: [...needs] }); setOpen(false) }
+    else alert('Could not save. Please try again.')
+  }
+
+  const summary = done
+    ? done.needs.join(' · ')
+    : 'The slip was trying to get you something. What was it?'
+  const openSheet = () => { setNeeds([]); setAlt(''); setOpen(true) }
+
+  return (
+    <>
+      <Launcher icon="🧭" title="What were you reaching for?" summary={summary} done={!!done} onOpen={openSheet} />
+      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="The need underneath" title="What were you really reaching for?">
+        <p style={styles.sheetLead}>
+          A slip isn't weakness — it's reaching for something. Name what it was after. That's the thing we can meet a kinder way next time.
+        </p>
+        <div style={styles.reachWrap}>
+          {REACH_NEEDS.map(n => (
+            <button key={n} type="button" onClick={() => toggle(n)} disabled={saving}
+              style={{ ...styles.reachChip, ...(needs.includes(n) ? styles.reachChipOn : {}) }}>{n}</button>
+          ))}
+        </div>
+        <label style={styles.reachAltLabel}>What else, even something small, could meet that? <span style={styles.reachOptional}>optional</span></label>
+        <input type="text" value={alt} onChange={(e) => setAlt(e.target.value)}
+          placeholder="e.g. A walk, calling Sam, an early night"
+          maxLength={140} style={styles.reachInput} />
+        <button onClick={handleSave} disabled={!ready || saving}
+          style={{ ...styles.sheetSaveBtn, ...(!ready ? styles.saveBtnDim : {}) }}>
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </ActivitySheet>
+    </>
+  )
+}
+
+// ===================================================================
+// TILE: WHERE WAS THE FORK (gentle decision-chain walk-back — a tool)
+// ===================================================================
+function ForkTile({ open, onClose, onSave }) {
+  const [steps, setSteps] = useState([''])
+  const [forkIdx, setForkIdx] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  const setStep = (i, v) => setSteps(prev => prev.map((x, j) => (j === i ? v : x)))
+  const addStep = () => setSteps(prev => (prev.length < 3 ? [...prev, ''] : prev))
+  const removeStep = (i) => { setSteps(prev => prev.filter((_, j) => j !== i)); setForkIdx(null) }
+
+  const ready = steps.some(x => x.trim().length > 0)
+
+  const handleSave = async () => {
+    if (!ready || saving) return
+    setSaving(true)
+    const clean = steps.map(x => x.trim()).filter(Boolean)
+    const forkStep = (forkIdx != null && steps[forkIdx]) ? steps[forkIdx].trim() : null
+    const ok = await onSave(clean, forkStep)
+    setSaving(false)
+    if (ok) { setSteps(['']); setForkIdx(null); onClose() }
+    else alert('Could not save. Please try again.')
+  }
+
+  return (
+    <ActivitySheet open={open} onClose={onClose} eyebrow="No blame — just the map" title="Where was the fork?">
+      <p style={styles.sheetLead}>
+        A slip is rarely one moment — it's a few small steps. Walk back two or three. We're not reliving it; we're finding the door you can use next time.
+      </p>
+      {steps.map((stp, i) => (
+        <div key={i} style={styles.forkStepRow}>
+          <span style={styles.forkStepNum}>{i + 1}</span>
+          <input type="text" value={stp} onChange={(e) => setStep(i, e.target.value)}
+            placeholder={i === 0 ? 'e.g. Skipped dinner, came home wired and alone' : 'then…'}
+            maxLength={120} style={styles.forkInput} />
+          {steps.length > 1 && (
+            <button type="button" onClick={() => removeStep(i)} style={styles.forkRemove} aria-label="Remove step">✕</button>
+          )}
+        </div>
+      ))}
+      {steps.length < 3 && (
+        <button type="button" onClick={addStep} style={styles.forkAdd}>+ add a step</button>
+      )}
+      {ready && (
+        <>
+          <p style={styles.forkPickLabel}>Which step was the earliest fork — where another small choice was open?</p>
+          <div style={styles.forkPickWrap}>
+            {steps.map((stp, i) => (stp.trim() ? (
+              <button key={i} type="button" onClick={() => setForkIdx(i)}
+                style={{ ...styles.forkPick, ...(forkIdx === i ? styles.forkPickOn : {}) }}>Step {i + 1}</button>
+            ) : null))}
+          </div>
+        </>
+      )}
+      <button onClick={handleSave} disabled={!ready || saving}
+        style={{ ...styles.sheetSaveBtn, ...(!ready ? styles.saveBtnDim : {}) }}>
+        {saving ? 'Saving…' : 'Save the map'}
+      </button>
+    </ActivitySheet>
+  )
+}
+
 function ActivitySheet({ open, onClose, eyebrow, title, children }) {
   if (!open) return null
   return (
@@ -755,10 +921,9 @@ function AnchorsTile({ navigate, anchorCount }) {
 function WhenYoureReadyTile({ onMoveToCommit, onRestartEndure, transitioning, hasSubstance }) {
   return (
     <div style={styles.readyTile}>
-      <p style={styles.readyEyebrow}>When you're ready</p>
       <h3 style={styles.readyTitle}>Choose your re-entry.</h3>
       <p style={styles.readyBody}>
-        You don't have to promise forever — just the next 24 hours. Both paths start the clock fresh from today.
+        Just the next 24 hours — both paths start the clock fresh from today.
       </p>
       {hasSubstance && (
         <button onClick={onRestartEndure} disabled={transitioning} style={styles.readyPrimaryBtn}>
@@ -768,9 +933,6 @@ function WhenYoureReadyTile({ onMoveToCommit, onRestartEndure, transitioning, ha
       <button onClick={onMoveToCommit} disabled={transitioning} style={styles.readySecondaryBtn}>
         {transitioning ? 'Moving…' : 'Move to Commit'}
       </button>
-      <p style={styles.readyHelper}>
-        Restart Endure begins the counter today. Move to Commit lets you set a fresh stop date first.
-      </p>
     </div>
   )
 }
@@ -779,6 +941,25 @@ function WhenYoureReadyTile({ onMoveToCommit, onRestartEndure, transitioning, ha
 // STYLES
 // ===================================================================
 const styles = {
+  reachWrap: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' },
+  reachChip: { padding: '9px 13px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '20px', fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  reachChipOn: { background: 'linear-gradient(180deg, #6E3A1C 0%, #3A2415 100%)', color: '#FAF7F1', border: '0.5px solid #3A2415' },
+  reachAltLabel: { display: 'block', fontSize: '12.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', margin: '0 0 8px', lineHeight: 1.4 },
+  reachOptional: { color: '#9C8C78', fontStyle: 'italic' },
+  reachInput: { width: '100%', boxSizing: 'border-box', padding: '12px 14px', background: 'white', border: '0.5px solid #DDCFB6', borderRadius: '12px', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', outline: 'none', marginBottom: '14px' },
+  forkStepRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' },
+  forkStepNum: { flexShrink: 0, width: '24px', height: '24px', borderRadius: '50%', background: '#F3EADB', color: '#854F0B', fontSize: '12px', fontWeight: 600, fontFamily: 'Georgia, serif', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  forkInput: { flex: 1, boxSizing: 'border-box', padding: '11px 13px', background: 'white', border: '0.5px solid #DDCFB6', borderRadius: '11px', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', outline: 'none' },
+  forkRemove: { flexShrink: 0, background: 'transparent', border: 'none', color: '#B9A07E', cursor: 'pointer', fontSize: '14px', fontFamily: 'inherit', padding: '4px' },
+  forkAdd: { background: 'transparent', border: 'none', color: '#854F0B', cursor: 'pointer', fontSize: '13px', fontFamily: 'Georgia, serif', fontStyle: 'italic', padding: '2px 0 4px', marginBottom: '10px' },
+  forkPickLabel: { fontSize: '12.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', lineHeight: 1.45, margin: '6px 0 10px' },
+  forkPickWrap: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' },
+  forkPick: { padding: '8px 14px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '18px', fontSize: '12.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  forkPickOn: { background: 'linear-gradient(180deg, #6E3A1C 0%, #3A2415 100%)', color: '#FAF7F1', border: '0.5px solid #3A2415' },
+  toolkit: { display: 'flex', gap: '10px' },
+  toolBtn: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '16px 10px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(80,50,20,0.05)' },
+  toolIcon: { width: '34px', height: '34px', borderRadius: '50%', background: '#F3EADB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#854F0B' },
+  toolLabel: { fontSize: '12px', color: '#5A4A38', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.3 },
   openPanel: { background: 'linear-gradient(180deg, #FBF4E8 0%, #F6ECDC 100%)', border: '0.5px solid #ECDFC8', borderRadius: '22px', padding: '22px 22px 20px', boxShadow: '0 6px 20px rgba(120,80,30,0.08)' },
   openEyebrow: { fontSize: '10.5px', color: '#B0894A', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 10px' },
   openTitle: { fontSize: '24px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.25, margin: '0 0 10px' },
