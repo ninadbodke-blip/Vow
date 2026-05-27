@@ -5,6 +5,7 @@ import VowBrandMark from '../../components/VowBrandMark'
 import BottomNav from '../../components/BottomNav'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
+import StageWayfinder from './StageWayfinder'
 import { resolveAddictionTypeId } from '../vowPath/utils/addictionTypes'
 
 // ===================================================================
@@ -46,6 +47,34 @@ const ProfileIcon = () => (
 // ===================================================================
 // MAIN COMPONENT
 // ===================================================================
+const MoveGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 8.5v7M8.5 12h7" />
+  </svg>
+)
+const ReadinessGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none" />
+  </svg>
+)
+const VowGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 19l3-1L19 7a2 2 0 0 0-3-3L5 15l-1 4z" />
+    <path d="M14 6l3 3" />
+  </svg>
+)
+const AnchorGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="5" r="2.4" />
+    <path d="M12 7.4V21" />
+    <path d="M5 13a7 7 0 0 0 14 0" />
+    <path d="M8 12H4M20 12h-4" />
+  </svg>
+)
+
 export default function CommitFreeHome({ progress: initialProgress }) {
   const navigate = useNavigate()
 
@@ -59,6 +88,10 @@ export default function CommitFreeHome({ progress: initialProgress }) {
   const [moves, setMoves] = useState([])   // preparation moves (stored as commit_prep signals)
   const [loading, setLoading] = useState(true)
   const [, setTickCount] = useState(0)
+  const [surfaceOpen, setSurfaceOpen] = useState(false)
+  const [moveOpen, setMoveOpen] = useState(false)
+  const [readinessOpen, setReadinessOpen] = useState(false)
+  const [vowOpen, setVowOpen] = useState(false)
   const [savingDate, setSavingDate] = useState(false)
   const [transitioning, setTransitioning] = useState(false)
   const [editingStopDate, setEditingStopDate] = useState(false)
@@ -308,79 +341,217 @@ export default function CommitFreeHome({ progress: initialProgress }) {
     )
   }
 
+  const hour = new Date().getHours()
+  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
+  const nowMs = Date.now()
+  let cdMs = stopDate ? stopDate.getTime() - nowMs : 0
+  if (cdMs < 0) cdMs = 0
+  const cdTotalSecs = Math.floor(cdMs / 1000)
+  const cdDays = Math.floor(cdTotalSecs / 86400)
+  const cdHours = Math.floor((cdTotalSecs % 86400) / 3600)
+  const cdMins = Math.floor((cdTotalSecs % 3600) / 60)
+  const cdSecs = cdTotalSecs % 60
+  const cd2 = (n) => String(n).padStart(2, '0')
+  const stopDateLabel = stopDate
+    ? stopDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+    : ''
+  const arrivedToday = stopDate ? stopDate.toDateString() === new Date().toDateString() : false
+
+  const prepMoveCount = moves.length
+  const prepDaysTouched = new Set(moves.map(m => m.date)).size
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
 
+        {/* WAYFINDING HEADER */}
         <div style={styles.topBar}>
           <VowBrandMark />
-          <button
-            onClick={() => navigate('/profile')}
-            style={styles.profileBtn}
-            aria-label="Profile"
-          >
+          <StageWayfinder progress={progress} />
+          <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
         </div>
 
-        <GreetingTile firstName={firstName} substanceLabel={progress.substance_label} />
+        {/* HERO — the stop-date spine (dark vault, stateful) */}
+        <div style={styles.hero}>
+          <p style={styles.heroEyebrow}>
+            Commit · {stopDateState === 'future' ? 'Counting down' : stopDateState === 'past' ? 'The day is here' : 'Name the day'}
+          </p>
+          <p style={styles.heroGreeting}>{greet}{firstName ? `, ${firstName}` : ''}.</p>
 
-        <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
+          {stopDateState === 'not_set' && (
+            <>
+              <p style={styles.heroReflection}>Name the day you stop. That’s when this turns real.</p>
+              <button onClick={() => setEditingStopDate(true)} style={styles.heroCta}>Set your stop date</button>
+            </>
+          )}
 
-        {/* JOURNAL (shared) */}
-        <JournalTile stage="commit" />
+          {stopDateState === 'future' && (
+            <>
+              <p style={styles.heroStopLabel}>Stop day · {stopDateLabel}</p>
+              <div style={styles.heroCountGrid}>
+                {[
+                  { n: cdDays, u: 'days' },
+                  { n: cd2(cdHours), u: 'hrs' },
+                  { n: cd2(cdMins), u: 'mins' },
+                  { n: cd2(cdSecs), u: 'secs' },
+                ].map((c, i) => (
+                  <div key={i} style={styles.heroCountCell}>
+                    <p style={styles.heroCountN}>{c.n}</p>
+                    <p style={styles.heroCountU}>{c.u}</p>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setEditingStopDate(true)} style={styles.heroChangeLink}>Change stop date</button>
+            </>
+          )}
 
-        {stopDateState === 'not_set' && (
-          <Launcher
-            icon="📅"
-            title="Set your stop date"
-            summary="Pick the day you stop — up to 14 days out."
-            done={false}
-            onOpen={() => setEditingStopDate(true)}
-          />
-        )}
-        {showCountdown && (
-          <CountdownTile
-            stopDate={stopDate}
-            onChangeDate={() => setEditingStopDate(true)}
-          />
-        )}
-        {showArrived && (
-          <StopDateArrivedTile
-            stopDate={stopDate}
-            onBeginEndure={handleBeginEndure}
-            onPickNewDate={() => setEditingStopDate(true)}
-            transitioning={transitioning}
-          />
-        )}
-        <StopDateSheet
-          open={editingStopDate}
-          prefillValue={progress.endure_starts_at}
-          onSave={handleSaveStopDate}
-          onClose={() => setEditingStopDate(false)}
-          saving={savingDate}
-        />
+          {stopDateState === 'past' && (
+            <>
+              <p style={styles.heroReflection}>
+                {arrivedToday ? 'Your stop date has arrived.' : 'Your stop date has passed.'}
+              </p>
+              <button onClick={handleBeginEndure} disabled={transitioning} style={styles.heroCta}>
+                {transitioning ? 'Starting Endure…' : 'Begin Endure now'}
+              </button>
+              <button onClick={() => setEditingStopDate(true)} style={styles.heroChangeLink}>Pick a new date</button>
+            </>
+          )}
 
-        <ReadinessTile latest={confidenceLatest} onSaved={handleConfidenceSaved} />
+          <div style={styles.heroCheckinRow}>
+            {todayCheckin ? (
+              <>
+                <span style={styles.heroDoneTick}>✓</span>
+                <span style={styles.heroDoneText}>You’ve checked in today.</span>
+                <button onClick={() => setCheckinOpen(true)} style={styles.heroUpdate}>Update</button>
+              </>
+            ) : (
+              <button onClick={() => setCheckinOpen(true)} style={styles.heroCheckinBtn}>Check in for today</button>
+            )}
+          </div>
+        </div>
 
-        <VowTile latest={vowLatest} onSaved={handleVowSaved} />
+        {/* SECTION — get ready */}
+        <div style={styles.sectionWrap}>
+          <div style={styles.sectionHeader}>
+            <p style={styles.sectionTitle}>Get ready</p>
+            <p style={styles.sectionHint}>Lock the ground down before day zero — your perimeter, and your plan for the moment it hits.</p>
+          </div>
+          <PerimeterLockTile />
+          <FearMatrixTile />
+        </div>
 
-        {/* DEFENSIVE ENGINEERING — launchers open blurred cards */}
-        <PerimeterLockTile />
+        {/* SECTION — in your words */}
+        <div style={styles.sectionWrap}>
+          <div style={styles.sectionHeader}>
+            <p style={styles.sectionTitle}>In your words</p>
+          </div>
+          <JournalTile stage="commit" />
+        </div>
 
-        <FearMatrixTile />
+        {/* TOOLS — glyph toolkit */}
+        <div style={styles.sectionWrap}>
+          <p style={styles.toolkitLabel}>Tools</p>
+          <div style={styles.toolkit}>
+            <button onClick={() => setMoveOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><MoveGlyph /></span>
+              <span style={styles.toolLabel}>Today’s move</span>
+            </button>
+            <button onClick={() => setReadinessOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><ReadinessGlyph /></span>
+              <span style={styles.toolLabel}>Readiness</span>
+            </button>
+            <button onClick={() => setVowOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><VowGlyph /></span>
+              <span style={styles.toolLabel}>Your vow</span>
+            </button>
+            <button onClick={() => navigate('/anchors')} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><AnchorGlyph /></span>
+              <span style={styles.toolLabel}>Anchors</span>
+            </button>
+          </div>
+        </div>
 
-        <PreparationLogTile
-          moves={moves}
-          stopDateISO={progress.endure_starts_at}
-          onAddMove={handleAddMove}
-          onDeleteMove={handleDeleteMove}
-        />
-
-        <AnchorsTile navigate={navigate} anchorCount={anchorCount} />
+        {/* WHAT'S SURFACING — collapsible */}
+        <div style={styles.sectionWrap}>
+          <button onClick={() => setSurfaceOpen(o => !o)} style={styles.surfaceToggle}>
+            <span style={styles.surfaceToggleText}>
+              <span style={styles.sectionTitle}>What’s surfacing</span>
+              <span style={styles.surfaceHint}>Your preparation map, and what it’s adding up to</span>
+            </span>
+            <span style={styles.surfaceChevron}>{surfaceOpen ? '⌄' : '›'}</span>
+          </button>
+          {surfaceOpen && (
+            <div style={styles.surfaceBody}>
+              <div style={styles.tile}>
+                <p style={styles.tileEyebrow}>Where you stand</p>
+                <h3 style={styles.tileTitle}>
+                  {prepMoveCount === 0
+                    ? 'No moves logged yet.'
+                    : `${prepMoveCount} ${prepMoveCount === 1 ? 'move' : 'moves'} across ${prepDaysTouched} ${prepDaysTouched === 1 ? 'day' : 'days'}.`}
+                </h3>
+                <p style={styles.tileBody}>
+                  {prepMoveCount === 0
+                    ? 'Each thing you do to prepare lands here and fills the map below.'
+                    : 'Every move is a brick laid before day zero. The map shows the shape of it.'}
+                </p>
+                <ContributionMap moves={moves} stopDateISO={progress.endure_starts_at} />
+              </div>
+              <button onClick={() => navigate('/mirror')} style={styles.oracleLink}>
+                Your full reflection lives in the Oracle <span style={styles.oracleLinkArrow}>→</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         <BottomNav />
       </div>
+
+      {/* TOOL: Today's move (preparation log) */}
+      {moveOpen && (
+        <div style={styles.sheetBackdrop} onClick={() => setMoveOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setMoveOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <PreparationLogTile
+              moves={moves}
+              stopDateISO={progress.endure_starts_at}
+              onAddMove={handleAddMove}
+              onDeleteMove={handleDeleteMove}
+              showMap={false}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* TOOL: Readiness */}
+      {readinessOpen && (
+        <div style={styles.sheetBackdrop} onClick={() => setReadinessOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setReadinessOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <ReadinessTile latest={confidenceLatest} onSaved={handleConfidenceSaved} />
+          </div>
+        </div>
+      )}
+
+      {/* TOOL: Your vow */}
+      {vowOpen && (
+        <div style={styles.sheetBackdrop} onClick={() => setVowOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setVowOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <VowTile latest={vowLatest} onSaved={handleVowSaved} />
+          </div>
+        </div>
+      )}
+
+      <StopDateSheet
+        open={editingStopDate}
+        prefillValue={progress.endure_starts_at}
+        onSave={handleSaveStopDate}
+        onClose={() => setEditingStopDate(false)}
+        saving={savingDate}
+      />
 
       <DailyCheckin
         isOpen={checkinOpen}
@@ -514,11 +685,12 @@ const READINESS_BLOCKERS = [
 ]
 
 function ReadinessTile({ latest, onSaved }) {
-  const [open, setOpen] = useState(false)
   const [value, setValue] = useState(latest?.payload?.score ?? 5)
   const [blocker, setBlocker] = useState(latest?.payload?.blocker ?? null)
   const [saving, setSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
   const savedScore = latest?.payload?.score ?? null
+  const done = savedScore != null
 
   const handleSave = async () => {
     if (saving) return
@@ -531,44 +703,40 @@ function ReadinessTile({ latest, onSaved }) {
         .select().single()
       if (error) { console.error(error); alert('Could not save. Please try again.'); setSaving(false); return }
       if (onSaved && saved) onSaved(saved)
-      setSaving(false); setOpen(false)
+      setSaving(false); setJustSaved(true); setTimeout(() => setJustSaved(false), 2500)
     } catch (err) { console.error(err); setSaving(false) }
   }
 
-  const done = savedScore != null
-  const summary = done ? `You're at ${savedScore}/10 right now.` : 'Mark how ready you actually feel today.'
-
   return (
-    <>
-      <Launcher icon="🎯" title="Readiness, today" summary={summary} done={done} onOpen={() => setOpen(true)} />
-      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="Readiness · today" title="How ready do you feel?">
-        <p style={styles.sheetLead}>
-          Not how ready you think you should feel. How ready you actually are, right now.
-        </p>
-        <div style={styles.rulerRow}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-            <button key={n} onClick={() => setValue(n)} disabled={saving}
-              style={{ ...styles.rulerSeg, ...(n <= value ? styles.rulerSegOn : {}) }}
-              aria-label={`Readiness ${n} of 10`} />
-          ))}
-        </div>
-        <div style={styles.rulerLabels}>
-          <span>Not yet</span>
-          <span style={styles.rulerValue}>{value}/10</span>
-          <span>Fully ready</span>
-        </div>
-        <p style={styles.cGroupLabel}>What's the biggest thing in the way?</p>
-        <div style={styles.cPillWrap}>
-          {READINESS_BLOCKERS.map(b => (
-            <button key={b} onClick={() => setBlocker(b)} disabled={saving}
-              style={{ ...styles.cPill, ...(blocker === b ? styles.cPillThreatOn : {}) }}>{b}</button>
-          ))}
-        </div>
-        <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
-          {saving ? 'Saving…' : (done ? 'Update readiness' : 'Save readiness')}
-        </button>
-      </ActivitySheet>
-    </>
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Readiness · today</p>
+      <h2 style={styles.tileTitle}>How ready do you feel?</h2>
+      <p style={styles.sheetLead}>
+        Not how ready you think you should feel. How ready you actually are, right now.
+      </p>
+      <div style={styles.rulerRow}>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+          <button key={n} onClick={() => setValue(n)} disabled={saving}
+            style={{ ...styles.rulerSeg, ...(n <= value ? styles.rulerSegOn : {}) }}
+            aria-label={`Readiness ${n} of 10`} />
+        ))}
+      </div>
+      <div style={styles.rulerLabels}>
+        <span>Not yet</span>
+        <span style={styles.rulerValue}>{value}/10</span>
+        <span>Fully ready</span>
+      </div>
+      <p style={styles.cGroupLabel}>What's the biggest thing in the way?</p>
+      <div style={styles.cPillWrap}>
+        {READINESS_BLOCKERS.map(b => (
+          <button key={b} onClick={() => setBlocker(b)} disabled={saving}
+            style={{ ...styles.cPill, ...(blocker === b ? styles.cPillThreatOn : {}) }}>{b}</button>
+        ))}
+      </div>
+      <button onClick={handleSave} disabled={saving} style={styles.sheetSaveBtn}>
+        {saving ? 'Saving…' : justSaved ? 'Saved ✓' : (done ? 'Update readiness' : 'Save readiness')}
+      </button>
+    </div>
   )
 }
 
@@ -579,11 +747,13 @@ const VOW_STARTERS = ['I’m doing this because', 'I’m done with', 'What I’l
 
 function VowTile({ latest, onSaved }) {
   const existingText = latest?.payload?.text || ''
-  const [open, setOpen] = useState(false)
   const [text, setText] = useState(existingText)
   const [saving, setSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
 
   useEffect(() => { setText(latest?.payload?.text || '') }, [latest])
+
+  const done = !!existingText
 
   const handleSave = async () => {
     if (saving || !text.trim()) return
@@ -596,35 +766,32 @@ function VowTile({ latest, onSaved }) {
         .select().single()
       if (error) { console.error(error); alert('Could not save. Please try again.'); setSaving(false); return }
       if (onSaved && saved) onSaved(saved)
-      setSaving(false); setOpen(false)
+      setSaving(false); setJustSaved(true); setTimeout(() => setJustSaved(false), 2500)
     } catch (err) { console.error(err); setSaving(false) }
   }
 
-  const done = !!existingText
-  const summary = done ? `"${existingText}"` : "Write the one line you'll come back to."
-
   return (
-    <>
-      <Launcher icon="🤝" title="Your vow" summary={summary} done={done} onOpen={() => setOpen(true)} />
-      <ActivitySheet open={open} onClose={() => setOpen(false)} eyebrow="Your vow" title="What are you committing to?">
-        <p style={styles.sheetLead}>
-          One honest line, in your own words. Something to come back to on the hard days.
-        </p>
-        <div style={styles.vowStarters}>
-          {VOW_STARTERS.map(st => (
-            <button key={st} type="button" disabled={saving}
-              onClick={() => setText(t => (t.trim() ? t.trimEnd() + ' ' : '') + st + ' ')}
-              style={styles.vowStarterChip}>{st}…</button>
-          ))}
-        </div>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="I'm doing this because…"
-          style={styles.vowInput} rows={3} maxLength={280} disabled={saving} />
-        <button onClick={handleSave} disabled={saving || !text.trim()}
-          style={{ ...styles.sheetSaveBtn, ...(!text.trim() ? styles.saveBtnDim : {}) }}>
-          {saving ? 'Saving…' : (done ? 'Revise my vow' : 'Save my vow')}
-        </button>
-      </ActivitySheet>
-    </>
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Your vow</p>
+      <h2 style={styles.tileTitle}>What are you committing to?</h2>
+      {done && <p style={styles.vowQuote}>“{existingText}”</p>}
+      <p style={styles.sheetLead}>
+        One honest line, in your own words. Something to come back to on the hard days.
+      </p>
+      <div style={styles.vowStarters}>
+        {VOW_STARTERS.map(st => (
+          <button key={st} type="button" disabled={saving}
+            onClick={() => setText(t => (t.trim() ? t.trimEnd() + ' ' : '') + st + ' ')}
+            style={styles.vowStarterChip}>{st}…</button>
+        ))}
+      </div>
+      <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="I'm doing this because…"
+        style={styles.vowInput} rows={3} maxLength={280} disabled={saving} />
+      <button onClick={handleSave} disabled={saving || !text.trim()}
+        style={{ ...styles.sheetSaveBtn, ...(!text.trim() ? styles.saveBtnDim : {}) }}>
+        {saving ? 'Saving…' : justSaved ? 'Saved ✓' : (done ? 'Revise my vow' : 'Save my vow')}
+      </button>
+    </div>
   )
 }
 
@@ -1014,7 +1181,7 @@ function FearMatrixTile() {
 // ===================================================================
 // TILE: PREPARATION LOG (the engine)
 // ===================================================================
-function PreparationLogTile({ moves, stopDateISO, onAddMove, onDeleteMove }) {
+function PreparationLogTile({ moves, stopDateISO, onAddMove, onDeleteMove, showMap = true }) {
   const [logging, setLogging] = useState(false)
   const todayStr = formatDateInput(new Date())
   const todayMoves = moves.filter(m => m.date === todayStr)
@@ -1100,7 +1267,7 @@ function PreparationLogTile({ moves, stopDateISO, onAddMove, onDeleteMove }) {
       )}
 
       {/* Contribution map */}
-      <ContributionMap moves={moves} stopDateISO={stopDateISO} />
+      {showMap && <ContributionMap moves={moves} stopDateISO={stopDateISO} />}
     </div>
   )
 }
@@ -1316,6 +1483,41 @@ function formatDateInput(date) {
 // STYLES
 // ===================================================================
 const styles = {
+  hero: { background: 'linear-gradient(170deg, #3A2A1C 0%, #241710 100%)', borderRadius: '22px', padding: '24px 22px 22px', margin: '6px 0 28px', boxShadow: '0 16px 36px -12px rgba(40,25,10,0.5)' },
+  heroEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 14px' },
+  heroGreeting: { fontSize: '15px', color: 'rgba(250,247,241,0.7)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 16px' },
+  heroReflection: { fontSize: '23px', color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.35, margin: '0 0 20px', letterSpacing: '-0.01em' },
+  heroCta: { display: 'inline-block', padding: '13px 26px', background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)', color: '#2A1710', border: 'none', borderRadius: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 14px rgba(0,0,0,0.2)' },
+  heroStopLabel: { fontSize: '12px', color: 'rgba(250,247,241,0.62)', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '0 0 12px', letterSpacing: '0.02em' },
+  heroCountGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '7px', margin: '0 0 16px' },
+  heroCountCell: { background: 'rgba(217,181,122,0.08)', borderRadius: '12px', padding: '14px 2px 10px', border: '0.5px solid rgba(217,181,122,0.18)', textAlign: 'center' },
+  heroCountN: { fontSize: '26px', fontWeight: 500, color: '#FAF7F1', lineHeight: 1, margin: 0, fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums' },
+  heroCountU: { fontSize: '9.5px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '7px 0 0', fontFamily: 'Georgia, serif' },
+  heroChangeLink: { display: 'block', margin: '0 auto', background: 'transparent', border: 'none', color: '#D9B57A', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', padding: '2px 4px' },
+  heroDoneRow: { display: 'flex', alignItems: 'center', gap: '10px' },
+  heroDoneTick: { width: '24px', height: '24px', borderRadius: '50%', border: '1px solid rgba(217,181,122,0.6)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 },
+  heroDoneText: { fontSize: '14px', color: 'rgba(250,247,241,0.85)', fontFamily: 'Georgia, serif', fontStyle: 'italic', flex: 1 },
+  heroUpdate: { background: 'transparent', border: 'none', color: '#D9B57A', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', flexShrink: 0 },
+  heroCheckinRow: { display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', paddingTop: '16px', borderTop: '1px solid rgba(217,181,122,0.2)' },
+  heroCheckinBtn: { width: '100%', padding: '12px', background: 'transparent', border: '1px solid rgba(217,181,122,0.45)', color: '#D9B57A', borderRadius: '11px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif' },
+  sectionWrap: { marginBottom: '28px' },
+  sectionHeader: { marginBottom: '14px', paddingLeft: '2px' },
+  sectionTitle: { fontSize: '13px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: 0 },
+  sectionHint: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 0', lineHeight: 1.45 },
+  toolkitLabel: { fontSize: '13px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 16px', paddingLeft: '2px' },
+  toolkit: { display: 'flex', gap: '8px', justifyContent: 'center' },
+  toolBtn: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '16px 6px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' },
+  toolIcon: { color: '#854F0B', display: 'flex' },
+  toolLabel: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.3 },
+  surfaceToggle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 2px', background: 'transparent', border: 'none', borderTop: '1px solid rgba(217,194,138,0.4)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' },
+  surfaceToggleText: { display: 'flex', flexDirection: 'column', gap: '5px' },
+  surfaceHint: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  surfaceChevron: { fontSize: '18px', color: '#854F0B', flexShrink: 0 },
+  surfaceBody: { marginTop: '8px' },
+  oracleLink: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', marginTop: '8px', padding: '14px', background: 'transparent', border: 'none', borderTop: '1px solid rgba(217,194,138,0.4)', color: '#854F0B', fontSize: '13px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
+  oracleLinkArrow: { fontSize: '14px' },
+  toolSheetWrap: { width: '100%', maxWidth: '430px', maxHeight: '90vh', overflowY: 'auto' },
+  toolSheetClose: { display: 'block', marginLeft: 'auto', marginBottom: '10px', width: '32px', height: '32px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'white', color: '#6B5C4A', fontSize: '13px', cursor: 'pointer', lineHeight: 1 },
   todayChipsWrap: { display: 'flex', flexWrap: 'wrap', gap: '7px', marginBottom: '12px' },
   todayChip: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 8px 6px 10px', background: '#F6EFDD', border: '0.5px solid #E8DCC4', borderRadius: '16px' },
   todayChipIcon: { fontSize: '13px', lineHeight: 1 },
