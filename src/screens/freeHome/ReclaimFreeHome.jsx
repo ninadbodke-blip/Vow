@@ -284,36 +284,32 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
           </button>
         </div>
 
-        {/* TILE 1 — GREETING */}
-        <GreetingTile firstName={firstName} />
-
-        {/* TILE 2 — WHAT STILL STANDS (anti-shame) */}
-        <WhatStillStandsTile
+        {/* OPENING — warm held space: greeting + what still stands */}
+        <OpeningPanel
+          firstName={firstName}
           bio={bio}
           anchorCount={anchorCount}
           longestStreakDays={longestStreakDays}
           checklistDone={checklistDone}
         />
 
-        {/* TILE 3 — FRACTURE DIAGNOSTIC (core data point) */}
+        {/* RIGHT NOW */}
+        <SectionLabel title="Right now" hint="No verdict here — just a place to set it down." />
         <FractureDiagnosticTile onLog={handleLogFracture} />
-
-        {/* TILE 4 — THE KINDER VOICE (anti-AVE reframe) */}
         <KinderVoiceTile onReframe={handleReframe} />
-
-        {/* TILE 5 — SWIPE-TO-SHIELD micro-contract */}
         <ShieldTile onShield={handleShield} />
 
-        {/* TILE — GENTLE CHECK-IN (shared signal) */}
+        {/* IN YOUR WORDS */}
+        <SectionLabel title="In your words" />
         <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
-
-        {/* JOURNAL (shared) */}
         <JournalTile stage="reclaim" />
 
-        {/* TILE 5 — ANCHORS */}
+        {/* WHAT HOLDS YOU */}
+        <SectionLabel title="What holds you" />
         <AnchorsTile navigate={navigate} anchorCount={anchorCount} />
 
-        {/* TILE 6 — WHEN YOU'RE READY (re-entry CTAs) */}
+        {/* WHEN YOU'RE READY */}
+        <SectionLabel title="When you're ready" />
         <WhenYoureReadyTile
           onMoveToCommit={handleMoveToCommit}
           onRestartEndure={handleRestartEndure}
@@ -380,6 +376,52 @@ function localDateStr(d = new Date()) {
 // ===================================================================
 // TILE: GREETING
 // ===================================================================
+// ===================================================================
+// OPENING PANEL (warm held space: greeting merged with what still stands)
+// ===================================================================
+function OpeningPanel({ firstName, bio, anchorCount, longestStreakDays, checklistDone }) {
+  const items = []
+  if (bio && bio.trim().length > 0) items.push({ label: 'Your reason for starting', value: 'preserved' })
+  if (anchorCount > 0) items.push({ label: `${anchorCount} ${anchorCount === 1 ? 'anchor' : 'anchors'} saved`, value: 'still there' })
+  if (longestStreakDays > 0) items.push({ label: 'Your longest stretch', value: `${longestStreakDays} ${longestStreakDays === 1 ? 'day' : 'days'}` })
+  if (checklistDone > 0) items.push({ label: 'Infrastructure you built', value: `${checklistDone} ${checklistDone === 1 ? 'item' : 'items'}` })
+
+  return (
+    <div style={styles.openPanel}>
+      <p style={styles.openEyebrow}>RECLAIM</p>
+      <h1 style={styles.openTitle}>You came back{firstName ? `, ${firstName}` : ''}.</h1>
+      <p style={styles.openBody}>
+        Whatever happened, none of what you built was erased. It's still here, waiting. Take your time.
+      </p>
+      {items.length > 0 ? (
+        <div style={styles.openStands}>
+          <p style={styles.openStandsHead}>What still stands</p>
+          {items.map((item, i) => (
+            <div key={i} style={styles.standsRow}>
+              <span style={styles.standsLabel}>{item.label}</span>
+              <span style={styles.standsValue}>{item.value}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={styles.standsEmpty}>You're here. That's the first thing.</p>
+      )}
+    </div>
+  )
+}
+
+// ===================================================================
+// SECTION LABEL (whisper-quiet group header)
+// ===================================================================
+function SectionLabel({ title, hint }) {
+  return (
+    <div style={styles.sectionLabelWrap}>
+      <p style={styles.sectionLabelText}>{title}</p>
+      {hint ? <p style={styles.sectionLabelHint}>{hint}</p> : null}
+    </div>
+  )
+}
+
 function GreetingTile({ firstName }) {
   return (
     <div style={styles.greetingTile}>
@@ -737,6 +779,15 @@ function WhenYoureReadyTile({ onMoveToCommit, onRestartEndure, transitioning, ha
 // STYLES
 // ===================================================================
 const styles = {
+  openPanel: { background: 'linear-gradient(180deg, #FBF4E8 0%, #F6ECDC 100%)', border: '0.5px solid #ECDFC8', borderRadius: '22px', padding: '22px 22px 20px', boxShadow: '0 6px 20px rgba(120,80,30,0.08)' },
+  openEyebrow: { fontSize: '10.5px', color: '#B0894A', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 10px' },
+  openTitle: { fontSize: '24px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.25, margin: '0 0 10px' },
+  openBody: { fontSize: '14.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 16px' },
+  openStands: { borderTop: '0.5px solid rgba(180,140,80,0.22)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' },
+  openStandsHead: { fontSize: '10px', color: '#9A7636', textTransform: 'uppercase', letterSpacing: '0.14em', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 2px' },
+  sectionLabelWrap: { margin: '8px 2px 0' },
+  sectionLabelText: { fontSize: '11px', color: '#A07A3C', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: 0 },
+  sectionLabelHint: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4, margin: '4px 0 0' },
   launcher: { display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', background: 'linear-gradient(155deg, #6E3A1C 0%, #3A2415 100%)', borderRadius: '18px', padding: '16px 18px', marginBottom: '14px', boxShadow: '0 6px 18px rgba(40,25,10,0.18)', fontFamily: 'inherit' },
   launcherTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
   launcherIcon: { fontSize: '22px', lineHeight: 1 },
