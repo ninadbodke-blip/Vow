@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabaseClient'
+import SheetPortal from '../../components/SheetPortal'
 import { JOURNAL_PROMPTS, chaptersFor } from './journalPrompts'
 
 // ===================================================================
@@ -175,7 +176,7 @@ export default function JournalTile({ stage }) {
     <>
       {face}
       {open && (
-        <div style={styles.overlay} onClick={() => setOpen(false)}>
+        <SheetPortal><div style={styles.overlay} onClick={() => setOpen(false)}>
           <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
             <div style={styles.sheetHead}>
               <div>
@@ -235,7 +236,7 @@ export default function JournalTile({ stage }) {
 
             <button onClick={() => setOpen(false)} style={styles.doneSheetBtn}>Done for now</button>
           </div>
-        </div>
+        </div></SheetPortal>
       )}
     </>
   )

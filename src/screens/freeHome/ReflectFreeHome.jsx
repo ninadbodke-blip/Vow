@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import SheetPortal from '../../components/SheetPortal'
 import VowBrandMark from '../../components/VowBrandMark'
 import QuickLogModal from './QuickLogModal'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
@@ -397,7 +398,7 @@ export default function ReflectFreeHome({ progress }) {
 
       {/* TOOL: Where it sits today (the weekly weighing) */}
       {weighingOpen && (
-        <div style={styles.sheetBackdrop} onClick={() => setWeighingOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setWeighingOpen(false)}>
           <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setWeighingOpen(false)} style={styles.toolSheetClose}>✕</button>
             <WeeklyWeighingTile
@@ -406,17 +407,17 @@ export default function ReflectFreeHome({ progress }) {
               onSaved={handleWeighingSaved}
             />
           </div>
-        </div>
+        </div></SheetPortal>
       )}
 
       {/* TOOL: Balance meter */}
       {balanceOpen && (
-        <div style={styles.sheetBackdrop} onClick={() => setBalanceOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setBalanceOpen(false)}>
           <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setBalanceOpen(false)} style={styles.toolSheetClose}>✕</button>
             <BalanceMetersTile latest={balanceLatest} onSaved={handleBalanceSaved} />
           </div>
-        </div>
+        </div></SheetPortal>
       )}
 
       <DailyCheckin
@@ -1235,7 +1236,7 @@ const DISSONANCE_DRIFT = ['Further from it', 'Slipping back', 'Standing still', 
 function ActivitySheet({ open, onClose, eyebrow, title, children }) {
   if (!open) return null
   return (
-    <div style={styles.sheetBackdrop} onClick={onClose}>
+    <SheetPortal><div style={styles.sheetBackdrop} onClick={onClose}>
       <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
         <div style={styles.sheetHead}>
           <div style={{ flex: 1 }}>
@@ -1246,7 +1247,7 @@ function ActivitySheet({ open, onClose, eyebrow, title, children }) {
         </div>
         <div>{children}</div>
       </div>
-    </div>
+    </div></SheetPortal>
   )
 }
 

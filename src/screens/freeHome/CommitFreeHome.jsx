@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import SheetPortal from '../../components/SheetPortal'
 import VowBrandMark from '../../components/VowBrandMark'
 import BottomNav from '../../components/BottomNav'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
@@ -511,7 +512,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
 
       {/* TOOL: Today's move (preparation log) */}
       {moveOpen && (
-        <div style={styles.sheetBackdrop} onClick={() => setMoveOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setMoveOpen(false)}>
           <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setMoveOpen(false)} style={styles.toolSheetClose}>✕</button>
             <PreparationLogTile
@@ -522,27 +523,27 @@ export default function CommitFreeHome({ progress: initialProgress }) {
               showMap={false}
             />
           </div>
-        </div>
+        </div></SheetPortal>
       )}
 
       {/* TOOL: Readiness */}
       {readinessOpen && (
-        <div style={styles.sheetBackdrop} onClick={() => setReadinessOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setReadinessOpen(false)}>
           <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setReadinessOpen(false)} style={styles.toolSheetClose}>✕</button>
             <ReadinessTile latest={confidenceLatest} onSaved={handleConfidenceSaved} />
           </div>
-        </div>
+        </div></SheetPortal>
       )}
 
       {/* TOOL: Your vow */}
       {vowOpen && (
-        <div style={styles.sheetBackdrop} onClick={() => setVowOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setVowOpen(false)}>
           <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setVowOpen(false)} style={styles.toolSheetClose}>✕</button>
             <VowTile latest={vowLatest} onSaved={handleVowSaved} />
           </div>
-        </div>
+        </div></SheetPortal>
       )}
 
       <StopDateSheet
@@ -570,7 +571,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
 function ActivitySheet({ open, onClose, eyebrow, title, children }) {
   if (!open) return null
   return (
-    <div style={styles.sheetBackdrop} onClick={onClose}>
+    <SheetPortal><div style={styles.sheetBackdrop} onClick={onClose}>
       <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
         <div style={styles.sheetHead}>
           <div style={{ flex: 1 }}>
@@ -581,7 +582,7 @@ function ActivitySheet({ open, onClose, eyebrow, title, children }) {
         </div>
         <div>{children}</div>
       </div>
-    </div>
+    </div></SheetPortal>
   )
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import SheetPortal from '../../components/SheetPortal'
 import VowBrandMark from '../../components/VowBrandMark'
 import { checkAndMarkMilestones } from '../../milestoneHelpers'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
@@ -501,17 +502,17 @@ export default function EndureFreeHome({ progress }) {
 
       {/* SHEET: replacement activity (floating card) */}
       {activityOpen && (
-        <div style={styles.sheetBackdrop} onClick={() => setActivityOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setActivityOpen(false)}>
           <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setActivityOpen(false)} style={styles.toolSheetClose}>✕</button>
             <ActivityLogTile activityLogs={activityLogs} onSaved={handleActivitySaved} />
           </div>
-        </div>
+        </div></SheetPortal>
       )}
 
       {/* TOOL: Your vow */}
       {vowOpen && (
-        <div style={styles.sheetBackdrop} onClick={() => setVowOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setVowOpen(false)}>
           <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setVowOpen(false)} style={styles.toolSheetClose}>✕</button>
             <VowTool
@@ -523,27 +524,27 @@ export default function EndureFreeHome({ progress }) {
               onRecommit={handleRecommit}
             />
           </div>
-        </div>
+        </div></SheetPortal>
       )}
 
       {/* TOOL: Daily vitals */}
       {vitalsOpen && (
-        <div style={styles.sheetBackdrop} onClick={() => setVitalsOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setVitalsOpen(false)}>
           <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setVitalsOpen(false)} style={styles.toolSheetClose}>✕</button>
             <DailyVitalsTile />
           </div>
-        </div>
+        </div></SheetPortal>
       )}
 
       {/* TOOL: Milestones */}
       {milestonesOpen && tracker && (
-        <div style={styles.sheetBackdrop} onClick={() => setMilestonesOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setMilestonesOpen(false)}>
           <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setMilestonesOpen(false)} style={styles.toolSheetClose}>✕</button>
             <SavingsMilestonesTile tracker={tracker} navigate={navigate} />
           </div>
-        </div>
+        </div></SheetPortal>
       )}
 
       <DailyCheckin

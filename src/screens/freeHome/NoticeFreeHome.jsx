@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import StageWayfinder from './StageWayfinder'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import SheetPortal from '../../components/SheetPortal'
 import VowBrandMark from '../../components/VowBrandMark'
 import QuickLogModal from './QuickLogModal'
 import DailyCheckin from './DailyCheckin'
@@ -524,7 +525,7 @@ function WeekMeterTile({ logs }) {
 function ActivitySheet({ open, onClose, eyebrow, title, children }) {
   if (!open) return null
   return (
-    <div style={styles.sheetBackdrop} onClick={onClose}>
+    <SheetPortal><div style={styles.sheetBackdrop} onClick={onClose}>
       <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
         <div style={styles.sheetHead}>
           <div style={{ flex: 1 }}>
@@ -535,7 +536,7 @@ function ActivitySheet({ open, onClose, eyebrow, title, children }) {
         </div>
         <div>{children}</div>
       </div>
-    </div>
+    </div></SheetPortal>
   )
 }
 
@@ -986,7 +987,7 @@ function CaughtMyselfTile() {
         <span style={styles.toolLabel}>Caught myself</span>
       </button>
       {open && (
-        <div style={styles.sheetBackdrop} onClick={() => setOpen(false)}>
+        <SheetPortal><div style={styles.sheetBackdrop} onClick={() => setOpen(false)}>
           <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
             <div style={styles.sheetHead}>
               <div>
@@ -1004,7 +1005,7 @@ function CaughtMyselfTile() {
               <p style={styles.catchMsg}>{message}</p>
             </div>
           </div>
-        </div>
+        </div></SheetPortal>
       )}
     </>
   )

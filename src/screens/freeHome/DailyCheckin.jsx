@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabaseClient'
+import SheetPortal from '../../components/SheetPortal'
 
 // ===================================================================
 // DAILY CHECK-IN  (shared across all six free homes)
@@ -291,7 +292,7 @@ export default function DailyCheckin({
   const onLastStep = stepIdx === lastIdx
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
+    <SheetPortal><div style={styles.overlay} onClick={onClose}>
       <div style={styles.card} onClick={(e) => e.stopPropagation()}>
 
         <div style={styles.header}>
@@ -343,7 +344,7 @@ export default function DailyCheckin({
           {isMulti ? 'Tap any that fit, or none. No wrong answer.' : "No right answer. What's true."}
         </p>
       </div>
-    </div>
+    </div></SheetPortal>
   )
 }
 

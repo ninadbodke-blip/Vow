@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabaseClient'
+import SheetPortal from '../../components/SheetPortal'
 
 // ===================================================================
 // QUICK LOG MODAL
@@ -115,7 +116,7 @@ export default function QuickLogModal({ isOpen, onClose, onLogged }) {
     : handleStep3Tap
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
+    <SheetPortal><div style={styles.overlay} onClick={onClose}>
       <div style={styles.card} onClick={(e) => e.stopPropagation()}>
 
         {/* HEADER */}
@@ -171,7 +172,7 @@ export default function QuickLogModal({ isOpen, onClose, onLogged }) {
         </p>
 
       </div>
-    </div>
+    </div></SheetPortal>
   )
 }
 

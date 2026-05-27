@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import SheetPortal from '../../components/SheetPortal'
 import VowBrandMark from '../../components/VowBrandMark'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
@@ -638,7 +639,7 @@ function ReentrySheet({ open, onClose, onMoveToCommit, onRestartEndure, transiti
 function ActivitySheet({ open, onClose, eyebrow, title, children }) {
   if (!open) return null
   return (
-    <div style={styles.sheetBackdrop} onClick={onClose}>
+    <SheetPortal><div style={styles.sheetBackdrop} onClick={onClose}>
       <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
         <div style={styles.sheetHead}>
           <div style={{ flex: 1 }}>
@@ -649,7 +650,7 @@ function ActivitySheet({ open, onClose, eyebrow, title, children }) {
         </div>
         <div>{children}</div>
       </div>
-    </div>
+    </div></SheetPortal>
   )
 }
 
