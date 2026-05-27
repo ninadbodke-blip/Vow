@@ -6,6 +6,7 @@ import { checkAndMarkMilestones } from '../../milestoneHelpers'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
+import StageWayfinder from './StageWayfinder'
 
 // ===================================================================
 // ENDURE-FREE HOME
@@ -34,6 +35,32 @@ const ProfileIcon = () => (
   </svg>
 )
 
+const VowGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 19l3-1L19 7a2 2 0 0 0-3-3L5 15l-1 4z" />
+    <path d="M14 6l3 3" />
+  </svg>
+)
+const VitalsGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12h4l2-6 4 12 2-6h6" />
+  </svg>
+)
+const MilestonesGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 21V4" />
+    <path d="M6 5h10l-2.5 3.5L16 12H6" />
+  </svg>
+)
+const AnchorGlyph = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="5" r="2.4" />
+    <path d="M12 7.4V21" />
+    <path d="M5 13a7 7 0 0 0 14 0" />
+    <path d="M8 12H4M20 12h-4" />
+  </svg>
+)
+
 export default function EndureFreeHome({ progress }) {
   const navigate = useNavigate()
 
@@ -47,6 +74,13 @@ export default function EndureFreeHome({ progress }) {
   const [showAddPlaceholder, setShowAddPlaceholder] = useState(false)
   const [slipCount, setSlipCount] = useState(progress.endure_slip_count || 0)
   const [loading, setLoading] = useState(true)
+  const [surfaceOpen, setSurfaceOpen] = useState(false)
+  const [vowOpen, setVowOpen] = useState(false)
+  const [vitalsOpen, setVitalsOpen] = useState(false)
+  const [milestonesOpen, setMilestonesOpen] = useState(false)
+  const [vowLatest, setVowLatest] = useState(null)
+  const [recommitToday, setRecommitToday] = useState(null)
+  const [recommitHistory, setRecommitHistory] = useState([])
 
   // 100ms tick for live counter animation
   useEffect(() => {
@@ -108,6 +142,23 @@ export default function EndureFreeHome({ progress }) {
         .eq('user_id', user.id).order('created_at', { ascending: false }).limit(40)
       if (acts) setActivityLogs(acts)
 
+      // ---- vow carried from Commit + daily recommit history ----
+      const { data: vowRow } = await supabase
+        .from('free_stage_signals').select('*')
+        .eq('user_id', user.id).eq('signal_type', 'commit_vow')
+        .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (vowRow) setVowLatest(vowRow)
+
+      const { data: recommits } = await supabase
+        .from('free_stage_signals').select('id, payload, created_at')
+        .eq('user_id', user.id).eq('stage', 'endure').eq('signal_type', 'endure_recommit')
+        .order('created_at', { ascending: false }).limit(30)
+      if (recommits) {
+        setRecommitHistory(recommits)
+        const todayKey = localDateStr()
+        setRecommitToday(recommits.find(r => r.payload?.date === todayKey) || null)
+      }
+
       setLoading(false)
     }
     load()
@@ -161,6 +212,34 @@ export default function EndureFreeHome({ progress }) {
     navigate(`/urge/${tracker.id}`, { state: { velocity } })
   }
 
+  const handleVowSaved = (row) => setVowLatest(row)
+
+  const handleRecommit = async (conviction) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+    const todayKey = localDateStr()
+    const payload = { conviction, date: todayKey }
+    let saved = null
+    if (recommitToday?.id) {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .update({ payload }).eq('id', recommitToday.id).select().single()
+      if (!error) saved = data
+    } else {
+      const { data, error } = await supabase.from('free_stage_signals')
+        .insert({ user_id: user.id, stage: 'endure', signal_type: 'endure_recommit', payload })
+        .select().single()
+      if (!error) saved = data
+    }
+    if (saved) {
+      setRecommitToday(saved)
+      setRecommitHistory(prev => {
+        const without = prev.filter(r => r.payload?.date !== todayKey)
+        return [saved, ...without].slice(0, 30)
+      })
+    }
+    return saved
+  }
+
   if (loading) {
     return (
       <div style={styles.frame}>
@@ -169,98 +248,163 @@ export default function EndureFreeHome({ progress }) {
     )
   }
 
+  const hour = new Date().getHours()
+  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
+  let daysFree = 0, hh = '00', mm = '00', ss = '00', sinceStr = ''
+  if (tracker) {
+    const startDate = new Date(tracker.start_date)
+    let totalSec = Math.floor((Date.now() - startDate.getTime()) / 1000)
+    if (totalSec < 0) totalSec = 0
+    daysFree = Math.floor(totalSec / 86400)
+    const pad = (n) => String(n).padStart(2, '0')
+    hh = pad(Math.floor((totalSec % 86400) / 3600))
+    mm = pad(Math.floor((totalSec % 3600) / 60))
+    ss = pad(totalSec % 60)
+    sinceStr = startDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+  const recommitDaysCount = new Set(recommitHistory.map(r => r.payload?.date).filter(Boolean)).size
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
 
-        {/* TOP BAR */}
+        {/* WAYFINDING HEADER */}
         <div style={styles.topBar}>
           <VowBrandMark />
-          <button
-            onClick={() => navigate('/profile')}
-            style={styles.profileBtn}
-            aria-label="Profile"
-          >
+          <StageWayfinder progress={progress} />
+          <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
         </div>
 
-        {/* TILE 1 — GREETING */}
-        <GreetingTile
-          firstName={firstName}
-          substanceLabel={progress.substance_label}
-        />
+        {/* HERO — the count-up clock (dark vault) */}
+        <div style={styles.hero}>
+          <p style={styles.heroEyebrow}>Endure · {tracker ? `Day ${daysFree + 1}` : 'Holding'}</p>
+          <p style={styles.heroGreeting}>{greet}{firstName ? `, ${firstName}` : ''}.</p>
 
-        {/* TILE 2 — TRACKER PILLS */}
-        <TrackerPillsTile
-          tracker={tracker}
-          onAddPress={() => setShowAddPlaceholder(true)}
-        />
+          {tracker ? (
+            <>
+              <div style={styles.heroBigDays}>
+                <span style={styles.heroBigDaysN}>{daysFree}</span>
+                <span style={styles.heroBigDaysU}>{daysFree === 1 ? 'day free' : 'days free'}</span>
+              </div>
+              <div style={styles.heroCountGrid}>
+                {[{ n: hh, u: 'hrs' }, { n: mm, u: 'mins' }, { n: ss, u: 'secs' }].map((c, i) => (
+                  <div key={i} style={styles.heroCountCell}>
+                    <p style={styles.heroCountN}>{c.n}</p>
+                    <p style={styles.heroCountU}>{c.u}</p>
+                  </div>
+                ))}
+              </div>
+              <p style={styles.heroSinceLabel}>Free from {tracker.addiction_types.name} since {sinceStr}</p>
+            </>
+          ) : (
+            <>
+              <p style={styles.heroReflection}>You're holding the line. Start a counter to watch the days add up.</p>
+              <button onClick={() => navigate('/onboarding/setup')} style={styles.heroCta}>Start your counter</button>
+            </>
+          )}
 
-        {/* TILE 3 — COUNTER (or set-up prompt if no tracker) */}
-        {tracker ? (
-          <CounterTile tracker={tracker} navigate={navigate} onUpdateStart={handleUpdateStartDate} />
-        ) : (
-          <CounterSetupPromptTile
-            substanceLabel={progress.substance_label}
-            navigate={navigate}
-          />
-        )}
+          <div style={styles.heroCheckinRow}>
+            {todayCheckin ? (
+              <>
+                <span style={styles.heroDoneTick}>✓</span>
+                <span style={styles.heroDoneText}>You’ve checked in today.</span>
+                <button onClick={() => setCheckinOpen(true)} style={styles.heroUpdate}>Update</button>
+              </>
+            ) : (
+              <button onClick={() => setCheckinOpen(true)} style={styles.heroCheckinBtn}>Check in for today</button>
+            )}
+          </div>
+        </div>
 
-        {/* TILE 4 — URGE / SLIP ACTIONS */}
+        {/* SECTION — when it hits */}
+        <div style={styles.sectionWrap}>
+          <div style={styles.sectionHeader}>
+            <p style={styles.sectionTitle}>When it hits</p>
+            <p style={styles.sectionHint}>Ride the urge out, or redirect it into something else. Both count.</p>
+          </div>
+          {tracker && (
+            <ActionTile
+              tracker={tracker}
+              navigate={navigate}
+              slipCount={slipCount}
+              onMoveToReclaim={handleMoveToReclaim}
+              onLogUrge={handleLogUrge}
+            />
+          )}
+          <ActivityLogTile activityLogs={activityLogs} onSaved={handleActivitySaved} />
+        </div>
+
+        {/* SECTION — in your words */}
+        <div style={styles.sectionWrap}>
+          <div style={styles.sectionHeader}>
+            <p style={styles.sectionTitle}>In your words</p>
+          </div>
+          <JournalTile stage="endure" />
+        </div>
+
+        {/* BUILD GATE — prominent (turns into the move-to-Build CTA at 30 days) */}
         {tracker && (
-          <ActionTile
-            tracker={tracker}
-            navigate={navigate}
-            slipCount={slipCount}
-            onMoveToReclaim={handleMoveToReclaim}
-            onLogUrge={handleLogUrge}
-          />
-        )}
-
-        {/* TILE — DAILY CHECK-IN (shared signal) */}
-        <TodayCheckinTile checkin={todayCheckin} onOpen={() => setCheckinOpen(true)} />
-
-        {/* DAILY VITALS — sleep ledger + head-weather (logs for the Mirror) */}
-        <DailyVitalsTile />
-
-        {/* JOURNAL (shared) */}
-        <JournalTile stage="endure" />
-
-        {/* TILE — REPLACEMENT ACTIVITY (mood before -> after) */}
-        <ActivityLogTile activityLogs={activityLogs} onSaved={handleActivitySaved} />
-
-        {/* TILE 5 — SAVINGS / MILESTONES */}
-        {tracker && (
-          <SavingsMilestonesTile tracker={tracker} navigate={navigate} />
-        )}
-
-        {/* BUILD GATE — locked until the counter reaches 30 days */}
-        {tracker && <BuildGateTile tracker={tracker} onMoveToBuild={handleMoveToBuild} />}
-
-        {/* TILE 6 — ANCHORS (stage-relevant for Endure) */}
-        <AnchorsTile navigate={navigate} />
-
-        <BottomNav />
-
-        {/* ADD PLACEHOLDER MODAL */}
-        {showAddPlaceholder && (
-          <div style={styles.modal} onClick={() => setShowAddPlaceholder(false)}>
-            <div style={styles.modalCard} onClick={e => e.stopPropagation()}>
-              <p style={styles.modalTitle}>Multi-addiction support, soon.</p>
-              <p style={styles.modalBody}>
-                For now, Vow holds one vow at a time. Tracking multiple addictions
-                is coming in a future update.
-              </p>
-              <button
-                onClick={() => setShowAddPlaceholder(false)}
-                style={styles.modalCloseBtn}
-              >
-                Got it
-              </button>
-            </div>
+          <div style={styles.sectionWrap}>
+            <BuildGateTile tracker={tracker} onMoveToBuild={handleMoveToBuild} />
           </div>
         )}
+
+        {/* TOOLS — glyph toolkit */}
+        <div style={styles.sectionWrap}>
+          <p style={styles.toolkitLabel}>Tools</p>
+          <div style={styles.toolkit}>
+            <button onClick={() => setVowOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><VowGlyph /></span>
+              <span style={styles.toolLabel}>Your vow</span>
+            </button>
+            <button onClick={() => setVitalsOpen(true)} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><VitalsGlyph /></span>
+              <span style={styles.toolLabel}>Daily vitals</span>
+            </button>
+            <button onClick={() => { if (tracker) setMilestonesOpen(true); else navigate('/onboarding/setup') }} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><MilestonesGlyph /></span>
+              <span style={styles.toolLabel}>Milestones</span>
+            </button>
+            <button onClick={() => navigate('/anchors')} style={styles.toolBtn}>
+              <span style={styles.toolIcon}><AnchorGlyph /></span>
+              <span style={styles.toolLabel}>Anchors</span>
+            </button>
+          </div>
+        </div>
+
+        {/* WHAT'S SURFACING — collapsible */}
+        <div style={styles.sectionWrap}>
+          <button onClick={() => setSurfaceOpen(o => !o)} style={styles.surfaceToggle}>
+            <span style={styles.surfaceToggleText}>
+              <span style={styles.sectionTitle}>What’s surfacing</span>
+              <span style={styles.surfaceHint}>How this stretch is holding together</span>
+            </span>
+            <span style={styles.surfaceChevron}>{surfaceOpen ? '⌄' : '›'}</span>
+          </button>
+          {surfaceOpen && (
+            <div style={styles.surfaceBody}>
+              <div style={styles.tile}>
+                <p style={styles.tileEyebrow}>This stretch</p>
+                <h3 style={styles.tileTitle}>
+                  {tracker ? `${daysFree} ${daysFree === 1 ? 'day' : 'days'} held.` : 'Holding the line.'}
+                </h3>
+                <p style={styles.tileBody}>
+                  {recommitDaysCount > 0
+                    ? `You’ve re-chosen your vow ${recommitDaysCount} ${recommitDaysCount === 1 ? 'day' : 'days'} this stretch${slipCount > 0 ? `, through ${slipCount} ${slipCount === 1 ? 'slip' : 'slips'}` : ''}. Each renewal is the choice that keeps you here.`
+                    : `Renew your vow daily and check in — a picture of how you’re holding builds here${slipCount > 0 ? `, even across the ${slipCount} ${slipCount === 1 ? 'slip' : 'slips'} so far` : ''}.`}
+                </p>
+              </div>
+              <button onClick={() => navigate('/mirror')} style={styles.oracleLink}>
+                Your full reflection lives in the Oracle <span style={styles.oracleLinkArrow}>→</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        <BottomNav />
 
         {/* MILESTONE TOAST */}
         {toastMilestones.length > 0 && (
@@ -273,15 +417,50 @@ export default function EndureFreeHome({ progress }) {
                     ? `${toastMilestones[0].label} unlocked.`
                     : `${toastMilestones.length} milestones unlocked.`}
                 </p>
-                <p style={styles.toastSub}>
-                  Tap milestones to see them.
-                </p>
+                <p style={styles.toastSub}>Tap milestones to see them.</p>
               </div>
             </div>
           </div>
         )}
 
       </div>
+
+      {/* TOOL: Your vow */}
+      {vowOpen && (
+        <div style={styles.sheetBackdrop} onClick={() => setVowOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setVowOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <VowTool
+              vowLatest={vowLatest}
+              tracker={tracker}
+              recommitToday={recommitToday}
+              recommitHistory={recommitHistory}
+              onVowSaved={handleVowSaved}
+              onRecommit={handleRecommit}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* TOOL: Daily vitals */}
+      {vitalsOpen && (
+        <div style={styles.sheetBackdrop} onClick={() => setVitalsOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setVitalsOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <DailyVitalsTile />
+          </div>
+        </div>
+      )}
+
+      {/* TOOL: Milestones */}
+      {milestonesOpen && tracker && (
+        <div style={styles.sheetBackdrop} onClick={() => setMilestonesOpen(false)}>
+          <div style={styles.toolSheetWrap} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setMilestonesOpen(false)} style={styles.toolSheetClose}>✕</button>
+            <SavingsMilestonesTile tracker={tracker} navigate={navigate} />
+          </div>
+        </div>
+      )}
 
       <DailyCheckin
         isOpen={checkinOpen}
@@ -1043,9 +1222,173 @@ function AnchorsTile({ navigate }) {
 }
 
 // ===================================================================
+// TILE: VOW TOOL (vow carried from Commit + proof + daily recommit)
+// ===================================================================
+const RECOMMIT_OPTIONS = [
+  { key: 'strong', label: 'Holding strong' },
+  { key: 'holding', label: 'Still holding' },
+  { key: 'shaky', label: 'Shaky today' },
+]
+
+function VowTool({ vowLatest, tracker, recommitToday, recommitHistory, onVowSaved, onRecommit }) {
+  const existingText = vowLatest?.payload?.text || ''
+  const [editing, setEditing] = useState(!existingText)
+  const [text, setText] = useState(existingText)
+  const [saving, setSaving] = useState(false)
+  const [recommitting, setRecommitting] = useState(false)
+
+  useEffect(() => {
+    const t = vowLatest?.payload?.text || ''
+    setText(t); setEditing(!t)
+  }, [vowLatest])
+
+  let daysFree = null, moneySaved = null
+  if (tracker) {
+    daysFree = Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 86400000)
+    const money = tracker.tracker_savings?.find(sv => sv.savings_type === 'money')
+    if (money) moneySaved = (daysFree * Number(money.per_day_amount)).toLocaleString('en-IN')
+  }
+
+  const handleSaveVow = async () => {
+    if (saving || !text.trim()) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase.from('free_stage_signals')
+      .insert({ user_id: user.id, stage: 'commit', signal_type: 'commit_vow', payload: { text: text.trim() } })
+      .select().single()
+    setSaving(false)
+    if (error) { console.error(error); alert('Could not save. Please try again.'); return }
+    if (onVowSaved) onVowSaved(data)
+    setEditing(false)
+  }
+
+  const doRecommit = async (key) => {
+    if (recommitting) return
+    setRecommitting(true)
+    await onRecommit(key)
+    setRecommitting(false)
+  }
+
+  const recommitDaysCount = new Set(recommitHistory.map(r => r.payload?.date).filter(Boolean)).size
+  const todayConviction = recommitToday?.payload?.conviction || null
+  const convictionWord = { strong: 'holding strong', holding: 'still holding', shaky: 'shaky today' }
+
+  return (
+    <div style={styles.tile}>
+      <p style={styles.tileEyebrow}>Your vow</p>
+
+      {editing ? (
+        <>
+          <h2 style={styles.tileTitle}>{existingText ? 'Revise your vow' : 'Write your vow'}</h2>
+          <p style={styles.tileBody}>
+            One honest line, in your own words — the reason you'll come back to on the hard days.
+          </p>
+          <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="I'm doing this because…"
+            style={styles.vowToolInput} rows={3} maxLength={280} disabled={saving} />
+          <button onClick={handleSaveVow} disabled={saving || !text.trim()}
+            style={{ ...styles.vitalsSaveBtn, ...(!text.trim() ? styles.vitalsSaveBtnDim : {}) }}>
+            {saving ? 'Saving…' : 'Save my vow'}
+          </button>
+        </>
+      ) : (
+        <>
+          <p style={styles.vowToolQuote}>“{existingText}”</p>
+          <button onClick={() => setEditing(true)} style={styles.checkinEditBtn}>Revise</button>
+
+          {tracker && daysFree !== null && (
+            <div style={styles.vowProofStrip}>
+              <div style={styles.vowProofItem}>
+                <p style={styles.vowProofN}>{daysFree}</p>
+                <p style={styles.vowProofU}>{daysFree === 1 ? 'day free' : 'days free'}</p>
+              </div>
+              {moneySaved !== null && (
+                <div style={styles.vowProofItem}>
+                  <p style={styles.vowProofN}>₹{moneySaved}</p>
+                  <p style={styles.vowProofU}>saved</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <p style={styles.recommitLabel}>Do you still choose this today?</p>
+          <div style={styles.recommitRow}>
+            {RECOMMIT_OPTIONS.map(o => (
+              <button key={o.key} onClick={() => doRecommit(o.key)} disabled={recommitting}
+                style={{ ...styles.recommitBtn, ...(todayConviction === o.key ? styles.recommitBtnOn : {}) }}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+          {todayConviction ? (
+            <p style={styles.recommitDoneNote}>
+              Re-chosen today — {convictionWord[todayConviction]}.{recommitDaysCount > 1 ? ` That's ${recommitDaysCount} days re-chosen this stretch.` : ''}
+            </p>
+          ) : (
+            <p style={styles.recommitDoneNote}>
+              {recommitDaysCount > 0
+                ? `Re-chosen ${recommitDaysCount} ${recommitDaysCount === 1 ? 'day' : 'days'} this stretch.`
+                : 'Tap once a day to renew it.'}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ===================================================================
 // STYLES
 // ===================================================================
 const styles = {
+  sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
+  hero: { background: 'linear-gradient(170deg, #3A2A1C 0%, #241710 100%)', borderRadius: '22px', padding: '24px 22px 22px', margin: '6px 0 28px', boxShadow: '0 16px 36px -12px rgba(40,25,10,0.5)' },
+  heroEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 14px' },
+  heroGreeting: { fontSize: '15px', color: 'rgba(250,247,241,0.7)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 16px' },
+  heroReflection: { fontSize: '20px', color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4, margin: '0 0 20px' },
+  heroCta: { display: 'inline-block', padding: '13px 26px', background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)', color: '#2A1710', border: 'none', borderRadius: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 14px rgba(0,0,0,0.2)' },
+  heroBigDays: { display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '6px 0 16px' },
+  heroBigDaysN: { fontSize: '64px', fontWeight: 500, color: '#FAF7F1', lineHeight: 1, fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums' },
+  heroBigDaysU: { fontSize: '12px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.2em', marginTop: '10px', fontFamily: 'Georgia, serif' },
+  heroCountGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '7px', margin: '0 0 14px' },
+  heroCountCell: { background: 'rgba(217,181,122,0.08)', borderRadius: '12px', padding: '10px 2px 8px', border: '0.5px solid rgba(217,181,122,0.18)', textAlign: 'center' },
+  heroCountN: { fontSize: '20px', fontWeight: 500, color: '#FAF7F1', lineHeight: 1, margin: 0, fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums' },
+  heroCountU: { fontSize: '9px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '6px 0 0', fontFamily: 'Georgia, serif' },
+  heroSinceLabel: { fontSize: '12px', color: 'rgba(250,247,241,0.55)', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: 0 },
+  heroDoneRow: { display: 'flex', alignItems: 'center', gap: '10px' },
+  heroDoneTick: { width: '24px', height: '24px', borderRadius: '50%', border: '1px solid rgba(217,181,122,0.6)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 },
+  heroDoneText: { fontSize: '14px', color: 'rgba(250,247,241,0.85)', fontFamily: 'Georgia, serif', fontStyle: 'italic', flex: 1 },
+  heroUpdate: { background: 'transparent', border: 'none', color: '#D9B57A', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', flexShrink: 0 },
+  heroCheckinRow: { display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', paddingTop: '16px', borderTop: '1px solid rgba(217,181,122,0.2)' },
+  heroCheckinBtn: { width: '100%', padding: '12px', background: 'transparent', border: '1px solid rgba(217,181,122,0.45)', color: '#D9B57A', borderRadius: '11px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif' },
+  sectionWrap: { marginBottom: '28px' },
+  sectionHeader: { marginBottom: '14px', paddingLeft: '2px' },
+  sectionTitle: { fontSize: '13px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: 0 },
+  sectionHint: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 0', lineHeight: 1.45 },
+  toolkitLabel: { fontSize: '13px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 16px', paddingLeft: '2px' },
+  toolkit: { display: 'flex', gap: '8px', justifyContent: 'center' },
+  toolBtn: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '16px 6px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' },
+  toolIcon: { color: '#854F0B', display: 'flex' },
+  toolLabel: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.3 },
+  surfaceToggle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 2px', background: 'transparent', border: 'none', borderTop: '1px solid rgba(217,194,138,0.4)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' },
+  surfaceToggleText: { display: 'flex', flexDirection: 'column', gap: '5px' },
+  surfaceHint: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  surfaceChevron: { fontSize: '18px', color: '#854F0B', flexShrink: 0 },
+  surfaceBody: { marginTop: '8px' },
+  oracleLink: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', marginTop: '8px', padding: '14px', background: 'transparent', border: 'none', borderTop: '1px solid rgba(217,194,138,0.4)', color: '#854F0B', fontSize: '13px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
+  oracleLinkArrow: { fontSize: '14px' },
+  toolSheetWrap: { width: '100%', maxWidth: '430px', maxHeight: '90vh', overflowY: 'auto' },
+  toolSheetClose: { display: 'block', marginLeft: 'auto', marginBottom: '10px', width: '32px', height: '32px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'white', color: '#6B5C4A', fontSize: '13px', cursor: 'pointer', lineHeight: 1 },
+  vowToolQuote: { fontSize: '19px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45, margin: '0 0 8px' },
+  vowToolInput: { width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '0.5px solid #E0D5C2', borderRadius: '12px', background: 'white', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.5, marginBottom: '12px', outline: 'none', resize: 'vertical' },
+  vowProofStrip: { display: 'flex', gap: '10px', margin: '14px 0' },
+  vowProofItem: { flex: 1, background: '#FBF1E0', border: '0.5px solid #ECDCBE', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' },
+  vowProofN: { fontSize: '20px', fontWeight: 500, color: '#854F0B', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' },
+  vowProofU: { fontSize: '10px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '6px 0 0', fontFamily: 'Georgia, serif' },
+  recommitLabel: { fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '10px 0 8px' },
+  recommitRow: { display: 'flex', gap: '7px', marginBottom: '10px' },
+  recommitBtn: { flex: 1, padding: '11px 6px', background: 'white', border: '0.5px solid #E0D5C2', borderRadius: '12px', fontSize: '12.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer', lineHeight: 1.2 },
+  recommitBtnOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: '0.5px solid #241710' },
+  recommitDoneNote: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '2px 0 0', textAlign: 'center', lineHeight: 1.4 },
   vitalsCompact: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: 'linear-gradient(180deg, #F6FAE9 0%, #ECF3D5 100%)', border: '0.5px solid #C2D49A', borderRadius: '14px', padding: '12px 16px' },
   vitalsCompactMain: { display: 'flex', alignItems: 'center', gap: '10px' },
   vitalsCompactCheck: { width: '26px', height: '26px', borderRadius: '50%', background: 'linear-gradient(180deg, #EAF3DE 0%, #DCE9C8 100%)', border: '0.5px solid #C2D49A', color: '#3B6D11', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
