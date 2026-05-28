@@ -17,8 +17,8 @@ import SlipHistory from './screens/SlipHistory'
 import UrgeLog from './screens/UrgeLog'
 import Anchors from './screens/Anchors'
 import AnchorPublic from './screens/AnchorPublic'
-import PrivacyPolicy from './screens/PrivacyPolicy'
-import Terms from './screens/Terms'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import Terms from './pages/Terms'
 
 // ===== Home (free tier router) =====
 import HomeRouter from './screens/freeHome/HomeRouter'
