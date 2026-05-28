@@ -76,6 +76,7 @@ export default function Anchors() {
       .limit(5)
     
     setReactions(reactionsData || [])
+    try { localStorage.setItem('vow_anchor_reactions_last_seen', new Date().toISOString()) } catch (_) {}
     setLoading(false)
   }
 

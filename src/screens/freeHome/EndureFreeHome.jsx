@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
+import AnchorReactionBadge from './AnchorReactionBadge'
 import SheetPortal from '../../components/SheetPortal'
 import VowBrandMark from '../../components/VowBrandMark'
 import { checkAndMarkMilestones } from '../../milestoneHelpers'
@@ -444,7 +445,7 @@ export default function EndureFreeHome({ progress }) {
               <span style={styles.toolLabel}>Milestones</span>
             </button>
             <button onClick={() => navigate('/anchors')} style={styles.toolBtn}>
-              <span style={styles.toolIcon}><AnchorGlyph /></span>
+              <span style={{ ...styles.toolIcon, position: 'relative' }}><AnchorGlyph /><AnchorReactionBadge /></span>
               <span style={styles.toolLabel}>Anchors</span>
             </button>
           </div>

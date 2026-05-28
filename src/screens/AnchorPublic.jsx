@@ -41,24 +41,21 @@ export default function AnchorPublic() {
   const sendReaction = async (reactionText) => {
     setSending(reactionText)
     try {
-      // Get the anchor_id and user_id from the token
-      const { data: anchorData } = await supabase
-        .from('anchors')
-        .select('id, user_id')
-        .eq('invite_token', token)
-        .single()
-      
-      if (!anchorData) throw new Error('Anchor not found')
+      // Goes through the submit_anchor_reaction SECURITY DEFINER RPC so the
+      // anonymous role doesn't need direct SELECT/INSERT on anchors or
+      // anchor_reactions. The function validates the token and writes the
+      // row with the anchor owner's user_id.
+      const { error: rpcError } = await supabase
+        .rpc('submit_anchor_reaction', {
+          p_token: token,
+          p_reaction_text: reactionText,
+        })
 
-      await supabase.from('anchor_reactions').insert({
-        anchor_id: anchorData.id,
-        user_id: anchorData.user_id,
-        reaction_text: reactionText,
-      })
+      if (rpcError) throw rpcError
 
       setSentReactions([...sentReactions, reactionText])
     } catch (err) {
-      console.error(err)
+      console.error('submit_anchor_reaction failed:', err)
       alert('Could not send. Please try again.')
     } finally {
       setSending(null)
