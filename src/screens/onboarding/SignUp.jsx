@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../../LanguageContext'
 import { supabase } from '../../supabaseClient'
 import AnimatedVowFlame from '../../components/AnimatedVowFlame'
@@ -27,6 +27,7 @@ const CSS = `
 .vow-submit:hover:not(:disabled) { filter: brightness(1.05); transform: translateY(-1px); }
 .vow-submit:active:not(:disabled) { transform: translateY(0); }
 .vow-toggle:hover { color: #F0E7D6; }
+.vow-footer-link:hover { color: rgba(217,181,122,1); }
 @media (prefers-reduced-motion: reduce) { .vrise, .vault-rise { animation: none; } }
 `
 
@@ -107,7 +108,7 @@ export default function SignUp() {
       {/* TOP — the cream manifesto (the world outside the vault) */}
       <div style={styles.topZone}>
         <div className="vrise" style={{ ...styles.markHalo, animationDelay: '0s' }}>
-          <AnimatedVowFlame size={44} />
+          <AnimatedVowFlame size={48} theme="light" />
         </div>
         <p className="vrise" style={{ ...styles.logo, animationDelay: '0.05s' }}>Vow</p>
         <p className="vrise" style={{ ...styles.tag, animationDelay: '0.09s' }}>{t('tagline')}</p>
@@ -141,6 +142,24 @@ export default function SignUp() {
           >
             {t('signIn')}
           </button>
+        </div>
+
+        {/* GOOGLE SSO — primary path, surfaced at the top */}
+        <button
+          type="button"
+          className="vow-google"
+          style={{ ...styles.googleBtn, ...(oauthLoading ? styles.btnDisabled : {}) }}
+          onClick={handleGoogle}
+          disabled={oauthLoading}
+        >
+          <GoogleG />
+          {oauthLoading ? 'Redirecting…' : 'Continue with Google'}
+        </button>
+
+        <div style={styles.divider}>
+          <span style={styles.dividerLine} />
+          <span style={styles.dividerText}>or</span>
+          <span style={styles.dividerLine} />
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -199,26 +218,14 @@ export default function SignUp() {
           {success && <p style={styles.success}>{success}</p>}
         </form>
 
-        <div style={styles.divider}>
-          <span style={styles.dividerLine} />
-          <span style={styles.dividerText}>or</span>
-          <span style={styles.dividerLine} />
-        </div>
-
-        <button
-          type="button"
-          className="vow-google"
-          style={{ ...styles.googleBtn, ...(oauthLoading ? styles.btnDisabled : {}) }}
-          onClick={handleGoogle}
-          disabled={oauthLoading}
-        >
-          <GoogleG />
-          {oauthLoading ? 'Redirecting…' : 'Continue with Google'}
-        </button>
-
         <p style={styles.privacy}>🔒 AES-256 encrypted · We never post on your behalf.</p>
 
-        <p style={styles.footer}>By continuing, you agree to keep your vow.</p>
+        <p style={styles.footer}>
+          By continuing, you agree to our{' '}
+          <Link to="/terms" className="vow-footer-link" style={styles.footerLink}>Terms</Link>
+          {' '}and{' '}
+          <Link to="/privacy" className="vow-footer-link" style={styles.footerLink}>Privacy Policy</Link>.
+        </p>
       </div>
     </div>
   )
@@ -406,7 +413,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    margin: '1.5rem 0 1.25rem',
+    margin: '1.25rem 0 1.5rem',
   },
   dividerLine: {
     flex: 1,
@@ -471,12 +478,21 @@ const styles = {
     border: '0.5px solid rgba(120,180,140,0.3)',
     borderRadius: '9px',
   },
+
+  // The Consent Footer — passive legal acceptance line with Terms / Privacy links
   footer: {
     textAlign: 'center',
     fontSize: '11px',
-    color: 'rgba(250,247,241,0.35)',
+    color: 'rgba(250,247,241,0.45)',
     marginTop: '0.7rem',
     fontStyle: 'italic',
     fontFamily: 'Georgia, serif',
+    lineHeight: 1.55,
+  },
+  footerLink: {
+    color: 'rgba(217,181,122,0.85)',
+    textDecoration: 'underline',
+    textUnderlineOffset: '2px',
+    transition: 'color 0.2s ease',
   },
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../LanguageContext'
 import { supabase } from '../supabaseClient'
 import BottomNav from '../components/BottomNav'
@@ -335,6 +335,13 @@ export default function Profile() {
           )}
         </div>
 
+        {/* THE PUBLISHER'S NOTE — legal links */}
+        <div style={styles.publishersNote}>
+          <Link to="/privacy" style={styles.publishersLink}>Privacy</Link>
+          <span style={styles.publishersDivider}>·</span>
+          <Link to="/terms" style={styles.publishersLink}>Terms</Link>
+        </div>
+
         {/* THE COLOPHON */}
         <button onClick={signOut} style={styles.colophon}>Sign out of this volume</button>
 
@@ -437,7 +444,13 @@ const styles = {
   threadDesc: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
   threadDescCurrent: { color: '#CBBA98' },
 
-  colophon: { display: 'block', margin: '2.5rem auto 1rem', background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.22em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  // THE PUBLISHER'S NOTE — small Privacy · Terms line, sits just above the colophon.
+  // Matches the existing amber small-caps link pattern (epLink) for visual consistency.
+  publishersNote: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '2.5rem' },
+  publishersLink: { color: '#854F0B', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.14em', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', textDecoration: 'none' },
+  publishersDivider: { color: '#9C8C78', fontSize: '11px', lineHeight: 1 },
+
+  colophon: { display: 'block', margin: '1.25rem auto 1rem', background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.22em', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
 
   sheetOverlay: { position: 'fixed', inset: 0, background: 'rgba(36,23,16,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 },
   sheetCard: { width: '100%', maxWidth: '440px', background: '#FAF7F1', borderRadius: '24px 24px 0 0', padding: '24px 22px 28px', boxShadow: '0 -8px 40px rgba(40,25,10,0.25)' },
