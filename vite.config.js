@@ -11,8 +11,7 @@ export default defineConfig({
       includeAssets: [
         'favicon.svg',
         'favicon.ico',
-        'favicon-16x16.png',
-        'favicon-32x32.png',
+        'favicon-96x96.png',
         'apple-touch-icon.png',
       ],
       manifest: {
@@ -22,12 +21,12 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        orientation: 'portrait',
         background_color: '#FAF7F1',
         theme_color: '#FAF7F1',
+        orientation: 'portrait',
         icons: [
-          { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/web-app-manifest-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: '/web-app-manifest-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       workbox: {
