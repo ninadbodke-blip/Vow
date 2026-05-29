@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../../LanguageContext'
 import { supabase } from '../../supabaseClient'
 import AnimatedVowFlame from '../../components/AnimatedVowFlame'
+import { Capacitor } from '@capacitor/core'
+import { SocialLogin } from '@capgo/capacitor-social-login'
 
 function GoogleG() {
   return (
@@ -46,18 +48,39 @@ export default function SignUp() {
 
   const isSignup = mode === 'signup'
 
-  // ---- AUTH LOGIC (unchanged) ----
+  // ---- AUTH LOGIC ----
   const handleGoogle = async () => {
     setError(null)
     setSuccess(null)
     setOauthLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin },
-      })
-      if (error) throw error
-      // A successful call redirects the whole page to Google.
+      if (Capacitor.isNativePlatform()) {
+        // NATIVE (Android/iOS): real Google account picker -> ID token -> Supabase.
+        // No browser redirect; the session lands inside the app.
+        const res = await SocialLogin.login({
+          provider: 'google',
+          options: { filterByAuthorizedAccounts: false }, // no scopes -> Credential Manager picker, no MainActivity edit
+        })
+        const idToken = res?.result?.idToken
+        if (!idToken) throw new Error('Google sign-in returned no ID token.')
+
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        })
+        if (error) throw error
+        // Session is now set. The onAuthStateChange listener in App.jsx re-routes
+        // automatically (new user -> onboarding, returning -> home), so we don't
+        // navigate manually here.
+      } else {
+        // WEB / PWA: existing full-page redirect flow (works fine in a browser).
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.origin },
+        })
+        if (error) throw error
+        // A successful call redirects the whole page to Google.
+      }
     } catch (err) {
       setError(err.message)
       setOauthLoading(false)

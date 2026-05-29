@@ -4,6 +4,8 @@ import { AnimatePresence } from 'framer-motion'
 import PageTransition from './components/PageTransition'
 import { LanguageProvider } from './LanguageContext'
 import { supabase } from './supabaseClient'
+import { Capacitor } from '@capacitor/core'
+import { SocialLogin } from '@capgo/capacitor-social-login'
 import SignUp from './screens/onboarding/SignUp'
 import AddictionPicker from './screens/onboarding/AddictionPicker'
 import StatePicker from './screens/onboarding/StatePicker'
@@ -57,6 +59,7 @@ function AppRoutes() {
   const [session, setSession] = useState(undefined)
   const [hasOnboardingProgress, setHasOnboardingProgress] = useState(undefined)
 
+  // 1. Session listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -70,6 +73,16 @@ function AppRoutes() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // 2. Native Google sign-in init (runs once on mount, native platforms only)
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      SocialLogin.initialize({
+        google: { webClientId: '751166391094-ghsv1o97d9jj2pp6dc4g897auh414lli.apps.googleusercontent.com' },
+      })
+    }
+  }, [])
+
+  // 3. Onboarding progress check
   useEffect(() => {
     async function check() {
       if (!session) {
