@@ -62,6 +62,34 @@ import MotivationArticle from './screens/motivation/MotivationArticle'
 // ===== Mirror =====
 import MirrorScreen from './screens/mirror/MirrorScreen'
 
+// =====================================================================
+// VOW PATH ACCESS GATE (pre-paywall)
+// =====================================================================
+// Vow Path is the paid guided journey. It is NOT public yet. Until billing
+// ships, only allowlisted tester accounts may reach any /app/vow-path route.
+// Set the allowlist via the VITE_VOWPATH_TESTERS env var (comma-separated
+// emails), e.g. VITE_VOWPATH_TESTERS="me@example.com,tester@example.com".
+// If the var is unset/empty, Vow Path is closed to EVERYONE (fail closed).
+const VOWPATH_TESTERS = (import.meta.env.VITE_VOWPATH_TESTERS || '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean)
+
+function isVowPathTester(session) {
+  const email = session?.user?.email?.toLowerCase()
+  return !!email && VOWPATH_TESTERS.includes(email)
+}
+
+// Resolve the element for a Vow Path route:
+//   not logged in        -> /app/welcome
+//   logged in, no access  -> /app/home (feature hidden pre-launch)
+//   allowlisted tester    -> the real screen
+function vowGate(session, element) {
+  if (!session) return <Navigate to="/app/welcome" replace />
+  if (!isVowPathTester(session)) return <Navigate to="/app/home" replace />
+  return element
+}
+
 function AppRoutes() {
   const location = useLocation()
   const [session, setSession] = useState(undefined)
@@ -199,30 +227,30 @@ function AppRoutes() {
       <Route path="/app/anchors" element={session ? <Anchors /> : <Navigate to="/app/welcome" />} />
 
       {/* ===== VOW PATH ===== */}
-      <Route path="/app/vow-path" element={session ? <VowPathIntro /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/vow-path/substance" element={session ? <SubstancePicker /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/vow-path/check" element={session ? <StageCheck /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/vow-path/result/:stageSlug" element={session ? <StageReveal /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path" element={vowGate(session, <VowPathIntro />)} />
+      <Route path="/app/vow-path/substance" element={vowGate(session, <SubstancePicker />)} />
+      <Route path="/app/vow-path/check" element={vowGate(session, <StageCheck />)} />
+      <Route path="/app/vow-path/result/:stageSlug" element={vowGate(session, <StageReveal />)} />
 
-      <Route path="/app/vow-path/reflect" element={session ? <ReflectOverview /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/vow-path/reflect/day/:dayNumber" element={session ? <ReflectV2Day /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/reflect" element={vowGate(session, <ReflectOverview />)} />
+      <Route path="/app/vow-path/reflect/day/:dayNumber" element={vowGate(session, <ReflectV2Day />)} />
 
-      <Route path="/app/vow-path/notice" element={session ? <NoticeOverview /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/vow-path/notice/day/:dayNumber" element={session ? <NoticeDay /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/notice" element={vowGate(session, <NoticeOverview />)} />
+      <Route path="/app/vow-path/notice/day/:dayNumber" element={vowGate(session, <NoticeDay />)} />
 
-      <Route path="/app/vow-path/commit" element={session ? <CommitOverview /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/vow-path/commit/day/:dayNumber" element={session ? <CommitDay /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/commit" element={vowGate(session, <CommitOverview />)} />
+      <Route path="/app/vow-path/commit/day/:dayNumber" element={vowGate(session, <CommitDay />)} />
 
-      <Route path="/app/vow-path/endure" element={session ? <EndureOverview /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/vow-path/endure/day/:dayNumber" element={session ? <EndureDay /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/endure" element={vowGate(session, <EndureOverview />)} />
+      <Route path="/app/vow-path/endure/day/:dayNumber" element={vowGate(session, <EndureDay />)} />
 
-      <Route path="/app/vow-path/build" element={session ? <BuildOverview /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/vow-path/build/day/:dayNumber" element={session ? <BuildDay /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/build" element={vowGate(session, <BuildOverview />)} />
+      <Route path="/app/vow-path/build/day/:dayNumber" element={vowGate(session, <BuildDay />)} />
 
-      <Route path="/app/vow-path/reclaim" element={session ? <ReclaimOverview /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/vow-path/reclaim/day/:dayNumber" element={session ? <ReclaimDay /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/reclaim" element={vowGate(session, <ReclaimOverview />)} />
+      <Route path="/app/vow-path/reclaim/day/:dayNumber" element={vowGate(session, <ReclaimDay />)} />
 
-      <Route path="/app/vow-path/transition/:fromStage/to/:toStage" element={session ? <StageTransition /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/transition/:fromStage/to/:toStage" element={vowGate(session, <StageTransition />)} />
 
       {/* ===== LIBRARY ===== */}
       <Route path="/app/library" element={session ? <LibraryHome /> : <Navigate to="/app/welcome" />} />

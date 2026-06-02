@@ -6,8 +6,8 @@ import MarketingLayout from './MarketingLayout'
 // =====================================================================
 // The first thing the world sees at vowapp.in. Hero with the flame, brief
 // promise, primary CTA. Then: what Vow is in two sentences, the six-stage
-// path as a previewed grid, the 20%-to-rural-recovery commitment, and a
-// closing CTA. All marketing pages share MarketingLayout (nav + footer).
+// path as a previewed grid, and a closing CTA. All marketing pages share
+// MarketingLayout (nav + footer).
 // =====================================================================
 
 const STAGES = [
@@ -76,21 +76,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* MISSION */}
-      <section style={styles.section}>
-        <div style={styles.inner}>
-          <p style={styles.eyebrow}>The promise</p>
-          <h2 style={styles.sectionTitle}>
-            Twenty percent goes to those who can't pay for it.
-          </h2>
-          <p style={styles.body}>
-            Vow Labs commits twenty percent of net margin to rural addiction
-            recovery programs in India — places where structured care barely
-            reaches. If this product earns, people who need it most receive.
-          </p>
         </div>
       </section>
 

@@ -43,10 +43,7 @@ export default function Pricing() {
           <div style={styles.tierCardPaid}>
             <p style={styles.tierEyebrow}>Pay once · keep forever</p>
             <h2 style={styles.tierName}>Vow Path</h2>
-            <p style={styles.tierPrice}>
-              <span style={styles.priceMain}>₹999</span>
-              <span style={styles.priceAlt}> · $99 international</span>
-            </p>
+            <p style={styles.priceSoon}>Coming soon</p>
             <p style={styles.tierBlurb}>
               The deep guided journey for each stage.
             </p>
@@ -58,9 +55,7 @@ export default function Pricing() {
               <li style={styles.tierItem}>Full library — articles, motivation, mirror</li>
               <li style={styles.tierItem}>Founder audio clips through the hard parts</li>
             </ul>
-            <button onClick={() => navigate('/app')} style={styles.tierCtaPrimary}>
-              Get Vow Path
-            </button>
+            <p style={styles.soonNote}>Pricing announced at launch</p>
           </div>
         </div>
       </section>
@@ -84,14 +79,6 @@ export default function Pricing() {
               Refunds follow the standard policies of the Google Play Store
               (for Android) and our payment processor (for web purchases). Full
               terms are in our Terms of Service.
-            </p>
-          </div>
-
-          <div style={styles.faqItem}>
-            <h3 style={styles.faqQ}>What is the twenty percent commitment?</h3>
-            <p style={styles.faqA}>
-              Twenty percent of Vow Labs' net margin goes to rural addiction
-              recovery programs in India. Reported transparently each year.
             </p>
           </div>
 
@@ -195,6 +182,20 @@ const styles = {
   priceAlt: {
     fontSize: '16px',
     color: '#9C8C78',
+  },
+  priceSoon: {
+    fontSize: '20px',
+    color: '#A07A3C',
+    fontStyle: 'italic',
+    margin: '0 0 12px',
+    fontFamily: 'Georgia, serif',
+  },
+  soonNote: {
+    fontSize: '14px',
+    color: '#9C8C78',
+    fontStyle: 'italic',
+    margin: '4px 0 0',
+    fontFamily: 'Georgia, serif',
   },
   tierBlurb: {
     fontSize: '16px',

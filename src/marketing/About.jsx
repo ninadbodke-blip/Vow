@@ -26,13 +26,6 @@ export default function About() {
             how it started, what running has to do with quitting smoking — is
             being written and will live here soon.
           </p>
-
-          <p style={styles.eyebrowSecond}>The promise</p>
-          <p style={styles.body}>
-            Twenty percent of Vow Labs' net margin goes to rural addiction
-            recovery programs in India — places where structured care barely
-            reaches. If Vow earns, people who need it most receive.
-          </p>
         </div>
       </section>
     </MarketingLayout>

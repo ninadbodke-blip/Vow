@@ -79,8 +79,9 @@ export default function HowItWorks() {
             written guidance, prompts that change over time, and the full library.
           </p>
           <p style={styles.body}>
-            One-time payment. ₹999 in India, $99 internationally. Pay once,
-            keep it. No subscriptions to cancel during a hard week.
+            One-time payment, not a subscription. Pay once and keep it — no
+            recurring charge to cancel during a hard week. Pricing will be
+            announced at launch.
           </p>
           <button onClick={() => navigate('/pricing')} style={styles.tertiaryBtn}>
             See pricing →

@@ -26,10 +26,6 @@ const QUESTIONS = [
     a: "Vow is a Progressive Web App, which means you can install it on iOS by visiting vowapp.in in Safari and tapping Share → Add to Home Screen. A dedicated Play Store listing for Android is rolling out. A native iOS App Store listing is on the roadmap.",
   },
   {
-    q: 'How does the twenty percent rural commitment work?',
-    a: "Twenty percent of Vow Labs' net margin (after costs) is allocated to rural addiction recovery programs in India. We'll report annually on what was contributed and where. This is built into the company, not an add-on.",
-  },
-  {
     q: 'Can I delete my data?',
     a: "Yes. You can delete your account and all associated data from the Profile screen in the app. Once deleted, your data is gone from our systems within the timeframe described in our Privacy Policy.",
   },
