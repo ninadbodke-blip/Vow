@@ -64,7 +64,7 @@ export default function MarketingLayout({ children }) {
             <a href="tel:+919152987821" style={styles.crisisLink}>iCall · +91 91529 87821</a>
           </p>
           <p style={styles.copyright}>
-            © 2026 Vow Labs · Made in India · Udyam-registered MSME
+            © 2026 Vow<sup style={styles.tm}>™</sup> Labs · Made in India · Udyam-registered MSME
           </p>
         </div>
       </footer>
@@ -200,5 +200,11 @@ const styles = {
     color: '#9C8C78',
     margin: 0,
     fontFamily: 'Georgia, serif',
+  },
+  tm: {
+    fontSize: '0.62em',
+    verticalAlign: 'super',
+    letterSpacing: 0,
+    marginLeft: '1px',
   },
 }

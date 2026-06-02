@@ -19,6 +19,36 @@ const STAGES = [
   { name: 'Reclaim', desc: 'When a slip comes, return with kindness, not shame.' },
 ]
 
+// ---------------------------------------------------------------------
+// HERO FLAME
+// Ported from the Welcome screen's third slide (the "furnace"), recolored
+// for the cream background: the center glows ember-orange (#F0712B) rather
+// than the app's cream-white, and a soft radial halo sits behind it so the
+// whole thing reads as a warm light source. Three layers flicker at
+// different speeds (back 1.8s, core 1.2s, ember 0.8s).
+// ---------------------------------------------------------------------
+function HeroFlame() {
+  return (
+    <div style={styles.flameWrap} aria-hidden="true">
+      <div style={styles.flameGlow} />
+      <svg viewBox="0 0 100 100" style={styles.flameSvg} xmlns="http://www.w3.org/2000/svg">
+        {/* Back flame — deep amber, slow */}
+        <path d="M50 15 Q70 50 50 90 Q30 50 50 15" fill="#8A4310" opacity="0.85">
+          <animate attributeName="d" values="M50 15 Q70 50 50 90 Q30 50 50 15; M45 20 Q75 45 50 90 Q25 55 45 20; M55 20 Q65 55 50 90 Q35 45 55 20; M50 15 Q70 50 50 90 Q30 50 50 15" dur="1.8s" repeatCount="indefinite" />
+        </path>
+        {/* Core flame — burnt orange (brand clay), faster */}
+        <path d="M50 35 Q65 65 50 90 Q35 65 50 35" fill="#C5572C">
+          <animate attributeName="d" values="M50 35 Q65 65 50 90 Q35 65 50 35; M52 30 Q60 60 50 90 Q30 70 52 30; M48 30 Q70 70 50 90 Q40 60 48 30; M50 35 Q65 65 50 90 Q35 65 50 35" dur="1.2s" repeatCount="indefinite" />
+        </path>
+        {/* Inner ember — glowing ember-orange, rapid flicker (was cream-white) */}
+        <path d="M50 55 Q55 75 50 90 Q45 75 50 55" fill="#F0712B">
+          <animate attributeName="d" values="M50 55 Q55 75 50 90 Q45 75 50 55; M48 50 Q58 70 50 90 Q42 70 48 50; M50 55 Q55 75 50 90 Q45 75 50 55" dur="0.8s" repeatCount="indefinite" />
+        </path>
+      </svg>
+    </div>
+  )
+}
+
 export default function Home() {
   const navigate = useNavigate()
 
@@ -26,13 +56,13 @@ export default function Home() {
     <MarketingLayout>
       {/* HERO */}
       <section style={styles.hero}>
-        <img src="/favicon.svg" alt="Vow flame" style={styles.heroMark} />
+        <HeroFlame />
         <h1 style={styles.heroTitle}>
-          A quiet, structured path<br />through recovery.
+          A structured path<br />towards recovery.
         </h1>
         <p style={styles.heroSubtitle}>
-          Built in India. Grounded in evidence.<br />
-          Designed to be there for the long days.
+          Grounded in evidence.<br />
+          Designed to be there for the hard days.
         </p>
         <button onClick={() => navigate('/app')} style={styles.heroCta}>
           Begin your journey
@@ -102,10 +132,28 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
   },
-  heroMark: {
-    width: '72px',
-    height: '72px',
-    marginBottom: '32px',
+  flameWrap: {
+    position: 'relative',
+    width: 'clamp(180px, 30vw, 260px)',
+    height: 'clamp(180px, 30vw, 260px)',
+    marginBottom: '28px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flameGlow: {
+    position: 'absolute',
+    inset: '-22%',
+    background:
+      'radial-gradient(circle at 50% 60%, rgba(240,113,43,0.30) 0%, rgba(240,113,43,0.14) 36%, rgba(240,113,43,0) 70%)',
+    filter: 'blur(6px)',
+    pointerEvents: 'none',
+  },
+  flameSvg: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    overflow: 'visible',
   },
   heroTitle: {
     fontSize: 'clamp(36px, 6vw, 58px)',

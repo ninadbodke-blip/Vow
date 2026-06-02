@@ -8,11 +8,24 @@ export default function Contact() {
           <p style={styles.eyebrow}>Contact</p>
           <h1 style={styles.title}>Write to us.</h1>
           <p style={styles.body}>
-            For product questions, partnership ideas, press, or anything else —
-            email is the best way to reach us. We're a small team and we read
-            everything.
+            We're a small team and we read everything. There are two ways to
+            reach us — pick whichever fits.
           </p>
 
+          <p style={styles.eyebrowSecond}>Help with the app</p>
+          <p style={styles.body}>
+            Trouble signing in, something not working, or a question about your
+            account or a purchase. This is the fastest route to a fix.
+          </p>
+          <a href="mailto:support@vowapp.in" style={styles.emailLink}>
+            support@vowapp.in
+          </a>
+
+          <p style={styles.eyebrowSecond}>Everything else</p>
+          <p style={styles.body}>
+            Partnerships, press, feedback on the product, or simply to say
+            hello.
+          </p>
           <a href="mailto:hello@vowapp.in" style={styles.emailLink}>
             hello@vowapp.in
           </a>
