@@ -25,7 +25,7 @@ export default function SlipFlow() {
         .eq('id', trackerId)
         .single()
       if (error) {
-        navigate('/home')
+        navigate('/app/home')
         return
       }
       setTracker(data)
@@ -103,7 +103,7 @@ export default function SlipFlow() {
         return
       }
 
-      navigate('/home')
+      navigate('/app/home')
     } catch (err) {
       alert('Could not save: ' + err.message)
       setSaving(false)
@@ -146,7 +146,7 @@ export default function SlipFlow() {
             </p>
             <div style={styles.actions}>
               <button 
-                onClick={() => navigate('/home')}
+                onClick={() => navigate('/app/home')}
                 style={{...styles.btn, ...styles.btnSecondary}}
               >
                 Not yet, take me back
@@ -229,7 +229,7 @@ export default function SlipFlow() {
             </p>
             <div style={styles.actions}>
               <button
-                onClick={() => navigate('/home', { replace: true })}
+                onClick={() => navigate('/app/home', { replace: true })}
                 style={{ ...styles.btn, ...styles.btnPrimary }}
               >
                 Back to home

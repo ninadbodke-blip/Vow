@@ -22,6 +22,14 @@ import AnchorPublic from './screens/AnchorPublic'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms from './pages/Terms'
 
+// ===== Marketing (public, indexed by Google) =====
+import MarketingHome from './marketing/Home'
+import MarketingAbout from './marketing/About'
+import MarketingHowItWorks from './marketing/HowItWorks'
+import MarketingPricing from './marketing/Pricing'
+import MarketingFaq from './marketing/Faq'
+import MarketingContact from './marketing/Contact'
+
 // ===== Home (free tier router) =====
 import HomeRouter from './screens/freeHome/HomeRouter'
 
@@ -117,105 +125,116 @@ function AppRoutes() {
     <AnimatePresence mode="wait">
       <PageTransition key={location.pathname}>
         <Routes location={location}>
+      {/* ===== PUBLIC ROUTES (no auth, no /app prefix) ===== */}
       <Route path="/a/:token" element={<AnchorPublic />} />
-
-      {/* ===== PUBLIC LEGAL PAGES ===== */}
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<Terms />} />
 
-      {/* ===== ROOT REDIRECT ===== */}
+      {/* ===== MARKETING (root, public, indexed) ===== */}
+      {/* Native Capacitor APK skips marketing and goes straight to the app entry. */}
       <Route
         path="/"
+        element={Capacitor.isNativePlatform() ? <Navigate to="/app" replace /> : <MarketingHome />}
+      />
+      <Route path="/about" element={<MarketingAbout />} />
+      <Route path="/how-it-works" element={<MarketingHowItWorks />} />
+      <Route path="/pricing" element={<MarketingPricing />} />
+      <Route path="/faq" element={<MarketingFaq />} />
+      <Route path="/contact" element={<MarketingContact />} />
+
+      {/* ===== APP ENTRY (auth-aware redirect) ===== */}
+      <Route
+        path="/app"
         element={
-          !session ? <Navigate to="/welcome" /> :
-          hasOnboardingProgress ? <Navigate to="/home" /> :
-          <Navigate to="/onboarding/addiction" />
+          !session ? <Navigate to="/app/welcome" /> :
+          hasOnboardingProgress ? <Navigate to="/app/home" /> :
+          <Navigate to="/app/onboarding/addiction" />
         }
       />
 
       <Route
-        path="/welcome"
+        path="/app/welcome"
         element={
-          session ? <Navigate to="/home" /> :
+          session ? <Navigate to="/app/home" /> :
           <Welcome />
         }
       />
 
       <Route
-        path="/signup"
+        path="/app/signup"
         element={
           session
-            ? (hasOnboardingProgress ? <Navigate to="/home" /> : <Navigate to="/onboarding/addiction" />)
+            ? (hasOnboardingProgress ? <Navigate to="/app/home" /> : <Navigate to="/app/onboarding/addiction" />)
             : <SignUp />
         }
       />
 
       {/* ===== ONBOARDING ===== */}
       <Route
-        path="/onboarding/addiction"
-        element={session ? <AddictionPicker /> : <Navigate to="/signup" />}
+        path="/app/onboarding/addiction"
+        element={session ? <AddictionPicker /> : <Navigate to="/app/signup" />}
       />
       <Route
-        path="/onboarding/state-picker"
-        element={session ? <StatePicker /> : <Navigate to="/signup" />}
+        path="/app/onboarding/state-picker"
+        element={session ? <StatePicker /> : <Navigate to="/app/signup" />}
       />
       <Route
-        path="/onboarding/setup"
-        element={session ? <TrackerSetup /> : <Navigate to="/signup" />}
+        path="/app/onboarding/setup"
+        element={session ? <TrackerSetup /> : <Navigate to="/app/signup" />}
       />
 
       {/* ===== HOME ===== */}
       <Route
-        path="/home"
-        element={session ? <HomeRouter /> : <Navigate to="/welcome" />}
+        path="/app/home"
+        element={session ? <HomeRouter /> : <Navigate to="/app/welcome" />}
       />
 
       {/* ===== USER-FACING TOOLS ===== */}
-      <Route path="/profile" element={session ? <Profile /> : <Navigate to="/welcome" />} />
-      <Route path="/slip/:trackerId" element={session ? <SlipFlow /> : <Navigate to="/welcome" />} />
-      <Route path="/urge/:trackerId" element={session ? <UrgeFlow /> : <Navigate to="/welcome" />} />
-      <Route path="/milestones/:trackerId" element={session ? <Milestones /> : <Navigate to="/welcome" />} />
-      <Route path="/slips" element={session ? <SlipHistory /> : <Navigate to="/welcome" />} />
-      <Route path="/urges" element={session ? <UrgeLog /> : <Navigate to="/welcome" />} />
-      <Route path="/anchors" element={session ? <Anchors /> : <Navigate to="/welcome" />} />
+      <Route path="/app/profile" element={session ? <Profile /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/slip/:trackerId" element={session ? <SlipFlow /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/urge/:trackerId" element={session ? <UrgeFlow /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/milestones/:trackerId" element={session ? <Milestones /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/slips" element={session ? <SlipHistory /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/urges" element={session ? <UrgeLog /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/anchors" element={session ? <Anchors /> : <Navigate to="/app/welcome" />} />
 
       {/* ===== VOW PATH ===== */}
-      <Route path="/vow-path" element={session ? <VowPathIntro /> : <Navigate to="/welcome" />} />
-      <Route path="/vow-path/substance" element={session ? <SubstancePicker /> : <Navigate to="/welcome" />} />
-      <Route path="/vow-path/check" element={session ? <StageCheck /> : <Navigate to="/welcome" />} />
-      <Route path="/vow-path/result/:stageSlug" element={session ? <StageReveal /> : <Navigate to="/welcome" />} />
+      <Route path="/app/vow-path" element={session ? <VowPathIntro /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/substance" element={session ? <SubstancePicker /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/check" element={session ? <StageCheck /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/result/:stageSlug" element={session ? <StageReveal /> : <Navigate to="/app/welcome" />} />
 
-      <Route path="/vow-path/reflect" element={session ? <ReflectOverview /> : <Navigate to="/welcome" />} />
-      <Route path="/vow-path/reflect/day/:dayNumber" element={session ? <ReflectV2Day /> : <Navigate to="/welcome" />} />
+      <Route path="/app/vow-path/reflect" element={session ? <ReflectOverview /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/reflect/day/:dayNumber" element={session ? <ReflectV2Day /> : <Navigate to="/app/welcome" />} />
 
-      <Route path="/vow-path/notice" element={session ? <NoticeOverview /> : <Navigate to="/welcome" />} />
-      <Route path="/vow-path/notice/day/:dayNumber" element={session ? <NoticeDay /> : <Navigate to="/welcome" />} />
+      <Route path="/app/vow-path/notice" element={session ? <NoticeOverview /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/notice/day/:dayNumber" element={session ? <NoticeDay /> : <Navigate to="/app/welcome" />} />
 
-      <Route path="/vow-path/commit" element={session ? <CommitOverview /> : <Navigate to="/welcome" />} />
-      <Route path="/vow-path/commit/day/:dayNumber" element={session ? <CommitDay /> : <Navigate to="/welcome" />} />
+      <Route path="/app/vow-path/commit" element={session ? <CommitOverview /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/commit/day/:dayNumber" element={session ? <CommitDay /> : <Navigate to="/app/welcome" />} />
 
-      <Route path="/vow-path/endure" element={session ? <EndureOverview /> : <Navigate to="/welcome" />} />
-      <Route path="/vow-path/endure/day/:dayNumber" element={session ? <EndureDay /> : <Navigate to="/welcome" />} />
+      <Route path="/app/vow-path/endure" element={session ? <EndureOverview /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/endure/day/:dayNumber" element={session ? <EndureDay /> : <Navigate to="/app/welcome" />} />
 
-      <Route path="/vow-path/build" element={session ? <BuildOverview /> : <Navigate to="/welcome" />} />
-      <Route path="/vow-path/build/day/:dayNumber" element={session ? <BuildDay /> : <Navigate to="/welcome" />} />
+      <Route path="/app/vow-path/build" element={session ? <BuildOverview /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/build/day/:dayNumber" element={session ? <BuildDay /> : <Navigate to="/app/welcome" />} />
 
-      <Route path="/vow-path/reclaim" element={session ? <ReclaimOverview /> : <Navigate to="/welcome" />} />
-      <Route path="/vow-path/reclaim/day/:dayNumber" element={session ? <ReclaimDay /> : <Navigate to="/welcome" />} />
+      <Route path="/app/vow-path/reclaim" element={session ? <ReclaimOverview /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/vow-path/reclaim/day/:dayNumber" element={session ? <ReclaimDay /> : <Navigate to="/app/welcome" />} />
 
-      <Route path="/vow-path/transition/:fromStage/to/:toStage" element={session ? <StageTransition /> : <Navigate to="/welcome" />} />
+      <Route path="/app/vow-path/transition/:fromStage/to/:toStage" element={session ? <StageTransition /> : <Navigate to="/app/welcome" />} />
 
       {/* ===== LIBRARY ===== */}
-      <Route path="/library" element={session ? <LibraryHome /> : <Navigate to="/welcome" />} />
-      <Route path="/library/:stage" element={session ? <LibraryStageHome /> : <Navigate to="/welcome" />} />
-      <Route path="/library/:stage/day/:dayNumber" element={session ? <LibraryDeepRead /> : <Navigate to="/welcome" />} />
+      <Route path="/app/library" element={session ? <LibraryHome /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/library/:stage" element={session ? <LibraryStageHome /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/library/:stage/day/:dayNumber" element={session ? <LibraryDeepRead /> : <Navigate to="/app/welcome" />} />
 
       {/* ===== MOTIVATION ===== */}
-      <Route path="/motivation" element={session ? <MotivationHome /> : <Navigate to="/welcome" />} />
-      <Route path="/motivation/article/:slug" element={session ? <MotivationArticle /> : <Navigate to="/welcome" />} />
+      <Route path="/app/motivation" element={session ? <MotivationHome /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/motivation/article/:slug" element={session ? <MotivationArticle /> : <Navigate to="/app/welcome" />} />
 
       {/* ===== MIRROR ===== */}
-      <Route path="/mirror" element={session ? <MirrorScreen /> : <Navigate to="/welcome" />} />
+      <Route path="/app/mirror" element={session ? <MirrorScreen /> : <Navigate to="/app/welcome" />} />
     </Routes>
       </PageTransition>
     </AnimatePresence>

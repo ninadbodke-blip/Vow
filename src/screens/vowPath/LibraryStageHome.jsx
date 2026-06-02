@@ -65,7 +65,7 @@ export default function LibraryStageHome() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -86,7 +86,7 @@ export default function LibraryStageHome() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.topBar}>
-            <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
+            <button onClick={() => navigate('/app/home')} style={styles.backBtn}>‹ Home</button>
             <p style={styles.topBarTitle}>Unknown</p>
             <div style={{ width: '60px' }}></div>
           </div>
@@ -142,7 +142,7 @@ export default function LibraryStageHome() {
       <div style={styles.phone}>
 
         <div style={styles.topBar}>
-          <button onClick={() => navigate(`/vow-path/${stage}`)} style={styles.backBtn}>‹ Back</button>
+          <button onClick={() => navigate(`/app/vow-path/${stage}`)} style={styles.backBtn}>‹ Back</button>
           <p style={styles.topBarTitle}>{config.label}</p>
           <div style={{ width: '60px' }}></div>
         </div>
@@ -224,7 +224,7 @@ export default function LibraryStageHome() {
 function DayRow({ dr, stage, unlocked, navigate }) {
   return (
     <button
-      onClick={() => unlocked ? navigate(`/library/${stage}/day/${dr.day}`) : null}
+      onClick={() => unlocked ? navigate(`/app/library/${stage}/day/${dr.day}`) : null}
       disabled={!unlocked}
       style={{
         ...styles.tocRow,

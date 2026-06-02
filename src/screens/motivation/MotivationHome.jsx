@@ -212,7 +212,7 @@ export default function MotivationHome() {
         <div style={styles.header}>
           <div style={{ width: '40px' }} />
           <p style={styles.headerTitle}>Motivation</p>
-          <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
+          <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
         </div>
 
         {/* THE PRIMARY ARTIFACT — their own Vow as the hero */}
@@ -262,7 +262,7 @@ export default function MotivationHome() {
             {themed.length === 0 ? (
               <p style={styles.essayEmpty}>Nothing tagged for that yet — try another, or “All”.</p>
             ) : themed.map(a => (
-              <button key={a.id} onClick={() => navigate(`/motivation/article/${a.slug}`)} style={styles.essayCard}>
+              <button key={a.id} onClick={() => navigate(`/app/motivation/article/${a.slug}`)} style={styles.essayCard}>
                 <p style={styles.essayTitle}>{a.title}</p>
                 <span style={styles.essayMeta}>{a.readMinutes} min</span>
               </button>
@@ -280,7 +280,7 @@ export default function MotivationHome() {
           anchors={anchors}
           daysFree={daysFree}
           onClose={() => setOverride(false)}
-          onLog={trackerId ? () => navigate(`/urge/${trackerId}`) : null}
+          onLog={trackerId ? () => navigate(`/app/urge/${trackerId}`) : null}
         />
       )}
     </div>

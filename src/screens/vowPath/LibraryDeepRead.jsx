@@ -41,7 +41,7 @@ export default function LibraryDeepRead() {
     async function checkAccess() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 

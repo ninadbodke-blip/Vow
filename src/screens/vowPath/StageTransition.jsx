@@ -12,7 +12,7 @@ const TRANSITION_CONTENT = {
     ],
     nextStageBlurb: 'Reflect is 21 days. One day at a time, in order.',
     continueLabel: 'Begin Reflect Day 1',
-    nextPath: '/vow-path/reflect',
+    nextPath: '/app/vow-path/reflect',
   },
   'reflect-to-commit': {
     eyebrow: 'Threshold',
@@ -24,7 +24,7 @@ const TRANSITION_CONTENT = {
     ],
     nextStageBlurb: 'Commit is 10 days. You will set a stop date between 10 and 30 days from today on Day 1.',
     continueLabel: 'Enter Commit',
-    nextPath: '/vow-path/commit',
+    nextPath: '/app/vow-path/commit',
   },
   'reflect-to-endure': {
     eyebrow: 'Threshold',
@@ -36,7 +36,7 @@ const TRANSITION_CONTENT = {
     ],
     nextStageBlurb: 'Endure is 21 days from today.',
     continueLabel: 'Enter Endure',
-    nextPath: '/vow-path/endure',
+    nextPath: '/app/vow-path/endure',
   },
   'commit-to-endure': {
     eyebrow: 'Threshold',
@@ -48,7 +48,7 @@ const TRANSITION_CONTENT = {
     ],
     nextStageBlurb: null,
     continueLabel: 'Enter Endure',
-    nextPath: '/vow-path/endure',
+    nextPath: '/app/vow-path/endure',
   },
   'endure-to-build': {
     eyebrow: 'Threshold',
@@ -60,7 +60,7 @@ const TRANSITION_CONTENT = {
     ],
     nextStageBlurb: 'Build is coming. We will notify you when it ships.',
     continueLabel: 'Return home',
-    nextPath: '/home',
+    nextPath: '/app/home',
     showAsComingSoon: true,
   },
 }
@@ -83,7 +83,7 @@ export default function StageTransition() {
             <p style={styles.errorText}>
               We don't recognize the path from {fromStage} to {toStage}.
             </p>
-            <button onClick={() => navigate('/home')} style={styles.primaryBtn}>
+            <button onClick={() => navigate('/app/home')} style={styles.primaryBtn}>
               Return home
             </button>
           </div>

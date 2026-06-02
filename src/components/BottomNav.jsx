@@ -28,10 +28,10 @@ const ICONS = {
 }
 
 const TABS = [
-  { key: 'home', label: 'Home', route: '/home', icon: ICONS.home, matchPrefix: false },
-  { key: 'mirror', label: 'Oracle', route: '/mirror', icon: ICONS.mirror, matchPrefix: true },
-  { key: 'motivation', label: 'Motivation', route: '/motivation', icon: ICONS.motivation, matchPrefix: true },
-  { key: 'path', label: 'Vow Path', route: '/vow-path', icon: <VowPathMark size={24} theme="light" />, matchPrefix: true },
+  { key: 'home', label: 'Home', route: '/app/home', icon: ICONS.home, matchPrefix: false },
+  { key: 'mirror', label: 'Oracle', route: '/app/mirror', icon: ICONS.mirror, matchPrefix: true },
+  { key: 'motivation', label: 'Motivation', route: '/app/motivation', icon: ICONS.motivation, matchPrefix: true },
+  { key: 'path', label: 'Vow Path', route: '/app/vow-path', icon: <VowPathMark size={24} theme="light" />, matchPrefix: true },
 ]
 
 export default function BottomNav() {

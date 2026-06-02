@@ -11,17 +11,20 @@ export default function LedgerOfForgone({ data, onSave, onComplete, saving }) {
     customPrompt = 'Something else',
     selfNamingPrompt,
     selfNamingOptions,
+    mostWantBackPrompt,
+    mostWantBackSubtext,
   } = data
 
   const handleFinalize = onSave || onComplete
 
-  // Phases: 'select' -> 'reveal' -> 'naming'
+  // Phases: 'select' -> 'reveal' -> ['most_want_back'] -> 'naming'
   const [phase, setPhase] = useState('select')
   const [selectedIds, setSelectedIds] = useState([])
   const [customLines, setCustomLines] = useState([])
   const [customInput, setCustomInput] = useState('')
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [selfNaming, setSelfNaming] = useState(null)
+  const [mostWantBack, setMostWantBack] = useState(null)
 
   const toggle = (id) => {
     setSelectedIds(prev =>
@@ -58,8 +61,15 @@ export default function LedgerOfForgone({ data, onSave, onComplete, saving }) {
       total_count: totalSelected,
       categories_touched: assembledLedger.map(c => c.key),
       self_naming: selfNaming,
+      most_want_back: mostWantBack,
     })
   }
+
+  // Flat list of everything the user tapped — used by the "most want back" pick
+  const selectedItemsFlat = [
+    ...assembledLedger.flatMap(c => c.items.map(it => ({ id: it.id, label: it.label }))),
+    ...customLines.map((line, idx) => ({ id: `custom_${idx}`, label: line })),
+  ]
 
   // ===================================================================
   // PHASE: SELECT
@@ -200,7 +210,53 @@ export default function LedgerOfForgone({ data, onSave, onComplete, saving }) {
         </p>
 
         <div style={styles.footer}>
-          <button onClick={() => setPhase('naming')} style={styles.primaryBtn}>
+          <button
+            onClick={() => setPhase(mostWantBackPrompt ? 'most_want_back' : 'naming')}
+            style={styles.primaryBtn}
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ===================================================================
+  // PHASE: MOST WANT BACK  (opt-in — only when mostWantBackPrompt is set)
+  // ===================================================================
+  if (phase === 'most_want_back') {
+    return (
+      <div style={styles.container}>
+        <h2 style={styles.prompt}>{mostWantBackPrompt}</h2>
+        {mostWantBackSubtext && <p style={styles.subtext}>{mostWantBackSubtext}</p>}
+
+        <div style={styles.namingList}>
+          {selectedItemsFlat.map(it => {
+            const selected = mostWantBack?.id === it.id
+            return (
+              <button
+                key={it.id}
+                onClick={() => setMostWantBack({ id: it.id, label: it.label })}
+                style={{
+                  ...styles.namingCard,
+                  ...(selected ? styles.namingCardSelected : {}),
+                }}
+              >
+                {it.label}
+              </button>
+            )
+          })}
+        </div>
+
+        <div style={styles.footer}>
+          <button
+            onClick={() => setPhase('naming')}
+            disabled={!mostWantBack}
+            style={{
+              ...styles.primaryBtn,
+              ...(!mostWantBack ? styles.primaryBtnDisabled : {}),
+            }}
+          >
             Continue
           </button>
         </div>

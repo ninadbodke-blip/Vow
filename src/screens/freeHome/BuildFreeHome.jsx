@@ -228,7 +228,7 @@ export default function BuildFreeHome({ progress: initialProgress }) {
         payload: { velocity, logged_at: new Date().toISOString() },
       })
     }
-    navigate(`/urge/${tracker.id}`, { state: { velocity } })
+    navigate(`/app/urge/${tracker.id}`, { state: { velocity } })
   }
 
   const handleCheckinSaved = (row) => setTodayCheckin(row)
@@ -242,7 +242,7 @@ export default function BuildFreeHome({ progress: initialProgress }) {
       .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
       .eq('user_id', user.id)
     if (error) { console.error('Move to reclaim failed:', error); alert('Could not move: ' + error.message); return }
-    window.location.assign('/home')
+    window.location.assign('/app/home')
   }
 
   if (loading) {
@@ -275,7 +275,7 @@ export default function BuildFreeHome({ progress: initialProgress }) {
         <div style={styles.topBar}>
           <VowBrandMark />
           <StageWayfinder progress={progress} />
-          <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
+          <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
         </div>
@@ -353,7 +353,7 @@ export default function BuildFreeHome({ progress: initialProgress }) {
               <span style={styles.toolIcon}><AlertGlyph /></span>
               <span style={styles.toolLabel}>If it hits</span>
             </button>
-            <button onClick={() => navigate('/anchors')} style={styles.toolBtn}>
+            <button onClick={() => navigate('/app/anchors')} style={styles.toolBtn}>
               <span style={{ ...styles.toolIcon, position: 'relative' }}><AnchorGlyph /><AnchorReactionBadge /></span>
               <span style={styles.toolLabel}>Anchors</span>
             </button>
@@ -385,7 +385,7 @@ export default function BuildFreeHome({ progress: initialProgress }) {
                   <p style={styles.surfaceLedgerProof}>“{ledger[0].payload?.proof || ledger[0].payload?.text}”</p>
                 )}
               </div>
-              <button onClick={() => navigate('/mirror')} style={styles.oracleLink}>
+              <button onClick={() => navigate('/app/mirror')} style={styles.oracleLink}>
                 Your full reflection lives in the Oracle <span style={styles.oracleLinkArrow}>→</span>
               </button>
             </div>
@@ -563,7 +563,7 @@ function SetupPromptTile({ substanceLabel, navigate }) {
       <p style={styles.tileBody}>
         Track your time free, savings, and milestones. Optional, but it reinforces the identity you're building.
       </p>
-      <button onClick={() => navigate('/onboarding/setup')} style={styles.tileSecondaryBtn}>
+      <button onClick={() => navigate('/app/onboarding/setup')} style={styles.tileSecondaryBtn}>
         Set up tracking
       </button>
     </div>
@@ -928,7 +928,7 @@ function AnchorsTile({ navigate }) {
         Here, anchors are less about crisis and more about staying connected.
         Keep the list reflecting who's actually in your life.
       </p>
-      <button onClick={() => navigate('/anchors')} style={styles.anchorsBtnNew}>
+      <button onClick={() => navigate('/app/anchors')} style={styles.anchorsBtnNew}>
         Open Anchors
       </button>
     </div>
@@ -960,7 +960,7 @@ function ActionTile({ tracker, navigate, slipCount = 0, onMoveToReclaim, onLogUr
         </button>
       </div>
 
-      <button onClick={() => navigate(`/slip/${tracker.id}`)} style={styles.slipFallbackBtn}>
+      <button onClick={() => navigate(`/app/slip/${tracker.id}`)} style={styles.slipFallbackBtn}>
         I slipped
       </button>
       <p style={styles.tileHelperText}>

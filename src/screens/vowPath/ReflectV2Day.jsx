@@ -92,7 +92,7 @@ export default function ReflectV2Day() {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -204,7 +204,7 @@ export default function ReflectV2Day() {
     const idx = sequence.indexOf(step)
 
     if (idx === 0 || step === STEP.CLOSING) {
-      navigate('/vow-path/reflect')
+      navigate('/app/vow-path/reflect')
       return
     }
 
@@ -220,7 +220,7 @@ export default function ReflectV2Day() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { error: artifactError } = await supabase
         .from('vow_artifacts')
@@ -292,7 +292,7 @@ export default function ReflectV2Day() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path/reflect')} style={styles.backBtn}>{'\u2039'} Overview</button>
+            <button onClick={() => navigate('/app/vow-path/reflect')} style={styles.backBtn}>{'\u2039'} Overview</button>
             <div style={{ width: '40px' }}></div>
             <div style={{ width: '40px' }}></div>
           </div>
@@ -484,14 +484,14 @@ export default function ReflectV2Day() {
           <p style={styles.closingLine}>{dayContent.closingLine}</p>
 
           <button
-            onClick={() => navigate(`/library/reflect/day/${dayNumber}`)}
+            onClick={() => navigate(`/app/library/reflect/day/${dayNumber}`)}
             style={styles.libraryLink}
           >
             Curious about the science behind this? Read the deep read {'\u2192'}
           </button>
 
           <button
-            onClick={() => navigate('/vow-path/reflect')}
+            onClick={() => navigate('/app/vow-path/reflect')}
             style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
           >
             {isFinalDay ? 'Back to overview' : 'Close'}

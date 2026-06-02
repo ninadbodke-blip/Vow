@@ -64,7 +64,7 @@ export default function NoticeDay() {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -177,7 +177,7 @@ export default function NoticeDay() {
     const idx = sequence.indexOf(step)
 
     if (idx === 0 || step === STEP.CLOSING) {
-      navigate('/vow-path/notice')
+      navigate('/app/vow-path/notice')
       return
     }
 
@@ -193,7 +193,7 @@ export default function NoticeDay() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const artifactType = `notice_day_${dayNumber}`
 
@@ -267,7 +267,7 @@ export default function NoticeDay() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path/notice')} style={styles.backBtn}>‹ Overview</button>
+            <button onClick={() => navigate('/app/vow-path/notice')} style={styles.backBtn}>‹ Overview</button>
             <div style={{ width: '40px' }}></div>
             <div style={{ width: '40px' }}></div>
           </div>
@@ -472,14 +472,14 @@ export default function NoticeDay() {
           )}
 
           <button
-            onClick={() => navigate(`/library/notice/day/${dayNumber}`)}
+            onClick={() => navigate(`/app/library/notice/day/${dayNumber}`)}
             style={styles.libraryLink}
           >
             Curious about the science behind this? Read the deep read →
           </button>
 
           <button
-            onClick={() => navigate('/vow-path/notice')}
+            onClick={() => navigate('/app/vow-path/notice')}
             style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
           >
             Return to the path

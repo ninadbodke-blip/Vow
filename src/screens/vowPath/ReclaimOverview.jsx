@@ -25,7 +25,7 @@ export default function ReclaimOverview() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -78,7 +78,7 @@ export default function ReclaimOverview() {
 
   const handleDayTap = (dayNum) => {
     if (!isDayTappable(dayNum)) return
-    navigate(`/vow-path/reclaim/day/${dayNum}`)
+    navigate(`/app/vow-path/reclaim/day/${dayNum}`)
   }
 
   if (!loaded) {
@@ -96,7 +96,7 @@ export default function ReclaimOverview() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
+            <button onClick={() => navigate('/app/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
             <p style={styles.headerTitle}>Reclaim</p>
             <div style={{ width: '60px' }}></div>
           </div>
@@ -108,7 +108,7 @@ export default function ReclaimOverview() {
               or if the Stage Check places you here.
             </p>
             <button
-              onClick={() => navigate('/vow-path')}
+              onClick={() => navigate('/app/vow-path')}
               style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
             >
               Take the Stage Check
@@ -128,7 +128,7 @@ export default function ReclaimOverview() {
       <div style={styles.phone}>
 
         <div style={styles.header}>
-          <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
+          <button onClick={() => navigate('/app/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
           <p style={styles.headerTitle}>Reclaim</p>
           <div style={{ width: '60px' }}></div>
         </div>

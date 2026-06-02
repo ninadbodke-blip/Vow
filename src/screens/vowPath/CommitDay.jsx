@@ -75,7 +75,7 @@ export default function CommitDay() {
       }
 
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { data: progressRow } = await supabase
         .from('vow_path_progress')
@@ -186,7 +186,7 @@ export default function CommitDay() {
     const idx = sequence.indexOf(step)
 
     if (idx === 0 || step === STEP.CLOSING) {
-      navigate('/vow-path/commit')
+      navigate('/app/vow-path/commit')
       return
     }
 
@@ -202,7 +202,7 @@ export default function CommitDay() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const artifactType = dayContent.artifactType
 
@@ -257,7 +257,7 @@ export default function CommitDay() {
       setCompleting(false)
       return
     }
-    navigate('/vow-path/transition/commit/to/endure')
+    navigate('/app/vow-path/transition/commit/to/endure')
   }
 
   const getBackLabel = () => {
@@ -292,7 +292,7 @@ export default function CommitDay() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path/commit')} style={styles.backBtn}>‹ Overview</button>
+            <button onClick={() => navigate('/app/vow-path/commit')} style={styles.backBtn}>‹ Overview</button>
             <div style={{ width: '40px' }}></div>
             <div style={{ width: '40px' }}></div>
           </div>
@@ -485,7 +485,7 @@ export default function CommitDay() {
           )}
 
           <button
-            onClick={() => navigate(`/library/commit/day/${dayNumber}`)}
+            onClick={() => navigate(`/app/library/commit/day/${dayNumber}`)}
             style={styles.libraryLink}
           >
             Curious about the science behind this? Read the deep read →
@@ -501,7 +501,7 @@ export default function CommitDay() {
             </button>
           ) : (
             <button
-              onClick={() => navigate('/vow-path/commit')}
+              onClick={() => navigate('/app/vow-path/commit')}
               style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
             >
               Close

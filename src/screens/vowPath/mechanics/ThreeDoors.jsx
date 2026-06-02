@@ -35,11 +35,11 @@ export default function ThreeDoors({ data, onSave, saving }) {
     }
 
     if (result.nextStage === 'commit') {
-      navigate('/vow-path/transition/reflect/to/commit')
+      navigate('/app/vow-path/transition/reflect/to/commit')
     } else if (result.nextStage === 'endure') {
-      navigate('/vow-path/transition/reflect/to/endure')
+      navigate('/app/vow-path/transition/reflect/to/endure')
     } else {
-      navigate('/home')
+      navigate('/app/home')
     }
   }
 

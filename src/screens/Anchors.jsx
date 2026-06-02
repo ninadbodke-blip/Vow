@@ -58,7 +58,7 @@ export default function Anchors() {
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { navigate('/signup'); return }
+    if (!user) { navigate('/app/signup'); return }
 
     const { data: anchorsData } = await supabase
       .from('anchors')
@@ -153,11 +153,11 @@ const sendHeartbeatTo = (anchor) => {
       <div style={styles.phone}>
         
         <div style={styles.topBar}>
-          <button onClick={() => navigate('/home')} style={styles.iconNavBtn} aria-label="Back to home">
+          <button onClick={() => navigate('/app/home')} style={styles.iconNavBtn} aria-label="Back to home">
             <BackIcon />
           </button>
           <p style={styles.topTitle}>Anchors</p>
-          <button onClick={() => navigate('/profile')} style={styles.iconNavBtn} aria-label="Profile">
+          <button onClick={() => navigate('/app/profile')} style={styles.iconNavBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
         </div>

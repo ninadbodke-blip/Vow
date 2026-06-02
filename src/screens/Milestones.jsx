@@ -21,7 +21,7 @@ export default function Milestones() {
           .select('*, addiction_types(name, icon)')
           .eq('id', trackerId)
           .single()
-        if (!t) { navigate('/home'); return }
+        if (!t) { navigate('/app/home'); return }
         setTracker(t)
 
         const { data: m } = await supabase
@@ -69,7 +69,7 @@ export default function Milestones() {
       <div style={styles.phone}>
 
         <div style={styles.header}>
-          <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Back</button>
+          <button onClick={() => navigate('/app/home')} style={styles.backBtn}>‹ Back</button>
           <p style={styles.headerTitle}>Milestones</p>
           <div style={{width: '40px'}}></div>
         </div>

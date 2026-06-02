@@ -30,7 +30,7 @@ export default function ReflectOverview() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -84,7 +84,7 @@ export default function ReflectOverview() {
 
   const handleDayTap = (dayNum) => {
     if (!isDayTappable(dayNum)) return
-    navigate(`/vow-path/reflect/day/${dayNum}`)
+    navigate(`/app/vow-path/reflect/day/${dayNum}`)
   }
 
   if (!loaded) {
@@ -102,7 +102,7 @@ export default function ReflectOverview() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
+            <button onClick={() => navigate('/app/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
             <p style={styles.headerTitle}>Reflect</p>
             <div style={{ width: '60px' }}></div>
           </div>
@@ -111,7 +111,7 @@ export default function ReflectOverview() {
             <p style={styles.lockedTitle}>Not yet.</p>
             <p style={styles.lockedReason}>{`You haven't started Reflect yet. Take the Stage Check first.`}</p>
             <button
-              onClick={() => navigate('/vow-path')}
+              onClick={() => navigate('/app/vow-path')}
               style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
             >
               Take the Stage Check
@@ -134,8 +134,8 @@ export default function ReflectOverview() {
         <div style={styles.heroWrap}>
           <div style={heroPaint} aria-hidden="true" />
           <div style={styles.heroNav}>
-            <button onClick={() => navigate('/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
-            <button onClick={() => navigate('/library/reflect')} style={styles.pillBtn}>Library</button>
+            <button onClick={() => navigate('/app/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
+            <button onClick={() => navigate('/app/library/reflect')} style={styles.pillBtn}>Library</button>
           </div>
         </div>
 

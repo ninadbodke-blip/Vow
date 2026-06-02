@@ -110,11 +110,11 @@ export default function SignUp() {
         }
 
         setSuccess('Account created. Check your email if confirmation is required.')
-        setTimeout(() => navigate('/onboarding/addiction'), 1500)
+        setTimeout(() => navigate('/app/onboarding/addiction'), 1500)
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        navigate('/home')
+        navigate('/app/home')
       }
     } catch (err) {
       setError(err.message)

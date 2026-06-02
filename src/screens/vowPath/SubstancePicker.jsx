@@ -73,7 +73,7 @@ export default function SubstancePicker() {
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const substance = getCurrentSubstance()
       if (!substance) {
@@ -105,7 +105,7 @@ export default function SubstancePicker() {
         return
       }
 
-      navigate('/vow-path/check')
+      navigate('/app/vow-path/check')
     } catch (err) {
       console.error(err)
       alert('Something went wrong. Please try again.')
@@ -155,7 +155,7 @@ export default function SubstancePicker() {
       <div style={styles.phone}>
 
         <div style={styles.header}>
-          <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Back</button>
+          <button onClick={() => navigate('/app/vow-path')} style={styles.backBtn}>‹ Back</button>
           <p style={styles.headerTitle}>Before we begin</p>
           <div style={{ width: '60px' }}></div>
         </div>

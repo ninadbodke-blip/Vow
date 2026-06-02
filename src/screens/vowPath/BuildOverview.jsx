@@ -27,7 +27,7 @@ export default function BuildOverview() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { data: progressRow } = await supabase
         .from('vow_path_progress')
@@ -77,7 +77,7 @@ export default function BuildOverview() {
 
   const handleDayTap = (dayNum) => {
     if (!isDayTappable(dayNum)) return
-    navigate(`/vow-path/build/day/${dayNum}`)
+    navigate(`/app/vow-path/build/day/${dayNum}`)
   }
 
   if (!loaded) {
@@ -95,7 +95,7 @@ export default function BuildOverview() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
+            <button onClick={() => navigate('/app/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
             <p style={styles.headerTitle}>Build</p>
             <div style={{ width: '60px' }}></div>
           </div>
@@ -104,7 +104,7 @@ export default function BuildOverview() {
             <p style={styles.lockedTitle}>Not yet.</p>
             <p style={styles.lockedReason}>{`You haven't reached Build yet. It opens after Endure.`}</p>
             <button
-              onClick={() => navigate('/vow-path')}
+              onClick={() => navigate('/app/vow-path')}
               style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
             >
               Take the Stage Check
@@ -130,9 +130,9 @@ export default function BuildOverview() {
       <div style={styles.phone}>
 
         <div style={styles.header}>
-          <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
+          <button onClick={() => navigate('/app/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
           <p style={styles.headerTitle}>Build</p>
-          <button onClick={() => navigate('/library/build')} style={styles.libraryBtn}>
+          <button onClick={() => navigate('/app/library/build')} style={styles.libraryBtn}>
             Library
           </button>
         </div>

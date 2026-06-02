@@ -46,7 +46,22 @@ Your only job for the next twenty-one days is to be honest in here. Nobody reads
 
 That's the work. I'll be back around the halfway mark. Go on.`,
     },
-    intro: [],
+    intro: [
+      'Every person who reaches Reflect arrived for a reason. Usually more than one, and usually not the reason they’d give out loud if someone asked.',
+      'There’s the public reason — the one that’s easy to admit, the one that sounds responsible. Underneath it, almost always, is a quieter one: a specific moment, a thing someone said, a number that scared you, a morning you don’t want to repeat. The quiet reason is the one that actually moves people. The public one rarely does.',
+      'Today is small, and it asks only one thing: what actually brought you here. Not the version for your family or your doctor. The real one — or the several real ones, including the ones you’re not proud of.',
+      'This matters more than it looks. The reason you start is the thing you come back to on the hard days, and there will be hard days. People who can name a true, specific reason are far more likely to still be standing months from now than people running on a vague sense that they should. “Should” burns off fast. A real reason doesn’t.',
+      'So be honest in here. No one reads this — not me, not anyone. You can finally stop choosing the acceptable answer and choose the true one. Tap whatever is real, as much as is real, and add your own if nothing fits.',
+    ],
+    practice: {
+      eyebrow: 'Between now and tomorrow',
+      title: 'Catch the real reason in the wild.',
+      body: [
+        'Sometime today, the reason you tapped will show up on its own — a moment, a feeling, a small consequence you’d normally talk yourself out of noticing.',
+        'When it does, just notice it. Don’t fix anything, don’t decide anything. Let yourself feel, for a few seconds, why you opened this in the first place. That’s the whole practice.',
+      ],
+      button: 'I’ll carry this',
+    },
     mechanicProps: {
       header: 'What brought you here?',
       subtext: 'Tap any that feel true. As many as you want. None of them commit you to anything.',

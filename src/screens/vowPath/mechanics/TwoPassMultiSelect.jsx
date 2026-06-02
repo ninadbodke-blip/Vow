@@ -78,6 +78,14 @@ export default function TwoPassMultiSelect({ data, onComplete }) {
   const linesHeld = allSelectedChips.filter(c => !crossedIds.includes(c.id))
   const linesCrossed = allSelectedChips.filter(c => crossedIds.includes(c.id))
 
+  // Reflect a crossed line back as the person's own words.
+  // Preset chips read "I'd never ___" → "You said you'd never ___."
+  const reflectBack = (label) => {
+    const m = label.match(/^I'd never (.+)$/i)
+    if (m) return `You said you'd never ${m[1]}.`
+    return `You said: "${label}"`
+  }
+
   // ---------------- Complete ----------------
 
   const finalize = () => {
@@ -255,7 +263,10 @@ export default function TwoPassMultiSelect({ data, onComplete }) {
           ) : (
             <ul style={styles.revealList}>
               {linesCrossed.map(c => (
-                <li key={c.id} style={styles.revealItem}>{c.label}</li>
+                <li key={c.id} style={styles.revealMirror}>
+                  <span style={styles.revealMirrorSaid}>{reflectBack(c.label)}</span>
+                  <span style={styles.revealMirrorDid}> You have.</span>
+                </li>
               ))}
             </ul>
           )}
@@ -484,6 +495,22 @@ const styles = {
     lineHeight: 1.5,
     padding: '6px 0',
     borderBottom: '0.5px solid #F0E9DC',
+  },
+  revealMirror: {
+    fontSize: '14px',
+    fontFamily: 'Georgia, serif',
+    lineHeight: 1.55,
+    padding: '8px 0',
+    borderBottom: '0.5px solid #F0E9DC',
+    listStyle: 'none',
+  },
+  revealMirrorSaid: {
+    fontStyle: 'italic',
+    color: '#2A1F15',
+  },
+  revealMirrorDid: {
+    color: '#A14222',
+    fontWeight: 500,
   },
   revealEmpty: {
     fontSize: '13px',

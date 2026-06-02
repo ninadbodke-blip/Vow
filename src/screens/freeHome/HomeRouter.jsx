@@ -28,25 +28,25 @@ function ComingSoonHome({ stageLabel, free_state, navigate }) {
 
         <div style={placeholderStyles.actions}>
           <button
-            onClick={() => navigate('/vow-path')}
+            onClick={() => navigate('/app/vow-path')}
             style={placeholderStyles.primaryBtn}
           >
             Begin the Vow Path
           </button>
           <button
-            onClick={() => navigate('/anchors')}
+            onClick={() => navigate('/app/anchors')}
             style={placeholderStyles.secondaryBtn}
           >
             Anchors
           </button>
           <button
-            onClick={() => navigate('/library')}
+            onClick={() => navigate('/app/library')}
             style={placeholderStyles.secondaryBtn}
           >
             Library
           </button>
           <button
-            onClick={() => navigate('/onboarding/state-picker')}
+            onClick={() => navigate('/app/onboarding/state-picker')}
             style={placeholderStyles.linkBtn}
           >
             Change my state
@@ -169,7 +169,7 @@ export default function HomeRouter() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
-          navigate('/welcome')
+          navigate('/app/welcome')
           return
         }
 
@@ -188,13 +188,13 @@ export default function HomeRouter() {
 
         // No row at all — user hasn't completed onboarding
         if (!progressRow) {
-          navigate('/onboarding/addiction')
+          navigate('/app/onboarding/addiction')
           return
         }
 
         // No substance picked yet
         if (!progressRow.primary_substance) {
-          navigate('/onboarding/addiction')
+          navigate('/app/onboarding/addiction')
           return
         }
 
@@ -203,7 +203,7 @@ export default function HomeRouter() {
         // ─────────────────────────────────────────────────────────────
         if (!progressRow.free_state) {
           // No free state set — send to state picker
-          navigate('/onboarding/state-picker')
+          navigate('/app/onboarding/state-picker')
           return
         }
 
@@ -269,7 +269,7 @@ export default function HomeRouter() {
 
     default:
       // Unknown state — send back to picker
-      navigate('/onboarding/state-picker')
+      navigate('/app/onboarding/state-picker')
       return null
   }
 }

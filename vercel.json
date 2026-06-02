@@ -1,6 +1,101 @@
 {
+  "redirects": [
+    {
+      "source": "/onboarding/:path*",
+      "destination": "/app/onboarding/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/vow-path/:path*",
+      "destination": "/app/vow-path/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/vow-path",
+      "destination": "/app/vow-path",
+      "permanent": false
+    },
+    {
+      "source": "/library/:path*",
+      "destination": "/app/library/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/library",
+      "destination": "/app/library",
+      "permanent": false
+    },
+    {
+      "source": "/motivation/:path*",
+      "destination": "/app/motivation/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/motivation",
+      "destination": "/app/motivation",
+      "permanent": false
+    },
+    {
+      "source": "/slip/:rest*",
+      "destination": "/app/slip/:rest*",
+      "permanent": false
+    },
+    {
+      "source": "/urge/:rest*",
+      "destination": "/app/urge/:rest*",
+      "permanent": false
+    },
+    {
+      "source": "/milestones/:rest*",
+      "destination": "/app/milestones/:rest*",
+      "permanent": false
+    },
+    {
+      "source": "/welcome",
+      "destination": "/app/welcome",
+      "permanent": false
+    },
+    {
+      "source": "/signup",
+      "destination": "/app/signup",
+      "permanent": false
+    },
+    {
+      "source": "/home",
+      "destination": "/app/home",
+      "permanent": false
+    },
+    {
+      "source": "/profile",
+      "destination": "/app/profile",
+      "permanent": false
+    },
+    {
+      "source": "/slips",
+      "destination": "/app/slips",
+      "permanent": false
+    },
+    {
+      "source": "/urges",
+      "destination": "/app/urges",
+      "permanent": false
+    },
+    {
+      "source": "/anchors",
+      "destination": "/app/anchors",
+      "permanent": false
+    },
+    {
+      "source": "/mirror",
+      "destination": "/app/mirror",
+      "permanent": false
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
@@ -10,9 +105,18 @@
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; media-src 'self' https://*.supabase.co; img-src 'self' data: https:; font-src 'self' data:;"
         },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        }
       ]
     }
   ]

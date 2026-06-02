@@ -53,7 +53,7 @@ export default function Profile() {
     async function load() {
       try {
         const { data: { user: u } } = await supabase.auth.getUser()
-        if (!u) { navigate('/signup'); return }
+        if (!u) { navigate('/app/signup'); return }
         setUser(u)
 
         const { data: p } = await supabase
@@ -144,7 +144,7 @@ export default function Profile() {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    navigate('/welcome')
+    navigate('/app/welcome')
   }
 
   if (loading) {

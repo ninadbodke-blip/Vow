@@ -32,7 +32,7 @@ export default function NoticeOverview() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -86,7 +86,7 @@ export default function NoticeOverview() {
 
   const handleDayTap = (dayNum) => {
     if (!isDayTappable(dayNum)) return
-    navigate(`/vow-path/notice/day/${dayNum}`)
+    navigate(`/app/vow-path/notice/day/${dayNum}`)
   }
 
   if (!loaded) {
@@ -104,7 +104,7 @@ export default function NoticeOverview() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
+            <button onClick={() => navigate('/app/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
             <p style={styles.headerTitle}>Notice</p>
             <div style={{ width: '60px' }}></div>
           </div>
@@ -113,7 +113,7 @@ export default function NoticeOverview() {
             <p style={styles.lockedTitle}>Not yet.</p>
             <p style={styles.lockedReason}>{`You haven't started Notice yet. Take the Stage Check first.`}</p>
             <button
-              onClick={() => navigate('/vow-path')}
+              onClick={() => navigate('/app/vow-path')}
               style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
             >
               Take the Stage Check
@@ -136,8 +136,8 @@ export default function NoticeOverview() {
         <div style={styles.heroWrap}>
           <div style={heroPaint} aria-hidden="true" />
           <div style={styles.heroNav}>
-            <button onClick={() => navigate('/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
-            <button onClick={() => navigate('/library/notice')} style={styles.pillBtn}>Library</button>
+            <button onClick={() => navigate('/app/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
+            <button onClick={() => navigate('/app/library/notice')} style={styles.pillBtn}>Library</button>
           </div>
         </div>
 

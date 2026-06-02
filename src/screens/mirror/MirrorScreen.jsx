@@ -341,7 +341,7 @@ export default function MirrorScreen() {
 
         <div style={styles.topRow}>
           <div style={{ width: '40px' }} />
-          <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
+          <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
         </div>
 
         {isEmpty ? (

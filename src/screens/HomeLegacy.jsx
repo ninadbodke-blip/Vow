@@ -28,7 +28,7 @@ export default function Home() {
   const loadTrackers = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      navigate('/signup')
+      navigate('/app/signup')
       return
     }
 
@@ -53,7 +53,7 @@ export default function Home() {
     if (trackerError) {
       setError(trackerError.message)
     } else if (!data || data.length === 0) {
-      navigate('/onboarding/addiction')
+      navigate('/app/onboarding/addiction')
     } else {
       setTrackers(data)
       if (activeIdx >= data.length) setActiveIdx(0)
@@ -83,7 +83,7 @@ export default function Home() {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    navigate('/signup')
+    navigate('/app/signup')
   }
 
   const handleAddMore = () => {
@@ -91,7 +91,7 @@ export default function Home() {
       setShowProModal(true)
       return
     }
-    navigate('/onboarding/addiction')
+    navigate('/app/onboarding/addiction')
   }
 
   const handleDeleteTracker = async () => {
@@ -285,7 +285,7 @@ export default function Home() {
               <span style={styles.savingsValue}>{longestDays} days</span>
             </div>
             <button
-              onClick={() => navigate(`/milestones/${tracker.id}`)}
+              onClick={() => navigate(`/app/milestones/${tracker.id}`)}
               style={styles.milestonesLink}
             >
               🏆 View milestones →
@@ -295,13 +295,13 @@ export default function Home() {
 
         <div style={styles.actions}>
           <button 
-            onClick={() => navigate(`/urge/${tracker.id}`)}
+            onClick={() => navigate(`/app/urge/${tracker.id}`)}
             style={{...styles.btn, ...styles.btnUrge}}
           >
             {t('logUrge')}
           </button>
           <button 
-            onClick={() => navigate(`/slip/${tracker.id}`)}
+            onClick={() => navigate(`/app/slip/${tracker.id}`)}
             style={{...styles.btn, ...styles.btnSlip}}
           >
             {t('iSlipped')}
@@ -311,13 +311,13 @@ export default function Home() {
         <div style={styles.tabRow}>
   <button style={{...styles.tab, ...styles.tabActive, border: 'none', cursor: 'pointer', fontFamily: 'inherit'}}>{t('home')}</button>
   <button 
-    onClick={() => navigate('/anchors')}
+    onClick={() => navigate('/app/anchors')}
     style={{...styles.tab, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit'}}
   >
     Anchors
   </button>
   <button 
-    onClick={() => navigate('/profile')}
+    onClick={() => navigate('/app/profile')}
     style={{...styles.tab, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit'}}
   >
     {t('profile')}

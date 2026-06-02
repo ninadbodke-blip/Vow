@@ -216,7 +216,7 @@ export default function EndureFreeHome({ progress }) {
       .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
       .eq('user_id', user.id)
     if (error) { console.error('Move to reclaim failed:', error); alert('Could not move. Please try again.'); return }
-    window.location.assign('/home')
+    window.location.assign('/app/home')
   }
 
   const handleMoveToBuild = async () => {
@@ -228,7 +228,7 @@ export default function EndureFreeHome({ progress }) {
       .update({ free_state: 'build', updated_at: new Date().toISOString() })
       .eq('user_id', user.id)
     if (error) { console.error('Move to build failed:', error); alert('Could not move. Please try again.'); return }
-    window.location.assign('/home')
+    window.location.assign('/app/home')
   }
 
   // Urge velocity — log the spike/creep signal (feeds the Mirror), then hand
@@ -242,7 +242,7 @@ export default function EndureFreeHome({ progress }) {
         payload: { velocity, logged_at: new Date().toISOString() },
       })
     }
-    navigate(`/urge/${tracker.id}`, { state: { velocity } })
+    navigate(`/app/urge/${tracker.id}`, { state: { velocity } })
   }
 
   const handleVowSaved = (row) => setVowLatest(row)
@@ -323,7 +323,7 @@ export default function EndureFreeHome({ progress }) {
         <div style={styles.topBar}>
           <VowBrandMark />
           <StageWayfinder progress={progress} />
-          <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
+          <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
         </div>
@@ -371,7 +371,7 @@ export default function EndureFreeHome({ progress }) {
           ) : (
             <>
               <p style={styles.heroReflection}>You're holding the line. Start a counter to watch the days add up.</p>
-              <button onClick={() => navigate('/onboarding/setup')} style={styles.heroCta}>Start your counter</button>
+              <button onClick={() => navigate('/app/onboarding/setup')} style={styles.heroCta}>Start your counter</button>
             </>
           )}
 
@@ -440,11 +440,11 @@ export default function EndureFreeHome({ progress }) {
               <span style={styles.toolIcon}><VitalsGlyph /></span>
               <span style={styles.toolLabel}>Daily vitals</span>
             </button>
-            <button onClick={() => { if (tracker) setMilestonesOpen(true); else navigate('/onboarding/setup') }} style={styles.toolBtn}>
+            <button onClick={() => { if (tracker) setMilestonesOpen(true); else navigate('/app/onboarding/setup') }} style={styles.toolBtn}>
               <span style={styles.toolIcon}><MilestonesGlyph /></span>
               <span style={styles.toolLabel}>Milestones</span>
             </button>
-            <button onClick={() => navigate('/anchors')} style={styles.toolBtn}>
+            <button onClick={() => navigate('/app/anchors')} style={styles.toolBtn}>
               <span style={{ ...styles.toolIcon, position: 'relative' }}><AnchorGlyph /><AnchorReactionBadge /></span>
               <span style={styles.toolLabel}>Anchors</span>
             </button>
@@ -473,7 +473,7 @@ export default function EndureFreeHome({ progress }) {
                     : `Renew your vow daily and check in — a picture of how you’re holding builds here${slipCount > 0 ? `, even across the ${slipCount} ${slipCount === 1 ? 'slip' : 'slips'} so far` : ''}.`}
                 </p>
               </div>
-              <button onClick={() => navigate('/mirror')} style={styles.oracleLink}>
+              <button onClick={() => navigate('/app/mirror')} style={styles.oracleLink}>
                 Your full reflection lives in the Oracle <span style={styles.oracleLinkArrow}>→</span>
               </button>
             </div>
@@ -1018,7 +1018,7 @@ function CounterSetupPromptTile({ substanceLabel, navigate }) {
         works either way.
       </p>
       <button
-        onClick={() => navigate('/onboarding/setup')}
+        onClick={() => navigate('/app/onboarding/setup')}
         style={styles.tileSecondaryBtn}
       >
         Set up tracking
@@ -1180,7 +1180,7 @@ function ActionTile({ tracker, navigate, slipCount = 0, onMoveToReclaim, onLogUr
         </button>
       </div>
 
-      <button onClick={() => navigate(`/slip/${tracker.id}`)} style={styles.slipFallbackBtn}>
+      <button onClick={() => navigate(`/app/slip/${tracker.id}`)} style={styles.slipFallbackBtn}>
         I slipped
       </button>
       <p style={styles.tileHelperText}>
@@ -1271,7 +1271,7 @@ function SavingsMilestonesTile({ tracker, navigate }) {
       </div>
 
       <button
-        onClick={() => navigate(`/milestones/${tracker.id}`)}
+        onClick={() => navigate(`/app/milestones/${tracker.id}`)}
         style={styles.milestonesLink}
       >
         🏆 View milestones →
@@ -1300,7 +1300,7 @@ function AnchorsTile({ navigate }) {
         The few you'd reach for at midnight, when the urge sharpens. Worth
         lining up before you need them.
       </p>
-      <button onClick={() => navigate('/anchors')} style={styles.anchorsBtnNew}>
+      <button onClick={() => navigate('/app/anchors')} style={styles.anchorsBtnNew}>
         Open Anchors
       </button>
     </div>

@@ -28,7 +28,7 @@ export default function StageCheck() {
     async function loadSubstance() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -40,7 +40,7 @@ export default function StageCheck() {
 
       // If no substance picked yet, route back to picker
       if (!progress?.substance_label) {
-        navigate('/vow-path/substance')
+        navigate('/app/vow-path/substance')
         return
       }
 
@@ -93,7 +93,7 @@ export default function StageCheck() {
     setSubmitting(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const result = scoreAssessment(responses)
 
@@ -115,7 +115,7 @@ export default function StageCheck() {
         return
       }
 
-      navigate(`/vow-path/result/${result.assigned_stage_slug}`)
+      navigate(`/app/vow-path/result/${result.assigned_stage_slug}`)
     } catch (err) {
       console.error(err)
       alert('Something went wrong. Please try again.')
@@ -125,7 +125,7 @@ export default function StageCheck() {
 
   const goBack = () => {
     if (currentScreen === 0) {
-      navigate('/vow-path/substance')
+      navigate('/app/vow-path/substance')
       return
     }
     setCurrentScreen(currentScreen - 1)

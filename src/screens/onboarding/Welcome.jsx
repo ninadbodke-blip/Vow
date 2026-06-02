@@ -123,8 +123,8 @@ export default function Welcome() {
   const isLast = idx === slides.length - 1
   const next = () => setIdx(i => (i < slides.length - 1 ? i + 1 : i))
   const prev = () => setIdx(i => (i > 0 ? i - 1 : i))
-  const skip = () => navigate('/signup')
-  const ignite = () => navigate('/signup')
+  const skip = () => navigate('/app/signup')
+  const ignite = () => navigate('/app/signup')
 
   // Swipe left = forward, right = back. Taps (dx ~ 0) pass through to buttons.
   const swipeX = useRef(null)

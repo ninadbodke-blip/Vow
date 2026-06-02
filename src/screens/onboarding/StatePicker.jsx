@@ -56,7 +56,7 @@ export default function StatePicker() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -68,7 +68,7 @@ export default function StatePicker() {
 
       if (!progress?.substance_label) {
         // No addiction selected yet, send them back
-        navigate('/onboarding/addiction')
+        navigate('/app/onboarding/addiction')
         return
       }
 
@@ -89,7 +89,7 @@ export default function StatePicker() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -108,7 +108,7 @@ export default function StatePicker() {
         return
       }
 
-      navigate('/home')
+      navigate('/app/home')
     } catch (err) {
       console.error(err)
       setError(err.message || 'Something went wrong.')

@@ -45,7 +45,7 @@ export function createStageMove({
     if (reset) { patch.endure_starts_at = null; patch.endure_slip_count = 0 }
     if (target === 'reclaim') patch.endure_slip_count = 0
     await supabase.from('vow_path_progress').update(patch).eq('user_id', u.id)
-    navigate('/home', { replace: true })
+    navigate('/app/home', { replace: true })
   }
 
   // Entering Endure is a real start, never a peek: (re)activate the tracker so
@@ -98,7 +98,7 @@ export function createStageMove({
       await supabase.from('free_stage_signals').insert({
         user_id: u.id, stage: 'endure', signal_type: 'endure_began', payload: { began_at: now },
       })
-      navigate('/home', { replace: true })
+      navigate('/app/home', { replace: true })
     } catch (err) {
       console.error(err)
       alert('Could not start Endure. Please try again.')
@@ -123,7 +123,7 @@ export function createStageMove({
     await supabase.from('vow_path_progress')
       .update({ free_state: 'endure', updated_at: new Date().toISOString() })
       .eq('user_id', u.id)
-    navigate('/home', { replace: true })
+    navigate('/app/home', { replace: true })
   }
 
   const goToStage = (target) => {

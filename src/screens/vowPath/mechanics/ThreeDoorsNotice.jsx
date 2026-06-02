@@ -45,11 +45,11 @@ export default function ThreeDoorsNotice({ data, onSave, saving }) {
     }
 
     if (result.nextStage === 'reflect') {
-      navigate('/vow-path/transition/notice/to/reflect')
+      navigate('/app/vow-path/transition/notice/to/reflect')
     } else if (result.action === 'wait_30_days' || result.action === 'closed_permanently') {
-      navigate('/home')
+      navigate('/app/home')
     } else {
-      navigate('/home')
+      navigate('/app/home')
     }
   }
 

@@ -11,7 +11,7 @@ export const STAGE_INFO = {
   reflect: { label: 'Reflect', totalDays: 21, durationLabel: '21 days' },
   commit: { label: 'Commit', totalDays: 10, durationLabel: '10 days' },
   endure: { label: 'Endure', totalDays: 21, durationLabel: '21 days' },
-  build: { label: 'Build', totalDays: 56, durationLabel: '8 modules over 8 weeks' },
+  build: { label: 'Build', totalDays: 9, durationLabel: '9 weeks, one chapter each' },
   reclaim: { label: 'Reclaim', totalDays: 4, durationLabel: '3-4 days' },
 }
 
@@ -74,16 +74,15 @@ export async function transitionFromNotice({ doorChoice }) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'No authenticated user' }
 
-    const reopenAt = new Date()
-    reopenAt.setDate(reopenAt.getDate() + 30)
-
+    // "I need time to sit with this." Nothing locks — Notice stays complete and
+    // the fork (Day 5) remains open, so the user can return and choose Reflect
+    // whenever they're ready. We only record that they reached the fork.
     const { error } = await supabase
       .from('vow_path_progress')
       .update({
-        vow_path_status: 'paused',
+        vow_path_status: 'active',
         last_completed_day: 5,
         last_completed_at: new Date().toISOString(),
-        stage_check_reopens_at: reopenAt.toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', user.id)

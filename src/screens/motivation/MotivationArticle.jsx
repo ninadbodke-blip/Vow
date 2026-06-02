@@ -78,7 +78,7 @@ export default function MotivationArticle() {
 function Header({ navigate }) {
   return (
     <div style={styles.topBar}>
-      <button onClick={() => navigate('/motivation')} style={styles.backBtn}>‹ Back</button>
+      <button onClick={() => navigate('/app/motivation')} style={styles.backBtn}>‹ Back</button>
       <p style={styles.topBarTitle}>Motivation</p>
       <div style={{ width: '60px' }}></div>
     </div>

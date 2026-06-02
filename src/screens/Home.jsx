@@ -51,7 +51,7 @@ export default function Home() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    navigate('/welcome')
+    navigate('/app/welcome')
   }
 
   // Determine CTA state
@@ -64,11 +64,11 @@ export default function Home() {
 
   const handleCtaClick = () => {
     if (ctaState === 'start' || ctaState === 'completed') {
-      navigate('/vow-path')
+      navigate('/app/vow-path')
       return
     }
     if (ctaState === 'in_progress') {
-      navigate('/vow-path/reflect')
+      navigate('/app/vow-path/reflect')
     }
   }
 

@@ -12,7 +12,7 @@ export default function StageReveal() {
 
   useEffect(() => {
     if (!reveal) {
-      navigate('/home')
+      navigate('/app/home')
       return
     }
 
@@ -42,7 +42,7 @@ export default function StageReveal() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -101,7 +101,7 @@ export default function StageReveal() {
 
       // Route to the overview, not directly to Day 1.
       // The user sees the full stage shape first, then taps Day 1 themselves.
-      navigate(`/vow-path/${stageSlug}`)
+      navigate(`/app/vow-path/${stageSlug}`)
     } catch (err) {
       console.error('Unexpected error:', err)
       alert(`Something went wrong: ${err.message}`)
@@ -114,7 +114,7 @@ export default function StageReveal() {
       <div style={styles.phone}>
 
         <div style={styles.header}>
-          <button onClick={() => navigate('/vow-path/check')} style={styles.backBtn}>‹ Back</button>
+          <button onClick={() => navigate('/app/vow-path/check')} style={styles.backBtn}>‹ Back</button>
           <p style={styles.headerTitle}>Your stage</p>
           <div style={{ width: '60px' }}></div>
         </div>
@@ -167,14 +167,14 @@ export default function StageReveal() {
             </div>
 
             <button
-              onClick={() => navigate('/vow-path/check')}
+              onClick={() => navigate('/app/vow-path/check')}
               style={styles.secondaryBtn}
             >
               Take the Stage Check again
             </button>
 
             <button
-              onClick={() => navigate('/home')}
+              onClick={() => navigate('/app/home')}
               style={styles.tertiaryBtn}
             >
               Back to home

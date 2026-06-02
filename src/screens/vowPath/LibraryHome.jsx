@@ -56,7 +56,7 @@ export default function LibraryHome() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/welcome')
+        navigate('/app/welcome')
         return
       }
 
@@ -93,7 +93,7 @@ export default function LibraryHome() {
       <div style={styles.phone}>
 
         <div style={styles.topBar}>
-          <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
+          <button onClick={() => navigate('/app/home')} style={styles.backBtn}>‹ Home</button>
           <p style={styles.topBarTitle}>Library</p>
           <div style={{ width: '60px' }}></div>
         </div>
@@ -119,7 +119,7 @@ export default function LibraryHome() {
             return (
               <button
                 key={stage.key}
-                onClick={() => isActive ? navigate(`/library/${stage.key}`) : null}
+                onClick={() => isActive ? navigate(`/app/library/${stage.key}`) : null}
                 disabled={!isActive}
                 style={{
                   ...styles.shelfRow,

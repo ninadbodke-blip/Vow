@@ -53,7 +53,7 @@ export default function BuildDay() {
       }
 
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { data: progressRow } = await supabase
         .from('vow_path_progress')
@@ -160,7 +160,7 @@ export default function BuildDay() {
     const idx = sequence.indexOf(step)
 
     if (idx === 0 || step === STEP.CLOSING) {
-      navigate('/vow-path/build')
+      navigate('/app/vow-path/build')
       return
     }
 
@@ -176,7 +176,7 @@ export default function BuildDay() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { error: artifactError } = await supabase
         .from('vow_artifacts')
@@ -238,7 +238,7 @@ export default function BuildDay() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path/build')} style={styles.backBtn}>‹ Overview</button>
+            <button onClick={() => navigate('/app/vow-path/build')} style={styles.backBtn}>‹ Overview</button>
             <div style={{ width: '40px' }}></div>
             <div style={{ width: '40px' }}></div>
           </div>
@@ -367,7 +367,7 @@ export default function BuildDay() {
             <p style={styles.closingLine}>{dayContent.closingLine}</p>
           )}
           <button
-            onClick={() => navigate('/vow-path/build')}
+            onClick={() => navigate('/app/vow-path/build')}
             style={{ ...styles.primaryBtn, marginTop: '2rem' }}
           >
             {isFinalEntry ? 'Back to overview' : 'Close'}

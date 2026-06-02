@@ -14,7 +14,7 @@ export default function UrgeLog() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/signup'); return }
+      if (!user) { navigate('/app/signup'); return }
 
       if (trackerId) {
         const { data: t } = await supabase
@@ -58,7 +58,7 @@ export default function UrgeLog() {
     <div style={styles.frame}>
       <div style={styles.phone}>
         <div style={styles.header}>
-          <button onClick={() => navigate('/profile')} style={styles.backBtn}>‹ Back</button>
+          <button onClick={() => navigate('/app/profile')} style={styles.backBtn}>‹ Back</button>
           <p style={styles.headerTitle}>Urge log</p>
           <div style={{width: '40px'}}></div>
         </div>

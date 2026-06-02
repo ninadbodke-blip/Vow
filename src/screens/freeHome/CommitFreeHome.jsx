@@ -268,7 +268,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
             setTransitioning(false)
             return
           }
-          window.location.assign('/home')
+          window.location.assign('/app/home')
           return
         }
       }
@@ -323,7 +323,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         user_id: user.id, stage: 'endure', signal_type: 'endure_began', payload: { began_at: now },
       })
 
-      window.location.assign('/home')
+      window.location.assign('/app/home')
     } catch (err) {
       console.error(err)
       alert('Something went wrong: ' + (err?.message || 'please try again.'))
@@ -371,7 +371,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         <div style={styles.topBar}>
           <VowBrandMark />
           <StageWayfinder progress={progress} />
-          <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
+          <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
         </div>
@@ -469,7 +469,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
               <span style={styles.toolIcon}><VowGlyph /></span>
               <span style={styles.toolLabel}>Your vow</span>
             </button>
-            <button onClick={() => navigate('/anchors')} style={styles.toolBtn}>
+            <button onClick={() => navigate('/app/anchors')} style={styles.toolBtn}>
               <span style={{ ...styles.toolIcon, position: 'relative' }}><AnchorGlyph /><AnchorReactionBadge /></span>
               <span style={styles.toolLabel}>Anchors</span>
             </button>
@@ -501,7 +501,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
                 </p>
                 <ContributionMap moves={moves} stopDateISO={progress.endure_starts_at} />
               </div>
-              <button onClick={() => navigate('/mirror')} style={styles.oracleLink}>
+              <button onClick={() => navigate('/app/mirror')} style={styles.oracleLink}>
                 Your full reflection lives in the Oracle <span style={styles.oracleLinkArrow}>→</span>
               </button>
             </div>
@@ -1464,7 +1464,7 @@ function AnchorsTile({ navigate, anchorCount }) {
           ? `${anchorCount} ${anchorCount === 1 ? 'person' : 'people'} saved. The list should reflect who's actually in your life.`
           : "One trusted person you'd call if it gets hard. Lining them up counts as a move."}
       </p>
-      <button onClick={() => navigate('/anchors')} style={styles.anchorsBtnNew}>
+      <button onClick={() => navigate('/app/anchors')} style={styles.anchorsBtnNew}>
         {has ? 'Open Anchors' : 'Set up Anchors'}
       </button>
     </div>

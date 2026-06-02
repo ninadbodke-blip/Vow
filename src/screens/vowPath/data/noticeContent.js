@@ -32,7 +32,7 @@ export const NOTICE_V2_DAYS = [
 
 I want to tell you why this app exists, and then I'll get out of your way.
 
-I made Vow because I used to be exactly where you are right now. Holding a phone, opening something like this, not totally sure if I was serious or just poking at the idea. And every app I tried wanted to congratulate me. Counters, streaks, little fires, badges. Like I'd won something. I hadn't won anything. I was scared, and I was tired, and the last thing I needed was a cartoon flame telling me I was on a roll.
+I made Vow because I used to be exactly where you are right now. Holding a phone, opening something like this, not totally sure if I was serious or just poking at the idea. And every app I tried wanted to congratulate me. Counters, streaks, badges, green checkmarks. Like I'd won something. I hadn't won anything. I was scared, and I was tired, and the last thing I needed was an app telling me I was on a roll.
 
 So Vow doesn't do that. There's no streak to break in here. There's no number you can lose. If you slip, you don't get punished, and you don't get sent back to the start. That was the whole point of building it.
 
@@ -46,15 +46,17 @@ Okay. Go ahead.`,
     },
     openings: {
       A: {
-        intro: `You're here because the Stage Check placed you in Notice. Most people in this stage don't think they have a problem. They've heard the warnings. They've seen the lists of symptoms. None of it has felt like it applies to them.
+        intro: `You're here because the Stage Check placed you in Notice. Most people who land here don't think they have a problem. They've heard the warnings. They've read the lists of symptoms. None of it has felt like it was about them.
 
-This stage isn't designed to convince you of anything. It's designed to surface things you already know about yourself, in a way that's harder to look past.
+So this stage doesn't try to convince you of anything. There's no lecture coming. For five days, all it does is hand you back things you already know about yourself — laid out plainly enough that they're harder to look past than they usually are.
 
-Today is the first of those things.
+Here's the first one.
 
-Most people who use a substance regularly have personal lines — things they tell themselves they'd never do with it. These lines exist before any data, before any clinical category. They're personal commitments to who you are.
+Almost everyone who uses a substance regularly has lines. Not rules someone else handed them — their own. The thing they told themselves, early on, that they would never do. "Not in the morning." "Not alone." "Never around the kids." These come before any diagnosis, before any chart. They're quieter than that — a kind of private agreement about the sort of person you are.
 
-Today you'll name yours. Then you'll mark which ones you've crossed. The crossed lines are yours. The not-crossed lines are yours too.`
+The thing about lines is that they move. Slowly, one reasonable exception at a time, until the line sits somewhere you'd never have agreed to if someone had shown you the whole distance at once. Nobody decides to cross them. You just look up one day and they're behind you.
+
+Today is in two parts. First you'll name your lines — the ones you actually held, not the ones that sound right. Then you'll mark the ones you've crossed. No one sees this but you. The crossed lines are yours. The ones still standing are yours too — and they matter just as much.`
       },
       C: {
         intro: `You've done Notice before. The Stage Check brought you back here. The lines you held last time might be different now.`
@@ -107,15 +109,15 @@ That's worth knowing.`,
     artifactType: 'notice_day_2',
     openings: {
       A: {
-        intro: `Most people who use a substance regularly tell themselves their use is stable. "It's the same as it's always been." "I've had this under control for years."
+        intro: `Yesterday was about lines — the edges you set, and where you've crossed them. Today is about movement.
 
-Sometimes that's true. More often it's not. The pattern has moved — slowly enough that no single day looked different from the one before it, but unmistakable when you look across years.
+Most people who use regularly tell themselves the use is steady. "It's the same as it's always been." "I've had this handled for years." Sometimes that's true. More often the pattern has been moving the whole time — slowly enough that no single day ever looked different from the one before it, and obvious only when you stand back and look across years instead of days.
 
-Today's exercise maps your trajectory. Not how much you used. Where you've been on a scale of behavior, at five points in your life.
+That's what today does. It maps your trajectory — not how much you use, but where you've been on a ladder of behavior, at five points across your life.
 
-The scale describes behavioral patterns, not quantities. Quantity is something the using mind can argue with. Behavioral pattern is harder to dispute.
+We use behavior instead of amount on purpose. Amount is easy to argue with — "that was a rough stretch," "everyone uses like that sometimes." A pattern of behavior is harder to talk your way out of. You either started using alone at some point, or you didn't. You either think about it first thing now, or you don't.
 
-Most people are surprised by what the map shows. Not by where they are today — they know where they are. By the direction they've been moving.`
+You'll read the ladder once, then place yourself at each point in time. Most people aren't surprised by where they are today — they already know that. They're surprised by the line that connects the dots: how far it has moved, and which way.`
       }
     },
     mechanic: {
@@ -179,83 +181,92 @@ Most people are surprised by what the map shows. Not by where they are today —
     artifactType: 'notice_day_3',
     openings: {
       A: {
-        intro: `You don't need to think your behavior is a problem to notice what's been happening around it.
+        intro: `You don't have to believe you have a problem to notice what's been happening around it.
 
-Today's exercise maps the people closest to you, and the small specific things they've been doing — or have stopped doing — in response to your use. You'll name 3 to 5 specific people. For each, you'll answer three questions.
+The people closest to you have been responding to your use for a while now — usually without a single confrontation. The responses are small and easy to miss from the inside: a question someone stopped asking, a plan that quietly stopped including you, a version of yourself you only seem to become around certain people.
 
-The questions aren't about whether they think you have a problem. They're about specific observable behaviors. When was the last time you had a fully-present conversation with them. Whether they've ever brought up your use. Whether the way they treat you has changed.
+Today is a ledger of those things. It works like a list, except every line is something that has actually happened. You'll read through them and tap the ones that are true for you. Not the ones that sound bad — the ones you recognize.
 
-The answers are factual. You either had that conversation last week, or you didn't. They either bring it up, or they don't. You can't argue with what people have actually done.
-
-Most people are surprised by what the map shows.`
+You don't have to name names, and you don't have to explain anything. Most people tap more than they expected to. That's the whole reason to write it down: the using mind keeps these scattered and out of view, and a list is much harder to scatter.`
       }
     },
     mechanic: {
-      type: 'relationshipMap',
+      type: 'ledgerOfForgone',
       data: {
-        minPeople: 3,
-        maxPeople: 5,
-        relationships: [
-          { id: 'partner', label: 'Partner' },
-          { id: 'parent', label: 'Parent' },
-          { id: 'sibling', label: 'Sibling' },
-          { id: 'child', label: 'Child' },
-          { id: 'close_friend', label: 'Close friend' },
-          { id: 'colleague', label: 'Colleague' },
-          { id: 'other', label: 'Other' },
-        ],
-        ageBands: [
-          { id: 'under_18', label: 'Under 18' },
-          { id: '18_30', label: '18-30' },
-          { id: '30_50', label: '30-50' },
-          { id: '50_plus', label: '50+' },
-        ],
-        questions: [
+        prompt: 'What has actually been happening with the people around you?',
+        subtext: `Tap every one that's true. Not what sounds bad — what you actually recognize.`,
+        minSelections: 3,
+        helperText: 'Most people tap 6-12. Take your time.',
+        categories: [
           {
-            id: 'last_conversation',
-            prompt: 'When was the last time you had a real conversation with this person — fully present, no substance in your system?',
-            options: [
-              { id: 'this_week', label: 'This week' },
-              { id: 'this_month', label: 'This month' },
-              { id: 'this_year_unknown', label: `This year, but I can't remember when` },
-              { id: 'cant_remember', label: `I genuinely can't remember` },
-              { id: 'before_started', label: 'Before any of this started' },
-              { id: 'not_applicable', label: 'Not applicable' },
+            key: 'conversations',
+            label: 'Conversations',
+            items: [
+              { id: 'cant_remember_real', label: `I can't remember the last fully present conversation I had with someone close — nothing in my system` },
+              { id: 'shorter', label: 'Conversations with certain people have quietly gotten shorter' },
+              { id: 'avoid_sober', label: `I put off serious talks until after I've used` },
+              { id: 'half_there', label: `I'm often only half-there when someone's talking to me` },
+              { id: 'lost_track', label: `I've lost track of what's actually going on in the lives of people I care about` },
             ]
           },
           {
-            id: 'brings_it_up',
-            prompt: 'Has this person ever brought up your use?',
-            options: [
-              { id: 'often', label: 'Often. They bring it up regularly.' },
-              { id: 'sometimes', label: `Sometimes. They've brought it up several times.` },
-              { id: 'once_twice', label: 'Once or twice. It came up, then dropped.' },
-              { id: 'never', label: `Never. They've never said anything.` },
-              { id: 'used_to_stopped', label: 'They used to. They stopped.' },
+            key: 'what_they_stopped',
+            label: `What they've stopped doing`,
+            items: [
+              { id: 'stopped_asking', label: 'Someone stopped asking how I am' },
+              { id: 'stopped_inviting', label: 'I get invited to fewer things than I used to' },
+              { id: 'stopped_relying', label: 'Someone stopped relying on me for things they used to' },
+              { id: 'stopped_bringing_up', label: 'Someone used to bring up my use, and then stopped' },
+              { id: 'stopped_expecting', label: 'People have stopped expecting me to follow through' },
             ]
           },
           {
-            id: 'treatment_changed',
-            prompt: 'Has the way they treat you changed?',
-            options: [
-              { id: 'yes_noticeably', label: 'Yes, noticeably.' },
-              { id: 'yes_small', label: 'Yes, in small ways.' },
-              { id: 'not_sure', label: 'Not sure.' },
-              { id: 'no', label: 'No, they treat me the same as always.' },
-              { id: 'cooled_overall', label: 'The relationship has cooled overall.' },
+            key: 'around_my_use',
+            label: 'What I arrange around it',
+            items: [
+              { id: 'time_use', label: 'I time my use around when people are home or asleep' },
+              { id: 'hide_amount', label: 'I keep the real amount or frequency to myself' },
+              { id: 'made_sure', label: `Someone brought it up once, and I made sure they wouldn't again` },
+              { id: 'lie_small', label: 'I tell small lies about where I was or what I did' },
+              { id: 'plan_around', label: 'I make or skip plans depending on whether I can use' },
             ]
-          }
+          },
+          {
+            key: 'who_i_am',
+            label: 'Who I am around them',
+            items: [
+              { id: 'quieter_version', label: `There's a person I'm a quieter, more guarded version of myself around now` },
+              { id: 'shorter_temper', label: 'I have a shorter temper with people who matter to me' },
+              { id: 'less_present_parent', label: `I'm less present as a parent than I want to be` },
+              { id: 'two_versions', label: `There's a me before I use and a me after, and people can tell which one they're getting` },
+              { id: 'withdraw', label: 'I withdraw from people rather than let them see me using' },
+            ]
+          },
+          {
+            key: 'trust',
+            label: 'Trust',
+            items: [
+              { id: 'trust_cooled', label: 'A relationship has cooled, and I know my use is part of why' },
+              { id: 'broken_small_promises', label: `I've broken small promises enough times that they've stopped landing` },
+              { id: 'someone_worries', label: 'Someone close worries about me and tries not to show it' },
+              { id: 'someone_gave_up', label: 'Someone seems to have quietly given up on saying anything' },
+            ]
+          },
         ],
-        selfNamingPrompt: 'Looking at the map:',
+        allowCustom: true,
+        customPrompt: `Something else that's been happening`,
+        selfNamingPrompt: 'Looking at the ledger:',
         selfNamingOptions: [
           { id: 'knew', label: 'I knew this was the shape of things.' },
-          { id: 'didnt_realize', label: `I didn't realize how clearly it shows.` },
-          { id: 'want_to_argue', label: `I want to argue with parts of it, but I named the answers.` },
+          { id: 'didnt_realize', label: `I didn't realize how much had quietly changed.` },
+          { id: 'want_to_argue', label: `I want to argue with parts of it, but I tapped them.` },
         ]
       }
     },
-    closingTitle: 'The people around you have been watching.',
-    closingBody: `This is what they've been doing.`,
+    closingTitle: 'The people have been part of this.',
+    closingBody: `None of this needed a confrontation to be true.
+
+It has been happening in the small things — and now it is written down where you can see it.`,
   },
 
   // ===================================================================
@@ -296,6 +307,7 @@ By the end, the ledger will be in front of you — yours, in your own taps. The 
               { id: 'weekends', label: 'Most of my weekends' },
               { id: 'mornings', label: 'Mornings that used to belong to me' },
               { id: 'sleep_quality', label: 'Sleep I never get back' },
+              { id: 'first_hour', label: `The first hour of the day, before I've reached for anything` },
             ]
           },
           {
@@ -319,6 +331,7 @@ By the end, the ledger will be in front of you — yours, in your own taps. The 
               { id: 'emotional_range', label: 'Emotions I used to feel fully' },
               { id: 'patience', label: 'Patience with people who matter to me' },
               { id: 'spontaneity', label: 'Spontaneity that did not require a substance' },
+              { id: 'boredom', label: 'The ability to sit with a dull moment without reaching for something' },
             ]
           },
           {
@@ -341,6 +354,7 @@ By the end, the ledger will be in front of you — yours, in your own taps. The 
               { id: 'friendships', label: 'Friendships that have quietly faded' },
               { id: 'family_trust', label: 'Trust from family members' },
               { id: 'sexual_intimacy', label: 'Sexual intimacy that did not need the substance' },
+              { id: 'remembered_conversations', label: `Conversations I'd actually remember the next day` },
             ]
           },
           {
@@ -362,7 +376,9 @@ By the end, the ledger will be in front of you — yours, in your own taps. The 
           { id: 'larger_than_expected', label: 'The list is larger than I expected.' },
           { id: 'about_right', label: 'The list is about what I expected.' },
           { id: 'argue_specifics', label: 'I want to argue with some of these, but I tapped them.' },
-        ]
+        ],
+        mostWantBackPrompt: 'Of everything here, which one would you most want back?',
+        mostWantBackSubtext: 'Just one. The one that, if you could have it back, would matter most.',
       }
     },
     closingTitle: 'The ledger is yours now.',
@@ -413,10 +429,10 @@ No commentary from us today. The day is yours.`
             id: 'wait_30_days',
             number: 2,
             title: 'I need time to sit with this.',
-            description: 'The Vow Path closes for 30 days. The Stage Check becomes available again after that, if you want to return. Nothing more is asked of you.',
+            description: 'Nothing more is asked of you right now. The Vow Path stays open — your records are here, and this fork waits for you. Come back and choose when you are ready.',
             confirmTitle: 'Take your time.',
-            confirmBody: 'The Vow Path closes today. The Stage Check becomes available again in 30 days. You can return to your records anytime through your home screen.',
-            confirmButton: 'Close',
+            confirmBody: 'Nothing closes. The Path stays here, and you can return to this fork from your home screen whenever you want to go on — tomorrow, next week, or further out.',
+            confirmButton: 'Done for now',
           },
           {
             id: 'not_for_me',

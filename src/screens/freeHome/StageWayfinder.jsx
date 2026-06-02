@@ -84,7 +84,7 @@ export default function StageWayfinder({ progress }) {
   const goToStage = createStageMove({
     stage, tracker, hasBegunEndure, stopDateISO, primarySubstance,
     daysOnTracker, buildUnlocked, moving, setMoving, setSheet,
-    navigate: () => window.location.assign('/home'),
+    navigate: () => window.location.assign('/app/home'),
     onClose: () => setMapOpen(false),
   })
 

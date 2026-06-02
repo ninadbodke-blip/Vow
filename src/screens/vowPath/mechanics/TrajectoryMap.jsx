@@ -165,7 +165,7 @@ export default function TrajectoryMap({ data, onSave, onComplete, existingData, 
           </div>
         ) : (
           <div style={styles.tierOptionList}>
-            {activeTiers.map(t => {
+            {activeTiers.filter(t => t.tier >= 1).map(t => {
               const selected = currentTier === t.tier
               return (
                 <button

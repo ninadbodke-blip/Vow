@@ -215,7 +215,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
         setTransitioning(false)
         return
       }
-      window.location.assign('/home')
+      window.location.assign('/app/home')
     } catch (err) {
       console.error(err)
       alert('Something went wrong: ' + (err?.message || 'please try again.'))
@@ -270,7 +270,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
         setTransitioning(false)
         return
       }
-      window.location.assign('/home')
+      window.location.assign('/app/home')
     } catch (err) {
       console.error(err)
       alert('Something went wrong: ' + (err?.message || 'please try again.'))
@@ -302,7 +302,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
         <div style={styles.topBar}>
           <VowBrandMark />
           <button
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/app/profile')}
             style={styles.profileBtn}
             aria-label="Profile"
           >
@@ -338,7 +338,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
               <span style={styles.toolIcon}><ForkGlyph /></span>
               <span style={styles.toolLabel}>Where was the fork?</span>
             </button>
-            <button onClick={() => navigate('/anchors')} style={styles.toolBtn}>
+            <button onClick={() => navigate('/app/anchors')} style={styles.toolBtn}>
               <span style={{ ...styles.toolIcon, position: 'relative' }}><AnchorGlyph /><AnchorReactionBadge /></span>
               <span style={styles.toolLabel}>Anchors</span>
             </button>
@@ -940,7 +940,7 @@ function AnchorsTile({ navigate, anchorCount }) {
           ? `You have ${anchorCount} ${anchorCount === 1 ? 'person' : 'people'} saved. Calling one of them might help right now.`
           : "If there's someone you trust — a friend, family, a sponsor — telling them out loud is part of how it gets processed."}
       </p>
-      <button onClick={() => navigate('/anchors')} style={styles.anchorsBtnNew}>
+      <button onClick={() => navigate('/app/anchors')} style={styles.anchorsBtnNew}>
         {has ? 'Open Anchors' : 'Set up Anchors'}
       </button>
     </div>

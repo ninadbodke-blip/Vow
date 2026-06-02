@@ -58,7 +58,7 @@ export default function AddictionPicker({ onboardingDone }) {
     async function load() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { navigate('/signup'); return }
+        if (!user) { navigate('/app/signup'); return }
 
         const { data: addictionData, error: addictionError } = await supabase
           .from('addiction_types').select('*').order('id')
@@ -91,7 +91,7 @@ export default function AddictionPicker({ onboardingDone }) {
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/signup'); return }
+      if (!user) { navigate('/app/signup'); return }
 
       const substanceUpdate = {
         user_id: user.id,
@@ -121,7 +121,7 @@ export default function AddictionPicker({ onboardingDone }) {
         .update({ onboarding_completed: true })
         .eq('id', user.id)
 
-      navigate('/onboarding/state-picker')
+      navigate('/app/onboarding/state-picker')
     } catch (err) {
       console.error(err)
       setError(err.message || 'Something went wrong. Please try again.')

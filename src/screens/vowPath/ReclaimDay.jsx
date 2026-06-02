@@ -58,7 +58,7 @@ export default function ReclaimDay() {
       }
 
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { data: progressRow } = await supabase
         .from('vow_path_progress')
@@ -154,7 +154,7 @@ export default function ReclaimDay() {
     const sequence = buildStepSequence()
     const idx = sequence.indexOf(step)
     if (idx === 0 || step === STEP.CLOSING) {
-      navigate('/vow-path/reclaim')
+      navigate('/app/vow-path/reclaim')
       return
     }
     if (idx > 0) {
@@ -168,7 +168,7 @@ export default function ReclaimDay() {
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { error: artifactError } = await supabase
         .from('vow_artifacts')
@@ -214,7 +214,7 @@ export default function ReclaimDay() {
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { error: artifactError } = await supabase
         .from('vow_artifacts')
@@ -251,7 +251,7 @@ export default function ReclaimDay() {
         return
       }
 
-      navigate(`/vow-path/${chosenStage}`)
+      navigate(`/app/vow-path/${chosenStage}`)
     } catch (err) {
       console.error(err)
       alert('Something went wrong during transition. Please try again.')
@@ -279,7 +279,7 @@ export default function ReclaimDay() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path/reclaim')} style={styles.backBtn}>‹ Overview</button>
+            <button onClick={() => navigate('/app/vow-path/reclaim')} style={styles.backBtn}>‹ Overview</button>
             <div style={{ width: '40px' }}></div>
             <div style={{ width: '40px' }}></div>
           </div>
@@ -398,7 +398,7 @@ export default function ReclaimDay() {
       <div style={styles.frame}>
         <div style={styles.phone}>
           <div style={styles.header}>
-            <button onClick={() => navigate('/vow-path/reclaim')} style={styles.backBtn}>‹ Overview</button>
+            <button onClick={() => navigate('/app/vow-path/reclaim')} style={styles.backBtn}>‹ Overview</button>
             <p style={styles.headerTitle}>{dayLabel}</p>
             <div style={{ width: '40px' }}></div>
           </div>
@@ -431,7 +431,7 @@ export default function ReclaimDay() {
           )}
 
           <button
-            onClick={() => navigate('/vow-path/reclaim')}
+            onClick={() => navigate('/app/vow-path/reclaim')}
             style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
           >
             {isFinalDay ? 'Back to overview' : 'Close'}

@@ -62,7 +62,7 @@ export default function LanguageSelector() {
 
   const choose = (l) => {
     setLang(l)
-    navigate('/signup')
+    navigate('/app/signup')
   }
 
   return (

@@ -79,7 +79,7 @@ export default function UrgeFlow() {
           .select('*, addiction_types(name, icon)')
           .eq('id', trackerId)
           .single()
-        if (!trackerData) { navigate('/home'); return }
+        if (!trackerData) { navigate('/app/home'); return }
         setTracker(trackerData)
 
         const { data: profile } = await supabase
@@ -89,7 +89,7 @@ export default function UrgeFlow() {
           .single()
         setProfileBio(profile?.bio || null)
       } catch (err) {
-        navigate('/home')
+        navigate('/app/home')
       } finally {
         setLoading(false)
       }
@@ -113,7 +113,7 @@ export default function UrgeFlow() {
         technique_used: passed ? passedTechnique : null,
         technique_helped: passed ? true : false,
       })
-      navigate('/home')
+      navigate('/app/home')
     } catch (err) {
       alert('Could not save: ' + err.message)
       setSaving(false)
@@ -152,8 +152,8 @@ export default function UrgeFlow() {
   return (
     <div style={styles.frame}>
       <div style={styles.card}>
-        {step === 'velocity' && <VelocityPicker onChoose={chooseVelocity} onCancel={() => navigate('/home')} />}
-        {step === 'intro' && <Intro tracker={tracker} onStart={startTechniques} onCancel={() => navigate('/home')} />}
+        {step === 'velocity' && <VelocityPicker onChoose={chooseVelocity} onCancel={() => navigate('/app/home')} />}
+        {step === 'intro' && <Intro tracker={tracker} onStart={startTechniques} onCancel={() => navigate('/app/home')} />}
         {step === 'technique' && (
           <Technique
             technique={techniques[techniqueIdx]}

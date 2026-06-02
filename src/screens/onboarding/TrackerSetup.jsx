@@ -211,7 +211,7 @@ export default function TrackerSetup() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        navigate('/signup')
+        navigate('/app/signup')
         return
       }
 
@@ -251,7 +251,7 @@ export default function TrackerSetup() {
         .in('addiction_type_id', selectedIds)
 
       if (existingTrackers && existingTrackers.length === selectedIds.length) {
-        navigate('/home')
+        navigate('/app/home')
         return
       }
 
@@ -260,7 +260,7 @@ export default function TrackerSetup() {
       const toSetUp = selectedIds.filter(id => !alreadyTracked.has(id))
 
       if (toSetUp.length === 0) {
-        navigate('/home')
+        navigate('/app/home')
         return
       }
 
@@ -298,7 +298,7 @@ setLoading(false)
           <p style={{ fontFamily: 'Georgia, serif', color: '#2A1F15', fontSize: '15px', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
             {error || "Tracking isn't available for this substance yet."}
           </p>
-          <button onClick={() => navigate('/home')} style={{ ...styles.optionBtn, width: '100%' }}>
+          <button onClick={() => navigate('/app/home')} style={{ ...styles.optionBtn, width: '100%' }}>
             Back to home
           </button>
         </div>
@@ -419,7 +419,7 @@ setLoading(false)
 
       if (savingsError) throw savingsError
 
-      navigate('/home')
+      navigate('/app/home')
     } catch (err) {
       setError(err.message)
       setSaving(false)
@@ -428,7 +428,7 @@ setLoading(false)
 
   const handleBack = () => {
     if (currentIdx > 0) setCurrentIdx(currentIdx - 1)
-    else navigate('/home')
+    else navigate('/app/home')
   }
 
   const trackingType = currentSetup.trackingType || 'money'

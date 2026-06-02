@@ -218,7 +218,7 @@ export default function NoticeFreeHome({ progress }) {
         <div style={styles.topBar}>
           <VowBrandMark />
           <StageWayfinder progress={progress} />
-          <button onClick={() => navigate('/profile')} style={styles.profileBtn} aria-label="Profile">
+          <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
         </div>
@@ -291,7 +291,7 @@ export default function NoticeFreeHome({ progress }) {
               <AwarenessStripTile checkins={recentCheckins} />
               {logs.length > 0 && <WeekMeterTile logs={logs} />}
               {recentNoticings.length > 0 && <RecentNoticingsTile noticings={recentNoticings} />}
-              <button onClick={() => navigate('/mirror')} style={styles.oracleLink}>
+              <button onClick={() => navigate('/app/mirror')} style={styles.oracleLink}>
                 Your full reflection lives in the Oracle <span style={styles.oracleLinkArrow}>→</span>
               </button>
             </div>

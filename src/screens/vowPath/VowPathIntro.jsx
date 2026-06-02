@@ -32,7 +32,7 @@ export default function VowPathIntro() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { navigate('/welcome'); return }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { data: progressRow } = await supabase
         .from('vow_path_progress')
@@ -66,16 +66,16 @@ export default function VowPathIntro() {
     if (status === 'relapse_support') {
       // Reclaim opens directly as relapse support. If it isn't your assigned
       // stage, the Reclaim screens treat it as a non-destructive visit.
-      navigate('/vow-path/reclaim')
+      navigate('/app/vow-path/reclaim')
       return
     }
     if (status === 'current') {
-      navigate(`/vow-path/${stageKey}`)
+      navigate(`/app/vow-path/${stageKey}`)
       return
     }
     if (status === 'visited') {
       // Past stage — open it fully for exploration.
-      navigate(`/vow-path/${stageKey}`)
+      navigate(`/app/vow-path/${stageKey}`)
     }
   }
 
@@ -100,7 +100,7 @@ export default function VowPathIntro() {
 
         {/* ---- HEADER ---- */}
         <div style={styles.topBar}>
-          <button onClick={() => navigate('/home')} style={styles.backBtn}>‹ Home</button>
+          <button onClick={() => navigate('/app/home')} style={styles.backBtn}>‹ Home</button>
         </div>
         <div style={styles.brand}>
           <VowPathMark size={40} theme="light" />
@@ -256,13 +256,13 @@ export default function VowPathIntro() {
         <div style={styles.ctaBlock}>
           {!hasAssessment ? (
             <>
-              <button onClick={() => navigate('/vow-path/substance')} style={styles.primaryCta}>
+              <button onClick={() => navigate('/app/vow-path/substance')} style={styles.primaryCta}>
                 Take the Stage Check
               </button>
               <p style={styles.ctaSub}>15 questions. About two minutes. Honest answers, in private.</p>
             </>
           ) : (
-            <button onClick={() => navigate('/vow-path/check')} style={styles.tertiaryCta}>
+            <button onClick={() => navigate('/app/vow-path/check')} style={styles.tertiaryCta}>
               Re-take the Stage Check
             </button>
           )}

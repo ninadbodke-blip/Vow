@@ -11,16 +11,18 @@ export default function MultiSelectChips({
   saving,
 }) {
   const [selectedIds, setSelectedIds] = useState([])
-  const [customText, setCustomText] = useState('')
-  const [customMode, setCustomMode] = useState(false)
+  const [customLines, setCustomLines] = useState([])
+  const [customInput, setCustomInput] = useState('')
+  const [showCustomInput, setShowCustomInput] = useState(false)
 
-  // Hydrate from existing data
+  // Hydrate from existing data (supports the new array and the legacy single field)
   useEffect(() => {
     if (existingData) {
       setSelectedIds(existingData.selected_chips || [])
-      if (existingData.custom_addition) {
-        setCustomText(existingData.custom_addition)
-        setCustomMode(true)
+      if (Array.isArray(existingData.custom_additions)) {
+        setCustomLines(existingData.custom_additions)
+      } else if (existingData.custom_addition) {
+        setCustomLines([existingData.custom_addition])
       }
     }
   }, [existingData])
@@ -31,14 +33,28 @@ export default function MultiSelectChips({
     )
   }
 
-  const totalSelected = selectedIds.length + (customMode && customText.trim() ? 1 : 0)
+  const addCustomLine = () => {
+    const trimmed = customInput.trim()
+    if (trimmed.length > 0 && customLines.length < 5) {
+      setCustomLines([...customLines, trimmed])
+      setCustomInput('')
+      setShowCustomInput(false)
+    }
+  }
+
+  const removeCustomLine = (idx) => {
+    setCustomLines(customLines.filter((_, i) => i !== idx))
+  }
+
+  const totalSelected = selectedIds.length + customLines.length
   const canSave = totalSelected >= minSelection
 
   const handleSave = () => {
     if (!canSave) return
     onSave({
       selected_chips: selectedIds,
-      custom_addition: customMode && customText.trim() ? customText.trim() : null,
+      custom_additions: customLines,
+      custom_addition: customLines[0] || null,
     })
   }
 
@@ -66,29 +82,48 @@ export default function MultiSelectChips({
       </div>
 
       {allowCustom && (
-        <>
-          <button
-            onClick={() => setCustomMode(!customMode)}
-            style={{
-              ...styles.customToggle,
-              ...(customMode ? styles.customToggleActive : {}),
-            }}
-          >
-            {customMode ? '✕ Cancel custom' : '+ Add your own'}
-          </button>
+        <div style={styles.customSection}>
+          {customLines.map((line, idx) => (
+            <div key={`custom_${idx}`} style={{ ...styles.chip, ...styles.chipSelected, ...styles.chipCustom }}>
+              <span>{line}</span>
+              <button
+                onClick={() => removeCustomLine(idx)}
+                style={styles.removeBtn}
+                aria-label="Remove"
+              >
+                ×
+              </button>
+            </div>
+          ))}
 
-          {customMode && (
-            <input
-              type="text"
-              value={customText}
-              onChange={(e) => setCustomText(e.target.value)}
-              placeholder="What is it?"
-              maxLength={80}
-              style={styles.customInput}
-              autoFocus
-            />
+          {!showCustomInput && customLines.length < 5 && (
+            <button
+              onClick={() => setShowCustomInput(true)}
+              style={styles.customToggle}
+            >
+              + Add your own
+            </button>
           )}
-        </>
+
+          {showCustomInput && (
+            <div style={styles.customInputRow}>
+              <input
+                type="text"
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                placeholder="What is it?"
+                maxLength={80}
+                style={styles.customInput}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') addCustomLine()
+                  if (e.key === 'Escape') { setShowCustomInput(false); setCustomInput('') }
+                }}
+              />
+              <button onClick={addCustomLine} style={styles.customAddBtn}>Add</button>
+            </div>
+          )}
+        </div>
       )}
 
       <button
@@ -165,7 +200,7 @@ const styles = {
     color: '#9C8C78',
   },
   customInput: {
-    width: '100%',
+    flex: 1,
     padding: '12px 14px',
     borderRadius: '12px',
     border: '0.5px solid #DDCFB6',
@@ -175,7 +210,29 @@ const styles = {
     fontFamily: 'inherit',
     boxSizing: 'border-box',
     outline: 'none',
+  },
+  customSection: {
+    display: 'flex', flexWrap: 'wrap', gap: '8px',
+    marginBottom: '1rem', alignItems: 'center',
+  },
+  chipCustom: {
+    display: 'flex', alignItems: 'center', gap: '8px',
+  },
+  removeBtn: {
+    background: 'transparent', border: 'none',
+    color: '#854F0B', fontSize: '18px',
+    cursor: 'pointer', padding: 0, lineHeight: 1,
+  },
+  customInputRow: {
+    display: 'flex', gap: '8px', width: '100%',
     marginBottom: '1rem',
+  },
+  customAddBtn: {
+    padding: '0 18px',
+    background: '#854F0B', color: '#FAF7F1',
+    border: 'none', borderRadius: '12px',
+    fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+    fontFamily: 'inherit',
   },
   saveBtn: {
     width: '100%', padding: '16px',
