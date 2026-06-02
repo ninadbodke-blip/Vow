@@ -7,12 +7,17 @@ import {
   NOTICE_TOTAL_DAYS,
   NOTICE_PHASES,
 } from './data/noticeContent'
+import { useStageBackground } from './utils/silhouettes'
 
 const STATUS = {
   COMPLETED: 'completed',
   CURRENT: 'current',
   LOCKED: 'locked',
 }
+
+// Per-stage frontispiece copy. (Template: move to stage config when extending.)
+const STAGE_EPIGRAPH = 'Looking at the shape of the habit, before deciding what to do with it.'
+const STAGE_END = 'End of Notice'
 
 export default function NoticeOverview() {
   const navigate = useNavigate()
@@ -21,6 +26,7 @@ export default function NoticeOverview() {
   const [completedDays, setCompletedDays] = useState(new Set())
   const [loaded, setLoaded] = useState(false)
   const [accessDenied, setAccessDenied] = useState(false)
+  const heroPaint = useStageBackground('notice')
 
   useEffect(() => {
     async function load() {
@@ -126,107 +132,98 @@ export default function NoticeOverview() {
     <div style={styles.frame}>
       <div style={styles.phone}>
 
-        <div style={styles.header}>
-          <button onClick={() => navigate('/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
-          <p style={styles.headerTitle}>Notice</p>
-          <button onClick={() => navigate('/library/notice')} style={styles.libraryBtn}>
-            Library
-          </button>
+        {/* 1 — Hero bleed with nav pills overlaid */}
+        <div style={styles.heroWrap}>
+          <div style={heroPaint} aria-hidden="true" />
+          <div style={styles.heroNav}>
+            <button onClick={() => navigate('/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
+            <button onClick={() => navigate('/library/notice')} style={styles.pillBtn}>Library</button>
+          </div>
         </div>
 
-        <div style={styles.tallyBlock}>
-          <p style={styles.tallyEyebrow}>Your journey</p>
-          <p style={styles.tallyLine}>
-            You have gathered <span style={styles.tallyEmph}>{totalCompleted}</span> of {NOTICE_TOTAL_DAYS} days.
-          </p>
-          <div style={styles.tallyMarks}>
-            {Array.from({ length: NOTICE_TOTAL_DAYS }).map((_, i) => {
-              const n = i + 1
-              const done = n <= totalCompleted
-              const today = !done && n === lastCompleted + 1
-              return (
-                <span key={i} style={{
-                  ...styles.tallyMark,
-                  color: done ? '#D9B57A' : today ? '#854F0B' : '#C9BBA3',
-                  opacity: done || today ? 1 : 0.7,
-                }}>{done ? '✦' : today ? '✧' : '·'}</span>
-              )
-            })}
-          </div>
-          <p style={styles.tallySubtitle}>
-            {totalCompleted === 0
-              ? 'Begin with Day 1.'
-              : totalCompleted === NOTICE_TOTAL_DAYS
-                ? 'Notice is complete.'
-                : `Day ${lastCompleted + 1} is next.`}
+        {/* 2 — Title + a single quiet progress line, married into the dissolve */}
+        <div style={styles.frontispiece}>
+          <h1 style={styles.stageTitle}>Notice</h1>
+          <p style={styles.progressLine}>
+            <span style={styles.progressEmph}>{totalCompleted}</span> of {NOTICE_TOTAL_DAYS} days gathered
           </p>
         </div>
 
-        {isPilotOrDev && (
-          <div style={styles.pilotNoteWrap}>
-            <p style={styles.pilotNote}>
-              {import.meta.env.DEV ? 'Dev mode: all days unlocked.' : 'Pilot mode: all days unlocked.'}
-            </p>
-          </div>
-        )}
+        {/* 4 — The continuous thread */}
+        <div style={styles.listWrap}>
+          <div style={styles.thread} aria-hidden="true" />
+          {NOTICE_PHASES.map((phase) => {
+            const [start, end] = phase.dayRange
+            const phaseDays = NOTICE_DAYS.filter(d => d.day >= start && d.day <= end)
+            return (
+              <div key={phase.key}>
+                {NOTICE_PHASES.length > 1 && (
+                  <div style={styles.phaseHeader}>
+                    <p style={styles.phaseTitle}>{`· ${phase.title.toUpperCase()} ·`}</p>
+                    {phase.subtitle && <p style={styles.phaseSubtitle}>{phase.subtitle}</p>}
+                  </div>
+                )}
 
-        {NOTICE_PHASES.map((phase) => {
-          const [start, end] = phase.dayRange
-          const phaseDays = NOTICE_DAYS.filter(d => d.day >= start && d.day <= end)
-
-          return (
-            <div key={phase.key} style={styles.phaseSection}>
-              <div style={styles.phaseHeader}>
-                <p style={styles.phaseTitle}>{phase.title}</p>
-                <p style={styles.phaseSubtitle}>{phase.subtitle}</p>
-              </div>
-
-              <div style={styles.threadWrap}>
-                <div style={styles.thread} />
                 {phaseDays.map((day) => {
                   const status = getDayStatus(day.day)
                   const tappable = isDayTappable(day.day)
                   const isToday = status === STATUS.CURRENT
                   const isDone = status === STATUS.COMPLETED
                   const isLocked = status === STATUS.LOCKED && !tappable
+
+                  if (isToday) {
+                    return (
+                      <button
+                        key={day.day}
+                        onClick={() => handleDayTap(day.day)}
+                        style={styles.vaultCard}
+                      >
+                        <span style={styles.vaultEyebrow}>Today's work</span>
+                        <span style={styles.vaultTitle}>{day.arrivalTitle}</span>
+                        {day.arrivalSubtitle && (
+                          <span style={styles.vaultSubtitle}>{day.arrivalSubtitle}</span>
+                        )}
+                      </button>
+                    )
+                  }
+
                   return (
                     <button
                       key={day.day}
                       onClick={() => handleDayTap(day.day)}
                       disabled={!tappable}
                       style={{
-                        ...styles.threadRow,
-                        ...(isToday ? styles.threadRowToday : {}),
-                        ...(isLocked ? styles.threadRowLocked : {}),
+                        ...styles.dayRow,
+                        ...(isLocked ? styles.dayRowLocked : {}),
                         cursor: tappable ? 'pointer' : 'not-allowed',
                       }}
                     >
                       <span style={{
-                        ...styles.threadNode,
-                        color: (isDone || isToday) ? '#D9B57A' : '#C9BBA3',
-                        background: isToday ? 'transparent' : '#FAF7F1',
-                      }}>{(isDone || isToday) ? '✦' : '·'}</span>
-                      <span style={styles.threadContent}>
-                        {isToday && <span style={styles.todayEyebrow}>Today's work</span>}
+                        ...styles.dayNode,
+                        color: isDone ? '#D9B57A' : '#C9BBA3',
+                      }}>{isDone ? '✦' : '·'}</span>
+                      <span style={styles.dayContent}>
                         <span style={{
-                          ...styles.threadTitle,
-                          ...(isToday ? styles.threadTitleToday : {}),
-                          ...(isDone ? styles.threadTitleDone : {}),
+                          ...styles.dayTitle,
+                          ...(isDone ? styles.dayTitleDone : {}),
                         }}>{day.arrivalTitle}</span>
                         {day.arrivalSubtitle && (
-                          <span style={{
-                            ...styles.threadSubtitle,
-                            ...(isToday ? styles.threadSubtitleToday : {}),
-                          }}>{day.arrivalSubtitle}</span>
+                          <span style={styles.daySubtitle}>{day.arrivalSubtitle}</span>
                         )}
                       </span>
                     </button>
                   )
                 })}
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
+
+        {/* 5 — The anchor */}
+        <div style={styles.anchor}>
+          <span style={styles.anchorMark}>✧</span>
+          <span style={styles.anchorText}>{STAGE_END}</span>
+        </div>
 
       </div>
     </div>
@@ -243,217 +240,132 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   phone: {
+    position: 'relative',
+    zIndex: 0,
     background: '#FAF7F1',
     maxWidth: '440px',
     width: '100%',
     borderRadius: '28px',
-    padding: '1.5rem 1.25rem 2rem',
+    padding: '1.75rem 1.25rem 2.5rem',
     boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
-  },
-  header: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: '1.25rem',
-  },
-  backBtn: {
-    background: 'transparent', border: 'none',
-    color: '#854F0B', fontSize: '14px', fontWeight: 500,
-    cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px',
-    minWidth: '60px', textAlign: 'left',
-  },
-  headerTitle: {
-    fontSize: '17px', fontWeight: 500, color: '#2A1F15',
-    margin: 0, fontFamily: 'Georgia, serif',
-  },
-  libraryBtn: {
-    background: 'transparent', border: 'none',
-    color: '#854F0B', fontSize: '13px', fontWeight: 500,
-    cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px',
-    minWidth: '60px', textAlign: 'right',
-    fontStyle: 'italic',
-  },
-  summaryCard: {
-    background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '20px',
-    padding: '1.5rem 1.25rem',
-    textAlign: 'center',
-    marginBottom: '1.5rem',
-    boxShadow: '0 4px 16px rgba(80,50,20,0.06)',
-  },
-  summaryLabel: {
-    fontSize: '11px', color: '#9C8C78',
-    textTransform: 'uppercase', letterSpacing: '0.12em',
-    fontWeight: 500, margin: '0 0 0.5rem',
-  },
-  summaryNumbers: { margin: '0 0 0.5rem' },
-  summaryBig: {
-    fontSize: '48px', fontWeight: 500, color: '#2A1F15',
-    fontFamily: 'Georgia, serif', lineHeight: 1,
-    fontVariantNumeric: 'tabular-nums',
-  },
-  summarySlash: {
-    fontSize: '24px', color: '#9C8C78',
-    fontFamily: 'Georgia, serif',
-  },
-  summaryTotal: {
-    fontSize: '24px', color: '#9C8C78',
-    fontFamily: 'Georgia, serif',
-    fontVariantNumeric: 'tabular-nums',
-  },
-  summarySubtitle: {
-    fontSize: '13px', color: '#6B5C4A',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    margin: '0 0 1rem',
-  },
-  progressBar: {
-    width: '100%', height: '4px',
-    background: '#EFE7D7',
-    borderRadius: '999px',
     overflow: 'hidden',
   },
-  progressFill: {
-    height: '100%',
-    background: 'linear-gradient(90deg, #C5572C 0%, #854F0B 100%)',
-    borderRadius: '999px',
-    transition: 'width 0.4s ease-out',
+
+  // 1 — Hero
+  heroWrap: {
+    position: 'relative',
+    height: 'clamp(250px, 44vh, 400px)',
+    margin: '-1.75rem -1.25rem 0',   // bleed to the card's top + side edges
   },
-  pilotNoteWrap: {
-    display: 'flex', justifyContent: 'center',
-    marginBottom: '1.25rem',
+  heroNav: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '2.25rem 1.5rem 0',
   },
-  pilotNote: {
-    fontSize: '11px', color: '#854F0B',
-    fontStyle: 'italic',
-    fontFamily: 'Georgia, serif',
-    margin: 0,
-    padding: '6px 14px',
-    background: '#F4ECDD',
-    borderRadius: '999px',
-    border: '0.5px solid #E8DCC2',
-  },
-  tallyBlock: { textAlign: 'center', margin: '0 0 2rem', padding: '0.5rem 0' },
-  tallyEyebrow: { fontSize: '11px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, margin: '0 0 0.75rem' },
-  tallyLine: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 1rem', lineHeight: 1.4 },
-  tallyEmph: { color: '#854F0B', fontStyle: 'normal', fontWeight: 500 },
-  tallyMarks: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', margin: '0 0 0.85rem' },
-  tallyMark: { fontSize: '15px', lineHeight: 1 },
-  tallySubtitle: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0 },
-  threadWrap: { position: 'relative', paddingLeft: '2px' },
-  thread: { position: 'absolute', left: '15px', top: '14px', bottom: '14px', width: '1.5px', background: '#D9B57A', opacity: 0.45, zIndex: 0 },
-  threadRow: { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: '12px', width: '100%', background: 'transparent', border: 'none', textAlign: 'left', padding: '11px 4px', fontFamily: 'inherit' },
-  threadRowToday: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '16px', padding: '16px', margin: '6px 0', boxShadow: '0 10px 24px -10px rgba(40,25,10,0.45)' },
-  threadRowLocked: { opacity: 0.3 },
-  threadNode: { width: '28px', flexShrink: 0, textAlign: 'center', fontSize: '14px', lineHeight: '1.5' },
-  threadContent: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '1px' },
-  todayEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500 },
-  threadTitle: { fontSize: '15px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
-  threadTitleToday: { color: '#FAF7F1' },
-  threadTitleDone: { color: '#9C8C78', fontStyle: 'italic', fontWeight: 400 },
-  threadSubtitle: { fontSize: '12px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
-  threadSubtitleToday: { color: '#CBBA98' },
-  phaseSection: { marginBottom: '1.75rem' },
-  phaseHeader: { marginBottom: '0.75rem', paddingLeft: '4px' },
-  phaseTitle: {
-    fontSize: '14px', fontWeight: 500, color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    margin: '0 0 2px',
-  },
-  phaseSubtitle: {
-    fontSize: '12px', color: '#854F0B',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    margin: 0,
-  },
-  dayList: { display: 'flex', flexDirection: 'column', gap: '6px' },
-  dayRow: {
-    display: 'flex', alignItems: 'center',
-    width: '100%', padding: '12px 14px',
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
+  pillBtn: {
+    background: 'rgba(250, 247, 241, 0.22)',
+    WebkitBackdropFilter: 'blur(12px)',
+    backdropFilter: 'blur(12px)',
+    border: '0.5px solid rgba(255, 255, 255, 0.4)',
+    color: '#3A2A1C', fontSize: '13px', fontWeight: 500,
     cursor: 'pointer', fontFamily: 'inherit',
-    textAlign: 'left', gap: '12px',
-    transition: 'all 0.15s',
-    boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
+    padding: '7px 16px', borderRadius: '999px',
   },
-  dayRowCompleted: { background: '#FDFBF6', borderColor: '#E0D5C2' },
-  dayRowCurrent: {
-    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
-    border: '1px solid #C5572C',
-    boxShadow: '0 4px 14px rgba(197,87,44,0.18)',
+
+  // 2 — Title pulled up into the hero's dissolve
+  frontispiece: {
+    position: 'relative', zIndex: 1, textAlign: 'center',
+    marginTop: '-52px', padding: '0 0.5rem',
   },
-  dayRowLocked: {
-    background: '#F0EBDF', borderColor: '#E0D8C5',
-    cursor: 'not-allowed', boxShadow: 'none',
+  stageTitle: {
+    fontSize: 'clamp(28px, 8vw, 34px)', fontWeight: 400, color: '#2A1F15',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    margin: '0 0 0.6rem', letterSpacing: '0.01em', lineHeight: 1.1,
   },
-  dayRowLockedBypass: {
-    background: '#FDFBF6', borderColor: '#E0D5C2',
-    borderStyle: 'dashed', cursor: 'pointer',
+  progressLine: {
+    fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', textAlign: 'center', letterSpacing: '0.02em', margin: 0,
   },
-  dayNumber: {
-    width: '32px', height: '32px', borderRadius: '50%',
-    background: '#F4ECDD',
-    border: '0.5px solid #E0D5C2',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
+  progressEmph: { color: '#854F0B' },
+  epigraph: {
+    fontSize: '15px', color: '#6B5C4A', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', lineHeight: 1.6, margin: '0 auto', maxWidth: '290px',
   },
-  dayNumberText: {
-    fontSize: '12px', fontWeight: 500, color: '#854F0B',
-    fontVariantNumeric: 'tabular-nums',
+
+  // 3 — One-line tally
+  tally: {
+    display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center',
+    gap: '4px 10px', margin: '1.5rem 0 0',
   },
-  dayContent: { flex: 1, minWidth: 0 },
-  dayTitle: {
-    fontSize: '14px', fontWeight: 500, color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    margin: 0, lineHeight: 1.35,
+  tallyMarks: { display: 'inline-flex', gap: '7px' },
+  tallyMark: { fontSize: '15px', lineHeight: 1 },
+  tallyText: { fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
+  tallyEmph: { color: '#854F0B', fontStyle: 'normal', fontWeight: 500 },
+
+  pilotNote: {
+    textAlign: 'center', fontSize: '11px', color: '#854F0B',
+    fontStyle: 'italic', fontFamily: 'Georgia, serif', margin: '1.5rem 0 0',
   },
-  dayTitleLocked: { color: '#9C8C78' },
-  daySubtitle: {
-    fontSize: '11px', color: '#9C8C78',
-    fontStyle: 'italic', fontFamily: 'Georgia, serif',
-    margin: '2px 0 0', lineHeight: 1.4,
+
+  // 4 — Continuous thread + list
+  listWrap: { position: 'relative', marginTop: '2.5rem', paddingTop: '0.25rem', paddingBottom: '48px' },
+  // thread `top` is tuned for Notice (single phase, no header → starts at the first day);
+  // a multi-phase stage would raise this to clear its first phase header.
+  thread: {
+    position: 'absolute', left: '19px', top: '18px', bottom: 0, width: '1.5px',
+    background: 'linear-gradient(180deg, rgba(217,181,122,0.6) 0%, rgba(217,181,122,0.6) 80%, rgba(217,181,122,0) 100%)',
   },
-  daySubtitleLocked: { color: '#B5A990' },
-  dayStatus: {
-    flexShrink: 0,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    minWidth: '52px',
+  phaseHeader: { textAlign: 'center', margin: '2rem 0 1.25rem' },
+  phaseTitle: {
+    fontSize: '12px', fontWeight: 600, color: '#854F0B',
+    fontFamily: '-apple-system, sans-serif', textTransform: 'uppercase',
+    letterSpacing: '0.2em', margin: '0 0 0.35rem',
   },
-  statusCheck: {
-    width: '24px', height: '24px', borderRadius: '50%',
-    background: 'linear-gradient(180deg, #EAF3DE 0%, #DCE9C8 100%)',
-    border: '0.5px solid #C2D49A',
-    color: '#3B6D11',
-    fontSize: '14px', fontWeight: 600,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  phaseSubtitle: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.4 },
+
+  dayRow: {
+    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start',
+    gap: '12px', width: '100%', background: 'transparent', border: 'none',
+    textAlign: 'left', padding: '15px 4px', fontFamily: 'inherit',
   },
-  statusCurrent: {
-    fontSize: '10px', fontWeight: 500, color: '#FAF7F1',
-    background: 'linear-gradient(180deg, #C5572C 0%, #A14222 100%)',
-    padding: '4px 10px', borderRadius: '999px',
-    textTransform: 'uppercase', letterSpacing: '0.06em',
+  dayRowLocked: { opacity: 0.3 },
+  dayNode: {
+    width: '30px', flexShrink: 0, textAlign: 'center', fontSize: '15px',
+    lineHeight: '1.5', marginTop: '1px', background: '#FAF7F1',
   },
-  statusLocked: { fontSize: '12px', opacity: 0.4 },
+  dayContent: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '1px' },
+  dayTitle: { fontSize: '16px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
+  dayTitleDone: { color: '#9C8C78', fontStyle: 'italic', fontWeight: 400 },
+  daySubtitle: { fontSize: '13px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
+
+  vaultCard: {
+    position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column',
+    gap: '5px', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+    fontFamily: 'inherit', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    borderRadius: '18px', padding: '20px 22px', margin: '10px 0',
+    boxShadow: '0 14px 30px -12px rgba(40,25,10,0.5)',
+  },
+  vaultEyebrow: {
+    fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase',
+    letterSpacing: '0.2em', fontWeight: 600, fontFamily: '-apple-system, sans-serif',
+  },
+  vaultTitle: { fontSize: '19px', fontWeight: 500, color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
+  vaultSubtitle: { fontSize: '13px', color: '#CBBA98', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.45 },
+
+  // 5 — Anchor
+  anchor: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', marginTop: '2px' },
+  anchorMark: { fontSize: '14px', color: '#D9B57A' },
+  anchorText: { fontSize: '12px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', letterSpacing: '0.04em' },
+
+  // --- kept for loading / accessDenied states ---
+  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' },
+  backBtn: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px', minWidth: '60px', textAlign: 'left' },
+  headerTitle: { fontSize: '17px', fontWeight: 500, color: '#2A1F15', margin: 0, fontFamily: 'Georgia, serif' },
   lockedBlock: { textAlign: 'center', padding: '3rem 1rem' },
   lockedIcon: { fontSize: '40px', marginBottom: '1.25rem' },
-  lockedTitle: {
-    fontSize: '20px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    margin: '0 0 1rem',
-  },
-  lockedReason: {
-    fontSize: '14px', color: '#6B5C4A',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.6, margin: 0,
-    maxWidth: '320px',
-    marginLeft: 'auto', marginRight: 'auto',
-  },
-  primaryBtn: {
-    width: '100%', padding: '14px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    border: 'none', borderRadius: '14px',
-    fontSize: '14px', fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
-  },
+  lockedTitle: { fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0 0 1rem' },
+  lockedReason: { fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6, margin: 0, maxWidth: '320px', marginLeft: 'auto', marginRight: 'auto' },
+  primaryBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '14px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)' },
 }
