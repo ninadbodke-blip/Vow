@@ -65,11 +65,20 @@ import MirrorScreen from './screens/mirror/MirrorScreen'
 // =====================================================================
 // VOW PATH ACCESS GATE (pre-paywall)
 // =====================================================================
-// Vow Path is the paid guided journey. It is NOT public yet. Until billing
-// ships, only allowlisted tester accounts may reach any /app/vow-path route.
-// Set the allowlist via the VITE_VOWPATH_TESTERS env var (comma-separated
-// emails), e.g. VITE_VOWPATH_TESTERS="me@example.com,tester@example.com".
-// If the var is unset/empty, Vow Path is closed to EVERYONE (fail closed).
+// Vow Path is the paid guided journey. By default it is NOT public: until
+// billing ships, only allowlisted tester accounts may reach /app/vow-path.
+//
+// Two env vars control access:
+//   VITE_VOWPATH_OPEN    - set to "true" to open Vow Path to ANY signed-in
+//                          user (e.g. for a grant review, investor, or demo).
+//                          Set back to "false"/unset afterwards to re-lock.
+//   VITE_VOWPATH_TESTERS - comma-separated allowlist of emails, used when
+//                          VOWPATH_OPEN is not "true", e.g.
+//                          VITE_VOWPATH_TESTERS="me@example.com,tester@example.com".
+//
+// If neither is set, Vow Path is closed to everyone (fail closed).
+const VOWPATH_OPEN = (import.meta.env.VITE_VOWPATH_OPEN || '').trim().toLowerCase() === 'true'
+
 const VOWPATH_TESTERS = (import.meta.env.VITE_VOWPATH_TESTERS || '')
   .split(',')
   .map((e) => e.trim().toLowerCase())
@@ -81,11 +90,13 @@ function isVowPathTester(session) {
 }
 
 // Resolve the element for a Vow Path route:
-//   not logged in        -> /app/welcome
-//   logged in, no access  -> /app/home (feature hidden pre-launch)
-//   allowlisted tester    -> the real screen
+//   not logged in               -> /app/welcome
+//   VOWPATH_OPEN === "true"      -> any signed-in user may enter (review/demo mode)
+//   otherwise, not on allowlist  -> /app/home (feature hidden pre-launch)
+//   allowlisted tester           -> the real screen
 function vowGate(session, element) {
   if (!session) return <Navigate to="/app/welcome" replace />
+  if (VOWPATH_OPEN) return element
   if (!isVowPathTester(session)) return <Navigate to="/app/home" replace />
   return element
 }
