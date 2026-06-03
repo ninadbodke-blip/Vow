@@ -63,41 +63,18 @@ import MotivationArticle from './screens/motivation/MotivationArticle'
 import MirrorScreen from './screens/mirror/MirrorScreen'
 
 // =====================================================================
-// VOW PATH ACCESS GATE (pre-paywall)
+// VOW PATH ACCESS GATE
 // =====================================================================
-// Vow Path is the paid guided journey. By default it is NOT public: until
-// billing ships, only allowlisted tester accounts may reach /app/vow-path.
+// Vow Path is the paid guided journey. While we are still pre-paywall and
+// actively showing the product to reviewers / investors / early testers,
+// the gate is intentionally a simple session check: any signed-in user can
+// walk the full journey.
 //
-// Two env vars control access:
-//   VITE_VOWPATH_OPEN    - set to "true" to open Vow Path to ANY signed-in
-//                          user (e.g. for a grant review, investor, or demo).
-//                          Set back to "false"/unset afterwards to re-lock.
-//   VITE_VOWPATH_TESTERS - comma-separated allowlist of emails, used when
-//                          VOWPATH_OPEN is not "true", e.g.
-//                          VITE_VOWPATH_TESTERS="me@example.com,tester@example.com".
-//
-// If neither is set, Vow Path is closed to everyone (fail closed).
-const VOWPATH_OPEN = (import.meta.env.VITE_VOWPATH_OPEN || '').trim().toLowerCase() === 'true'
-
-const VOWPATH_TESTERS = (import.meta.env.VITE_VOWPATH_TESTERS || '')
-  .split(',')
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean)
-
-function isVowPathTester(session) {
-  const email = session?.user?.email?.toLowerCase()
-  return !!email && VOWPATH_TESTERS.includes(email)
-}
-
-// Resolve the element for a Vow Path route:
-//   not logged in               -> /app/welcome
-//   VOWPATH_OPEN === "true"      -> any signed-in user may enter (review/demo mode)
-//   otherwise, not on allowlist  -> /app/home (feature hidden pre-launch)
-//   allowlisted tester           -> the real screen
+// When billing ships, restrictions go back inside vowGate() below — either
+// an entitlements check ("user has purchased Vow Path"), an allowlist, or
+// both. The 17 route call sites do not need to change.
 function vowGate(session, element) {
   if (!session) return <Navigate to="/app/welcome" replace />
-  if (VOWPATH_OPEN) return element
-  if (!isVowPathTester(session)) return <Navigate to="/app/home" replace />
   return element
 }
 
