@@ -1,13 +1,18 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MarketingLayout from './MarketingLayout'
 
 // =====================================================================
 // HOMEPAGE
 // =====================================================================
-// The first thing the world sees at vowapp.in. Hero with the flame, brief
-// promise, primary CTA. Then: what Vow is in two sentences, the six-stage
-// path as a previewed grid, and a closing CTA. All marketing pages share
-// MarketingLayout (nav + footer).
+// Premium editorial landing page. Top to bottom: ember-flame hero with the
+// positioning line, a short "what Vow is" beat, the six stages as an
+// interactive vertical "thread" (accordion), a Field Notes (SEO) showcase,
+// and a closing CTA. Nav + footer live in the shared MarketingLayout.
+//
+// Responsiveness: most of this page is fluid already (clamp() type +
+// auto-fit grids + a naturally vertical thread). A small scoped <style>
+// block at the top trims horizontal padding on phones. No external CSS.
 // =====================================================================
 
 const STAGES = [
@@ -19,32 +24,90 @@ const STAGES = [
   { name: 'Reclaim', desc: 'When a slip comes, return with kindness, not shame.' },
 ]
 
+// Field Notes previews. Placeholder articles for now — these become real,
+// indexable pages when the writing is done. Each maps to a stage so the
+// section doubles as a teaser of the journey.
+const NOTES = [
+  {
+    kicker: 'On the third day',
+    title: 'The wall most people hit at day three',
+    excerpt: 'Why cravings spike just before they fade — and how to outlast the storm.',
+  },
+  {
+    kicker: 'On slips',
+    title: 'A slip is not a collapse',
+    excerpt: 'What to do in the first hour after, when the shame is loudest.',
+  },
+  {
+    kicker: 'Before you are ready',
+    title: 'The quiet work of noticing',
+    excerpt: "You don't have to decide to quit to start paying attention.",
+  },
+]
+
 // ---------------------------------------------------------------------
 // HERO FLAME
 // Ported from the Welcome screen's third slide (the "furnace"), recolored
 // for the cream background: the center glows ember-orange (#F0712B) rather
-// than the app's cream-white, and a soft radial halo sits behind it so the
-// whole thing reads as a warm light source. Three layers flicker at
-// different speeds (back 1.8s, core 1.2s, ember 0.8s).
+// than the app's cream-white, with a soft radial halo behind it. Three
+// layers flicker at different speeds (back 1.8s, core 1.2s, ember 0.8s).
 // ---------------------------------------------------------------------
 function HeroFlame() {
   return (
     <div style={styles.flameWrap} aria-hidden="true">
       <div style={styles.flameGlow} />
       <svg viewBox="0 0 100 100" style={styles.flameSvg} xmlns="http://www.w3.org/2000/svg">
-        {/* Back flame — deep amber, slow */}
         <path d="M50 15 Q70 50 50 90 Q30 50 50 15" fill="#8A4310" opacity="0.85">
           <animate attributeName="d" values="M50 15 Q70 50 50 90 Q30 50 50 15; M45 20 Q75 45 50 90 Q25 55 45 20; M55 20 Q65 55 50 90 Q35 45 55 20; M50 15 Q70 50 50 90 Q30 50 50 15" dur="1.8s" repeatCount="indefinite" />
         </path>
-        {/* Core flame — burnt orange (brand clay), faster */}
         <path d="M50 35 Q65 65 50 90 Q35 65 50 35" fill="#C5572C">
           <animate attributeName="d" values="M50 35 Q65 65 50 90 Q35 65 50 35; M52 30 Q60 60 50 90 Q30 70 52 30; M48 30 Q70 70 50 90 Q40 60 48 30; M50 35 Q65 65 50 90 Q35 65 50 35" dur="1.2s" repeatCount="indefinite" />
         </path>
-        {/* Inner ember — glowing ember-orange, rapid flicker (was cream-white) */}
         <path d="M50 55 Q55 75 50 90 Q45 75 50 55" fill="#F0712B">
           <animate attributeName="d" values="M50 55 Q55 75 50 90 Q45 75 50 55; M48 50 Q58 70 50 90 Q42 70 48 50; M50 55 Q55 75 50 90 Q45 75 50 55" dur="0.8s" repeatCount="indefinite" />
         </path>
       </svg>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------
+// STAGE THREAD (accordion)
+// A vertical gold thread with a node per stage. Each row shows the number
+// and name; tapping expands a short description. One open at a time.
+// ---------------------------------------------------------------------
+function StageThread() {
+  const [open, setOpen] = useState(0)
+
+  return (
+    <div style={styles.thread}>
+      <div style={styles.threadLine} aria-hidden="true" />
+      {STAGES.map((s, i) => {
+        const isOpen = open === i
+        return (
+          <div key={s.name} style={styles.threadItem}>
+            <span style={{ ...styles.threadDot, background: isOpen ? '#C5572C' : '#FAF7F1' }} aria-hidden="true" />
+            <button
+              onClick={() => setOpen(isOpen ? null : i)}
+              style={styles.threadHeader}
+              aria-expanded={isOpen}
+            >
+              <span style={styles.threadNum}>{String(i + 1).padStart(2, '0')}</span>
+              <span style={styles.threadName}>{s.name}</span>
+              <span style={styles.threadToggle}>{isOpen ? '\u2212' : '+'}</span>
+            </button>
+            <div
+              style={{
+                ...styles.threadBody,
+                maxHeight: isOpen ? '120px' : '0',
+                opacity: isOpen ? 1 : 0,
+              }}
+            >
+              <p style={styles.threadDesc}>{s.desc}</p>
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -54,26 +117,35 @@ export default function Home() {
 
   return (
     <MarketingLayout>
+      <style>{`
+        @media (max-width: 700px) {
+          .vow-pad { padding-left: 20px !important; padding-right: 20px !important; }
+        }
+      `}</style>
+
       {/* HERO */}
-      <section style={styles.hero}>
+      <section className="vow-pad" style={styles.hero}>
         <HeroFlame />
         <h1 style={styles.heroTitle}>
           A structured path<br />towards recovery.
         </h1>
         <p style={styles.heroSubtitle}>
-          Grounded in evidence.<br />
-          Designed to be there for the hard days.
+          Not just a tracker — a companion for the messy,<br />
+          non-linear reality of recovery.
         </p>
         <button onClick={() => navigate('/app')} style={styles.heroCta}>
           Begin your journey
         </button>
+        <p style={styles.heroNote}>
+          Free to start. Works on any phone — Android app coming soon to Google Play.
+        </p>
       </section>
 
       {/* WHAT IS VOW */}
-      <section style={styles.section}>
+      <section className="vow-pad" style={styles.section}>
         <div style={styles.inner}>
           <p style={styles.eyebrow}>What is Vow</p>
-          <h2 style={styles.sectionTitle}>Not a tracker. A companion.</h2>
+          <h2 style={styles.sectionTitle}>Not just a tracker. A companion.</h2>
           <p style={styles.body}>
             Vow is a sobriety and recovery app for people who've decided that this
             matters. It's built on the Transtheoretical Model — the most studied
@@ -81,15 +153,16 @@ export default function Home() {
             truth of real recovery.
           </p>
           <p style={styles.body}>
-            No streaks to brag about. No badges. No social feed. Just the work,
+            The streak counter is there if you want it — but it was never the
+            point. No badges to chase, no feed to perform for. Just the work,
             made walkable, one day at a time.
           </p>
         </div>
       </section>
 
-      {/* SIX STAGES */}
-      <section style={styles.sectionAlt}>
-        <div style={styles.inner}>
+      {/* SIX STAGES — interactive thread */}
+      <section className="vow-pad" style={styles.sectionAlt}>
+        <div style={styles.innerNarrow}>
           <p style={styles.eyebrow}>Six stages · one path</p>
           <h2 style={styles.sectionTitle}>Where you are matters.</h2>
           <p style={styles.body}>
@@ -97,20 +170,34 @@ export default function Home() {
             you're in and offers what that stage actually needs — different on day
             three than on day three hundred.
           </p>
-          <div style={styles.stagesGrid}>
-            {STAGES.map((s, i) => (
-              <div key={s.name} style={styles.stageCard}>
-                <p style={styles.stageNum}>{String(i + 1).padStart(2, '0')}</p>
-                <h3 style={styles.stageName}>{s.name}</h3>
-                <p style={styles.stageDesc}>{s.desc}</p>
-              </div>
+          <StageThread />
+        </div>
+      </section>
+
+      {/* FIELD NOTES — SEO showcase */}
+      <section className="vow-pad" style={styles.section}>
+        <div style={styles.inner}>
+          <p style={styles.eyebrow}>Field Notes on recovery</p>
+          <h2 style={styles.sectionTitle}>Honest writing for the hard parts.</h2>
+          <p style={styles.body}>
+            Practical, unsentimental notes on the moments recovery actually turns
+            on. The first notes are on the way.
+          </p>
+          <div style={styles.notesGrid}>
+            {NOTES.map((n) => (
+              <article key={n.title} style={styles.noteCard}>
+                <p style={styles.noteKicker}>{n.kicker}</p>
+                <h3 style={styles.noteTitle}>{n.title}</h3>
+                <p style={styles.noteExcerpt}>{n.excerpt}</p>
+                <span style={styles.noteRead}>Read more ›</span>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
       {/* FINAL CTA */}
-      <section style={styles.ctaSection}>
+      <section className="vow-pad" style={styles.ctaSection}>
         <div style={styles.inner}>
           <h2 style={styles.ctaTitle}>Ready when you are.</h2>
           <button onClick={() => navigate('/app')} style={styles.heroCta}>
@@ -126,7 +213,7 @@ const styles = {
   hero: {
     maxWidth: '900px',
     margin: '0 auto',
-    padding: '80px 32px 100px',
+    padding: '72px 32px 96px',
     textAlign: 'center',
     display: 'flex',
     flexDirection: 'column',
@@ -136,7 +223,7 @@ const styles = {
     position: 'relative',
     width: 'clamp(180px, 30vw, 260px)',
     height: 'clamp(180px, 30vw, 260px)',
-    marginBottom: '28px',
+    marginBottom: '24px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -160,7 +247,7 @@ const styles = {
     fontWeight: 400,
     color: '#2A1F15',
     lineHeight: 1.12,
-    margin: '0 0 24px',
+    margin: '0 0 22px',
     fontFamily: 'Georgia, serif',
     letterSpacing: '-0.01em',
   },
@@ -168,7 +255,7 @@ const styles = {
     fontSize: 'clamp(17px, 2vw, 20px)',
     color: '#5B4F3F',
     lineHeight: 1.55,
-    margin: '0 0 40px',
+    margin: '0 0 36px',
     fontFamily: 'Georgia, serif',
   },
   heroCta: {
@@ -183,15 +270,25 @@ const styles = {
     cursor: 'pointer',
     letterSpacing: '0.01em',
   },
+  heroNote: {
+    fontSize: '13.5px',
+    color: '#9C8C78',
+    margin: '18px 0 0',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
   section: {
-    padding: '80px 32px',
+    padding: '76px 32px',
   },
   sectionAlt: {
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
-    padding: '80px 32px',
+    padding: '76px 32px',
   },
   inner: {
     maxWidth: '880px',
+    margin: '0 auto',
+  },
+  innerNarrow: {
+    maxWidth: '720px',
     margin: '0 auto',
   },
   eyebrow: {
@@ -200,7 +297,7 @@ const styles = {
     textTransform: 'uppercase',
     letterSpacing: '0.18em',
     fontWeight: 500,
-    fontFamily: 'Georgia, serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     margin: '0 0 16px',
   },
   sectionTitle: {
@@ -208,7 +305,7 @@ const styles = {
     fontWeight: 400,
     color: '#2A1F15',
     lineHeight: 1.2,
-    margin: '0 0 24px',
+    margin: '0 0 22px',
     fontFamily: 'Georgia, serif',
     letterSpacing: '-0.005em',
   },
@@ -219,39 +316,124 @@ const styles = {
     margin: '0 0 18px',
     fontFamily: 'Georgia, serif',
   },
-  stagesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: '20px',
+
+  // ---- Stage thread ----
+  thread: {
+    position: 'relative',
     marginTop: '40px',
+    paddingLeft: '4px',
   },
-  stageCard: {
-    background: '#FAF7F1',
-    border: '0.5px solid #E8DCC2',
-    borderRadius: '14px',
-    padding: '22px 22px 24px',
+  threadLine: {
+    position: 'absolute',
+    left: '7px',
+    top: '8px',
+    bottom: '8px',
+    width: '1.5px',
+    background: '#D9B57A',
+    opacity: 0.8,
   },
-  stageNum: {
+  threadItem: {
+    position: 'relative',
+    paddingLeft: '34px',
+    borderBottom: '0.5px solid rgba(168,122,60,0.18)',
+  },
+  threadDot: {
+    position: 'absolute',
+    left: '2px',
+    top: '21px',
+    width: '11px',
+    height: '11px',
+    borderRadius: '50%',
+    border: '1.5px solid #C5572C',
+    boxSizing: 'border-box',
+    transition: 'background 0.25s ease',
+  },
+  threadHeader: {
+    width: '100%',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    padding: '16px 0',
+    textAlign: 'left',
+    fontFamily: 'Georgia, serif',
+  },
+  threadNum: {
     fontSize: '12px',
     color: '#A07A3C',
-    letterSpacing: '0.18em',
-    margin: '0 0 8px',
-    fontFamily: 'Georgia, serif',
+    letterSpacing: '0.14em',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    minWidth: '22px',
   },
-  stageName: {
-    fontSize: '22px',
-    fontWeight: 500,
+  threadName: {
+    fontSize: 'clamp(20px, 3vw, 26px)',
+    fontWeight: 400,
     color: '#2A1F15',
-    margin: '0 0 10px',
     fontFamily: 'Georgia, serif',
   },
-  stageDesc: {
-    fontSize: '15px',
+  threadToggle: {
+    marginLeft: 'auto',
+    fontSize: '22px',
+    color: '#A07A3C',
+    fontWeight: 400,
+    lineHeight: 1,
+  },
+  threadBody: {
+    overflow: 'hidden',
+    transition: 'max-height 0.35s ease, opacity 0.3s ease',
+  },
+  threadDesc: {
+    fontSize: '17px',
     color: '#5B4F3F',
-    lineHeight: 1.55,
-    margin: 0,
+    lineHeight: 1.6,
+    margin: '0 0 18px',
+    fontStyle: 'italic',
     fontFamily: 'Georgia, serif',
   },
+
+  // ---- Field Notes ----
+  notesGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+    gap: '36px',
+    marginTop: '44px',
+  },
+  noteCard: {
+    borderTop: '1px solid #D9B57A',
+    paddingTop: '20px',
+  },
+  noteKicker: {
+    fontSize: '12px',
+    color: '#A07A3C',
+    textTransform: 'uppercase',
+    letterSpacing: '0.14em',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    margin: '0 0 12px',
+  },
+  noteTitle: {
+    fontSize: '23px',
+    fontWeight: 400,
+    color: '#2A1F15',
+    lineHeight: 1.25,
+    margin: '0 0 12px',
+    fontFamily: 'Georgia, serif',
+  },
+  noteExcerpt: {
+    fontSize: '16px',
+    color: '#6B5C4A',
+    lineHeight: 1.55,
+    fontStyle: 'italic',
+    margin: '0 0 16px',
+    fontFamily: 'Georgia, serif',
+  },
+  noteRead: {
+    fontSize: '14px',
+    color: '#C5572C',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+
   ctaSection: {
     padding: '80px 32px 100px',
     textAlign: 'center',
@@ -260,7 +442,7 @@ const styles = {
     fontSize: 'clamp(28px, 4vw, 38px)',
     fontWeight: 400,
     color: '#2A1F15',
-    margin: '0 0 32px',
+    margin: '0 0 30px',
     fontFamily: 'Georgia, serif',
   },
 }
