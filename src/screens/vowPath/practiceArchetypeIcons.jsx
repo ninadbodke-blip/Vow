@@ -36,14 +36,11 @@ const PATHS = {
       <circle cx="12" cy="12" r="2.6" />
     </>
   ),
-  // Anchor — tie a realisation to something steady (an anchor)
-  anchor: (
+  // Tether — tie a realisation to something steady (two linked rings)
+  tether: (
     <>
-      <circle cx="12" cy="4.5" r="2" />
-      <path d="M12 6.5V21" />
-      <path d="M7.5 10.5h9" />
-      <path d="M4.5 13.5a7.5 7.5 0 0 0 15 0" />
-      <path d="M4.5 13.5l-1.9.4M19.5 13.5l1.9.4" />
+      <circle cx="9.5" cy="12" r="4.2" />
+      <circle cx="14.5" cy="12" r="4.2" />
     </>
   ),
   // Document — capture a real artefact of a moment (a page)
