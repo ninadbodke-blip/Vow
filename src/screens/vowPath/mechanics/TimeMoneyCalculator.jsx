@@ -1,6 +1,67 @@
 import { useState, useEffect } from 'react'
 
+const SLIDER_STYLE_ID = 'vow-slider-styles'
+const SLIDER_CSS = `
+  .vow-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(180deg, #EFE7D7 0%, #E5DCC8 100%);
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+  }
+  .vow-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    background: transparent;
+    border-radius: 999px;
+  }
+  .vow-slider::-moz-range-track {
+    height: 6px;
+    background: linear-gradient(180deg, #EFE7D7 0%, #E5DCC8 100%);
+    border-radius: 999px;
+  }
+  .vow-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #E5C18A 0%, #B89567 100%);
+    border: 2px solid #FAF7F1;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(40,25,10,0.25);
+    margin-top: -8px;
+  }
+  .vow-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #E5C18A 0%, #B89567 100%);
+    border: 2px solid #FAF7F1;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(40,25,10,0.25);
+  }
+  .vow-slider:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgba(217,181,122,0.25), 0 2px 6px rgba(40,25,10,0.25);
+  }
+  .vow-slider:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 4px rgba(217,181,122,0.25), 0 2px 6px rgba(40,25,10,0.25);
+  }
+`
+
+function ensureSliderStyles() {
+  if (typeof document === 'undefined') return
+  if (document.getElementById(SLIDER_STYLE_ID)) return
+  const el = document.createElement('style')
+  el.id = SLIDER_STYLE_ID
+  el.innerHTML = SLIDER_CSS
+  document.head.appendChild(el)
+}
+
 export default function TimeMoneyCalculator({ substance, existingData, onSave, saving }) {
+  useEffect(() => { ensureSliderStyles() }, [])
   // Time fields (hours per week)
   const [usingTime, setUsingTime] = useState(5)
   const [prepTime, setPrepTime] = useState(1)
@@ -119,11 +180,18 @@ export default function TimeMoneyCalculator({ substance, existingData, onSave, s
         </p>
 
         <div style={styles.moneyDisplay}>
-          <span style={styles.rupeeSymbol}>₹</span>
+          <span style={styles.rupeeSymbol}>{'\u20b9'}</span>
           <input
             type="number"
-            value={moneyPerWeek}
-            onChange={(e) => setMoneyPerWeek(parseInt(e.target.value, 10) || 0)}
+            inputMode="numeric"
+            value={moneyPerWeek === 0 ? '' : moneyPerWeek}
+            onChange={(e) => {
+              const v = e.target.value
+              if (v === '') { setMoneyPerWeek(0); return }
+              const n = parseInt(v, 10)
+              if (!isNaN(n) && n >= 0) setMoneyPerWeek(n)
+            }}
+            placeholder="0"
             style={styles.moneyInput}
             min={0}
             max={100000}
@@ -226,6 +294,7 @@ function SliderField({ label, sublabel, value, onChange, min, max, step, unit, h
         step={step}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
+        className="vow-slider"
         style={fieldStyles.slider}
       />
     </div>

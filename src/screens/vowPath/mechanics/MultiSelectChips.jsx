@@ -13,7 +13,6 @@ export default function MultiSelectChips({
   const [selectedIds, setSelectedIds] = useState([])
   const [customLines, setCustomLines] = useState([])
   const [customInput, setCustomInput] = useState('')
-  const [showCustomInput, setShowCustomInput] = useState(false)
 
   // Hydrate from existing data (supports the new array and the legacy single field)
   useEffect(() => {
@@ -38,7 +37,6 @@ export default function MultiSelectChips({
     if (trimmed.length > 0 && customLines.length < 5) {
       setCustomLines([...customLines, trimmed])
       setCustomInput('')
-      setShowCustomInput(false)
     }
   }
 
@@ -48,6 +46,7 @@ export default function MultiSelectChips({
 
   const totalSelected = selectedIds.length + customLines.length
   const canSave = totalSelected >= minSelection
+  const canAddCustom = customInput.trim().length > 0 && customLines.length < 5
 
   const handleSave = () => {
     if (!canSave) return
@@ -79,50 +78,46 @@ export default function MultiSelectChips({
             </button>
           )
         })}
+        {customLines.map((line, idx) => (
+          <div
+            key={`custom_${idx}`}
+            style={{ ...styles.chip, ...styles.chipSelected, ...styles.chipCustom }}
+          >
+            <span>{line}</span>
+            <button
+              onClick={() => removeCustomLine(idx)}
+              style={styles.removeBtn}
+              aria-label="Remove"
+            >
+              ×
+            </button>
+          </div>
+        ))}
       </div>
 
-      {allowCustom && (
-        <div style={styles.customSection}>
-          {customLines.map((line, idx) => (
-            <div key={`custom_${idx}`} style={{ ...styles.chip, ...styles.chipSelected, ...styles.chipCustom }}>
-              <span>{line}</span>
-              <button
-                onClick={() => removeCustomLine(idx)}
-                style={styles.removeBtn}
-                aria-label="Remove"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-
-          {!showCustomInput && customLines.length < 5 && (
-            <button
-              onClick={() => setShowCustomInput(true)}
-              style={styles.customToggle}
-            >
-              + Add your own
-            </button>
-          )}
-
-          {showCustomInput && (
-            <div style={styles.customInputRow}>
-              <input
-                type="text"
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="What is it?"
-                maxLength={80}
-                style={styles.customInput}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') addCustomLine()
-                  if (e.key === 'Escape') { setShowCustomInput(false); setCustomInput('') }
-                }}
-              />
-              <button onClick={addCustomLine} style={styles.customAddBtn}>Add</button>
-            </div>
-          )}
+      {allowCustom && customLines.length < 5 && (
+        <div style={styles.customInputRow}>
+          <input
+            type="text"
+            value={customInput}
+            onChange={(e) => setCustomInput(e.target.value)}
+            placeholder="Add your own..."
+            maxLength={80}
+            style={styles.customInput}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && canAddCustom) addCustomLine()
+            }}
+          />
+          <button
+            onClick={addCustomLine}
+            disabled={!canAddCustom}
+            style={{
+              ...styles.customAddBtn,
+              ...(canAddCustom ? {} : styles.customAddBtnDisabled),
+            }}
+          >
+            + Add
+          </button>
         </div>
       )}
 
@@ -225,14 +220,23 @@ const styles = {
   },
   customInputRow: {
     display: 'flex', gap: '8px', width: '100%',
-    marginBottom: '1rem',
+    marginBottom: '1.25rem',
   },
   customAddBtn: {
-    padding: '0 18px',
-    background: '#854F0B', color: '#FAF7F1',
+    padding: '12px 18px',
+    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    color: '#FAF7F1',
     border: 'none', borderRadius: '12px',
     fontSize: '13px', fontWeight: 500, cursor: 'pointer',
     fontFamily: 'inherit',
+    boxShadow: '0 2px 8px rgba(40,25,10,0.20)',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+  },
+  customAddBtnDisabled: {
+    background: '#C9B894',
+    boxShadow: 'none',
+    cursor: 'not-allowed',
   },
   saveBtn: {
     width: '100%', padding: '16px',

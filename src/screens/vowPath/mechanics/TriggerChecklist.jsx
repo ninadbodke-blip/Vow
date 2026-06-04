@@ -83,27 +83,29 @@ export default function TriggerChecklist({
       {allowCustom && (
         <div style={styles.customSection}>
           {customs.map((c, i) => (
-            <div key={i} style={styles.customRow}>
+            <div key={i} style={{ ...styles.row, ...styles.rowSelected, ...styles.customRowInline }}>
+              <span style={{ ...styles.checkbox, ...styles.checkboxSelected }}>{'\u2713'}</span>
               <input
                 type="text"
                 value={c}
                 onChange={(e) => updateCustom(i, e.target.value)}
-                placeholder="Add another trigger"
+                placeholder="Type your trigger..."
                 maxLength={80}
-                style={styles.customInput}
+                autoFocus={c === ''}
+                style={styles.customInlineInput}
               />
               <button
                 onClick={() => removeCustom(i)}
-                style={styles.removeBtn}
+                style={styles.removeBtnInline}
                 aria-label="Remove"
               >
-                ✕
+                {'\u00d7'}
               </button>
             </div>
           ))}
           {customs.length < maxCustom && (
             <button onClick={addCustom} style={styles.addCustomBtn}>
-              + Add another trigger
+              + Add your own trigger
             </button>
           )}
         </div>
@@ -188,47 +190,49 @@ const styles = {
   },
   customSection: {
     display: 'flex', flexDirection: 'column',
-    gap: '8px',
+    gap: '6px',
     marginBottom: '1.25rem',
     marginTop: '0.5rem',
   },
-  customRow: {
-    display: 'flex',
-    gap: '8px',
-    alignItems: 'center',
+  customRowInline: {
+    cursor: 'default',
+    padding: '8px 14px',
   },
-  customInput: {
+  customInlineInput: {
     flex: 1,
-    padding: '12px 14px',
-    borderRadius: '12px',
-    border: '0.5px solid #DDCFB6',
-    background: 'white',
+    background: 'transparent',
+    border: 'none',
+    outline: 'none',
+    padding: '4px 0',
     fontSize: '14px',
     color: '#2A1F15',
     fontFamily: 'inherit',
-    boxSizing: 'border-box',
-    outline: 'none',
+    lineHeight: 1.4,
+    minWidth: 0,
   },
-  removeBtn: {
-    width: '36px', height: '36px',
+  removeBtnInline: {
     background: 'transparent',
-    border: '0.5px solid #DDCFB6',
-    borderRadius: '8px',
-    color: '#9C8C78',
+    border: 'none',
+    color: '#854F0B',
+    fontSize: '20px',
     cursor: 'pointer',
-    fontSize: '12px',
-    fontFamily: 'inherit',
+    padding: '0 4px',
+    lineHeight: 1,
+    flexShrink: 0,
+    opacity: 0.6,
   },
   addCustomBtn: {
     background: 'transparent',
     border: '0.5px dashed #DDCFB6',
     borderRadius: '12px',
-    padding: '10px 14px',
-    fontSize: '12px', fontWeight: 500,
+    padding: '12px 14px',
+    fontSize: '13px', fontWeight: 500,
     color: '#854F0B',
     fontFamily: 'inherit',
     cursor: 'pointer',
     width: '100%',
+    textAlign: 'left',
+    display: 'flex', alignItems: 'center', gap: '12px',
   },
   saveBtn: {
     width: '100%', padding: '16px',

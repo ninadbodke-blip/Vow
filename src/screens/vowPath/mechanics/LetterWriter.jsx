@@ -6,6 +6,8 @@ export default function LetterWriter({
   promptHeader,
   starterPrompts,
   unsealOnKey,
+  minWords = 20,
+  helperText,
   dayNumber,
   substance,
   existingData,
@@ -47,7 +49,8 @@ export default function LetterWriter({
   }, [letterKey])
 
   const wordCount = letterText.trim().split(/\s+/).filter(Boolean).length
-  const canSeal = letterText.trim().length >= 20  // minimum 20 chars
+  const canSeal = wordCount >= minWords
+  const progressPct = Math.min(100, Math.round((wordCount / minWords) * 100))
 
   // Compute the unseal-on day text for the seal warning
   const unsealOnLabel = (() => {
@@ -71,6 +74,10 @@ export default function LetterWriter({
       <div>
         <h2 style={styles.promptHeader}>{promptHeader}</h2>
 
+        {helperText && (
+          <p style={styles.helperBanner}>{helperText}</p>
+        )}
+
         <textarea
           value={letterText}
           onChange={(e) => setLetterText(e.target.value)}
@@ -80,17 +87,42 @@ export default function LetterWriter({
         />
 
         <div style={styles.metaRow}>
-          <span style={styles.wordCount}>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+          <span style={styles.wordCount}>
+            {wordCount} {wordCount === 1 ? 'word' : 'words'}
+            {minWords > 0 && (
+              <span style={styles.wordCountTarget}>{` / ${minWords} minimum`}</span>
+            )}
+          </span>
           {existingLetter && !existingLetter.is_sealed && (
             <span style={styles.editingNote}>Editing earlier draft</span>
           )}
         </div>
 
-        {starterPrompts && starterPrompts.length > 0 && wordCount < 10 && (
+        {minWords > 0 && (
+          <div style={styles.progressTrack}>
+            <div style={{ ...styles.progressFill, width: `${progressPct}%` }} />
+          </div>
+        )}
+
+        {starterPrompts && starterPrompts.length > 0 && (
           <div style={styles.startersBlock}>
-            <p style={styles.startersLabel}>{`If you're stuck, you can begin with:`}</p>
+            <p style={styles.startersLabel}>
+              {wordCount < 10
+                ? 'Pick one to begin, or write your own opening:'
+                : 'Stuck? Try writing about one of these:'}
+            </p>
             {starterPrompts.map((s, i) => (
-              <p key={i} style={styles.starterItem}>{s}</p>
+              <button
+                key={i}
+                onClick={() => {
+                  const cleaned = s.replace(/^["\u201c"]|["\u201d"]$/g, '').trim()
+                  const insert = letterText.trim().length === 0 ? cleaned : `${letterText.trim()}\n\n${cleaned}`
+                  setLetterText(insert)
+                }}
+                style={styles.starterItem}
+              >
+                {s}
+              </button>
             ))}
           </div>
         )}
@@ -108,7 +140,7 @@ export default function LetterWriter({
 
         {!canSeal && (
           <p style={styles.helpText}>
-            Write at least a few sentences before sealing.
+            {`Write at least ${minWords} words before sealing. You're at ${wordCount}.`}
           </p>
         )}
       </div>
@@ -287,7 +319,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: '0.5rem',
-    marginBottom: '1rem',
+    marginBottom: '0.5rem',
     padding: '0 4px',
   },
   wordCount: {
@@ -297,11 +329,40 @@ const styles = {
     fontStyle: 'italic',
     fontVariantNumeric: 'tabular-nums',
   },
+  wordCountTarget: {
+    color: '#9C8C78',
+    opacity: 0.7,
+  },
   editingNote: {
     fontSize: '11px',
     color: '#854F0B',
     fontFamily: 'Georgia, serif',
     fontStyle: 'italic',
+  },
+  helperBanner: {
+    fontSize: '13px',
+    color: '#6B5C4A',
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    lineHeight: 1.6,
+    margin: '0 0 1rem',
+    padding: '0.85rem 1rem',
+    background: '#FDFBF6',
+    border: '0.5px solid #EFE7D7',
+    borderRadius: '10px',
+  },
+  progressTrack: {
+    height: '3px',
+    background: '#EFE7D7',
+    borderRadius: '999px',
+    overflow: 'hidden',
+    marginBottom: '1.25rem',
+  },
+  progressFill: {
+    height: '100%',
+    background: 'linear-gradient(90deg, #D9B57A 0%, #B89567 100%)',
+    borderRadius: '999px',
+    transition: 'width 0.25s ease-out',
   },
   startersBlock: {
     padding: '0.85rem 1rem',
@@ -319,12 +380,19 @@ const styles = {
     margin: '0 0 0.6rem',
   },
   starterItem: {
+    display: 'block',
+    width: '100%',
+    textAlign: 'left',
+    background: 'transparent',
+    border: 'none',
+    padding: '6px 0',
     fontSize: '13px',
     color: '#6B5C4A',
     fontFamily: 'Georgia, serif',
     fontStyle: 'italic',
     lineHeight: 1.5,
-    margin: '0 0 0.4rem',
+    cursor: 'pointer',
+    borderBottom: '0.5px solid #EFE7D7',
   },
   primaryBtn: {
     width: '100%', padding: '16px',

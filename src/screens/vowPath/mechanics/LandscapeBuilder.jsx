@@ -171,7 +171,7 @@ export default function LandscapeBuilder({ substance, existingData, onSave, savi
             {daysPerWeek} {daysPerWeek === 1 ? 'day' : 'days'} a week
           </p>
           <p style={styles.resultLine}>
-            {amountPerSession} {substanceMeta.unit} per session
+            {amountPerSession} {substanceMeta.unit} per day
           </p>
           <div style={styles.resultDivider}></div>
           <p style={styles.resultLine}>
