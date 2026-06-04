@@ -137,10 +137,10 @@ export default function SignUp() {
         <p className="vrise" style={{ ...styles.tag, animationDelay: '0.09s' }}>{t('tagline')}</p>
 
         <h1 className="vrise" style={{ ...styles.headline, animationDelay: '0.16s' }}>
-          The quietest rooms<br />build the loudest lives.
+          Step Into the Sanctuary.
         </h1>
         <p className="vrise" style={{ ...styles.headlineSub, animationDelay: '0.22s' }}>
-          Your timeline is secure. Your progress is private. Step inside.
+          Your timeline is secure. Your progress is private.
         </p>
       </div>
 
@@ -196,7 +196,7 @@ export default function SignUp() {
                 onChange={(e) => setName(e.target.value)}
                 style={styles.input}
                 required
-                placeholder="Ninad"
+                placeholder="Your Name"
               />
             </div>
           )}
@@ -234,14 +234,14 @@ export default function SignUp() {
             disabled={loading}
             style={{ ...styles.submitBtn, ...(loading ? styles.btnDisabled : {}) }}
           >
-            {loading ? 'One moment…' : 'Enter the Vault →'}
+            {loading ? 'One moment…' : 'Submit →'}
           </button>
 
           {error && <p style={styles.err}>{error}</p>}
           {success && <p style={styles.success}>{success}</p>}
         </form>
 
-        <p style={styles.privacy}>🔒 AES-256 encrypted · We never post on your behalf.</p>
+        <p style={styles.privacy}>We never post on your behalf.</p>
 
         <p style={styles.footer}>
           By continuing, you agree to our{' '}
