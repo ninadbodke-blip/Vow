@@ -21,7 +21,7 @@ export const STAGE_SILHOUETTES = {
   reflect: { count: 9, tint: '#C28C76' }, // golden hour
   commit:  { count: 5, tint: '#6C7689' }, // twilight
   endure:  { count: 9, tint: '#8E957C' }, // steady ground
-  build:   { count: 5, tint: '#7C8757' }, // living green
+  build:   { count: 6, tint: '#7C8757' }, // living green
   reclaim: { count: 3, tint: '#DBB394' }, // warm dawn
 }
 
