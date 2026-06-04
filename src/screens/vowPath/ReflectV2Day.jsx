@@ -5,6 +5,7 @@ import { audioUrl } from './utils/audioUrl'
 import { isCadenceBypassed } from './utils/vowPathGating'
 import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
 import { getReflectV2Day, REFLECT_V2_TOTAL_DAYS } from './data/reflectV2Content'
+import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
 
 // Mechanic components
 import MultiSelectChips from './mechanics/MultiSelectChips'
@@ -33,6 +34,7 @@ const STEP = {
   AUDIO: 'audio',
   INTRO: 'intro',
   INTERACTION: 'interaction',
+  PRACTICE: 'practice',
   CLOSING: 'closing',
 }
 
@@ -178,6 +180,7 @@ export default function ReflectV2Day() {
     if (dayContent?.founderAudio) seq.push(STEP.AUDIO)
     if (dayContent?.intro?.length > 0) seq.push(STEP.INTRO)
     seq.push(STEP.INTERACTION)
+    if (dayContent?.practice) seq.push(STEP.PRACTICE)
     seq.push(STEP.CLOSING)
     return seq
   }
@@ -466,6 +469,49 @@ export default function ReflectV2Day() {
     )
   }
 
+  // ---- PRACTICE (real-world, "between now and tomorrow"; opt-in via dayContent.practice) ----
+  if (step === STEP.PRACTICE && dayContent.practice) {
+    const practice = dayContent.practice
+    const body = Array.isArray(practice.body) ? practice.body : [practice.body]
+    return (
+      <div style={styles.frame}>
+        <div style={styles.phone}>
+          <div style={styles.header}>
+            <button onClick={goBack} style={styles.backBtn}>{getBackLabel()}</button>
+            <div style={{ width: '40px' }}></div>
+            <div style={{ width: '40px' }}></div>
+          </div>
+
+          <div style={styles.introHeaderBlock}>
+            {practice.archetype && (
+              <div style={{ color: '#854F0B', display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                <PracticeArchetypeIcon archetype={practice.archetype} size={30} />
+              </div>
+            )}
+            {practice.archetype && (
+              <div style={styles.practiceArchetypeName}>
+                {practice.archetypeLabel || (practice.archetype.charAt(0).toUpperCase() + practice.archetype.slice(1))}
+              </div>
+            )}
+            <div style={styles.introDayLabel}>{practice.eyebrow || 'Between now and tomorrow'}</div>
+            <h2 style={styles.introTitle}>{practice.title}</h2>
+            <div style={styles.introDivider}></div>
+          </div>
+
+          <div style={styles.readingBlock}>
+            {body.map((para, i) => (
+              <p key={i} style={styles.readingPara}>{para}</p>
+            ))}
+          </div>
+
+          <button onClick={advance} style={styles.primaryBtn}>
+            {practice.button || 'I\u2019ll carry this'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // ---- CLOSING ----
   if (step === STEP.CLOSING) {
     const isFinalDay = dayNumber === REFLECT_V2_TOTAL_DAYS
@@ -589,6 +635,13 @@ const styles = {
     textAlign: 'center',
     marginBottom: '2rem',
     paddingTop: '1.5rem',
+  },
+  practiceArchetypeName: {
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    fontSize: '15px',
+    color: '#854F0B',
+    marginBottom: '0.7rem',
   },
   introDayLabel: {
     fontSize: '12px',
