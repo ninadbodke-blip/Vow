@@ -138,9 +138,9 @@ export default function MarketingLayout({ children }) {
               Available as a web app today. Android app coming soon to Google Play.
             </p>
             <div style={styles.social}>
-              <a href="https://instagram.com/" target="_blank" rel="noreferrer" style={styles.socialLink} aria-label="Instagram"><InstagramIcon /></a>
-              <a href="https://x.com/" target="_blank" rel="noreferrer" style={styles.socialLink} aria-label="X"><XIcon /></a>
-              <a href="https://facebook.com/" target="_blank" rel="noreferrer" style={styles.socialLink} aria-label="Facebook"><FacebookIcon /></a>
+              <a href="https://www.instagram.com/vowapp.in/" target="_blank" rel="noreferrer" style={styles.socialLink} aria-label="Instagram"><InstagramIcon /></a>
+              <a href="https://x.com/vowappin" target="_blank" rel="noreferrer" style={styles.socialLink} aria-label="X"><XIcon /></a>
+              <a href="https://www.facebook.com/profile.php?id=61590264526239" target="_blank" rel="noreferrer" style={styles.socialLink} aria-label="Facebook"><FacebookIcon /></a>
             </div>
           </div>
 
@@ -235,6 +235,7 @@ const styles = {
     letterSpacing: '0.01em',
   },
   navPanel: {
+    display: 'flex',
     flexDirection: 'column',
     gap: '2px',
     marginTop: '14px',
