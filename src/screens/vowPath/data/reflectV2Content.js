@@ -681,7 +681,7 @@ I'll see you at the end. Keep going.`,
     closingLine: `You're not alone in any of this. That's not a slogan. That's what the data shows.`,
     practice: {
       eyebrow: 'Carry this with you',
-      archetype: 'anchor',
+      archetype: 'tether',
       title: 'Think of one person who turned things around.',
       body: [
         'Today you read about strangers who looked at themselves honestly. Sometime today, think of one real person you actually know — or knew — who faced something hard and came out the other side. A relative, a friend, someone from years ago.',
