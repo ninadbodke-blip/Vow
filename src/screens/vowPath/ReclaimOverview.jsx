@@ -1,30 +1,33 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
-import { canEnterReclaim } from './utils/stageAccess'
+import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
 import {
-  RECLAIM_DAYS,
-  RECLAIM_TOTAL_DAYS,
-  RECLAIM_PHASES,
-} from './data/reclaimContent'
+  BUILD_DAYS,
+  BUILD_TOTAL_DAYS,
+  BUILD_PHASES,
+  getCurrentBuildWeek,
+} from './data/buildContent'
 import { useStageBackground } from './utils/silhouettes'
 
 const STATUS = {
   COMPLETED: 'completed',
   CURRENT: 'current',
+  OPEN: 'open',
   LOCKED: 'locked',
 }
 
-const STAGE_END = 'End of Reclaim'
+const STAGE_END = 'End of Build'
 
-export default function ReclaimOverview() {
+export default function BuildOverview() {
   const navigate = useNavigate()
 
   const [progress, setProgress] = useState(null)
   const [completedDays, setCompletedDays] = useState(new Set())
   const [loaded, setLoaded] = useState(false)
   const [accessDenied, setAccessDenied] = useState(false)
-  const heroPaint = useStageBackground('reclaim')
+  const [currentWeek, setCurrentWeek] = useState(1)
+  const heroPaint = useStageBackground('build')
 
   useEffect(() => {
     async function load() {
@@ -40,19 +43,20 @@ export default function ReclaimOverview() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!canEnterReclaim(progressRow)) {
+      if (!canEnterStage(progressRow, 'build')) {
         setAccessDenied(true)
         setLoaded(true)
         return
       }
 
       setProgress(progressRow)
+      setCurrentWeek(getCurrentBuildWeek(progressRow.build_starts_at))
 
       const { data: artifacts } = await supabase
         .from('vow_artifacts')
         .select('day_number')
         .eq('user_id', user.id)
-        .eq('stage', 'reclaim')
+        .eq('stage', 'build')
 
       const completed = new Set(
         (artifacts || [])
@@ -67,22 +71,22 @@ export default function ReclaimOverview() {
 
   const getDayStatus = (dayNum) => {
     if (completedDays.has(dayNum)) return STATUS.COMPLETED
-    // Only surface a "today" vault when Reclaim is the assigned stage.
-    // For anyone visiting it as support, every day is simply open.
-    if (progress?.current_stage === 'reclaim') {
-      const nextDay = (progress.last_completed_day || 0) + 1
-      if (dayNum === nextDay) return STATUS.CURRENT
-    }
+    if (dayNum === currentWeek) return STATUS.CURRENT
+    if (dayNum < currentWeek) return STATUS.OPEN
     return STATUS.LOCKED
   }
 
-  // Reclaim is relapse support — reachable anytime, so every day is tappable
-  // (the day cadence is bypassed; LOCKED status only affects styling, not access).
-  const isDayTappable = () => true
+  const isDayTappable = (dayNum) => {
+    if (import.meta.env.DEV) return true
+    if (progress?.is_pilot_mode) return true
+    if (isExploringPastStage(progress, 'build')) return true
+    const status = getDayStatus(dayNum)
+    return status !== STATUS.LOCKED
+  }
 
   const handleDayTap = (dayNum) => {
     if (!isDayTappable(dayNum)) return
-    navigate(`/app/vow-path/reclaim/day/${dayNum}`)
+    navigate(`/app/vow-path/build/day/${dayNum}`)
   }
 
   if (!loaded) {
@@ -101,13 +105,13 @@ export default function ReclaimOverview() {
         <div style={styles.phone}>
           <div style={styles.header}>
             <button onClick={() => navigate('/app/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
-            <p style={styles.headerTitle}>Reclaim</p>
+            <p style={styles.headerTitle}>Build</p>
             <div style={{ width: '60px' }}></div>
           </div>
           <div style={styles.lockedBlock}>
             <div style={styles.lockedIcon}>⏳</div>
             <p style={styles.lockedTitle}>Not yet.</p>
-            <p style={styles.lockedReason}>{`You haven't started Reclaim yet. Take the Stage Check first.`}</p>
+            <p style={styles.lockedReason}>{`You haven't started Build yet. Take the Stage Check first.`}</p>
             <button
               onClick={() => navigate('/app/vow-path')}
               style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
@@ -133,27 +137,27 @@ export default function ReclaimOverview() {
           <div style={heroPaint} aria-hidden="true" />
           <div style={styles.heroNav}>
             <button onClick={() => navigate('/app/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
-            <button onClick={() => navigate('/app/library/reclaim')} style={styles.pillBtn}>Library</button>
+            <button onClick={() => navigate('/app/library/build')} style={styles.pillBtn}>Library</button>
           </div>
         </div>
 
         {/* 2 — Title + a single quiet progress line, married into the dissolve */}
         <div style={styles.frontispiece}>
-          <h1 style={styles.stageTitle}>Reclaim</h1>
+          <h1 style={styles.stageTitle}>Build</h1>
           <p style={styles.progressLine}>
-            <span style={styles.progressEmph}>{totalCompleted}</span> of {RECLAIM_TOTAL_DAYS} days gathered
+            <span style={styles.progressEmph}>{totalCompleted}</span> of {BUILD_TOTAL_DAYS} days gathered
           </p>
         </div>
 
         {/* 4 — The continuous thread (runs the full height behind the centred phase headers) */}
         <div style={styles.listWrap}>
           <div style={styles.thread} aria-hidden="true" />
-          {RECLAIM_PHASES.map((phase) => {
+          {BUILD_PHASES.map((phase) => {
             const [start, end] = phase.dayRange
-            const phaseDays = RECLAIM_DAYS.filter(d => d.day >= start && d.day <= end)
+            const phaseDays = BUILD_DAYS.filter(d => d.day >= start && d.day <= end)
             return (
               <div key={phase.key}>
-                {RECLAIM_PHASES.length > 1 && (
+                {BUILD_PHASES.length > 1 && (
                   <div style={styles.phaseHeader}>
                     <p style={styles.phaseTitle}>{`· ${phase.title.toUpperCase()} ·`}</p>
                     {phase.subtitle && <p style={styles.phaseSubtitle}>{phase.subtitle}</p>}
@@ -288,7 +292,7 @@ const styles = {
 
   // 4 — Continuous thread + list
   listWrap: { position: 'relative', marginTop: '2.5rem', paddingTop: '0.25rem', paddingBottom: '48px' },
-  // Reclaim is multi-phase, so the thread starts BELOW the first centred phase header
+  // Build is multi-phase, so the thread starts BELOW the first centred phase header
   // (Notice, single-phase, used top:18). Nudge if the spine peeks above the first header.
   thread: {
     position: 'absolute', left: '19px', top: '88px', bottom: 0, width: '1.5px',
