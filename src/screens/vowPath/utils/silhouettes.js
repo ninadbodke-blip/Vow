@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 // STAGE BACKGROUND CONFIG (sumi-e ink wash)
 // =====================================================================
 // Drop the generated images into the app's public folder as:
-//     /public/silhouettes/{stage}-{n}.png        (n is 1-indexed)
-// e.g. /public/silhouettes/reflect-1.png ... reflect-9.png
+//     /public/silhouettes/{stage}-{n}.webp       (n is 1-indexed)
+// e.g. /public/silhouettes/reflect-1.webp ... reflect-9.webp
 //
 // `count` = how many variants exist for that stage. Set it to exactly how
 // many you generate. The overview rotates through them on each arrival.
@@ -28,8 +28,8 @@ export const STAGE_SILHOUETTES = {
 export const SILHOUETTE_INK = '#6B4A1C'
 
 // File extension for the silhouette images. Must match your files' case exactly
-// (Vercel/Linux is case-sensitive). Set to 'png' to match your current exports.
-const EXT = 'png'
+// (Vercel/Linux is case-sensitive). Images are now exported as .webp.
+const EXT = 'webp'
 
 export function silhouetteSrc(stage, n) {
   return `/silhouettes/${stage}-${n}.${EXT}`
