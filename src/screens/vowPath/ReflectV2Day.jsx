@@ -493,7 +493,10 @@ export default function ReflectV2Day() {
                 {practice.archetypeLabel || (practice.archetype.charAt(0).toUpperCase() + practice.archetype.slice(1))}
               </div>
             )}
-            <div style={styles.introDayLabel}>{practice.eyebrow || 'Between now and tomorrow'}</div>
+            <div style={styles.introDayLabel}>Between today and tomorrow</div>
+            {practice.eyebrow && practice.eyebrow !== 'Between now and tomorrow' && (
+              <div style={styles.practiceEyebrowSub}>{practice.eyebrow}</div>
+            )}
             <h2 style={styles.introTitle}>{practice.title}</h2>
             <div style={styles.introDivider}></div>
           </div>
@@ -642,6 +645,13 @@ const styles = {
     fontSize: '15px',
     color: '#854F0B',
     marginBottom: '0.7rem',
+  },
+  practiceEyebrowSub: {
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    fontSize: '13px',
+    color: '#9C8C78',
+    margin: '-0.5rem 0 0.85rem',
   },
   introDayLabel: {
     fontSize: '12px',
