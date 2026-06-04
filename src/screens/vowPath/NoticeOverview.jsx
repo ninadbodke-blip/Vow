@@ -8,6 +8,7 @@ import {
   NOTICE_PHASES,
 } from './data/noticeContent'
 import { useStageBackground } from './utils/silhouettes'
+import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
 
 const STATUS = {
   COMPLETED: 'completed',
@@ -274,9 +275,13 @@ export default function NoticeOverview() {
                           <span style={{
                             ...styles.checkinRing,
                             ...(checkinDone ? styles.checkinRingDone : {}),
-                          }}>{checkinDone ? '✓' : ''}</span>
+                          }}>
+                            {day.practice?.archetype && (
+                              <PracticeArchetypeIcon archetype={day.practice.archetype} size={15} />
+                            )}
+                          </span>
                           <span style={styles.checkinLabel}>
-                            {checkinDone ? 'Noted' : 'How it landed'}
+                            {checkinDone ? 'Noted' : 'Did you try it?'}
                           </span>
                         </button>
                       )}
@@ -508,9 +513,9 @@ const styles = {
     cursor: 'pointer', fontFamily: 'inherit', padding: '4px 2px',
   },
   checkinRing: {
-    width: '22px', height: '22px', borderRadius: '50%', border: '1.5px solid #C9A86A',
+    width: '26px', height: '26px', borderRadius: '50%', border: '1.5px solid #C9A86A',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '12px', color: '#3A2A1C', background: 'transparent', lineHeight: 1,
+    color: '#854F0B', background: 'transparent', lineHeight: 1,
   },
   checkinRingDone: { background: '#D9B57A', border: '1.5px solid #D9B57A', color: '#3A2A1C', fontWeight: 700 },
   checkinLabel: {
