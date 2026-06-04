@@ -24,32 +24,47 @@ const STAGES = [
   { name: 'Reclaim', desc: 'When a slip comes, return with kindness, not shame.' },
 ]
 
-// Field Notes previews. Placeholder articles for now — these become real,
-// indexable pages when the writing is done. Each maps to a stage so the
-// section doubles as a teaser of the journey.
+// Field Notes previews. Each maps loosely to a moment in the journey, so the
+// section doubles as a teaser of the writing inside the app. (Full, indexable
+// pages can hang off these cards later; for now they read as a standing index.)
 const NOTES = [
+  {
+    kicker: 'Before you are ready',
+    title: 'The quiet work of noticing',
+    excerpt: "You don't have to decide to quit to start paying attention. Noticing comes first, and it asks nothing of you yet.",
+  },
+  {
+    kicker: 'On the hard hours',
+    title: 'The person you are at 3 a.m.',
+    excerpt: 'The version of you that wants it most tends to arrive in the dark. Here is how to sit with him without making it a fight.',
+  },
+  {
+    kicker: 'On honesty',
+    title: 'What it was doing for you',
+    excerpt: 'Nothing holds on this long for no reason. Naming the job it quietly did is how you begin to do that job some other way.',
+  },
   {
     kicker: 'On the third day',
     title: 'The wall most people hit at day three',
-    excerpt: 'Why cravings spike just before they fade — and how to outlast the storm.',
+    excerpt: 'Why the craving spikes hardest just before it fades — and what it costs to outlast a wave instead of arguing with it.',
   },
   {
     kicker: 'On slips',
     title: 'A slip is not a collapse',
-    excerpt: 'What to do in the first hour after, when the shame is loudest.',
+    excerpt: 'What to do in the first hour after, when the shame is loudest and the story is trying to end right here.',
   },
   {
-    kicker: 'Before you are ready',
-    title: 'The quiet work of noticing',
-    excerpt: "You don't have to decide to quit to start paying attention.",
+    kicker: 'On the long middle',
+    title: 'When it stops being dramatic and starts being boring',
+    excerpt: 'The early days carry a kind of adrenaline. The months that follow ask for something quieter, and steadier, and harder.',
   },
 ]
 
 // ---------------------------------------------------------------------
 // HERO FLAME
-// Ported from the Welcome screen's third slide (the "furnace"), recolored
-// for the cream background: the center glows ember-orange (#F0712B) rather
-// than the app's cream-white, with a soft radial halo behind it. Three
+// Ported from the Welcome screen's third slide (the "furnace"), in the Vow
+// flame palette: deep clay back (#854F0B), gold core (#D9B57A), and an
+// ember-red inner spark (#C5572C), with a soft radial halo behind it. Three
 // layers flicker at different speeds (back 1.8s, core 1.2s, ember 0.8s).
 // ---------------------------------------------------------------------
 function HeroFlame() {
@@ -57,13 +72,13 @@ function HeroFlame() {
     <div style={styles.flameWrap} aria-hidden="true">
       <div style={styles.flameGlow} />
       <svg viewBox="0 0 100 100" style={styles.flameSvg} xmlns="http://www.w3.org/2000/svg">
-        <path d="M50 15 Q70 50 50 90 Q30 50 50 15" fill="#8A4310" opacity="0.85">
+        <path d="M50 15 Q70 50 50 90 Q30 50 50 15" fill="#854F0B" opacity="0.85">
           <animate attributeName="d" values="M50 15 Q70 50 50 90 Q30 50 50 15; M45 20 Q75 45 50 90 Q25 55 45 20; M55 20 Q65 55 50 90 Q35 45 55 20; M50 15 Q70 50 50 90 Q30 50 50 15" dur="1.8s" repeatCount="indefinite" />
         </path>
-        <path d="M50 35 Q65 65 50 90 Q35 65 50 35" fill="#C5572C">
+        <path d="M50 35 Q65 65 50 90 Q35 65 50 35" fill="#D9B57A">
           <animate attributeName="d" values="M50 35 Q65 65 50 90 Q35 65 50 35; M52 30 Q60 60 50 90 Q30 70 52 30; M48 30 Q70 70 50 90 Q40 60 48 30; M50 35 Q65 65 50 90 Q35 65 50 35" dur="1.2s" repeatCount="indefinite" />
         </path>
-        <path d="M50 55 Q55 75 50 90 Q45 75 50 55" fill="#F0712B">
+        <path d="M50 55 Q55 75 50 90 Q45 75 50 55" fill="#C5572C">
           <animate attributeName="d" values="M50 55 Q55 75 50 90 Q45 75 50 55; M48 50 Q58 70 50 90 Q42 70 48 50; M50 55 Q55 75 50 90 Q45 75 50 55" dur="0.8s" repeatCount="indefinite" />
         </path>
       </svg>
@@ -181,7 +196,7 @@ export default function Home() {
           <h2 style={styles.sectionTitle}>Honest writing for the hard parts.</h2>
           <p style={styles.body}>
             Practical, unsentimental notes on the moments recovery actually turns
-            on. The first notes are on the way.
+            on — a few to begin with, more as the work continues.
           </p>
           <div style={styles.notesGrid}>
             {NOTES.map((n) => (
@@ -232,7 +247,7 @@ const styles = {
     position: 'absolute',
     inset: '-22%',
     background:
-      'radial-gradient(circle at 50% 60%, rgba(240,113,43,0.30) 0%, rgba(240,113,43,0.14) 36%, rgba(240,113,43,0) 70%)',
+      'radial-gradient(circle at 50% 60%, rgba(197,87,44,0.30) 0%, rgba(197,87,44,0.14) 36%, rgba(197,87,44,0) 70%)',
     filter: 'blur(6px)',
     pointerEvents: 'none',
   },
