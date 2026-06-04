@@ -215,7 +215,7 @@ export default function LibraryDeepRead() {
             </svg>
           </div>
           <p style={styles.sealLabel}>The reading is sealed.</p>
-          <button onClick={() => navigate(-1)} style={styles.sealBtn}>Return</button>
+          <button onClick={() => navigate(`/app/vow-path/${stageKey}`)} style={styles.sealBtn}>Return</button>
         </div>
       </div>
     </div>
