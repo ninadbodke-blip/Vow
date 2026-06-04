@@ -26,6 +26,16 @@ export const NOTICE_V2_DAYS = [
     arrivalTitle: 'Lines crossed.',
     arrivalSubtitle: `The lines you said you'd never cross.`,
     artifactType: 'notice_day_1',
+    practice: {
+      eyebrow: 'Between now and tomorrow',
+      archetype: 'catch',
+      title: 'Catch the next small line.',
+      body: [
+        `Today you named lines you\u2019ve already crossed. Before tomorrow, watch for a small new one as it happens \u2014 the extra one, the earlier start, the rule quietly bent.`,
+        `You don\u2019t have to stop it. Just catch yourself crossing, once, while it\u2019s happening. A line you can see yourself cross has less hold than one you cross in the dark.`,
+      ],
+      button: `I\u2019ll carry this`,
+    },
     founderAudio: {
       audioSrc: 'notice/day_01.mp3',
       transcript: `Hi. It's Ninad. I'm the person who made this.
@@ -107,6 +117,16 @@ That's worth knowing.`,
     arrivalTitle: 'The drift.',
     arrivalSubtitle: 'Where you started, where you are.',
     artifactType: 'notice_day_2',
+    practice: {
+      eyebrow: 'Between now and tomorrow',
+      archetype: 'map',
+      title: 'Find where it drifted.',
+      body: [
+        `You mapped how far the pattern has moved from where it began. Sometime today, take one ordinary detail \u2014 the amount, the time of day, the reason you reach for it \u2014 and remember honestly what it was a year or two ago.`,
+        `Don\u2019t judge the gap. Just let yourself see, once, how far the quiet drift has actually carried you.`,
+      ],
+      button: `I\u2019ll carry this`,
+    },
     openings: {
       A: {
         intro: `Yesterday was about lines — the edges you set, and where you've crossed them. Today is about movement.
@@ -179,6 +199,16 @@ You'll read the ladder once, then place yourself at each point in time. Most peo
     arrivalTitle: 'The people.',
     arrivalSubtitle: `What they've been doing while you've been using.`,
     artifactType: 'notice_day_3',
+    practice: {
+      eyebrow: 'Between now and tomorrow',
+      archetype: 'watch',
+      title: 'Watch one person, once.',
+      body: [
+        `Today you wrote down what the people around you have quietly been doing. Before tomorrow, pick one of them and just notice them \u2014 what they ask, what they\u2019ve stopped asking, how they are around you.`,
+        `You don\u2019t have to say anything or fix anything. Today is only for seeing them clearly, once.`,
+      ],
+      button: `I\u2019ll carry this`,
+    },
     openings: {
       A: {
         intro: `You don't have to believe you have a problem to notice what's been happening around it.
@@ -277,6 +307,16 @@ It has been happening in the small things — and now it is written down where y
     arrivalTitle: 'What you have given up.',
     arrivalSubtitle: `The ledger most people don't keep.`,
     artifactType: 'notice_day_4',
+    practice: {
+      eyebrow: 'Between now and tomorrow',
+      archetype: 'shed',
+      title: 'Catch one thing you set down.',
+      body: [
+        `You listed the things your use has quietly cost you \u2014 the hobbies, the plans, the mornings. Sometime today, catch one of them in real life: the thing you\u2019d have done, the person you\u2019d have called, the hour you\u2019d have spent otherwise.`,
+        `Not to feel bad. Just to turn one line on the ledger into something real you can see.`,
+      ],
+      button: `I\u2019ll carry this`,
+    },
     openings: {
       A: {
         intro: `Substance use is rarely free.
