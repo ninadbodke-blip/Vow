@@ -183,7 +183,7 @@ export default function NoticeOverview() {
 
         {/* 1 — Hero bleed with nav pills overlaid */}
         <div style={styles.heroWrap}>
-          <div style={{ ...heroPaint, backgroundPosition: 'center 0%' }} aria-hidden="true" />
+          <div style={heroPaint} aria-hidden="true" />
           <div style={styles.heroNav}>
             <button onClick={() => navigate('/app/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
             <button onClick={() => navigate('/app/library/notice')} style={styles.pillBtn}>Library</button>
