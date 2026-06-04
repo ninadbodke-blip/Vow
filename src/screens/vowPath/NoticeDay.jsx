@@ -23,7 +23,7 @@ const PRACTICE_GLYPHS = {
   say: (<><path d="M5 9.5h2.6L11 6.5v11L7.6 14.5H5z" /><path d="M14.4 9.2a4 4 0 0 1 0 5.6" /><path d="M17 7a7 7 0 0 1 0 10" /></>),
   catch: (<><circle cx="9.5" cy="9" r="5" /><path d="M9.5 4v10M4.5 9h10" /><path d="M13.1 12.6L20 19.5" /></>),
   watch: (<><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" /><circle cx="12" cy="12" r="2.6" /></>),
-  anchor: (<><circle cx="12" cy="4.5" r="2" /><path d="M12 6.5V21" /><path d="M7.5 10.5h9" /><path d="M4.5 13.5a7.5 7.5 0 0 0 15 0" /><path d="M4.5 13.5l-1.9.4M19.5 13.5l1.9.4" /></>),
+  tether: (<><circle cx="9.5" cy="12" r="4.2" /><circle cx="14.5" cy="12" r="4.2" /></>),
   document: (<><path d="M7 3.5h6l4 4V20.5H7z" /><path d="M13 3.5v4h4" /><path d="M9.8 12.5h4.4M9.8 15.5h4.4" /></>),
   map: (<><path d="M3.5 6.5l5.5-2 6 2 5.5-2v13l-5.5 2-6-2-5.5 2z" /><path d="M9 4.5v13M15 6.5v13" /></>),
   pause: (<><circle cx="12" cy="12" r="8.5" /><path d="M10 9v6M14 9v6" /></>),
@@ -493,8 +493,13 @@ export default function NoticeDay() {
 
           <div style={styles.introHeaderBlock}>
             {practice.archetype && (
-              <div style={{ color: '#854F0B', display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+              <div style={{ color: '#854F0B', display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
                 <PracticeArchetypeIcon archetype={practice.archetype} size={30} />
+              </div>
+            )}
+            {practice.archetype && (
+              <div style={styles.practiceArchetypeName}>
+                {practice.archetypeLabel || (practice.archetype.charAt(0).toUpperCase() + practice.archetype.slice(1))}
               </div>
             )}
             <div style={styles.introDayLabel}>{practice.eyebrow || 'Between now and tomorrow'}</div>
@@ -645,6 +650,13 @@ const styles = {
     textAlign: 'center',
     marginBottom: '2rem',
     paddingTop: '1.5rem',
+  },
+  practiceArchetypeName: {
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    fontSize: '15px',
+    color: '#854F0B',
+    marginBottom: '0.7rem',
   },
   introDayLabel: {
     fontSize: '12px',
