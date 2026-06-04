@@ -1,21 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 
 // =====================================================================
-// WATERCOLOUR SILHOUETTE CONFIG
+// STAGE BACKGROUND CONFIG (sumi-e ink wash)
 // =====================================================================
 // Drop the generated images into the app's public folder as:
 //     /public/silhouettes/{stage}-{n}.png        (n is 1-indexed)
 // e.g. /public/silhouettes/reflect-1.png ... reflect-9.png
 //
 // `count` = how many variants exist for that stage. Set it to exactly how
-// many you generate. The overview rotates through them on each arrival;
-// the path map shows variant 1 faintly behind the stage's section.
+// many you generate. The overview rotates through them on each arrival.
 //
-// `tint` = the stage's watercolour wash (from the locked palette). It is
-// used only as a soft colour fallback while an image is missing/loading,
-// so the screen never looks broken before the WebPs are in place.
-// (If you'd rather these match the warmer accents already on the path map,
-//  change the six tints here — this is the single source of truth.)
+// `tint` = stage accent colour. Kept here as the single source of truth
+// for any UI that wants a per-stage hue (path map, accents, etc.).
+// It is NO LONGER applied as an image overlay — the images are
+// monochrome sumi-e ink on cream and need no colour wash.
 // =====================================================================
 
 export const STAGE_SILHOUETTES = {
@@ -52,10 +50,10 @@ export function pickStageVariant(stage) {
 }
 
 // The stage visual is an absolute-fill layer inside a relative "hero" wrapper at
-// the top of the overview (the wrapper owns height + full-bleed). This returns
-// only the paint: the v4 monochrome image framed near its TOP (where the interest
-// sits) and dissolving at its bottom edge into the cream page via a mask.
-//   IMAGE_FOCUS — which part of the picture the hero frames (v4 = interest up top).
+// the top of the overview (the wrapper owns height + full-bleed). Returns only
+// the paint: the sumi-e image framed near its TOP (where the ink sits) and
+// dissolving at its bottom edge into the cream page via a mask.
+//   IMAGE_FOCUS — which part of the picture the hero frames (ink interest up top).
 //   FADE        — where the bottom dissolve begins.
 const IMAGE_FOCUS = 'center 26%'
 const FADE = 'linear-gradient(to bottom, #000 0%, #000 75%, transparent 100%)'
@@ -71,22 +69,17 @@ export function useStageBackground(stage) {
     if (n) setUrl(silhouetteSrc(stage, n))
   }, [stage])
   if (!cfg) return { display: 'none' }
-  const tint = `linear-gradient(180deg, ${cfg.tint}30 0%, ${cfg.tint}14 100%)`
-  const common = {
+  // No tint overlay — sumi-e images are monochrome black on cream, no colour wash needed.
+  // While the image is loading, return nothing (cream background shows through cleanly).
+  if (!url) return { display: 'none' }
+  return {
     position: 'absolute',
     inset: 0,
-    WebkitMaskImage: FADE,   // dissolve the bottom edge into the cream page
+    WebkitMaskImage: FADE,
     maskImage: FADE,
+    backgroundImage: `url('${url}')`,
+    backgroundSize: 'cover',
+    backgroundPosition: IMAGE_FOCUS,
     backgroundRepeat: 'no-repeat',
-  }
-  if (!url) {
-    return { ...common, backgroundImage: tint, backgroundSize: 'cover' }
-  }
-  return {
-    ...common,
-    backgroundImage: `url('${url}'), ${tint}`,
-    backgroundSize: 'cover, cover',
-    backgroundPosition: `${IMAGE_FOCUS}, center`,
-    backgroundRepeat: 'no-repeat, no-repeat',
   }
 }

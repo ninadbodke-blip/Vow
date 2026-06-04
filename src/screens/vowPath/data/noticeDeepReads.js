@@ -91,36 +91,36 @@ export const NOTICE_DEEP_READS = {
     wordCount: 472,
     sections: [
       {
-        heading: "OPENING",
-        paragraphs: [
-          `Today's exercise asked you to name 3 to 5 specific people in your life. For each, you answered three questions. None of the questions asked what they thought. They asked what they had done. When you last had a fully-present conversation with them. Whether they brought up your use. Whether the way they treated you had changed.`,
-          `The output was a map. People, in your own words. Behaviors, in specific tense, factual answers.`,
-        ],
-      },
-      {
-        heading: "WHY OBSERVABLE BEHAVIOR, NOT OPINION",
-        paragraphs: [
-          `If today's exercise had asked you "do the people in your life think you have a problem?" — most users would have answered no. Either because the people haven't said anything, or because the using mind is excellent at interpreting their concern as overreaction.`,
-          `The questions you actually got asked were different. They were about specific observable behaviors. You either had a fully- present conversation with your partner this month, or you didn't. Your mother either brings up your use, or she doesn't. The way your closest friend treats you has either changed, or it hasn't.`,
-          `Behaviors don't carry the negotiability of opinions. You can't talk yourself out of the answer "I can't remember the last fully-present conversation I had with my partner." You either can, or you can't.`,
-          `This is the precontemplation tool that addiction research has consistently identified as the most powerful single lever: the recognition that the people around you have been responding to your use in patterns visible from outside, and that those patterns are observable to you if you look directly.`,
-        ],
-      },
-      {
-        heading: "THE RESEARCH",
-        paragraphs: [
-          `The technique is called environmental reevaluation in the Transtheoretical Model literature (Prochaska & DiClemente, 1983; Prochaska et al., 1992). It's been studied across 50 years of behavior change research. The finding: precontemplative users who become aware of how their use is affecting their relationships move forward more often than users confronted with health risks, financial costs, or any other category of consequence.`,
-          `Why relationships, specifically? Probably because relationships are what most people stake their identity on. The using self can tolerate "I have a health problem" or "I'm spending too much." It has more difficulty with "the people I love are pulling back from me." That difficulty is what produces movement.`,
-          `The findings extend to a darker observation, particularly relevant if you named a child in your map: children of regular substance users typically have no memory of the parent in a non-using state. For a young child, the using parent is the parent. There is no earlier version they can compare against.`,
-        ],
-      },
-      {
-        heading: "WHAT IT MEANS FOR YOU",
-        paragraphs: [
-          `The map is in your records. Five people, specific behaviors, factual answers. If the map showed patterns — relationships cooled, conversations missing, the stopping of mentions — those patterns are now visible to you. They had been visible to the people in question for some time.`,
-          `You don't have to do anything with the map. Today was for the looking.`,
-        ],
-      },
+  heading: "OPENING",
+  paragraphs: [
+    `Today's exercise was a ledger. Five categories of things that have been happening around your use — conversations, what the people around you stopped doing, what you arrange around your use, who you are with them, and trust. Your job was to tap the ones you recognize. Not the ones that sound bad. The ones that are actually true.`,
+    `The output is a map of specific, recent, real things. Written down where they can be seen all at once, instead of scattered the way they usually are.`,
+  ],
+},
+{
+  heading: "WHY A LIST, NOT A QUESTION",
+  paragraphs: [
+    `The using mind keeps relationship damage scattered. A late arrival here, a broken promise there, a conversation that got shorter — individually, each one has an explanation. A list is harder to scatter. It assembles the pattern from the pieces.`,
+    `None of the items asked for your opinion. They asked whether specific things had happened. You either time your use around when people are home, or you don't. Someone either stopped inviting you to things, or they didn't. A relationship has either cooled and you know your use is part of why, or it hasn't. Those questions don't carry the same negotiability as "do you think you have a problem?" You recognize them, or you don't.`,
+    `Most people tap more items than they expected. This is consistent — not because the ledger is designed to produce guilt, but because recognition is easier than admission. The items surface what was already there.`,
+  ],
+},
+{
+  heading: "THE RESEARCH",
+  paragraphs: [
+    `The mechanism is called environmental reevaluation in the Transtheoretical Model (Prochaska & DiClemente, 1983; Prochaska et al., 1992). The finding, consistently across fifty years of behavior change research: people who become aware of how their use is affecting their relationships move forward more reliably than people confronted with health risks, financial costs, or legal consequences.`,
+    `Why relationships? Probably because relationships are where most people stake their sense of self. The using self can manage "I have a health problem" or "I'm spending money I shouldn't." It has more difficulty with "the people I care about have been quietly adjusting around me." That difficulty is what produces movement.`,
+    `One finding in this literature is worth naming if you tapped the parenting item. Children of regular substance users often have no earlier version of the parent to compare against. For a young child, the using parent is simply the parent. The version you want to be and the version they are growing up with may, over time, become different people.`,
+  ],
+},
+{
+  heading: "WHAT IT MEANS FOR YOU",
+  paragraphs: [
+    `At the end of the ledger, you named what it felt like to look at what you'd tapped. Three options: you knew this was the shape of things. You didn't realize how much had quietly changed. Or you wanted to argue with parts of it — but tapped them anyway.`,
+    `That third one is worth sitting with. The items you wanted to dispute but still recognized are often the most significant entries in the ledger. Argument and recognition happening at the same time is the signal, not the noise.`,
+    `The ledger is in your records. You don't have to do anything with it today. Today was for the looking.`,
+  ],
+},
     ],
   },
   4: {
