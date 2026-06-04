@@ -55,7 +55,7 @@ export function pickStageVariant(stage) {
 // dissolving at its bottom edge into the cream page via a mask.
 //   IMAGE_FOCUS — which part of the picture the hero frames (ink interest up top).
 //   FADE        — where the bottom dissolve begins.
-const IMAGE_FOCUS = 'center 26%'
+const IMAGE_FOCUS = 'center 0%'
 const FADE = 'linear-gradient(to bottom, #000 0%, #000 75%, transparent 100%)'
 
 export function useStageBackground(stage) {
