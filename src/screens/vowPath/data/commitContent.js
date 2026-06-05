@@ -48,7 +48,7 @@ export const COMMIT_DAYS = [
     founderAudio: {
       transcript: `Hi. It's Ninad.
 
-You chose to commit. I don't want to make a big ceremony out of it, because the ceremony was never the point — what you do after is. But I do want to mark it. You stood in front of three doors and you walked through the hard one. Okay. Let's get to work.
+You chose to commit. I don't want to make a big ceremony out of it, because the ceremony was never the point — what you do after is. But I do want to mark it. You’ve decided this is worth doing — and deciding, really deciding, is harder than people like to admit. Okay. Let’s get to work.
 
 Here's what Commit is, and what it isn't. It is not the part where you quit. Not yet. People get this backwards all the time. They decide to change, and then they try to white-knuckle it starting that same night, no plan, pure willpower — and willpower runs out around nine p.m., and they're back where they started by the weekend. That's not a character flaw. That's just bad preparation.
 
@@ -522,34 +522,25 @@ Pick one from below that has the lowest barrier for you to try. Commit to it for
     mechanic: {
       type: 'dailyAnchorPicker',
       data: {
-        anchorSlots: [
-          { id: 'morning_1', label: 'Morning anchor #1', timeWindow: 'morning' },
-          { id: 'morning_2', label: 'Morning anchor #2', timeWindow: 'morning' },
-          { id: 'evening_1', label: 'Evening anchor #1', timeWindow: 'evening' },
-          { id: 'evening_2', label: 'Evening anchor #2', timeWindow: 'evening' },
-        ],
+        perGroup: 2,
         morningOptions: [
-          { id: 'cold_water_face_morn', label: 'Cold water on the face, first thing' },
-          { id: 'water_before_coffee', label: 'A glass of water before coffee' },
-          { id: 'two_min_breath', label: '2 minutes of breath at the window' },
-          { id: 'one_thing_paper', label: 'Write one thing on paper — the day ahead, in one line' },
-          { id: 'make_the_bed', label: 'Make the bed' },
-          { id: 'stretch_2_min', label: '2 minutes of stretching' },
-          { id: 'open_curtains', label: 'Open the curtains, look outside for 60 seconds' },
-          { id: 'read_one_page', label: 'Read one page of a book (not phone)' },
+          { id: 'cold_water_face', label: 'Cold water on the face, first thing' },
+          { id: 'water_first', label: 'A full glass of water before anything else' },
+          { id: 'step_outside', label: 'Step outside for two minutes' },
+          { id: 'ten_min_movement', label: 'Ten minutes of movement \u2014 a walk, a stretch, anything' },
+          { id: 'one_line_today', label: 'Write the one thing that matters today, in a line' },
+          { id: 'light_no_phone', label: 'Coffee or sunlight, phone left in another room' },
         ],
         eveningOptions: [
-          { id: 'phone_away_30_min', label: 'Phone away from bed by [specific time]' },
-          { id: 'tea_or_water', label: 'A specific tea or water ritual' },
-          { id: 'one_line_journal', label: 'One line in a journal — what was the day' },
-          { id: 'shower_before_bed', label: 'Shower before bed' },
-          { id: 'no_screens_30_min', label: 'No screens 30 minutes before sleep' },
-          { id: 'tomorrow_one_thing', label: 'Write tomorrow on paper — one thing, one line' },
-          { id: 'read_before_sleep', label: 'Read for 15 minutes before sleep' },
-          { id: 'gratitude_one_line', label: 'One line of gratitude' },
+          { id: 'phone_out_of_room', label: 'Phone out of the bedroom by a set time' },
+          { id: 'one_thing_right', label: 'Note one thing that went right today' },
+          { id: 'tomorrow_first_task', label: "Write tomorrow's first task, in a line" },
+          { id: 'walk_after_dinner', label: 'A short walk after dinner' },
+          { id: 'no_screens_before_bed', label: 'No screens for 30 minutes before sleep' },
+          { id: 'lights_out_set_time', label: 'Lights out by a set time' },
         ],
-        allowCustomPerSlot: true,
-        customPrompt: 'Your own anchor',
+        allowCustom: true,
+        customPrompt: 'Your own',
         whyTheseHeader: 'Why these four?',
         whyTheseSubtext: 'One sentence. Optional, but worth doing.',
       }
@@ -722,6 +713,7 @@ Pick one from below that has the lowest barrier for you to try. Commit to it for
         witnessesHeader: 'Who knows?',
         witnessesSubtext: `List the people who know about the vow. They don't have to be asked permission. They just have to know it exists.`,
         maxWitnesses: 4,
+        minWitnesses: 2,
         relationshipOptions: [
           { id: 'partner', label: 'Partner' },
           { id: 'parent', label: 'Parent' },
