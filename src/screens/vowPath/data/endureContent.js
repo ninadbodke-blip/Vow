@@ -1195,3 +1195,172 @@ What comes next is a longer, less structured stretch. The work continues — thr
 export function getEndureDay(dayNumber) {
   return ENDURE_DAYS.find(d => d.day === dayNumber) || null
 }
+// ---------------------------------------------------------------------------
+// Physical / offline practices — the "between today and tomorrow" exercises.
+// Keyed by day number; resolved in EndureDay and surfaced as a check-in on the
+// overview. Phase-close days (7, 14, 21) have none — those days are reviews.
+// ---------------------------------------------------------------------------
+export const ENDURE_PRACTICES = {
+  1: {
+    eyebrow: 'Carry this with you',
+    archetype: 'pause',
+    title: `Get through the next hour. Then the next.`,
+    body: [
+      `The real unit of today isn’t the month, or even the day. It’s the next hour. Before tomorrow, when the wanting rises, set it down to that: I only have to get through this hour. When it’s done, start the next one.`,
+      `Mark them if it helps — a tally on paper, a knuckle counted. Each hour you outlast is proof that the wave crests and falls without you doing anything but waiting. You don’t have to win the month tonight. You have to wait out one hour, and then be willing to do it again.`,
+    ],
+  },
+  2: {
+    eyebrow: 'Carry this with you',
+    archetype: 'watch',
+    title: `Locate which state you’re in, three times today.`,
+    body: [
+      `You learned the three states your nervous system moves through. Before tomorrow, stop three times — morning, afternoon, night — and just name which one you’re in: settled, fight-or-flight, or shut-down. No fixing. Only locating.`,
+      `The craving feels different, and needs a different response, depending on which state you’re in. Getting quick at reading the state — before you react to it — is the whole skill. Three reps today begins to build it.`,
+    ],
+  },
+  3: {
+    eyebrow: 'Carry this with you',
+    archetype: 'catch',
+    title: `Let one protected feeling come, and stay.`,
+    body: [
+      `The substance was holding certain feelings off. Now they arrive. Before tomorrow, when one of them surfaces — the loneliness, the anger, the grief you’d usually numb — don’t fix it and don’t run. Sit with it for sixty seconds and let it be there.`,
+      `You’re not indulging it; you’re proving it won’t kill you. A feeling you can let move through you loses its power to send you reaching. Those sixty seconds are the rep.`,
+    ],
+  },
+  4: {
+    eyebrow: 'Carry this with you',
+    archetype: 'map',
+    title: `Write the first five minutes after a slip.`,
+    body: [
+      `You learned why a single slip tries to become a collapse. Before tomorrow, write down — concretely — exactly what you’ll do in the first five minutes if it happens: who you’ll message, what you’ll say to yourself, the next single action. Decide it now, while you’re clear.`,
+      `The danger of a slip isn’t the slip; it’s the story that says you’ve already failed, so you may as well keep going. A response written in advance is how you interrupt that story before it gets running.`,
+    ],
+  },
+  5: {
+    eyebrow: 'Carry this with you',
+    archetype: 'pause',
+    title: `Pick the move that matches the state.`,
+    body: [
+      `Before tomorrow, the next time an urge comes, do this in order: first locate your state, then choose the move that fits it. Wired and agitated wants something that discharges — a fast walk, cold water. Shut down and flat wants something that gently re-engages — call someone, step outside, move slowly.`,
+      `Most relapse-prevention advice fails because it offers one move for every moment. The skill is matching. Read the state first; the right response follows from it.`,
+    ],
+  },
+  6: {
+    eyebrow: 'Carry this with you',
+    archetype: 'document',
+    title: `Write the shame sentence, and the truer one.`,
+    body: [
+      `You found the shame story — the sentence underneath that says what your using means about you. Before tomorrow, write it down in its ugliest, most honest form. Then, beneath it, write the truer sentence: what is actually the case.`,
+      `Shame survives by staying unspoken. On paper, the cruel version usually looks less like a fact and more like an old recording. Keep both lines — you’ll read them again on Day 13.`,
+    ],
+  },
+  8: {
+    eyebrow: 'Carry this with you',
+    archetype: 'plant',
+    title: `Do one good thing flatly, expecting nothing.`,
+    body: [
+      `The flatness is your brain relearning how to feel without the substance — it lifts, but slowly. Before tomorrow, do one small thing you used to enjoy, and do it even though it will probably feel like nothing. The walk, the music, the friend.`,
+      `You’re not chasing a feeling today; you’re laying track for when feeling returns. Acting before the reward comes back is part of how the reward comes back. Flat and done still counts.`,
+    ],
+  },
+  9: {
+    eyebrow: 'Carry this with you',
+    archetype: 'watch',
+    title: `Watch one urge instead of being it.`,
+    body: [
+      `You met the part of you that watches — the one that can observe a craving without being run by it. Before tomorrow, when an urge comes, step back into that watcher: name it, “there’s a craving,” and watch it like weather moving across a sky.`,
+      `The urge is not you, and it is not a command. It’s a state passing through. Watched from a half-step back, it rises, peaks, and thins out on its own — and you were the sky the whole time, not the weather.`,
+    ],
+  },
+  10: {
+    eyebrow: 'Carry this with you',
+    archetype: 'document',
+    title: `Write down one thing that’s already different.`,
+    body: [
+      `Ten days. Before tomorrow, write down one concrete thing that has changed since Day Zero — sleep, money still in the account, a morning you remember, a conversation you were actually present for. One real, specific thing.`,
+      `The mind quietly erases progress to keep the case for using intact. A written, specific marker is evidence you can return to when it tells you nothing has changed. It has.`,
+    ],
+  },
+  11: {
+    eyebrow: 'Carry this with you',
+    archetype: 'tether',
+    title: `Read your vow back, out loud.`,
+    body: [
+      `You committed to something at the start. Before tomorrow, find what you wrote — the vow, the reason — and read it back to yourself out loud, once. Not to judge how you’re doing. Only to put the original reason in front of you again.`,
+      `By the second week the reason goes quiet and the wanting gets clever. Hearing the vow in your own voice is how you re-anchor to the thing you decided when you were thinking clearly.`,
+    ],
+  },
+  12: {
+    eyebrow: 'Carry this with you',
+    archetype: 'say',
+    title: `Reach the kind of support you’ve been skipping.`,
+    body: [
+      `You mapped the four kinds of support and saw where you actually stand. Before tomorrow, reach toward the one you’ve been neglecting — message the person, look up the meeting, book the appointment, join the room. One real move toward the gap.`,
+      `People relapse in the gaps in their support, not in the parts they’ve already covered. Closing one gap this week is worth more than reinforcing what’s already strong.`,
+    ],
+  },
+  13: {
+    eyebrow: 'Carry this with you',
+    archetype: 'watch',
+    title: `Read what you wrote on Day 6 again.`,
+    body: [
+      `A week ago you wrote the shame sentence, and the truer one beneath it. Before tomorrow, read both again — and notice, without forcing anything, whether the cruel version still feels as true as it did seven days ago.`,
+      `You’re not trying to make it false. You’re measuring distance. Often the words that felt like bedrock a week ago now read like an old mood. That gap, when it’s there, is the proof the story was never the fact.`,
+    ],
+  },
+  15: {
+    eyebrow: 'Carry this with you',
+    archetype: 'document',
+    title: `Name the moment you nearly went.`,
+    body: [
+      `There has been a moment — maybe more than one — where you came close. Before tomorrow, write it down honestly: what was happening, what you felt, what almost won, and what you did instead. The plain account, not the dramatic one.`,
+      `Near-misses hold the most information you’ll get. Written down while it’s fresh, the moment becomes a map of your real edges — the specific situation, hour, or feeling to plan around — instead of a near-disaster you’d rather forget.`,
+    ],
+  },
+  16: {
+    eyebrow: 'Carry this with you',
+    archetype: 'map',
+    title: `Choose the one thing the next month is about.`,
+    body: [
+      `You looked at where the work goes next. Before tomorrow, choose the single focus for the coming month and make it concrete — not “do better,” but one specific, checkable thing: asleep by a set time, one meeting a week, the morning anchor, the hard conversation finally had.`,
+      `A month with one clear focus moves further than a month of vague resolve. Pick the one that, if it held, would hold most of the rest up with it.`,
+    ],
+  },
+  17: {
+    eyebrow: 'Carry this with you',
+    archetype: 'watch',
+    title: `Notice what a week changed — and what it didn’t.`,
+    body: [
+      `Before tomorrow, take an honest read of the last week against the one before it. What is genuinely easier now? What is exactly as hard? Name both — the progress, and the part that hasn’t moved.`,
+      `Recovery isn’t linear, and pretending everything is improving sets you up to crash when it doesn’t. Seeing it clearly — this lifted, that’s still heavy — is what keeps you steady through the parts that take longer.`,
+    ],
+  },
+  18: {
+    eyebrow: 'Carry this with you',
+    archetype: 'document',
+    title: `Write one true line about these eighteen days.`,
+    body: [
+      `Eighteen days. Before tomorrow, write a single honest sentence about what they have actually been like — not the version for anyone else, not the inspiring one. The true one.`,
+      `One real line cuts through both the “I’m crushing it” story and the “nothing’s working” story. Keep it. Over time, these single lines become the most honest record you have of what this actually took.`,
+    ],
+  },
+  19: {
+    eyebrow: 'Carry this with you',
+    archetype: 'plant',
+    title: `Do one thing that matches what you value.`,
+    body: [
+      `You surfaced what you actually value — under the substance, under the noise. Before tomorrow, take one small action that lines up with one of those values: the relationship, the work, the kind of person you want to be. Small and real.`,
+      `Cravings loosen their grip not when you white-knuckle them, but when the life on the other side starts to feel like yours. Acting from a value, even once, is you building that life one move at a time.`,
+    ],
+  },
+  20: {
+    eyebrow: 'Carry this with you',
+    archetype: 'pause',
+    title: `Let yourself register twenty days.`,
+    body: [
+      `Twenty days. Before tomorrow, stop for a moment and actually let it land — not as a streak to protect, but as a real stretch of choosing, again and again, often when it was hard. Don’t rush past it.`,
+      `The mind that minimises progress will want to skip this. Don’t let it. Registering what you’ve done, plainly and without performance, is part of what makes the next stretch possible.`,
+    ],
+  },
+}
