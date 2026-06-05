@@ -4,7 +4,8 @@ import { supabase } from '../../supabaseClient'
 import { audioUrl } from './utils/audioUrl'
 import { isCadenceBypassed } from './utils/vowPathGating'
 import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
-import { getCommitDay, COMMIT_TOTAL_DAYS } from './data/commitContent'
+import { getCommitDay, COMMIT_TOTAL_DAYS, COMMIT_PRACTICES } from './data/commitContent'
+import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
 import { transitionFromCommit } from './utils/stageTransitions'
 
 // Mechanic components
@@ -25,6 +26,7 @@ const STEP = {
   AUDIO: 'audio',
   INTRO: 'intro',
   INTERACTION: 'interaction',
+  PRACTICE: 'practice',
   CLOSING: 'closing',
 }
 
@@ -46,6 +48,7 @@ export default function CommitDay() {
   const { dayNumber: dayNumberParam } = useParams()
   const dayNumber = parseInt(dayNumberParam, 10)
   const dayContent = getCommitDay(dayNumber)
+  const practice = COMMIT_PRACTICES[dayNumber] || null
 
   const [step, setStep] = usePersistedStep(`vow_step_commit_${dayNumber}`, STEP.ARRIVAL, { skipPersist: [STEP.CLOSING] })
   const [progress, setProgress] = useState(null)
@@ -160,6 +163,7 @@ export default function CommitDay() {
     if (dayContent?.founderAudio) seq.push(STEP.AUDIO)
     if (dayContent?.intro?.length > 0 || dayContent?.introByFamily) seq.push(STEP.INTRO)
     seq.push(STEP.INTERACTION)
+    if (practice) seq.push(STEP.PRACTICE)
     seq.push(STEP.CLOSING)
     return seq
   }
@@ -465,6 +469,51 @@ export default function CommitDay() {
   }
 
   // ---- CLOSING ----
+  // ---- PRACTICE (real-world, "between today and tomorrow") ----
+  if (step === STEP.PRACTICE && practice) {
+    const body = Array.isArray(practice.body) ? practice.body : [practice.body]
+    return (
+      <div style={styles.frame}>
+        <div style={styles.phone}>
+          <div style={styles.header}>
+            <button onClick={goBack} style={styles.backBtn}>{getBackLabel()}</button>
+            <div style={{ width: '40px' }}></div>
+            <div style={{ width: '40px' }}></div>
+          </div>
+
+          <div style={styles.introHeaderBlock}>
+            {practice.archetype && (
+              <div style={{ color: '#854F0B', display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                <PracticeArchetypeIcon archetype={practice.archetype} size={30} />
+              </div>
+            )}
+            {practice.archetype && (
+              <div style={styles.practiceArchetypeName}>
+                {practice.archetypeLabel || (practice.archetype.charAt(0).toUpperCase() + practice.archetype.slice(1))}
+              </div>
+            )}
+            <div style={styles.introDayLabel}>Between today and tomorrow</div>
+            {practice.eyebrow && practice.eyebrow !== 'Between now and tomorrow' && (
+              <div style={styles.practiceEyebrowSub}>{practice.eyebrow}</div>
+            )}
+            <h2 style={styles.introTitle}>{practice.title}</h2>
+            <div style={styles.introDivider}></div>
+          </div>
+
+          <div style={styles.readingBlock}>
+            {body.map((para, i) => (
+              <p key={i} style={styles.readingPara}>{para}</p>
+            ))}
+          </div>
+
+          <button onClick={advance} style={styles.primaryBtn}>
+            {practice.button || 'I\u2019ll carry this'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (step === STEP.CLOSING) {
     const isFinalDay = dayNumber === COMMIT_TOTAL_DAYS
     return (
@@ -559,6 +608,20 @@ const styles = {
     alignItems: 'center',
     textAlign: 'center',
     padding: '3rem 2rem',
+  },
+  practiceArchetypeName: {
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    fontSize: '15px',
+    color: '#854F0B',
+    marginBottom: '0.7rem',
+  },
+  practiceEyebrowSub: {
+    fontFamily: 'Georgia, serif',
+    fontStyle: 'italic',
+    fontSize: '13px',
+    color: '#9C8C78',
+    margin: '-0.5rem 0 0.85rem',
   },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
