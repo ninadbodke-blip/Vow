@@ -82,8 +82,17 @@ export default function ReflectOverview() {
   const getDayStatus = (dayNum) => {
     if (completedDays.has(dayNum)) return STATUS.COMPLETED
     if (!progress) return STATUS.LOCKED
-    const lastCompleted = progress.last_completed_day || 0
-    const nextDay = lastCompleted + 1
+    // The "next / Today" day is the first day of THIS stage not yet completed,
+    // read from this stage's own artifacts. That keeps the brown card advancing
+    // even when revisiting a past stage, where last_completed_day tracks your
+    // *current* stage rather than this one.
+    let nextDay
+    if (isExploringPastStage(progress, 'reflect')) {
+      nextDay = 1
+      while (completedDays.has(nextDay)) nextDay++
+    } else {
+      nextDay = (progress.last_completed_day || 0) + 1
+    }
     if (dayNum === nextDay) return STATUS.CURRENT
     return STATUS.LOCKED
   }
