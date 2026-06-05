@@ -819,3 +819,100 @@ I'll talk to you on the other side, once it's actually started. You've got this 
 export function getCommitDay(dayNumber) {
   return COMMIT_DAYS.find(d => d.day === dayNumber) || null
 }
+// ---------------------------------------------------------------------------
+// Physical / offline practices — the "between today and tomorrow" exercises.
+// Keyed by day number; resolved in CommitDay and surfaced as a check-in on the
+// overview. Same shape as the Notice / Reflect practices.
+// ---------------------------------------------------------------------------
+export const COMMIT_PRACTICES = {
+  1: {
+    eyebrow: 'Carry this with you',
+    archetype: 'document',
+    title: `Put the date somewhere it can’t be ignored.`,
+    body: [
+      `A date that only lives in your head is easy to move. Sometime before tomorrow, write it down where you’ll actually see it — the back of your phone, a card in your wallet, the top of a calendar. Not a reminder you’ll swipe away. Something physical.`,
+      `You’re not promising anything yet. You’re only refusing to let the date stay vague. A date you can point to is much harder to quietly push a week later.`,
+    ],
+  },
+  2: {
+    eyebrow: 'Carry this with you',
+    archetype: 'shed',
+    title: `Clear one thing out tonight.`,
+    body: [
+      `You looked at what in your surroundings makes it easy. Before tomorrow, remove one of those things for real — pour it out, give it away, throw out the paraphernalia, delete the contact, unfollow the account. One concrete removal, done with your hands, not saved for later.`,
+      `It doesn’t have to be everything. One thing, gone tonight, tells the part of you that’s still negotiating that this time the room around you is changing too.`,
+    ],
+  },
+  3: {
+    eyebrow: 'Carry this with you',
+    archetype: 'say',
+    title: `Tell one person the date.`,
+    body: [
+      `A vow no one witnesses is only half made. Before tomorrow, tell one person you trust the actual date — out loud, or in a message you actually send. Not the whole story if you don’t want. Just: this is the day, and I wanted you to know.`,
+      `You’ll feel the pull to keep it private, so that failing can stay private too. That’s exactly why saying it matters. Once someone else holds the date, it stops being only yours to quietly cancel.`,
+    ],
+  },
+  4: {
+    eyebrow: 'Carry this with you',
+    archetype: 'plant',
+    title: `Start the new thing at its smallest size.`,
+    body: [
+      `You named what could grow into the space the substance leaves. Before tomorrow, do the smallest possible first version of one of them — a ten-minute walk, one page, one set, opening the app and signing up. Absurdly small, on purpose.`,
+      `The point isn’t progress today; it’s putting one real root down while you still have momentum. Something has to grow into that space, or the old thing simply grows back.`,
+    ],
+  },
+  5: {
+    eyebrow: 'Carry this with you',
+    archetype: 'catch',
+    title: `Rehearse the reach, once, while it’s easy.`,
+    body: [
+      `You chose what to reach for when the urge comes. Before tomorrow, run it once now, while nothing is hard — actually call the person and talk for a minute, actually leave the room, actually do the breathing. Practise the move when there’s no pressure on it.`,
+      `A plan you’ve only thought about tends to collapse in the real moment. A move your body has already made once is something you can fall back into when thinking goes offline.`,
+    ],
+  },
+  6: {
+    eyebrow: 'Carry this with you',
+    archetype: 'tether',
+    title: `Run the four anchors once today.`,
+    body: [
+      `You set the small daily things meant to hold the shape of your days. Before tomorrow, do all four of them once, today, in order — not to prove anything, just to feel what a day built around them is actually like.`,
+      `These are the rails. Most days won’t be dramatic; they’ll be held, or not held, by whether these small things happened. Walking through them once now makes tomorrow’s version feel automatic instead of optional.`,
+    ],
+  },
+  7: {
+    eyebrow: 'Carry this with you',
+    archetype: 'say',
+    title: `Have the one conversation you’re avoiding.`,
+    body: [
+      `Some of these days turn on a conversation you’d rather not have — with a partner, a friend who only knows you around the substance, someone owed an apology or an explanation. Before tomorrow, pick the one you’ve been avoiding and either have it, or write down exactly what you’ll say and when.`,
+      `You don’t have to handle all of them. Just stop letting the hardest one sit as a vague dread. Named and given a time, it shrinks into something you can actually do.`,
+    ],
+  },
+  8: {
+    eyebrow: 'Carry this with you',
+    archetype: 'document',
+    title: `Write the vow in your own words.`,
+    body: [
+      `Today the vow is yours to make. Before tomorrow, write it out by hand if you can — not a generic resolution, but the real thing, in your own plain words: what you’re stopping, and the truest reason underneath it. A few lines is enough.`,
+      `Writing it by hand slows you down just enough to mean it. Keep what you write; you’ll come back to it on a day when the reason has gone quiet and you need to read it in your own voice.`,
+    ],
+  },
+  9: {
+    eyebrow: 'Carry this with you',
+    archetype: 'say',
+    title: `Tell the witnesses, and when you’ll check back.`,
+    body: [
+      `You decided who holds this with you. Before tomorrow, actually tell them — not just the date now, but that you’re asking them to witness it. And tell them how often you’ll come back: a weekly message, a standing call, a regular check-in.`,
+      `A witness who never hears from you again can’t hold anything. The cadence is what turns “I told someone once” into something that keeps catching you.`,
+    ],
+  },
+  10: {
+    eyebrow: 'Carry this with you',
+    archetype: 'pause',
+    title: `Mark the eve, quietly.`,
+    body: [
+      `Tomorrow the work changes. Tonight, before you sleep, take a few minutes to mark the threshold on purpose — read back the vow you wrote, look at the date, sit for a moment with what you built across these ten days. No performance, no audience.`,
+      `You’re not stepping into willpower; you’re stepping into a structure you’ve already laid. Letting yourself feel the weight of the eve, deliberately, is how the first day arrives as something you chose rather than something that just happened to you.`,
+    ],
+  },
+}
