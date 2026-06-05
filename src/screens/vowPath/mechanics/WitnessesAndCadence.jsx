@@ -6,6 +6,7 @@ export default function WitnessesAndCadence({ data, onSave, saving }) {
     witnessesHeader,
     witnessesSubtext,
     maxWitnesses,
+    minWitnesses = 2,
     relationshipOptions,
     timingOptions,
     cadenceHeader,
@@ -202,13 +203,13 @@ export default function WitnessesAndCadence({ data, onSave, saving }) {
         )}
 
         <div style={styles.footer}>
-          <p style={styles.countLine}>{witnesses.length} of up to {maxWitnesses} witnesses</p>
+          <p style={styles.countLine}>{witnesses.length < minWitnesses ? `Add at least ${minWitnesses} \u2014 you can add up to ${maxWitnesses}` : `${witnesses.length} of up to ${maxWitnesses} witnesses`}</p>
           <button
             onClick={() => setPhase('cadence')}
-            disabled={witnesses.length === 0}
+            disabled={witnesses.length < minWitnesses}
             style={{
               ...styles.primaryBtn,
-              ...(witnesses.length === 0 ? styles.primaryBtnDisabled : {}),
+              ...(witnesses.length < minWitnesses ? styles.primaryBtnDisabled : {}),
             }}
           >
             Continue
