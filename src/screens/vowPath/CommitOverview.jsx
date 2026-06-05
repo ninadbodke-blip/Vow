@@ -6,8 +6,10 @@ import {
   COMMIT_DAYS,
   COMMIT_TOTAL_DAYS,
   COMMIT_PHASES,
+  COMMIT_PRACTICES,
 } from './data/commitContent'
 import { useStageBackground } from './utils/silhouettes'
+import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
 
 const STATUS = {
   COMPLETED: 'completed',
@@ -24,6 +26,9 @@ export default function CommitOverview() {
   const [completedDays, setCompletedDays] = useState(new Set())
   const [loaded, setLoaded] = useState(false)
   const [accessDenied, setAccessDenied] = useState(false)
+  const [checkins, setCheckins] = useState({})
+  const [activeDay, setActiveDay] = useState(null)
+  const [draft, setDraft] = useState({ didIt: null, felt: null, helpful: null, note: '' })
   const heroPaint = useStageBackground('commit')
 
   useEffect(() => {
@@ -60,6 +65,16 @@ export default function CommitOverview() {
           .filter(d => d !== null && d !== undefined)
       )
       setCompletedDays(completed)
+
+      const { data: checkinRows } = await supabase
+        .from('practice_checkins')
+        .select('day_number, did_it, felt, helpful, note')
+        .eq('user_id', user.id)
+        .eq('stage', 'commit')
+      const checkinMap = {}
+      ;(checkinRows || []).forEach(r => { checkinMap[r.day_number] = r })
+      setCheckins(checkinMap)
+
       setLoaded(true)
     }
     load()
@@ -85,6 +100,42 @@ export default function CommitOverview() {
   const handleDayTap = (dayNum) => {
     if (!isDayTappable(dayNum)) return
     navigate(`/app/vow-path/commit/day/${dayNum}`)
+  }
+
+  const openCheckin = (day) => {
+    const existing = checkins[day.day]
+    setDraft({
+      didIt: existing?.did_it || null,
+      felt: existing?.felt || null,
+      helpful: existing?.helpful ?? null,
+      note: existing?.note || '',
+    })
+    setActiveDay(day)
+  }
+
+  const saveCheckin = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || !activeDay) return
+    const isNo = draft.didIt === 'no'
+    const payload = {
+      user_id: user.id,
+      stage: 'commit',
+      day_number: activeDay.day,
+      archetype: COMMIT_PRACTICES[activeDay.day]?.archetype || null,
+      practice_title: COMMIT_PRACTICES[activeDay.day]?.title || null,
+      did_it: draft.didIt,
+      felt: isNo ? null : (draft.felt || null),
+      helpful: isNo ? null : draft.helpful,
+      note: draft.note?.trim() || null,
+      responded_at: new Date().toISOString(),
+    }
+    const { error } = await supabase
+      .from('practice_checkins')
+      .upsert(payload, { onConflict: 'user_id,stage,day_number' })
+    if (!error) {
+      setCheckins(prev => ({ ...prev, [activeDay.day]: payload }))
+      setActiveDay(null)
+    }
   }
 
   if (!loaded) {
@@ -185,31 +236,55 @@ export default function CommitOverview() {
                     )
                   }
 
+                  const hasCheckin = isDone && COMMIT_PRACTICES[day.day]
+                  const checkinDone = !!checkins[day.day]
                   return (
-                    <button
-                      key={day.day}
-                      onClick={() => handleDayTap(day.day)}
-                      disabled={!tappable}
-                      style={{
-                        ...styles.dayRow,
-                        ...(isLocked ? styles.dayRowLocked : {}),
-                        cursor: tappable ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      <span style={{
-                        ...styles.dayNode,
-                        color: isDone ? '#D9B57A' : '#C9BBA3',
-                      }}>{isDone ? '✦' : '·'}</span>
-                      <span style={styles.dayContent}>
+                    <div key={day.day} style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => handleDayTap(day.day)}
+                        disabled={!tappable}
+                        style={{
+                          ...styles.dayRow,
+                          ...(isLocked ? styles.dayRowLocked : {}),
+                          cursor: tappable ? 'pointer' : 'not-allowed',
+                          paddingRight: hasCheckin ? '84px' : '4px',
+                        }}
+                      >
                         <span style={{
-                          ...styles.dayTitle,
-                          ...(isDone ? styles.dayTitleDone : {}),
-                        }}>{day.arrivalTitle}</span>
-                        {day.arrivalSubtitle && (
-                          <span style={styles.daySubtitle}>{day.arrivalSubtitle}</span>
-                        )}
-                      </span>
-                    </button>
+                          ...styles.dayNode,
+                          color: isDone ? '#D9B57A' : '#C9BBA3',
+                        }}>{isDone ? '✦' : '·'}</span>
+                        <span style={styles.dayContent}>
+                          <span style={{
+                            ...styles.dayTitle,
+                            ...(isDone ? styles.dayTitleDone : {}),
+                          }}>{day.arrivalTitle}</span>
+                          {day.arrivalSubtitle && (
+                            <span style={styles.daySubtitle}>{day.arrivalSubtitle}</span>
+                          )}
+                        </span>
+                      </button>
+
+                      {hasCheckin && (
+                        <button
+                          onClick={() => openCheckin(day)}
+                          style={styles.checkinMarker}
+                          aria-label={checkinDone ? 'Edit your check-in' : 'Add a practice check-in'}
+                        >
+                          <span style={{
+                            ...styles.checkinRing,
+                            ...(checkinDone ? styles.checkinRingDone : {}),
+                          }}>
+                            {COMMIT_PRACTICES[day.day]?.archetype && (
+                              <PracticeArchetypeIcon archetype={COMMIT_PRACTICES[day.day].archetype} size={15} />
+                            )}
+                          </span>
+                          <span style={styles.checkinLabel}>
+                            {checkinDone ? 'Noted' : 'Did you try it?'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
                   )
                 })}
               </div>
@@ -222,6 +297,83 @@ export default function CommitOverview() {
           <span style={styles.anchorMark}>✧</span>
           <span style={styles.anchorText}>{STAGE_END}</span>
         </div>
+
+        {/* Check-in bottom sheet */}
+        {activeDay && (
+          <div style={styles.sheetOverlay} onClick={() => setActiveDay(null)}>
+            <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.sheetHandle} aria-hidden="true" />
+              <p style={styles.sheetEyebrow}>How it landed</p>
+              <p style={styles.sheetTitle}>{COMMIT_PRACTICES[activeDay.day]?.title}</p>
+
+              <p style={styles.sheetQ}>Did you get to it?</p>
+              <div style={styles.sheetOptions}>
+                {[['yes', 'I did'], ['tried', 'I tried'], ['no', 'Not this time']].map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => setDraft(d => ({ ...d, didIt: val }))}
+                    style={{ ...styles.optionBtn, ...(draft.didIt === val ? styles.optionBtnActive : {}) }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {draft.didIt === 'no' && (
+                <p style={styles.sheetGentle}>
+                  That{'\u2019'}s alright. Noticing that you didn{'\u2019'}t is its own kind of honesty {'\u2014'} the practice will keep.
+                </p>
+              )}
+
+              {(draft.didIt === 'yes' || draft.didIt === 'tried') && (
+                <>
+                  <p style={styles.sheetQ}>How did it sit with you?</p>
+                  <div style={styles.sheetOptions}>
+                    {['Lighter', 'Harder than I expected', 'It surprised me', 'No different'].map(f => (
+                      <button
+                        key={f}
+                        onClick={() => setDraft(d => ({ ...d, felt: f }))}
+                        style={{ ...styles.chipBtn, ...(draft.felt === f ? styles.chipBtnActive : {}) }}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+
+                  <p style={styles.sheetQ}>Was it worth doing?</p>
+                  <div style={styles.sheetOptions}>
+                    {[['yes', true], ['no', false]].map(([key, bool]) => (
+                      <button
+                        key={key}
+                        onClick={() => setDraft(d => ({ ...d, helpful: bool }))}
+                        style={{ ...styles.optionBtn, ...(draft.helpful === bool ? styles.optionBtnActive : {}) }}
+                      >
+                        {bool ? 'Yes' : 'Not really'}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <textarea
+                value={draft.note}
+                onChange={(e) => setDraft(d => ({ ...d, note: e.target.value }))}
+                placeholder="Anything you want to remember? (optional)"
+                style={styles.sheetNote}
+                rows={2}
+              />
+
+              <button
+                onClick={saveCheckin}
+                disabled={!draft.didIt}
+                style={{ ...styles.sheetSave, ...(!draft.didIt ? styles.sheetSaveDisabled : {}) }}
+              >
+                {checkins[activeDay.day] ? 'Update' : 'Save'}
+              </button>
+              <button onClick={() => setActiveDay(null)} style={styles.sheetCancel}>Not now</button>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
@@ -291,7 +443,8 @@ const styles = {
   // 4 — Continuous thread + list
   listWrap: { position: 'relative', marginTop: '2.5rem', paddingTop: '0.25rem', paddingBottom: '48px' },
   // Commit is multi-phase, so the thread starts BELOW the first centred phase header
-  // (Notice, single-phase, used top:18). Nudge if the spine peeks above the first header.
+  // (Notice, single-phase, used top:18). If the spine peeks above the first
+  // "· PHASE ·" header or starts mid-first-day, nudge this value.
   thread: {
     position: 'absolute', left: '19px', top: '88px', bottom: 0, width: '1.5px',
     background: 'linear-gradient(180deg, rgba(217,181,122,0.6) 0%, rgba(217,181,122,0.6) 80%, rgba(217,181,122,0) 100%)',
@@ -332,6 +485,79 @@ const styles = {
   },
   vaultTitle: { fontSize: '19px', fontWeight: 500, color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
   vaultSubtitle: { fontSize: '13px', color: '#CBBA98', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.45 },
+
+  // Check-in marker on completed practice rows
+  checkinMarker: {
+    position: 'absolute', right: '0px', top: '50%', transform: 'translateY(-50%)',
+    zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center',
+    gap: '4px', width: '78px', background: 'transparent', border: 'none',
+    cursor: 'pointer', fontFamily: 'inherit', padding: '4px 2px',
+  },
+  checkinRing: {
+    width: '26px', height: '26px', borderRadius: '50%', border: '1.5px solid #C9A86A',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#854F0B', background: 'transparent', lineHeight: 1,
+  },
+  checkinRingDone: { background: '#D9B57A', border: '1.5px solid #D9B57A', color: '#3A2A1C', fontWeight: 700 },
+  checkinLabel: {
+    fontSize: '10px', color: '#9C8C78', fontStyle: 'italic',
+    fontFamily: 'Georgia, serif', lineHeight: 1.15, textAlign: 'center',
+  },
+
+  // Check-in bottom sheet
+  sheetOverlay: {
+    position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(40,25,15,0.45)',
+    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    WebkitBackdropFilter: 'blur(2px)', backdropFilter: 'blur(2px)',
+  },
+  sheet: {
+    background: '#FAF7F1', width: '100%', maxWidth: '440px',
+    borderRadius: '24px 24px 0 0', padding: '14px 22px 28px',
+    boxShadow: '0 -10px 40px rgba(40,25,10,0.25)', maxHeight: '88vh', overflowY: 'auto',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  sheetHandle: { width: '40px', height: '4px', borderRadius: '2px', background: '#D8CCB8', margin: '0 auto 16px' },
+  sheetEyebrow: {
+    fontSize: '11px', color: '#854F0B', textTransform: 'uppercase',
+    letterSpacing: '0.2em', fontWeight: 600, margin: '0 0 6px', textAlign: 'center',
+  },
+  sheetTitle: {
+    fontSize: '19px', color: '#2A1F15', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', lineHeight: 1.3, margin: '0 0 4px', textAlign: 'center',
+  },
+  sheetQ: { fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', margin: '18px 0 9px' },
+  sheetGentle: {
+    fontSize: '13px', color: '#8A7A66', fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    lineHeight: 1.5, margin: '14px 0 0', background: '#F2ECE0', padding: '12px 14px', borderRadius: '12px',
+  },
+  sheetOptions: { display: 'flex', flexWrap: 'wrap', gap: '8px' },
+  optionBtn: {
+    flex: '1 1 auto', minWidth: '88px', padding: '11px 12px', borderRadius: '12px',
+    border: '1px solid #E0D3BC', background: '#FFFDF9', color: '#5A4A38',
+    fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+  },
+  optionBtnActive: { background: '#3A2A1C', border: '1px solid #3A2A1C', color: '#FAF7F1' },
+  chipBtn: {
+    padding: '8px 14px', borderRadius: '999px', border: '1px solid #E0D3BC',
+    background: '#FFFDF9', color: '#5A4A38', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
+  },
+  chipBtnActive: { background: '#854F0B', border: '1px solid #854F0B', color: '#FAF7F1' },
+  sheetNote: {
+    width: '100%', marginTop: '18px', padding: '12px 14px', borderRadius: '12px',
+    border: '1px solid #E0D3BC', background: '#FFFDF9', color: '#2A1F15',
+    fontSize: '14px', fontFamily: 'Georgia, serif', resize: 'vertical', boxSizing: 'border-box',
+  },
+  sheetSave: {
+    width: '100%', marginTop: '18px', padding: '14px', borderRadius: '14px',
+    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1',
+    border: 'none', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+  },
+  sheetSaveDisabled: { opacity: 0.4, cursor: 'not-allowed' },
+  sheetCancel: {
+    width: '100%', marginTop: '10px', padding: '10px', background: 'transparent',
+    border: 'none', color: '#9C8C78', fontSize: '13px', fontStyle: 'italic',
+    fontFamily: 'Georgia, serif', cursor: 'pointer',
+  },
 
   // 5 — Anchor
   anchor: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', marginTop: '2px' },
