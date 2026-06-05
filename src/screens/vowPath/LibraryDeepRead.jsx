@@ -70,6 +70,25 @@ export default function LibraryDeepRead() {
         return
       }
 
+      // A chapter's deep read unlocks the moment that chapter is done — using the
+      // exact signal the overview uses to mark a day complete: a vow_artifacts row
+      // for this stage + day. Independent of stage order or which stage is current,
+      // so chapters done in earlier (already-unlocked) stages open normally too.
+      const { data: artifactRow } = await supabase
+        .from('vow_artifacts')
+        .select('day_number')
+        .eq('user_id', user.id)
+        .eq('stage', stageKey)
+        .eq('day_number', dayNumber)
+        .maybeSingle()
+
+      if (artifactRow) {
+        setAccessAllowed(true)
+        setChecking(false)
+        return
+      }
+
+      // Whole stage already marked complete — allow all of its chapters.
       const completed = progress.completed_stages || []
       if (completed.some(c => c.stage === stageKey)) {
         setAccessAllowed(true)
@@ -77,21 +96,23 @@ export default function LibraryDeepRead() {
         return
       }
 
+      // Current stage, serial fallback: allow days at or before the latest done.
       if (progress.current_stage === stageKey) {
         const lastCompleted = progress.last_completed_day || 0
-        if (dayNumber > lastCompleted) {
-          setAccessAllowed(false)
-          setAccessReason(`This chapter unlocks after you complete Day ${dayNumber}.`)
+        if (dayNumber <= lastCompleted) {
+          setAccessAllowed(true)
           setChecking(false)
           return
         }
-        setAccessAllowed(true)
+        setAccessAllowed(false)
+        setAccessReason(`This chapter unlocks after you complete Day ${dayNumber}.`)
         setChecking(false)
         return
       }
 
+      // Earlier or other stage, and this chapter isn't done yet.
       setAccessAllowed(false)
-      setAccessReason(`You're not currently in ${stageLabel}.`)
+      setAccessReason(`This chapter unlocks once you complete Day ${dayNumber} of ${stageLabel}.`)
       setChecking(false)
     }
     checkAccess()

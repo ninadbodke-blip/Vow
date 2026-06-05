@@ -120,6 +120,13 @@ export default function CommitDay() {
       if (artifact) {
         setExistingArtifact(artifact)
         setInteractionData(artifact.content)
+        // Completed day -> its resting place is the seal. With no in-session step
+        // position (fresh open, reload, or mobile suspension), land on CLOSING
+        // rather than replaying from the start. A persisted step (e.g. the user
+        // stepped back to review an answer) is respected.
+        let hasStep = false
+        try { hasStep = sessionStorage.getItem(`vow_step_commit_${dayNumber}`) !== null } catch {}
+        if (!hasStep) setStep(STEP.CLOSING)
       }
 
       setAccessLoading(false)
