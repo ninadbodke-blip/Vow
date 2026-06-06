@@ -180,10 +180,6 @@ The first three days are different. Walk through them.`,
     mechanic: {
       type: 'protectedEmotionsMap',
       data: {
-        teachIntro: [
-          `For most people, the substance was the fastest way out of feelings that — for whatever reason in your history — felt like too much to sit inside. Not all feelings. Specific ones.`,
-          `That isn't weakness. It is what anyone does when a feeling has no other exit. Today isn't about judging it. It is about seeing the job it was doing — clearly enough that you can start to find other doors.`,
-        ],
         functionsPrompt: `What did it do for you, in the moment?`,
         functions: [
           { id: 'edge_off', label: 'Took the edge off — made the day bearable' },
@@ -269,8 +265,9 @@ The first three days are different. Walk through them.`,
     arrivalSubtitle: `What you'll do if you slip.`,
     artifactType: 'endure_day_4',
     intro: [
-      `Most people who slip in early sobriety don't relapse because the substance won. They relapse because of the story that starts the moment after.`,
-      `Today, before any slip has happened, you build the path for what you'd do if it did — small, clear, ready. Pre-deciding it keeps a single slip a single slip.`,
+      `Most people who slip in early sobriety don't relapse because the substance won. They relapse because of the story that starts the moment after: "I've blown it." Marlatt and Gordon named this in 1985 — the Abstinence Violation Effect. One slip triggers shame; the shame says the day, the week, the whole effort is ruined; and that thought, not the substance, is what turns one use into ten.`,
+      `So the real intervention isn't willpower in the moment — it is a decision made now, before any slip. A small, clear path for what you do if it happens, built to interrupt the story before it gathers speed.`,
+      `Pre-deciding this does not make slipping more likely. It makes a single slip stay a single slip. Today, before anything has happened, you'll build that path — one move at each step — and write the line you'll tell yourself if the moment comes.`,
     ],
     mechanic: {
       type: 'aveProtocolBuilder',
@@ -345,17 +342,13 @@ The first three days are different. Walk through them.`,
     arrivalSubtitle: 'The right move depends on where you are.',
     artifactType: 'endure_day_5',
     intro: [
-      `On Day 2 you met the three states. Today matches your response to which one you're in — because the same move that helps in one state can make another worse.`,
-      `You'll build a small plan for each: how you'll know you're there, the one move you reach for first, and a backup if it's not enough.`,
+      `On Day 2 you met the three states — settled, wound up, and shut down. Today matches your response to whichever one you're actually in, because the same move that soothes one state can make another worse. Matching matters more than effort: the right small move in the right state beats a big effort in the wrong one.`,
+      `A long exhale calms a wound-up system but deepens a shut-down one. A brisk walk helps when you're steady but is close to impossible in deep shutdown. Cold water shocks shutdown back into motion — exactly the wrong thing when you're already revved. One strategy can't cover all three.`,
+      `So you'll build a small, specific plan for each state: how you'll know you're in it, the one move you reach for first, and a backup if that isn't enough. The point is to decide now, while it's calm — so that in the moment you're following a plan you already trust, instead of improvising at your worst.`,
     ],
     mechanic: {
       type: 'stateMatchedResponse',
       data: {
-        teach: [
-          `On Day 2 you met the three states. Today matches your response to which one you're in — because the same move that helps in one state makes another worse.`,
-          `A long exhale calms a wound-up system but deepens a shut-down one. A brisk walk helps when you're steady but is impossible in deep shutdown. Cold water shocks shutdown back into motion — exactly wrong when you're already revved. One strategy can't cover all three.`,
-          `So you'll build a small plan for each state: how you'll know you're there, the one move you reach for first, and a backup if that's not enough.`,
-        ],
         sectionPrompts: {
           sign: `How you'll know you're here`,
           primary: 'Your first move',
@@ -811,16 +804,13 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'The four kinds, and where you actually stand.',
     artifactType: 'endure_day_12',
     intro: [
-      `"Recovery capital" is one of the simplest predictors of whether change lasts: the more resources you have around you, the better the odds — more than willpower, more than how bad things got.`,
-      `Today is an honest snapshot of where you actually stand across its four kinds — not where you'd like to be, where you are.`,
+      `"Recovery capital" is one of the most reliable predictors of whether change lasts — the resources you can draw on, across four kinds. Cloud and Granfield's work put it plainly: the more capital around you, the better the odds — more than willpower, more than how bad things got.`,
+      `The four kinds are physical (health, money, a stable place to be), human (skills, self-belief, the capacity to cope), social (the people who actually show up for you), and cultural (values, belonging, a sense of who you are beyond the substance). Most people in early sobriety lean hard on one or two and let the rest quietly thin out.`,
+      `So this is an honest snapshot of all four — not where you'd like to be, where you actually stand right now. You'll tap what's true in each, see the shape they make together, and notice which one is carrying you and which has worn thinnest.`,
     ],
     mechanic: {
       type: 'capitalProfile',
       data: {
-        teach: [
-          `Recovery capital is one of the most reliable predictors of whether change lasts — the resources you can draw on, across four kinds. Cloud and Granfield's work put it plainly: the more capital around you, the better the odds — more than willpower, more than how bad things got.`,
-          `Most people in early sobriety lean hard on one or two kinds and let the rest thin out. This is an honest snapshot of all four — not where you'd like to be, where you actually are right now.`,
-        ],
         capitals: [
           {
             key: 'physical',
@@ -1235,7 +1225,7 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     intro: [
       `Day 16 touched cultural capital — meaning, values, identity. Today goes straight at values, because they are what holds the work once the structured days end. A value isn't a belief you keep on a shelf; it's a direction you move in — the kind of person your choices are walking you toward.`,
       `The substance didn't only cost time and money. It crowded out the things you value, because those things needed the attention and energy it was eating. Naming your values, and acting on even one, is how an identity beyond the substance starts to come back.`,
-      `You'll surface what actually matters, rank your top five, see what it crowded out — and pick one to act on this week.`,
+      `You'll surface what actually matters — not what you wish mattered, but what genuinely drives the choices you make — rank your top five, see clearly what the substance crowded out, and pick one value to act on this week. A value you never act on stays theoretical; one small, concrete move is what turns a word into a direction you are actually walking.`,
     ],
     mechanic: {
       type: 'valuesPortrait',
