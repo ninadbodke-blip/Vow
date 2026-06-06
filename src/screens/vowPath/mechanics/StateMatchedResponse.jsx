@@ -7,7 +7,6 @@ import { useState } from 'react'
 export default function StateMatchedResponse({ data, onSave, saving }) {
   const {
     states = [],
-    teach = [],
     allowCustom = true,
     customPrompt = 'Your own',
     sectionPrompts = {},
@@ -16,7 +15,7 @@ export default function StateMatchedResponse({ data, onSave, saving }) {
   const PRIMARY_P = sectionPrompts.primary || 'Your first move'
   const BACKUP_P = sectionPrompts.backup || "If that's not enough"
 
-  const [phase, setPhase] = useState('teach')
+  const [phase, setPhase] = useState('state:0')
   const [picks, setPicks] = useState({})
   const [customInputs, setCustomInputs] = useState({})
 
@@ -43,7 +42,7 @@ export default function StateMatchedResponse({ data, onSave, saving }) {
     return (pool.find(o => o.id === val) || {}).label || val
   }
   const advance = () => { if (idx < states.length - 1) { setPhase(`state:${idx + 1}`); window.scrollTo({ top: 0, behavior: 'smooth' }) } else setPhase('review') }
-  const goBack = () => { if (idx > 0) { setPhase(`state:${idx - 1}`); window.scrollTo({ top: 0, behavior: 'smooth' }) } else setPhase('teach') }
+  const goBack = () => { if (idx > 0) { setPhase(`state:${idx - 1}`); window.scrollTo({ top: 0, behavior: 'smooth' }) } }
 
   const finalize = () => {
     const idPart = v => (v && !v.startsWith('custom:') ? v : null)
@@ -85,18 +84,6 @@ export default function StateMatchedResponse({ data, onSave, saving }) {
     )
   }
 
-  // ===================== TEACH =====================
-  if (phase === 'teach') {
-    return (
-      <div style={S.container}>
-        <p style={S.eyebrow}>Day 5 · State-matched response</p>
-        <h2 style={S.prompt}>The right move depends on where you are.</h2>
-        {teach.map((t, i) => <p key={i} style={{ ...S.body, marginBottom: i === teach.length - 1 ? '0.5rem' : '0.85rem' }}>{t}</p>)}
-        <div style={S.footer}><button onClick={() => setPhase('state:0')} style={S.primaryBtn}>Build the plan ›</button></div>
-      </div>
-    )
-  }
-
   // ===================== STATE =====================
   if (state) {
     const p = picks[state.key] || {}
@@ -117,7 +104,7 @@ export default function StateMatchedResponse({ data, onSave, saving }) {
           {p.primary && <Section sk={state.key} section="backup" title={BACKUP_P} options={backupOptions} accent={accent} />}
         </div>
         <div style={S.footer}>
-          <button onClick={goBack} style={S.secondaryBtn}>‹ Back</button>
+          {idx > 0 && <button onClick={goBack} style={S.secondaryBtn}>‹ Back</button>}
           <button onClick={advance} disabled={!canAdvance} style={{ ...S.primaryBtnFlex, ...(!canAdvance ? S.disabled : {}) }}>{idx === states.length - 1 ? 'Review ›' : 'Next state ›'}</button>
         </div>
       </div>
@@ -159,20 +146,20 @@ const optOn = (accent) => ({ border: `1.5px solid ${accent}`, background: `linea
 
 const S = {
   container: { padding: 0 },
-  eyebrow: { fontSize: '11px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: 'Georgia, serif', margin: '0 0 0.75rem' },
-  prompt: { fontSize: '20px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.32, margin: '0 0 0.6rem' },
-  body: { fontSize: '14.5px', color: '#4A3A28', fontFamily: 'Georgia, serif', lineHeight: 1.62, margin: 0 },
-  hint: { fontSize: '13px', color: '#8A7355', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: '0 0 0.25rem' },
-  sectionLabel: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 600, fontFamily: 'Georgia, serif', margin: '0 0 0.6rem' },
-  footer: { display: 'flex', gap: '10px', marginTop: '1.75rem' },
-  primaryBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
-  primaryBtnFlex: { flex: 1, padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
-  secondaryBtn: { padding: '14px 20px', background: 'transparent', color: '#8A7355', border: '0.5px solid #D9C9B0', borderRadius: '12px', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  eyebrow: { fontSize: '11px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: 'Georgia, serif', margin: '0 0 0.8rem' },
+  prompt: { fontSize: '21px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.34, margin: '0 0 0.6rem' },
+  body: { fontSize: '15.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.72, margin: 0 },
+  hint: { fontSize: '14px', color: '#7E6A52', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, margin: '0 0 0.25rem' },
+  sectionLabel: { fontSize: '11.5px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.13em', fontWeight: 600, fontFamily: 'Georgia, serif', margin: '0 0 0.6rem' },
+  footer: { display: 'flex', gap: '10px', marginTop: '1.9rem' },
+  primaryBtn: { width: '100%', padding: '15px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '13px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
+  primaryBtnFlex: { flex: 1, padding: '15px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '13px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
+  secondaryBtn: { padding: '15px 20px', background: 'transparent', color: '#8A7355', border: '0.5px solid #D9C9B0', borderRadius: '13px', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
   disabled: { opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' },
-  card: { background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderRadius: '13px', border: '0.5px solid #EADFCB' },
-  optList: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  opt: { textAlign: 'left', padding: '12px 14px', borderRadius: '11px', border: '0.5px solid #E0D5C2', background: '#FDFBF6', color: '#3A2D1E', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer', lineHeight: 1.4, width: '100%' },
-  input: { width: '100%', padding: '11px 13px', border: '0.5px solid #C9A86F', borderRadius: '10px', fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', background: '#FFFDF8', outline: 'none', boxSizing: 'border-box' },
-  planRow: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0 0 0.6rem', lineHeight: 1.45 },
-  planKey: { display: 'block', fontSize: '10px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'Georgia, serif', marginBottom: '1px' },
+  card: { background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderRadius: '14px', border: '0.5px solid #EADFCB' },
+  optList: { display: 'flex', flexDirection: 'column', gap: '9px' },
+  opt: { textAlign: 'left', padding: '14px 16px', borderRadius: '12px', border: '0.5px solid #E0D5C2', background: '#FDFBF6', color: '#3A2D1E', fontSize: '14.5px', fontFamily: 'Georgia, serif', cursor: 'pointer', lineHeight: 1.45, width: '100%' },
+  input: { width: '100%', padding: '12px 14px', border: '0.5px solid #C9A86F', borderRadius: '11px', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', background: '#FFFDF8', outline: 'none', boxSizing: 'border-box' },
+  planRow: { fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0 0 0.6rem', lineHeight: 1.5 },
+  planKey: { display: 'block', fontSize: '10.5px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'Georgia, serif', marginBottom: '1px' },
 }
