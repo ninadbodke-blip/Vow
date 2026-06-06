@@ -1,14 +1,14 @@
 import { useState } from 'react'
 
 // DAY 2 — "The three states"
-// Meet the polyvagal states, then PLACE yourself on a vertical ladder:
-// where you are right now, and where you sit on a normal day — two markers
-// on one ladder. Then a tailored read, then name your earliest drop-signal.
-// Tactile placement, not a menu. (type: 'stateLocator')
+// Opens directly on the ladder; the polyvagal teaching now lives on the day's
+// intro page (shell), set in the reading type, so the cards read as one layout.
+// Place yourself on a vertical ladder (right now + a normal day), get a tailored
+// read, then name your earliest drop-signal. Flow: place → read → signal → review.
+// Keeps current_state/default_state/early_signal (Day 20 reads them). (type: 'stateLocator')
 export default function StateLocator({ data, onSave, saving }) {
   const {
     states = [],
-    teachIntro = [],
     placePrompt,
     placeNowLabel = 'Right now',
     placeUsualLabel = 'On a normal day',
@@ -18,7 +18,7 @@ export default function StateLocator({ data, onSave, saving }) {
     signalOptions = [],
   } = data
 
-  const [phase, setPhase] = useState('meet')
+  const [phase, setPhase] = useState('place')
   const [nowState, setNowState] = useState(null)
   const [usualState, setUsualState] = useState(null)
   const [placing, setPlacing] = useState('now')
@@ -43,7 +43,7 @@ export default function StateLocator({ data, onSave, saving }) {
   }
 
   const ladder = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', margin: '1.15rem 0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', margin: '1.2rem 0' }}>
       {states.map(s => {
         const isNow = nowState === s.id
         const isUsual = usualState === s.id
@@ -53,7 +53,7 @@ export default function StateLocator({ data, onSave, saving }) {
             key={s.id}
             onClick={() => placeRung(s.id)}
             style={{
-              textAlign: 'left', padding: '14px 16px', borderRadius: '14px', cursor: 'pointer', width: '100%',
+              textAlign: 'left', padding: '15px 17px', borderRadius: '14px', cursor: 'pointer', width: '100%',
               border: lit ? `2px solid ${s.color}` : '0.5px solid #E0D5C2',
               background: lit
                 ? `linear-gradient(180deg, ${hexA(s.color, 0.15)} 0%, ${hexA(s.color, 0.06)} 100%)`
@@ -61,36 +61,20 @@ export default function StateLocator({ data, onSave, saving }) {
               transition: 'all .15s',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', flexWrap: 'wrap', marginBottom: '5px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', flexWrap: 'wrap', marginBottom: '6px' }}>
               <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-              <span style={{ fontSize: '15.5px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif' }}>{s.label}</span>
-              {s.clinical && <span style={{ fontSize: '11.5px', color: '#A2906F', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>{s.clinical}</span>}
+              <span style={{ fontSize: '16px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif' }}>{s.label}</span>
+              {s.clinical && <span style={{ fontSize: '12px', color: '#A2906F', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>{s.clinical}</span>}
               <span style={{ flex: 1 }} />
-              {isNow && <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#fff', background: s.color, borderRadius: '20px', padding: '2px 9px', fontFamily: 'Georgia, serif' }}>● now</span>}
-              {isUsual && <span style={{ fontSize: '10.5px', fontWeight: 600, color: s.color, background: 'transparent', border: `1.5px solid ${s.color}`, borderRadius: '20px', padding: '1px 8px', fontFamily: 'Georgia, serif' }}>○ usually</span>}
+              {isNow && <span style={{ fontSize: '11px', fontWeight: 600, color: '#fff', background: s.color, borderRadius: '20px', padding: '2px 10px', fontFamily: 'Georgia, serif' }}>● now</span>}
+              {isUsual && <span style={{ fontSize: '11px', fontWeight: 600, color: s.color, background: 'transparent', border: `1.5px solid ${s.color}`, borderRadius: '20px', padding: '1px 9px', fontFamily: 'Georgia, serif' }}>○ usually</span>}
             </div>
-            <p style={{ fontSize: '12.5px', color: '#6B5840', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: 0 }}>{s.body}</p>
+            <p style={{ fontSize: '13.5px', color: '#5F4E3A', fontFamily: 'Georgia, serif', lineHeight: 1.55, margin: 0 }}>{s.body}</p>
           </button>
         )
       })}
     </div>
   )
-
-  // ===================== MEET =====================
-  if (phase === 'meet') {
-    return (
-      <div style={S.container}>
-        <p style={S.eyebrow}>Day 2 · The three states</p>
-        <h2 style={S.prompt}>Three states, not moods.</h2>
-        {teachIntro.map((t, i) => (
-          <p key={i} style={{ ...S.body, marginBottom: i === teachIntro.length - 1 ? '0.5rem' : '0.85rem' }}>{t}</p>
-        ))}
-        <div style={S.footer}>
-          <button onClick={() => setPhase('place')} style={S.primaryBtn}>Meet them ›</button>
-        </div>
-      </div>
-    )
-  }
 
   // ===================== PLACE =====================
   if (phase === 'place') {
@@ -100,32 +84,31 @@ export default function StateLocator({ data, onSave, saving }) {
         <p style={S.eyebrow}>Place yourself</p>
         <h2 style={S.prompt}>{placePrompt || 'Here are the three. Where are you?'}</h2>
 
-        <div style={{ display: 'flex', gap: '7px', background: '#F2EADA', padding: '4px', borderRadius: '11px', marginTop: '0.9rem' }}>
+        <div style={{ display: 'flex', gap: '7px', background: '#F2EADA', padding: '4px', borderRadius: '11px', marginTop: '1rem' }}>
           {[['now', placeNowLabel, nowState], ['usual', placeUsualLabel, usualState]].map(([k, lbl, val]) => {
             const on = placing === k
             return (
               <button key={k} onClick={() => setPlacing(k)}
                 style={{
-                  flex: 1, padding: '9px 6px', borderRadius: '8px', cursor: 'pointer', border: 'none',
+                  flex: 1, padding: '10px 6px', borderRadius: '8px', cursor: 'pointer', border: 'none',
                   background: on ? '#FFFFFF' : 'transparent',
                   boxShadow: on ? '0 1px 4px rgba(110,68,16,0.12)' : 'none',
                   color: on ? '#5A3A0E' : '#8A7355', fontWeight: on ? 600 : 400,
-                  fontSize: '13px', fontFamily: 'Georgia, serif',
+                  fontSize: '13.5px', fontFamily: 'Georgia, serif',
                 }}>
                 {lbl}{val ? ` · ${labelOf(val)}` : ''}
               </button>
             )
           })}
         </div>
-        <p style={{ ...S.hint, marginTop: '0.6rem' }}>
+        <p style={{ ...S.hint, marginTop: '0.7rem' }}>
           {placing === 'now' ? 'Tap the rung that fits this moment.' : 'Now tap where you sit on an ordinary day.'}
         </p>
 
         {ladder()}
 
         <div style={S.footer}>
-          <button onClick={() => setPhase('meet')} style={S.secondaryBtn}>‹ Back</button>
-          <button onClick={() => setPhase('read')} disabled={!ready} style={{ ...S.primaryBtnFlex, ...(!ready ? S.disabled : {}) }}>Continue ›</button>
+          <button onClick={() => setPhase('read')} disabled={!ready} style={{ ...S.primaryBtn, ...(!ready ? S.disabled : {}) }}>Continue ›</button>
         </div>
       </div>
     )
@@ -144,8 +127,8 @@ export default function StateLocator({ data, onSave, saving }) {
         <div style={{ ...S.card, borderLeft: `3px solid ${usual.color || '#854F0B'}` }}>
           <p style={S.cardText}>{read[usualState] || read.default}</p>
         </div>
-        <p style={{ ...S.body, marginTop: '0.9rem' }}>{nowVsUsual}</p>
-        {readTail && <p style={{ ...S.body, marginTop: '0.85rem' }}>{readTail}</p>}
+        <p style={{ ...S.body, marginTop: '1rem' }}>{nowVsUsual}</p>
+        {readTail && <p style={{ ...S.body, marginTop: '0.9rem' }}>{readTail}</p>}
         <div style={S.footer}>
           <button onClick={() => setPhase('place')} style={S.secondaryBtn}>‹ Back</button>
           <button onClick={() => setPhase('signal')} style={S.primaryBtnFlex}>Continue ›</button>
@@ -206,24 +189,26 @@ function hexA(hex, a) {
   return `rgba(${r},${g},${b},${a})`
 }
 
+// Type scale aligned to the day shell: 16px/1.8 reading feel, 21px headings,
+// Georgia throughout, generous spacing — so the cards read as one layout.
 const S = {
   container: { padding: 0 },
-  eyebrow: { fontSize: '11px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: 'Georgia, serif', margin: '0 0 0.75rem' },
-  prompt: { fontSize: '20px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.32, margin: '0 0 0.6rem' },
-  body: { fontSize: '14.5px', color: '#4A3A28', fontFamily: 'Georgia, serif', lineHeight: 1.62, margin: 0 },
-  hint: { fontSize: '13px', color: '#8A7355', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: '0 0 0.25rem' },
-  footer: { display: 'flex', gap: '10px', marginTop: '1.75rem' },
-  primaryBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
-  primaryBtnFlex: { flex: 1, padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
-  secondaryBtn: { padding: '14px 20px', background: 'transparent', color: '#8A7355', border: '0.5px solid #D9C9B0', borderRadius: '12px', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  eyebrow: { fontSize: '11px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: 'Georgia, serif', margin: '0 0 0.8rem' },
+  prompt: { fontSize: '21px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.34, margin: '0 0 0.6rem' },
+  body: { fontSize: '15.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.72, margin: 0 },
+  hint: { fontSize: '14px', color: '#7E6A52', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, margin: '0 0 0.25rem' },
+  footer: { display: 'flex', gap: '10px', marginTop: '1.9rem' },
+  primaryBtn: { width: '100%', padding: '15px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '13px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
+  primaryBtnFlex: { flex: 1, padding: '15px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '13px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
+  secondaryBtn: { padding: '15px 20px', background: 'transparent', color: '#8A7355', border: '0.5px solid #D9C9B0', borderRadius: '13px', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
   disabled: { opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' },
-  card: { background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderRadius: '0 12px 12px 0', padding: '15px 17px' },
-  cardText: { fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.62, margin: 0 },
-  optList: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '0.85rem' },
-  opt: { textAlign: 'left', padding: '13px 15px', borderRadius: '11px', border: '0.5px solid #E0D5C2', background: '#FDFBF6', color: '#3A2D1E', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer', lineHeight: 1.4 },
+  card: { background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderRadius: '0 13px 13px 0', padding: '16px 18px' },
+  cardText: { fontSize: '15.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.7, margin: 0 },
+  optList: { display: 'flex', flexDirection: 'column', gap: '9px', marginTop: '1rem' },
+  opt: { textAlign: 'left', padding: '14px 16px', borderRadius: '12px', border: '0.5px solid #E0D5C2', background: '#FDFBF6', color: '#3A2D1E', fontSize: '14.5px', fontFamily: 'Georgia, serif', cursor: 'pointer', lineHeight: 1.45 },
   optOn: { border: '1.5px solid #8A5A1A', background: 'linear-gradient(180deg, #FBF1DF 0%, #F4E7CE 100%)', color: '#5A3A0E', fontWeight: 600 },
-  input: { width: '100%', padding: '12px 14px', border: '0.5px solid #C9A86F', borderRadius: '11px', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', background: '#FFFDF8', outline: 'none', boxSizing: 'border-box', marginTop: '2px' },
-  reviewCard: { background: 'linear-gradient(180deg, #FFFFFF 0%, #FBF7EF 100%)', border: '0.5px solid #EADFCB', borderRadius: '13px', padding: '14px 16px', marginBottom: '10px' },
-  reviewLabel: { fontSize: '10px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.14em', fontFamily: 'Georgia, serif', margin: '0 0 0.35rem' },
-  reviewBig: { fontSize: '15.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.4 },
+  input: { width: '100%', padding: '13px 15px', border: '0.5px solid #C9A86F', borderRadius: '12px', fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', background: '#FFFDF8', outline: 'none', boxSizing: 'border-box', marginTop: '2px' },
+  reviewCard: { background: 'linear-gradient(180deg, #FFFFFF 0%, #FBF7EF 100%)', border: '0.5px solid #EADFCB', borderRadius: '14px', padding: '15px 17px', marginBottom: '10px' },
+  reviewLabel: { fontSize: '10.5px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.13em', fontFamily: 'Georgia, serif', margin: '0 0 0.4rem' },
+  reviewBig: { fontSize: '16px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.4 },
 }
