@@ -30,6 +30,7 @@ export default function CapitalAssessment({ data, onSave, saving }) {
   const [lowestCapitalKey, setLowestCapitalKey] = useState(null)
   const [pickedArea, setPickedArea] = useState(null)
   const [commitmentText, setCommitmentText] = useState('')
+  const [planWhen, setPlanWhen] = useState('')
 
   // Load baseline for deep dive
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function CapitalAssessment({ data, onSave, saving }) {
           }
         })
         setLowestCapitalKey(lowestKey)
-        setPhase('reveal_lowest')
+        setPhase('profile')
       } else {
         setPhase('no_baseline')
       }
@@ -120,8 +121,9 @@ export default function CapitalAssessment({ data, onSave, saving }) {
     onSave({
       version: 'deep_dive',
       lowest_capital: lowestCapitalKey,
-      picked_area: pickedArea,
-      commitment_text: commitmentText.trim() || null,
+      picked_move: pickedArea,
+      smallest_version: commitmentText.trim() || null,
+      plan_when: planWhen.trim() || null,
       assessed_at: new Date().toISOString(),
     })
   }
@@ -257,26 +259,71 @@ export default function CapitalAssessment({ data, onSave, saving }) {
   }
 
   // ===================================================================
+  // DEEP DIVE — PROFILE RECAP (all four; strongest + thinnest)
+  // ===================================================================
+  if (phase === 'profile') {
+    const scores = baselineData?.capital_scores || {}
+    const maxScore = Math.max(1, ...capitals.map(c => scores[c.key] || 0))
+    const strongest = capitals.reduce((best, c) => ((scores[c.key] || 0) > (best ? (scores[best.key] || 0) : -1) ? c : best), null)
+    const lowest = capitals.find(c => c.key === lowestCapitalKey)
+    return (
+      <div style={styles.container}>
+        <p style={styles.eyebrow}>Where you stood on Day 12</p>
+        <h2 style={styles.prompt}>Your recovery capital.</h2>
+        <p style={styles.subtext}>The four resources that hold recovery up. Here's your shape from a week ago — read the whole thing before we focus.</p>
+
+        <div style={styles.scoresCard}>
+          {capitals.map(c => {
+            const score = scores[c.key] || 0
+            const pct = (score / maxScore) * 100
+            const isLow = c.key === lowestCapitalKey
+            return (
+              <div key={c.key} style={styles.scoreRow}>
+                <div style={styles.scoreLabel}>{c.label}</div>
+                <div style={styles.scoreBar}>
+                  <div style={{ ...styles.scoreFill, width: `${pct}%`, ...(isLow ? { background: 'linear-gradient(90deg, #C5572C, #9C4520)' } : {}) }}></div>
+                </div>
+                <div style={styles.scoreNum}>{score}</div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div style={{ background: 'linear-gradient(180deg, #EAF3DE 0%, #DCE9C8 100%)', border: '0.5px solid #7A8C5A', borderRadius: '12px', padding: '13px 15px', marginBottom: '10px' }}>
+          <p style={{ fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.55 }}>Your strongest base right now is <b>{strongest?.label}</b>. That isn't a finished job — it's a resource to lean on while you build the thin one.</p>
+        </div>
+        <div style={{ background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderLeft: '3px solid #C5572C', borderRadius: '0 12px 12px 0', padding: '13px 15px' }}>
+          <p style={{ fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.55 }}>The thinnest is <b>{lowest?.label}</b> — today's focus. Not because you've failed there, but because it's where the next month has the most to give.</p>
+        </div>
+
+        <div style={styles.footer}>
+          <button onClick={() => setPhase('reveal_lowest')} style={styles.primaryBtn}>Focus on {lowest?.label}</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ===================================================================
   // DEEP DIVE — REVEAL LOWEST
   // ===================================================================
   if (phase === 'reveal_lowest') {
     const lowestCapital = capitals.find(c => c.key === lowestCapitalKey)
     return (
       <div style={styles.container}>
-        <p style={styles.eyebrow}>Your weakest capital</p>
+        <p style={styles.eyebrow}>Today's focus</p>
         <h2 style={styles.capitalHeader}>{lowestCapital?.label}</h2>
         <p style={styles.subtext}>{lowestCapital?.description}</p>
 
-        <div style={styles.lowestNote}>
-          <p style={styles.lowestNoteText}>
-            This is where the next month of work focuses. Not all at once — one specific area, smallest commitment.
-          </p>
-        </div>
+        {lowestCapital?.why && (
+          <div style={{ background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderLeft: '3px solid #C5572C', borderRadius: '0 12px 12px 0', padding: '16px' }}>
+            <p style={{ fontSize: '10px', color: '#C5572C', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 600, fontFamily: 'Georgia, serif', margin: '0 0 0.5rem' }}>Why this matters — and how it's actually built</p>
+            <p style={{ fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.62, margin: 0 }}>{lowestCapital.why}</p>
+          </div>
+        )}
 
         <div style={styles.footer}>
-          <button onClick={() => setPhase('pick_area')} style={styles.primaryBtn}>
-            Continue
-          </button>
+          <button onClick={() => setPhase('profile')} style={styles.secondaryBtn}>‹ Back</button>
+          <button onClick={() => setPhase('pick_area')} style={styles.primaryBtnFlex}>The move ›</button>
         </div>
       </div>
     )
@@ -286,13 +333,8 @@ export default function CapitalAssessment({ data, onSave, saving }) {
   // DEEP DIVE — PICK AREA
   // ===================================================================
   if (phase === 'pick_area') {
-    const areasMap = {
-      physical: physicalAreas,
-      human: humanAreas,
-      social: socialAreas,
-      cultural: culturalAreas,
-    }
-    const areas = areasMap[lowestCapitalKey] || []
+    const lowestCapital = capitals.find(c => c.key === lowestCapitalKey)
+    const areas = lowestCapital?.moves || []
 
     return (
       <div style={styles.container}>
@@ -338,35 +380,48 @@ export default function CapitalAssessment({ data, onSave, saving }) {
   // DEEP DIVE — COMMITMENT
   // ===================================================================
   if (phase === 'commitment') {
+    const lowestCapital = capitals.find(c => c.key === lowestCapitalKey)
+    const moves = lowestCapital?.moves || []
+    const moveLabel = (moves.find(m => m.id === pickedArea) || {}).label
+    const ready = commitmentText.trim().length >= 8 && planWhen.trim().length > 0
     return (
       <div style={styles.container}>
         <h2 style={styles.prompt}>{commitmentPrompt}</h2>
-        <p style={styles.subtext}>
-          One sentence. The smallest version of the commitment, not the ideal one. Smaller is more durable.
-        </p>
+        <p style={styles.subtext}>Small and specific beats ideal. A plan you can picture happening is the one that happens.</p>
 
+        {moveLabel && (
+          <div style={{ background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)', border: '1px solid #C5AE8A', borderRadius: '12px', padding: '12px 14px', marginBottom: '1rem' }}>
+            <p style={{ fontSize: '10px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 0.3rem' }}>Your move</p>
+            <p style={{ fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.45 }}>{moveLabel}</p>
+          </div>
+        )}
+
+        <p style={{ fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 0.5rem' }}>The smallest real version of it</p>
         <textarea
           value={commitmentText}
           onChange={(e) => setCommitmentText(e.target.value)}
-          placeholder="In the next 30 days, I will..."
+          placeholder="The smallest concrete version — something you could actually do this week"
           style={styles.textarea}
-          rows={4}
-          maxLength={300}
+          rows={3}
+          maxLength={240}
         />
 
-        <p style={styles.helper}>
-          {commitmentText.length} characters
-        </p>
+        <p style={{ fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '1rem 0 0.5rem' }}>When and where you'll do it</p>
+        <input
+          type="text"
+          value={planWhen}
+          onChange={(e) => setPlanWhen(e.target.value)}
+          placeholder="e.g. Sunday morning, before anything else"
+          style={{ width: '100%', padding: '12px 14px', border: '0.5px solid #E0D5C2', borderRadius: '12px', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', background: '#FDFBF6', outline: 'none', boxSizing: 'border-box' }}
+          maxLength={120}
+        />
 
         <div style={styles.footer}>
           <button onClick={() => setPhase('pick_area')} style={styles.secondaryBtn}>‹ Back</button>
           <button
             onClick={() => setPhase('review')}
-            disabled={commitmentText.trim().length < 10}
-            style={{
-              ...styles.primaryBtnFlex,
-              ...(commitmentText.trim().length < 10 ? styles.primaryBtnDisabled : {}),
-            }}
+            disabled={!ready}
+            style={{ ...styles.primaryBtnFlex, ...(!ready ? styles.primaryBtnDisabled : {}) }}
           >
             Continue
           </button>
@@ -378,15 +433,9 @@ export default function CapitalAssessment({ data, onSave, saving }) {
   // ===================================================================
   // DEEP DIVE — REVIEW
   // ===================================================================
-  const areasMap = {
-    physical: physicalAreas,
-    human: humanAreas,
-    social: socialAreas,
-    cultural: culturalAreas,
-  }
-  const areas = areasMap[lowestCapitalKey] || []
-  const pickedAreaObj = areas.find(a => a.id === pickedArea)
   const lowestCapital = capitals.find(c => c.key === lowestCapitalKey)
+  const areas = lowestCapital?.moves || []
+  const pickedAreaObj = areas.find(a => a.id === pickedArea)
 
   return (
     <div style={styles.container}>
@@ -399,14 +448,21 @@ export default function CapitalAssessment({ data, onSave, saving }) {
       </div>
 
       <div style={styles.reviewCard}>
-        <p style={styles.reviewLabel}>Specific area</p>
+        <p style={styles.reviewLabel}>Your move</p>
         <p style={styles.reviewBig}>{pickedAreaObj?.label}</p>
       </div>
 
       <div style={styles.reviewCard}>
-        <p style={styles.reviewLabel}>Your commitment</p>
+        <p style={styles.reviewLabel}>The smallest version</p>
         <p style={styles.reviewMessage}>{commitmentText}</p>
       </div>
+
+      {planWhen.trim() && (
+        <div style={styles.reviewCard}>
+          <p style={styles.reviewLabel}>When and where</p>
+          <p style={styles.reviewBig}>{planWhen}</p>
+        </div>
+      )}
 
       <div style={styles.footer}>
         <button onClick={() => setPhase('commitment')} style={styles.secondaryBtn}>‹ Back</button>
