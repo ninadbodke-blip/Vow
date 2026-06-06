@@ -57,9 +57,9 @@ I'm with you on this part. One hour at a time. Go.`,
       audioSrc: 'endure/day_01.mp3',
     },
     intro: [
-      `Today is Day Zero. The day you stopped, or the day Vow asks you to mark as the start of Endure.`,
-      `There's a ritual today, and a map. The ritual marks the threshold. The map shows what to expect physiologically over the first 72 hours.`,
-      `No reading after this. Just the marking, then the map.`,
+      `Today is Day Zero — the day you stopped, or the day Vow asks you to mark as the start of Endure. It deserves a threshold, not a quiet slide into the work. So today there is a ritual and a map, and almost no reading.`,
+      `The ritual is simple: a held breath, a marking, a line drawn between before and after. Thresholds matter because the mind remembers them. Years from now you may not recall Day 9 or Day 14, but you will remember the day you decided this one counted as the beginning.`,
+      `The map is the first seventy-two hours, physiologically. The early days are the hardest in pure bodily terms — the system recalibrating without the thing it had been leaning on. Knowing roughly what to expect, hour by hour, takes some of the fear out of it: what feels like something going wrong is usually the body doing exactly what it should. Mark the threshold, then read the map. That is all today asks.`,
     ],
     mechanic: {
       type: 'guidedHold',
@@ -174,8 +174,9 @@ The first three days are different. Walk through them.`,
     arrivalSubtitle: 'The emotions the substance was protecting you from.',
     artifactType: 'endure_day_3',
     intro: [
-      `The using mind keeps it simple: I used because I wanted to. The body tells a quieter, more honest story.`,
-      `Today you'll trace it in two layers — what the substance did for you, and the feeling underneath that it was managing.`,
+      `The using mind keeps the story simple: I used because I wanted to. The body tells a quieter, more honest version. Most substance use isn't really about the substance — it's about a feeling the substance made bearable, or made vanish for a while.`,
+      `Psychologists call this experiential avoidance: the pull to escape an inner experience we don't want to have. The trouble is the feeling doesn't actually leave — it waits, and the avoiding slowly becomes its own second problem. What the substance protected you from is still there underneath, and meeting it directly, even briefly, is what loosens its grip.`,
+      `So today you'll trace it in two layers. First, what the substance actually did for you — numbed, loosened, quieted, lifted. Then the feeling underneath that it was managing: the thing you were reaching past it to avoid. Naming a feeling is not the same as being overwhelmed by it. Named, it becomes something you can work with, instead of something that quietly runs you from below.`,
     ],
     mechanic: {
       type: 'protectedEmotionsMap',
@@ -508,9 +509,9 @@ The first three days are different. Walk through them.`,
     arrivalSubtitle: 'The first week.',
     artifactType: 'endure_day_7',
     intro: [
-      `Today is the close of Phase 1. The first week. The hardest stretch in terms of pure physiology, often.`,
-      `Today's exercise is short. You'll see a brief summary of what the first week covered. You'll tap how it landed.`,
-      `Then Phase 2 begins tomorrow — the middle week. Different texture. The flatness.`,
+      `Today closes Phase 1 — the first week, and often the hardest stretch in pure physiological terms. The body has been recalibrating without the thing it leaned on, and you stayed with it. That is not a small thing, even when it doesn't feel dramatic from the inside.`,
+      `Closings matter as much as openings. Without them the days blur together and progress turns invisible — you only ever feel how far is left, never how far you've come. So today is deliberately short: a brief summary of what the first week covered, and a single tap for how it actually landed. No new work, no reading to push through.`,
+      `Then Phase 2 begins tomorrow — the middle week, with a different texture entirely. The acute physical storm settles, and in its place comes the flatness: the strange greyness where nothing quite registers. It's a different kind of challenge, and naming it in advance makes it easier to meet. For now, just mark the week you finished.`,
     ],
     mechanic: {
       type: 'phaseClose',
@@ -631,8 +632,8 @@ The first three days are different. Walk through them.`,
     artifactType: 'endure_day_9',
     intro: [
       `Indian contemplative traditions name something the West has often missed — sakshi bhava, the witness consciousness. The part of you that is not your thoughts, not your feelings, not your cravings, not your body. The part that watches all of them happen.`,
-      `In early sobriety, the witness is the most useful capacity you can develop. It lets you notice a craving without becoming the craving. Notice a shame thought without becoming a shamed person. Notice the flatness without identifying with it as who you now are.`,
-      `Today's exercise is short. A guided sit. You'll do it in the app, with prompts, for five minutes. The point is to feel — directly, even briefly — what witness consciousness is. Once you've felt it, you can return to it.`,
+      `In early sobriety, the witness is the most useful capacity you can develop. It lets you notice a craving without becoming the craving. Notice a shame thought without becoming a shamed person. Notice the flatness without taking it as who you now are.`,
+      `Today's exercise is short — a guided sit, with prompts, for about five minutes. The point isn't to empty your mind or to get it right; it's to feel, directly and even briefly, what the witness actually is. Concepts about it don't help much. The felt sense of stepping back even an inch — of being the one who notices rather than the one swept along — is the whole thing. Once you've touched it, you can return to it on any hard day, and the craving or the shame becomes something you're watching pass rather than something you are.`,
     ],
     mechanic: {
       type: 'guidedWitness',
@@ -685,8 +686,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
       audioSrc: 'endure/day_10.mp3',
     },
     intro: [
-      `Today is Day 10. Halfway through Endure. There is no exercise today other than a single tap of how you are.`,
-      `No structured work. Just an audio from Ninad, and one tap.`,
+      `Today is Day 10 — halfway through Endure. There's no structured exercise: no mapping, no building, nothing to complete. Just an audio from Ninad, and a single tap for how you are right now.`,
+      `Halfway points are worth pausing on. The beginning has its own fierce energy — the decision is fresh, the stakes feel vivid. The end is close enough to pull you forward. The middle is where most things quietly get abandoned, not because they got harder, but because the early urgency faded and nothing rose to replace it. You're standing at exactly that point, and you're still here.`,
+      `So today asks almost nothing of you, on purpose. Not every day needs to be effortful to count. Some days the work is simply to notice you're still walking, mark it honestly, and keep going. Listen to the audio, tap how you are, and let that be enough — some days, simply still being here is the whole achievement.`,
     ],
     mechanic: {
       type: 'finalTap',
@@ -730,8 +732,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'What you\u2019ve been reaching for. What is actually happening.',
     artifactType: 'endure_day_11',
     intro: [
-      `Recovery runs on what you put in the space the substance used to fill. Eleven days in, there's something — or a few things — you've been reaching for instead.`,
-      `Today is a check-in on that, without judgement: what's working, what isn't, and what to adjust.`,
+      `Recovery runs on what you put in the space the substance used to fill. You don't beat a habit by leaving a hole where it was — you put something in the hole that does a version of the same job the substance was doing: soothing, energising, connecting, marking the end of a day.`,
+      `And a replacement only holds if it's actually being done. A plan you aren't running isn't an engine — it's a diagram. The point isn't to keep good intentions on a list; it's to have a few real things turning over in daily life, quietly doing the work the substance used to do.`,
+      `Eleven days in, there's something — or a few things — you've been reaching for instead. So today is a check, not a test, and there's no judgement in it. You'll set how alive each one is right now: what's genuinely working, what isn't, what's harder than you expected. Then you'll decide what to adjust. An honest reading now is worth far more than an optimistic one.`,
     ],
     mechanic: {
       type: 'replacementEngineCheck',
@@ -882,8 +885,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: `Reading what you wrote on Day 6, with seven days between.`,
     artifactType: 'endure_day_13',
     intro: [
-      `On Day 6 you made a structured statement of what the shame story has been saying. You also saw the alternative framings — not affirmations, but more accurate descriptions in clinical language.`,
-      `Today, with a week between, you'll read what you made and see if anything has shifted. Sometimes the alternative framings have already settled in. Sometimes the original statement still feels truer. Both are useful information.`,
+      `On Day 6 you wrote a structured statement of what the shame story has been telling you — the harsh, familiar narration that addiction installs and then pretends is simply the truth. You also saw the alternative framings beside it: not affirmations or pep talk, but more accurate descriptions of the same facts in plain clinical language.`,
+      `Shame is sticky because it disguises itself as honesty. It doesn't feel like an attack; it feels like finally seeing yourself clearly. That's exactly why it has to be written down and looked at from the outside, where its claims can be checked rather than just believed.`,
+      `Today, with a week between you and that statement, you'll read back what you made and notice whether anything has shifted. Sometimes the alternative framings have quietly settled in, and the original now reads as too harsh. Sometimes the old statement still feels truer and the gap hasn't closed. Both are real information — not a test you pass or fail, just an honest reading of where the story stands now.`,
     ],
     mechanic: {
       type: 'shameStatement',
@@ -913,8 +917,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'The middle week.',
     artifactType: 'endure_day_14',
     intro: [
-      `Phase 2 ends today. The middle week — anhedonia, the witness, halfway, the capital baseline, the shame revisit.`,
-      `Phase 3 begins tomorrow. The return. Things start coming back in Phase 3 — not the substance, the rest of life. Pleasure registering again. Connection landing again. The reasons for the vow becoming more vivid, not less.`,
+      `Phase 2 ends today — the middle week, and in some ways the strangest one. It held the flatness, the witness, the halfway mark, your recovery-capital baseline, and the return to the shame statement. Less physical drama than week one, but its own kind of demanding: the work of staying when nothing feels like much.`,
+      `As with each phase, today closes deliberately rather than letting the days dissolve into one another. A short summary of what the middle week covered, and a tap for how it landed. Marking the close is how the progress becomes visible to you, instead of staying something you only know in the abstract.`,
+      `Then Phase 3 begins tomorrow — the return. This is where things start coming back: not the substance, but the rest of life. Pleasure beginning to register again, connection landing again, the reasons behind the vow becoming more vivid rather than fading. The hardest physiological stretch is behind you. What's ahead is rebuilding.`,
     ],
     mechanic: {
       type: 'phaseClose',
@@ -952,8 +957,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'What nearly happened, named honestly.',
     artifactType: 'endure_day_15',
     intro: [
-      `Day 4 built the plan for if you slip. Today looks backward, not forward. By now most people have had a real slip, a near one, or an urge that came within an inch — and today is for looking at one of those honestly.`,
-      `Not as confession. As data. An urge is never one moment; it's a chain — and once you can see the links, you can see where it might have broken.`,
+      `Day 4 built the plan for if you slip. Today looks backward instead of forward. By now most people have had something — a real slip, a near one, or an urge that came within an inch of winning — and today is for taking one of those and looking at it honestly.`,
+      `Not as confession, and not to relitigate the guilt. As data. An urge is never a single moment that arrives out of nowhere, however much it feels that way. It's a chain: a trigger, a state, a thought, a decision, a window. The reason it can feel like it 'just happened' is that the early links are quiet and easy to miss.`,
+      `Once you can see the links laid out, you can see where the chain might have broken — and where it could break next time. That's the whole point of looking back: not to feel worse about what happened, but to find the specific, catchable moment earlier in the sequence where a different move was genuinely possible.`,
     ],
     mechanic: {
       type: 'lapseRelapseRecall',
@@ -1032,8 +1038,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'Where the next month of work focuses.',
     artifactType: 'endure_day_16',
     intro: [
-      `On Day 12 you mapped all four kinds of recovery capital — the resources research consistently finds matter more than willpower for whether change lasts. Today you'll see that whole picture again, then go deep on the one that's thinnest.`,
-      `This isn't about fixing it today. It's about one real, specific move — the kind that actually builds that particular capital — and a small plan you can picture happening. One move beats a long list of good intentions.`,
+      `On Day 12 you mapped all four kinds of recovery capital — physical, human, social, cultural — the resources research consistently finds matter more than willpower for whether change actually lasts. Today you'll see that whole picture again, with a little distance from it, and then go deep on the one kind that's currently thinnest.`,
+      `The thinnest capital is usually where the next real risk lives, and also where the most growth is available. But it's easy to look at a depleted area and feel only the size of the gap — which tends to produce a long list of vague intentions and no actual movement.`,
+      `So this isn't about fixing it today. It's about choosing one real, specific move — the kind that genuinely builds that particular capital — and a small plan concrete enough that you can picture it happening this week. One move you can see yourself doing beats ten you merely approve of. That's where the next month of work begins.`,
     ],
     mechanic: {
       type: 'capitalAssessment',
@@ -1111,8 +1118,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'A week later. What has changed.',
     artifactType: 'endure_day_17',
     intro: [
-      `Day 11 was the first replacement-engine check. This is the second, a week later — and it reads from your Day 11 answers, so you can see what actually shifted.`,
-      `Same shape, but now it shows you the movement.`,
+      `Day 11 was your first replacement-engine check — an honest reading of what you'd been reaching for in the space the substance used to fill, and how alive each of those things actually was. This is the second reading, a week on.`,
+      `Things move in a week. What was hard can ease as the flatness lifts and energy returns. What felt easy can quietly stall. And you may have adjusted something without quite noticing you did. A single snapshot can't show any of that; two, spaced apart, can.`,
+      `So this uses the same dial as before, but this time it remembers Day 11. For each practice you'll see where you set it then, and where it sits now — the movement made visible instead of guessed at. Recovery in the middle weeks rarely feels like progress from the inside; seeing the shift on the page is one of the few honest ways to know it's happening.`,
     ],
     mechanic: {
       type: 'replacementEngineCheck',
@@ -1169,8 +1177,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'Across these eighteen days.',
     artifactType: 'endure_day_18',
     intro: [
-      `On Day 2 you located yourself in the polyvagal three-state model. Day 5 you built state-matched responses. Today you'll do a full map — across all eighteen days, where have you actually been spending time, and where do you tend to oscillate now that the substance isn't part of the regulation?`,
-      `The map will show how your time splits across the three states, what tends to pull you toward the hardest one, and what brings you back.`,
+      `On Day 2 you located yourself in the three states of the polyvagal model — settled, wound up, shut down. On Day 5 you built responses matched to each. Today you'll do the full map: across all eighteen days, where have you actually been spending your time, and where do you tend to oscillate now that the substance isn't part of how you regulate?`,
+      `This matters because the substance was, among other things, a nervous-system tool — a fast way to shift state when you were too wound up or too shut down. Take it away and the question becomes unavoidable: what's regulating you now? For a while the honest answer is often 'not much, yet' — and that is precisely what these eighteen days have been quietly rebuilding.`,
+      `The map will show how your time splits across the three states, what tends to pull you toward the hardest one for you, and what reliably brings you back. Seeing the shape of it — not as a feeling but as a pattern — is what lets you work with your own system instead of being caught off guard by it.`,
     ],
     mechanic: {
       type: 'nervousSystemMap',
@@ -1303,8 +1312,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'Twenty days through.',
     artifactType: 'endure_day_20',
     intro: [
-      `Twenty days of work are behind you. The portrait today is not a self-description you generate. It is a portrait made from your actual taps across Endure — the states you have spent time in, the protected emotions you named, the AVE protocol you built, the shame statement you wrote, the capitals you mapped, the values you ranked, the urges you held against.`,
-      `The portrait will assemble itself. You will read it. Then you'll tap which parts of it are most true.`,
+      `Twenty days of work are behind you. The portrait today is unlike anything else in Endure: it isn't a self-description you sit down and compose. It's assembled from your actual taps across these twenty days — the states you've spent time in, the protected emotions you named, the AVE protocol you built, the shame statement you wrote, the capitals you mapped, the values you ranked, the urges you held against.`,
+      `There's a reason it's built this way rather than asked. The using mind is an unreliable narrator about itself — quick to minimise, quick to catastrophise, quick to forget. A portrait drawn from what you actually did, day after day, sidesteps all of that. It reflects the evidence back, not the story.`,
+      `So the portrait will assemble itself, and you'll read it — possibly recognising things about this stretch you hadn't put into words. Then you'll tap which parts of it ring most true. Not to grade it, but because choosing what's true is itself a way of claiming the work as yours.`,
     ],
     mechanic: {
       type: 'endurePortrait',
@@ -1353,8 +1363,9 @@ I'll see you in Build. Go on — you've more than earned what's next.`,
       audioSrc: 'endure/day_21.mp3',
     },
     intro: [
-      `Today is Day 21. The last day of Endure. There is one exercise — reading your vow, then marking Day 21 with a single tap.`,
-      `The vow was sealed on Commit Day 8. It has held for twenty-one days. Today you read it again, with twenty-one days of holding underneath you.`,
+      `Today is Day 21 — the last day of Endure. There's a single exercise: reading your vow again, then marking the day with one tap. After three weeks of building, naming, and holding, the close is deliberately quiet.`,
+      `The vow was sealed back on Commit, Day 8. It has now held for twenty-one days — through the acute first week, through the flatness of the middle, through the slow return of the third. You didn't hold it by willpower alone; you held it by building the things underneath it, day by day, that make a vow possible to keep.`,
+      `So today you read it once more, but you read it differently — with twenty-one days of actual holding underneath the words. The same sentences mean something else now than they did when you first wrote them. Mark the day. Endure is complete, and what you've built here is what the next stage stands on.`,
     ],
     mechanic: {
       type: 'vowHeld',
