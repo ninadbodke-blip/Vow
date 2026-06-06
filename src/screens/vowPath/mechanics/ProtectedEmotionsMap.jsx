@@ -1,84 +1,132 @@
 import { useState } from 'react'
 
+// DAY 3 — "What was underneath"
+// Two-layer map: first what the substance DID for you (its function), then
+// lift the lid — the feeling underneath each. Experiential-avoidance teaching,
+// then the one feeling that now needs another route, and one way to stay with
+// it. (type: 'protectedEmotionsMap')
 export default function ProtectedEmotionsMap({ data, onSave, saving }) {
   const {
-    prompt,
-    subtext,
-    emotionCategories,
-    allowCustom,
-    customPrompt,
+    teachIntro = [],
+    functionsPrompt,
+    functions = [],
+    underneathPrompt,
+    feelingGroups = [],
+    allowCustom = true,
+    customPrompt = 'Another feeling it was managing',
+    read = {},
     followUpPrompt,
-    followUpOptions,
+    followUpOptions = [],
+    keyPrompt,
+    withPrompt,
+    withOptions = [],
   } = data
 
-  // Phases: 'select' -> 'reveal' -> 'naming'
-  const [phase, setPhase] = useState('select')
-
-  const [selectedIds, setSelectedIds] = useState([])
-  const [customEmotions, setCustomEmotions] = useState([])
-  const [customInput, setCustomInput] = useState('')
+  const [phase, setPhase] = useState('open')
+  const [funcs, setFuncs] = useState([])          // function ids
+  const [feels, setFeels] = useState([])          // feeling ids
+  const [customText, setCustomText] = useState('')
+  const [customFeels, setCustomFeels] = useState([])
   const [followUp, setFollowUp] = useState(null)
+  const [keyFeel, setKeyFeel] = useState(null)
+  const [withPick, setWithPick] = useState(null)
+  const [withCustom, setWithCustom] = useState('')
 
-  const toggle = (id) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
-  }
+  const allFeelItems = feelingGroups.flatMap(g => g.items)
+  const feelLabel = (id) => (allFeelItems.find(f => f.id === id) || {}).label || id
+  const funcLabel = (id) => (functions.find(f => f.id === id) || {}).label || id
+  const toggle = (arr, set, id) => set(arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id])
+  const totalFeel = feels.length + customFeels.length
 
   const addCustom = () => {
-    const trimmed = customInput.trim()
-    if (trimmed.length > 0 && customEmotions.length < 4) {
-      setCustomEmotions([...customEmotions, trimmed])
-      setCustomInput('')
-    }
+    const t = customText.trim()
+    if (t && !customFeels.includes(t)) { setCustomFeels([...customFeels, t]); setCustomText('') }
   }
-
-  const removeCustom = (idx) => {
-    setCustomEmotions(customEmotions.filter((_, i) => i !== idx))
-  }
-
-  const totalSelected = selectedIds.length + customEmotions.length
-
-  const assembledMap = emotionCategories.map(cat => {
-    const itemsSelected = cat.items.filter(item => selectedIds.includes(item.id))
-    return { category: cat.label, key: cat.key, items: itemsSelected }
-  }).filter(c => c.items.length > 0)
 
   const finalize = () => {
     onSave({
-      selected_emotions: selectedIds,
-      custom_emotions: customEmotions,
-      total_count: totalSelected,
-      categories_touched: assembledMap.map(c => c.key),
+      // --- fields EndurePortrait (Day 20) reads ---
+      selected_emotions: feels,
+      custom_emotions: customFeels,
       follow_up: followUp,
+      // --- richer data ---
+      functions: funcs,
+      key_feeling: keyFeel,
+      staying_with: withPick === 'custom' ? `custom:${withCustom.trim()}` : withPick,
+      mapped_at: new Date().toISOString(),
     })
   }
 
-  // ===================================================================
-  // PHASE: SELECT
-  // ===================================================================
-  if (phase === 'select') {
+  // ===================== OPEN (teach) =====================
+  if (phase === 'open') {
     return (
-      <div style={styles.container}>
-        <h2 style={styles.prompt}>{prompt}</h2>
-        <p style={styles.subtext}>{subtext}</p>
+      <div style={S.container}>
+        <p style={S.eyebrow}>Day 3 · What was underneath</p>
+        <h2 style={S.prompt}>The substance had a job.</h2>
+        {teachIntro.map((t, i) => (
+          <p key={i} style={{ ...S.body, marginBottom: i === teachIntro.length - 1 ? '0.5rem' : '0.85rem' }}>{t}</p>
+        ))}
+        <div style={S.footer}>
+          <button onClick={() => setPhase('functions')} style={S.primaryBtn}>Begin ›</button>
+        </div>
+      </div>
+    )
+  }
 
-        {emotionCategories.map(cat => (
-          <div key={cat.key} style={styles.categoryBlock}>
-            <p style={styles.categoryLabel}>{cat.label}</p>
-            <div style={styles.itemList}>
-              {cat.items.map(item => {
-                const selected = selectedIds.includes(item.id)
+  // ===================== FUNCTIONS (layer 1) =====================
+  if (phase === 'functions') {
+    return (
+      <div style={S.container}>
+        <p style={S.eyebrow}>First layer</p>
+        <h2 style={S.prompt}>{functionsPrompt || 'What did it do for you, in the moment?'}</h2>
+        <p style={S.hint}>Tap the ones that ring true. No judgement here — it worked, or you wouldn't have kept reaching for it.</p>
+        <div style={S.optList}>
+          {functions.map(o => {
+            const on = funcs.includes(o.id)
+            return <button key={o.id} onClick={() => toggle(funcs, setFuncs, o.id)} style={{ ...S.opt, ...(on ? S.optOn : {}) }}>{o.label}</button>
+          })}
+        </div>
+        <div style={S.footer}>
+          <button onClick={() => setPhase('open')} style={S.secondaryBtn}>‹ Back</button>
+          <button onClick={() => setPhase('underneath')} disabled={funcs.length === 0} style={{ ...S.primaryBtnFlex, ...(funcs.length === 0 ? S.disabled : {}) }}>Lift the lid ›</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ===================== UNDERNEATH (layer 2) =====================
+  if (phase === 'underneath') {
+    return (
+      <div style={S.container}>
+        <p style={S.eyebrow}>Underneath</p>
+        <h2 style={S.prompt}>{underneathPrompt || 'And under that — what was it really managing?'}</h2>
+
+        {funcs.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '0.4rem 0 0.9rem' }}>
+            {funcs.map(id => (
+              <span key={id} style={{ fontSize: '11px', color: '#8A6A3A', background: '#F4E7CE', border: '0.5px solid #DEC9A0', borderRadius: '20px', padding: '4px 10px', fontFamily: 'Georgia, serif' }}>
+                {funcLabel(id).split('—')[0].trim().toLowerCase()}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {feelingGroups.map(g => (
+          <div key={g.key} style={{ marginBottom: '1rem' }}>
+            <p style={S.groupLabel}>{g.label}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+              {g.items.map(f => {
+                const on = feels.includes(f.id)
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => toggle(item.id)}
+                  <button key={f.id} onClick={() => toggle(feels, setFeels, f.id)}
                     style={{
-                      ...styles.item,
-                      ...(selected ? styles.itemSelected : {}),
-                    }}
-                  >
-                    {item.label}
+                      textAlign: 'left', padding: '9px 13px', borderRadius: '20px', cursor: 'pointer',
+                      border: on ? '1.5px solid #B2541F' : '0.5px solid #E0D5C2',
+                      background: on ? 'linear-gradient(180deg, #F7E3CF 0%, #F1D6BA 100%)' : '#FDFBF6',
+                      color: on ? '#7A3A12' : '#4A3A28', fontWeight: on ? 600 : 400,
+                      fontSize: '13px', fontFamily: 'Georgia, serif', lineHeight: 1.35, transition: 'all .12s',
+                    }}>
+                    {f.label}
                   </button>
                 )
               })}
@@ -87,276 +135,156 @@ export default function ProtectedEmotionsMap({ data, onSave, saving }) {
         ))}
 
         {allowCustom && (
-          <div style={styles.customSection}>
-            <p style={styles.categoryLabel}>Something else</p>
-
-            {customEmotions.map((label, idx) => (
-              <div key={`ce_${idx}`} style={{ ...styles.item, ...styles.itemSelected, ...styles.itemCustom }}>
-                <span>{label}</span>
-                <button onClick={() => removeCustom(idx)} style={styles.removeBtn}>×</button>
-              </div>
-            ))}
-
-            {customEmotions.length < 4 && (
-              <div style={styles.customInputRow}>
-                <input
-                  type="text"
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  placeholder={customPrompt}
-                  style={styles.customInput}
-                  onKeyDown={(e) => { if (e.key === 'Enter') addCustom() }}
-                />
-                <button onClick={addCustom} style={styles.customAddBtn}>Add</button>
+          <div style={{ marginTop: '0.5rem' }}>
+            {customFeels.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                {customFeels.map((c, i) => (
+                  <span key={i} style={{ fontSize: '12.5px', color: '#7A3A12', background: 'linear-gradient(180deg, #F7E3CF 0%, #F1D6BA 100%)', border: '1px solid #D9B57A', borderRadius: '20px', padding: '5px 11px', fontFamily: 'Georgia, serif' }}>
+                    {c} <span onClick={() => setCustomFeels(customFeels.filter((_, j) => j !== i))} style={{ cursor: 'pointer', opacity: 0.55, marginLeft: '3px' }}>×</span>
+                  </span>
+                ))}
               </div>
             )}
+            <div style={{ display: 'flex', gap: '7px' }}>
+              <input value={customText} onChange={e => setCustomText(e.target.value)} onKeyDown={e => e.key === 'Enter' && addCustom()} placeholder={customPrompt} style={{ ...S.input, marginTop: 0, flex: 1 }} maxLength={60} />
+              <button onClick={addCustom} disabled={!customText.trim()} style={{ ...S.secondaryBtn, padding: '12px 16px', opacity: customText.trim() ? 1 : 0.4 }}>Add</button>
+            </div>
           </div>
         )}
 
-        <div style={styles.footer}>
-          <p style={styles.countLine}>
-            {totalSelected} selected
-          </p>
-          <button
-            onClick={() => setPhase('reveal')}
-            disabled={totalSelected === 0}
-            style={{
-              ...styles.primaryBtn,
-              ...(totalSelected === 0 ? styles.primaryBtnDisabled : {}),
-            }}
-          >
-            See the map
-          </button>
+        <div style={S.footer}>
+          <button onClick={() => setPhase('functions')} style={S.secondaryBtn}>‹ Back</button>
+          <button onClick={() => setPhase('read')} disabled={totalFeel === 0} style={{ ...S.primaryBtnFlex, ...(totalFeel === 0 ? S.disabled : {}) }}>Continue ›</button>
         </div>
       </div>
     )
   }
 
-  // ===================================================================
-  // PHASE: REVEAL
-  // ===================================================================
-  if (phase === 'reveal') {
+  // ===================== READ (synthesis + follow-up) =====================
+  if (phase === 'read') {
+    const ready = !!followUp
     return (
-      <div style={styles.container}>
-        <h2 style={styles.revealTitle}>The map.</h2>
-        <p style={styles.revealSubtitle}>
-          {totalSelected} emotions the substance was helping you not feel.
+      <div style={S.container}>
+        <p style={S.eyebrow}>What this means</p>
+        <p style={{ ...S.body, marginBottom: '0.85rem' }}>
+          You lifted {totalFeel} {totalFeel === 1 ? 'feeling' : 'feelings'}. {read.lead}
         </p>
+        <div style={{ ...S.card, borderLeft: '3px solid #854F0B' }}>
+          <p style={S.cardText}>{read.reframe}</p>
+        </div>
 
-        <div style={styles.mapCard}>
-          {assembledMap.map(cat => (
-            <div key={cat.key} style={styles.mapCategory}>
-              <p style={styles.mapCategoryLabel}>{cat.category}</p>
-              <ul style={styles.mapList}>
-                {cat.items.map(item => (
-                  <li key={item.id} style={styles.mapItem}>{item.label}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <p style={{ ...S.groupLabel, marginTop: '1.4rem' }}>{followUpPrompt || 'Looking at what you lifted:'}</p>
+        <div style={S.optList}>
+          {followUpOptions.map(o => {
+            const on = followUp === o.id
+            return <button key={o.id} onClick={() => setFollowUp(o.id)} style={{ ...S.opt, ...(on ? S.optOn : {}) }}>{o.label}</button>
+          })}
+        </div>
 
-          {customEmotions.length > 0 && (
-            <div style={styles.mapCategory}>
-              <p style={styles.mapCategoryLabel}>In your own words</p>
-              <ul style={styles.mapList}>
-                {customEmotions.map((label, idx) => (
-                  <li key={`c_${idx}`} style={styles.mapItem}>{label}</li>
-                ))}
-              </ul>
-            </div>
+        <div style={S.footer}>
+          <button onClick={() => setPhase('underneath')} style={S.secondaryBtn}>‹ Back</button>
+          <button onClick={() => setPhase('choose')} disabled={!ready} style={{ ...S.primaryBtnFlex, ...(!ready ? S.disabled : {}) }}>Continue ›</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ===================== CHOOSE (key feeling + staying-with) =====================
+  if (phase === 'choose') {
+    const chosen = [...feels, ...customFeels.map((c, i) => `custom_${i}`)]
+    const chosenLabel = (id) => id.startsWith('custom_') ? customFeels[Number(id.split('_')[1])] : feelLabel(id)
+    const ready = keyFeel && withPick && (withPick !== 'custom' || withCustom.trim())
+    return (
+      <div style={S.container}>
+        <p style={S.eyebrow}>The one that matters most</p>
+        <h2 style={S.prompt}>{keyPrompt || 'Without the substance, which one most needs another way through?'}</h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', marginTop: '0.85rem' }}>
+          {chosen.map(id => {
+            const on = keyFeel === id
+            return (
+              <button key={id} onClick={() => setKeyFeel(id)}
+                style={{
+                  padding: '9px 13px', borderRadius: '20px', cursor: 'pointer',
+                  border: on ? '1.5px solid #8A5A1A' : '0.5px solid #E0D5C2',
+                  background: on ? 'linear-gradient(180deg, #FBF1DF 0%, #F4E7CE 100%)' : '#FDFBF6',
+                  color: on ? '#5A3A0E' : '#4A3A28', fontWeight: on ? 600 : 400,
+                  fontSize: '13px', fontFamily: 'Georgia, serif',
+                }}>
+                {chosenLabel(id)}
+              </button>
+            )
+          })}
+        </div>
+
+        <h2 style={{ ...S.prompt, marginTop: '1.6rem' }}>{withPrompt || 'One way to stay with it — not fix it, just be with it:'}</h2>
+        <div style={S.optList}>
+          {withOptions.map(o => {
+            const on = withPick === o.id
+            return <button key={o.id} onClick={() => setWithPick(o.id)} style={{ ...S.opt, ...(on ? S.optOn : {}) }}>{o.label}</button>
+          })}
+          <button onClick={() => setWithPick('custom')} style={{ ...S.opt, ...(withPick === 'custom' ? S.optOn : {}) }}>Something else…</button>
+          {withPick === 'custom' && (
+            <input value={withCustom} onChange={e => setWithCustom(e.target.value)} placeholder="Name it" style={S.input} maxLength={90} />
           )}
         </div>
 
-        <p style={styles.revealNote}>
-          The substance was a way of not feeling these. Without it, they surface.
-        </p>
-
-        <div style={styles.footer}>
-          <button onClick={() => setPhase('naming')} style={styles.primaryBtn}>
-            Continue
-          </button>
+        <div style={S.footer}>
+          <button onClick={() => setPhase('read')} style={S.secondaryBtn}>‹ Back</button>
+          <button onClick={() => setPhase('review')} disabled={!ready} style={{ ...S.primaryBtnFlex, ...(!ready ? S.disabled : {}) }}>Continue ›</button>
         </div>
       </div>
     )
   }
 
-  // ===================================================================
-  // PHASE: NAMING
-  // ===================================================================
-  return (
-    <div style={styles.container}>
-      <h2 style={styles.prompt}>{followUpPrompt}</h2>
-
-      <div style={styles.optionList}>
-        {followUpOptions.map(opt => {
-          const selected = followUp === opt.id
-          return (
-            <button
-              key={opt.id}
-              onClick={() => setFollowUp(opt.id)}
-              style={{
-                ...styles.optionCard,
-                ...(selected ? styles.optionCardSelected : {}),
-              }}
-            >
-              {opt.label}
-            </button>
-          )
-        })}
+  // ===================== REVIEW =====================
+  if (phase === 'review') {
+    const keyLabel = keyFeel && keyFeel.startsWith('custom_') ? customFeels[Number(keyFeel.split('_')[1])] : feelLabel(keyFeel)
+    const wLabel = withPick === 'custom' ? withCustom.trim() : ((withOptions.find(o => o.id === withPick) || {}).label || '')
+    return (
+      <div style={S.container}>
+        <p style={S.eyebrow}>Named</p>
+        <div style={S.reviewCard}>
+          <p style={S.reviewLabel}>What it was managing</p>
+          <p style={S.reviewBig}>{totalFeel} {totalFeel === 1 ? 'feeling' : 'feelings'}, lifted into the light</p>
+        </div>
+        <div style={S.reviewCard}>
+          <p style={S.reviewLabel}>The one that needs another route</p>
+          <p style={S.reviewBig}>{keyLabel}</p>
+        </div>
+        <div style={S.reviewCard}>
+          <p style={S.reviewLabel}>How you'll stay with it</p>
+          <p style={S.reviewBig}>{wLabel}</p>
+        </div>
+        <div style={S.footer}>
+          <button onClick={() => setPhase('choose')} style={S.secondaryBtn} disabled={saving}>‹ Back</button>
+          <button onClick={finalize} disabled={saving} style={{ ...S.primaryBtnFlex, ...(saving ? S.disabled : {}) }}>{saving ? 'Saving…' : 'Save'}</button>
+        </div>
       </div>
+    )
+  }
 
-      <div style={styles.footer}>
-        <button
-          onClick={finalize}
-          disabled={!followUp || saving}
-          style={{
-            ...styles.primaryBtn,
-            ...((!followUp || saving) ? styles.primaryBtnDisabled : {}),
-          }}
-        >
-          {saving ? 'Saving...' : 'Save the map'}
-        </button>
-      </div>
-    </div>
-  )
+  return null
 }
 
-const styles = {
-  container: { paddingTop: '0.5rem' },
-  prompt: {
-    fontSize: '20px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif', fontWeight: 500,
-    lineHeight: 1.3, margin: '0 0 0.5rem',
-  },
-  subtext: {
-    fontSize: '13px', color: '#6B5C4A',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.55, margin: '0 0 1.25rem',
-  },
-  categoryBlock: { marginBottom: '1.5rem' },
-  categoryLabel: {
-    fontSize: '11px', color: '#854F0B',
-    textTransform: 'uppercase', letterSpacing: '0.16em',
-    fontWeight: 500, fontFamily: 'Georgia, serif',
-    margin: '0 0 0.6rem',
-  },
-  itemList: { display: 'flex', flexDirection: 'column', gap: '6px' },
-  item: {
-    padding: '10px 12px',
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '10px',
-    fontSize: '13px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    cursor: 'pointer', textAlign: 'left',
-    lineHeight: 1.4,
-    transition: 'all 0.15s',
-    width: '100%',
-  },
-  itemSelected: {
-    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
-    border: '1px solid #C5572C',
-    boxShadow: '0 2px 8px rgba(197,87,44,0.12)',
-  },
-  itemCustom: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px',
-  },
-  customSection: { marginBottom: '1.5rem' },
-  customInputRow: { display: 'flex', gap: '8px', marginTop: '6px' },
-  customInput: {
-    flex: 1,
-    padding: '10px 12px',
-    border: '1px solid #C5AE8A',
-    borderRadius: '10px',
-    fontSize: '13px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    outline: 'none',
-    background: 'white',
-  },
-  customAddBtn: {
-    padding: '0 16px',
-    background: '#854F0B',
-    color: '#FAF7F1',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '12px',
-    fontWeight: 500,
-    cursor: 'pointer',
-  },
-  removeBtn: {
-    background: 'transparent', border: 'none',
-    color: '#854F0B', fontSize: '18px',
-    cursor: 'pointer', padding: 0, lineHeight: 1,
-  },
-  revealTitle: {
-    fontSize: '24px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif', fontWeight: 500,
-    margin: '0 0 0.5rem', textAlign: 'center',
-  },
-  revealSubtitle: {
-    fontSize: '13px', color: '#854F0B',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    margin: '0 0 1.5rem', textAlign: 'center',
-  },
-  mapCard: {
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
-    padding: '16px',
-    marginBottom: '1rem',
-  },
-  mapCategory: { marginBottom: '1rem' },
-  mapCategoryLabel: {
-    fontSize: '11px', color: '#854F0B',
-    textTransform: 'uppercase', letterSpacing: '0.14em',
-    fontWeight: 500, fontFamily: 'Georgia, serif',
-    margin: '0 0 0.5rem',
-  },
-  mapList: { margin: 0, padding: '0 0 0 1rem', listStyle: 'disc' },
-  mapItem: {
-    fontSize: '13px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    lineHeight: 1.55,
-    margin: '0 0 0.35rem',
-  },
-  revealNote: {
-    fontSize: '13px', color: '#6B5C4A',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.6, textAlign: 'center',
-    margin: '0 0 1rem',
-  },
-  optionList: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  optionCard: {
-    padding: '14px 16px',
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
-    fontSize: '14px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    cursor: 'pointer', textAlign: 'left',
-    lineHeight: 1.4,
-    transition: 'all 0.15s',
-  },
-  optionCardSelected: {
-    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
-    border: '1px solid #C5572C',
-    boxShadow: '0 2px 8px rgba(197,87,44,0.12)',
-  },
-  countLine: {
-    fontSize: '11.5px', color: '#9C8C78',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    margin: '0 0 8px', textAlign: 'center',
-  },
-  footer: { marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' },
-  primaryBtn: {
-    width: '100%', padding: '14px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    border: 'none', borderRadius: '14px',
-    fontSize: '14px', fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
-  },
-  primaryBtnDisabled: { opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' },
+const S = {
+  container: { padding: 0 },
+  eyebrow: { fontSize: '11px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: 'Georgia, serif', margin: '0 0 0.75rem' },
+  prompt: { fontSize: '20px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.32, margin: '0 0 0.6rem' },
+  body: { fontSize: '14.5px', color: '#4A3A28', fontFamily: 'Georgia, serif', lineHeight: 1.62, margin: 0 },
+  hint: { fontSize: '13px', color: '#8A7355', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: '0 0 0.25rem' },
+  groupLabel: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 600, fontFamily: 'Georgia, serif', margin: '0 0 0.5rem' },
+  footer: { display: 'flex', gap: '10px', marginTop: '1.75rem' },
+  primaryBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
+  primaryBtnFlex: { flex: 1, padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
+  secondaryBtn: { padding: '14px 20px', background: 'transparent', color: '#8A7355', border: '0.5px solid #D9C9B0', borderRadius: '12px', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  disabled: { opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' },
+  card: { background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderRadius: '0 12px 12px 0', padding: '15px 17px' },
+  cardText: { fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.62, margin: 0 },
+  optList: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '0.85rem' },
+  opt: { textAlign: 'left', padding: '13px 15px', borderRadius: '11px', border: '0.5px solid #E0D5C2', background: '#FDFBF6', color: '#3A2D1E', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer', lineHeight: 1.4 },
+  optOn: { border: '1.5px solid #8A5A1A', background: 'linear-gradient(180deg, #FBF1DF 0%, #F4E7CE 100%)', color: '#5A3A0E', fontWeight: 600 },
+  input: { width: '100%', padding: '12px 14px', border: '0.5px solid #C9A86F', borderRadius: '11px', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', background: '#FFFDF8', outline: 'none', boxSizing: 'border-box', marginTop: '2px' },
+  reviewCard: { background: 'linear-gradient(180deg, #FFFFFF 0%, #FBF7EF 100%)', border: '0.5px solid #EADFCB', borderRadius: '13px', padding: '14px 16px', marginBottom: '10px' },
+  reviewLabel: { fontSize: '10px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.14em', fontFamily: 'Georgia, serif', margin: '0 0 0.35rem' },
+  reviewBig: { fontSize: '15.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.4 },
 }

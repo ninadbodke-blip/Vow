@@ -128,6 +128,7 @@ export default function ShameStatement({ data, onSave, saving }) {
   if (phase === 'intro') {
     return (
       <div style={styles.container}>
+        <p style={styles.eyebrow}>Day 6 · Shame is not guilt</p>
         <h2 style={styles.prompt}>Before we start.</h2>
         <div style={styles.introCard}>
           <p style={styles.introText}>{introCard}</p>
@@ -321,6 +322,7 @@ export default function ShameStatement({ data, onSave, saving }) {
 
 const styles = {
   container: { paddingTop: '0.5rem' },
+  eyebrow: { fontSize: '11px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: 'Georgia, serif', margin: '0 0 0.75rem' },
   prompt: { fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.3, margin: '0 0 0.5rem' },
   subtext: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, margin: '0 0 1.25rem' },
   progressLabel: { fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 0.75rem' },
@@ -328,8 +330,8 @@ const styles = {
   introText: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.65, margin: 0 },
   componentPrompt: { fontSize: '22px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.3, margin: '0 0 0.5rem' },
   optionList: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  optionCard: { padding: '12px 14px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '12px', fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer', textAlign: 'left', lineHeight: 1.45, transition: 'all 0.15s', width: '100%' },
-  optionCardSelected: { background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)', border: '1px solid #C5572C', boxShadow: '0 2px 8px rgba(197,87,44,0.12)' },
+  optionCard: { padding: '12px 14px', background: '#FDFBF6', border: '0.5px solid #E0D5C2', borderRadius: '11px', fontSize: '13.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', cursor: 'pointer', textAlign: 'left', lineHeight: 1.45, transition: 'all 0.15s', width: '100%' },
+  optionCardSelected: { background: 'linear-gradient(180deg, #FBF1DF 0%, #F4E7CE 100%)', border: '1.5px solid #8A5A1A', boxShadow: '0 1px 6px rgba(110,68,16,0.12)', fontWeight: 600, color: '#5A3A0E' },
 
   // ----- assembled shame statement (the "whole story" beat) -----
   shameDoc: { background: 'linear-gradient(180deg, #2F2218 0%, #211610 100%)', borderRadius: '16px', padding: '22px 20px', marginBottom: '1rem', boxShadow: '0 6px 18px rgba(30,18,8,0.22)' },
@@ -356,8 +358,8 @@ const styles = {
   noBaselineText: { fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6, margin: 0 },
 
   footer: { marginTop: '1.5rem', display: 'flex', gap: '8px' },
-  primaryBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '14px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)' },
-  primaryBtnFlex: { flex: 1, padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '14px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)' },
+  primaryBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
+  primaryBtnFlex: { flex: 1, padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
   primaryBtnDisabled: { opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' },
-  secondaryBtn: { padding: '14px 18px', background: 'white', color: '#2A1F15', border: '0.5px solid #DDCFB6', borderRadius: '14px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' },
+  secondaryBtn: { padding: '14px 20px', background: 'transparent', color: '#8A7355', border: '0.5px solid #D9C9B0', borderRadius: '12px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'Georgia, serif' },
 }
