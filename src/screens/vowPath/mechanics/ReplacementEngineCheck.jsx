@@ -13,12 +13,19 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
     adjustmentOptions,
     whatChangedPrompt,
     whatChangedOptions,
+    freshStatusOptions,
+    freshDifficultyOptions,
+    freshAdjustmentOptions,
+    freshAddPrompt,
+    freshAddSubtext,
   } = data
 
   const isSecondCheck = version === 'second'
 
   const [loadingState, setLoadingState] = useState('loading')
   const [committedActivities, setCommittedActivities] = useState([])
+  const [source, setSource] = useState('commit')
+  const [freshInput, setFreshInput] = useState('')
   const [priorCheckData, setPriorCheckData] = useState(null)
 
   // Per-activity entries: { activityId: { status, difficulty, adjustment, whatChanged } }
@@ -44,7 +51,9 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
         .maybeSingle()
 
       if (!commitArtifact?.content?.committed_activities) {
-        setLoadingState('no_data')
+        setSource('fresh')
+        setLoadingState('ready')
+        setPhase('collect')
         return
       }
 
@@ -67,6 +76,19 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
     }
     load()
   }, [pullFromArtifact, pullPriorCheck, isSecondCheck])
+
+  const statusOpts = source === 'fresh' ? (freshStatusOptions || statusOptions) : statusOptions
+  const difficultyOpts = source === 'fresh' ? (freshDifficultyOptions || difficultyOptions) : difficultyOptions
+  const adjustmentOpts = source === 'fresh' ? (freshAdjustmentOptions || adjustmentOptions) : adjustmentOptions
+
+  const addFresh = () => {
+    const t = freshInput.trim()
+    if (!t || committedActivities.length >= 3) return
+    if (committedActivities.some(a => a.label.toLowerCase() === t.toLowerCase())) { setFreshInput(''); return }
+    setCommittedActivities(prev => [...prev, { activity: `fresh_${prev.length}_${Date.now()}`, label: t, frequency: null, duration: null, is_fresh: true }])
+    setFreshInput('')
+  }
+  const removeFresh = (aid) => setCommittedActivities(prev => prev.filter(a => a.activity !== aid))
 
   const updateEntry = (activityId, field, value) => {
     setEntries(prev => ({
@@ -111,6 +133,7 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
 
     onSave({
       version,
+      source,
       check_data: checkData,
       checked_at: new Date().toISOString(),
     })
@@ -129,28 +152,42 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
     )
   }
 
-  if (loadingState === 'no_data') {
+  if (phase === 'collect') {
     return (
       <div style={styles.container}>
-        <div style={styles.noBaselineBlock}>
-          <p style={styles.noBaselineTitle}>No replacement engine on record.</p>
-          <p style={styles.noBaselineText}>
-            You didn't complete Commit Day 4, or the data isn't available. Use the check-in below to capture what you've actually been doing in the past week.
-          </p>
+        <h2 style={styles.prompt}>{freshAddPrompt || 'What have you been reaching for?'}</h2>
+        <p style={styles.subtext}>{freshAddSubtext || "Name one to three things you've actually been doing instead. They don't have to be impressive or even healthy. Just honest."}</p>
+
+        <div style={styles.activityList}>
+          {committedActivities.map(a => (
+            <div key={a.activity} style={styles.freshChip}>
+              <span style={styles.freshChipText}>{a.label}</span>
+              <button onClick={() => removeFresh(a.activity)} style={styles.freshChipX}>×</button>
+            </div>
+          ))}
         </div>
+
+        {committedActivities.length < 3 && (
+          <div style={styles.freshInputRow}>
+            <input
+              type="text"
+              value={freshInput}
+              onChange={e => setFreshInput(e.target.value)}
+              placeholder="e.g. walking, the gym, tea, scrolling, calling someone"
+              style={styles.freshInput}
+              onKeyDown={e => { if (e.key === 'Enter') addFresh() }}
+            />
+            <button onClick={addFresh} style={styles.freshAddBtn}>Add</button>
+          </div>
+        )}
 
         <div style={styles.footer}>
           <button
-            onClick={() => onSave({
-              version,
-              check_data: [],
-              no_baseline: true,
-              checked_at: new Date().toISOString(),
-            })}
-            disabled={saving}
-            style={styles.primaryBtn}
+            onClick={() => setPhase('list')}
+            disabled={committedActivities.length === 0}
+            style={{ ...styles.primaryBtn, ...(committedActivities.length === 0 ? styles.primaryBtnDisabled : {}) }}
           >
-            {saving ? 'Saving...' : 'Continue'}
+            {committedActivities.length === 0 ? 'Add at least one' : 'Continue'}
           </button>
         </div>
       </div>
@@ -163,9 +200,9 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
   if (phase === 'list') {
     return (
       <div style={styles.container}>
-        <h2 style={styles.prompt}>Your replacement activities.</h2>
+        <h2 style={styles.prompt}>{source === 'fresh' ? "What you've been reaching for." : 'Your replacement activities.'}</h2>
         <p style={styles.subtext}>
-          Tap into each one to check status and what you'll adjust.
+          {source === 'fresh' ? "Tap into each one to check how it's going and what you'll adjust." : "Tap into each one to check status and what you'll adjust."}
         </p>
 
         <div style={styles.activityList}>
@@ -187,12 +224,14 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
               >
                 <div style={styles.activityLeft}>
                   <p style={styles.activityName}>{activity.label}</p>
-                  <p style={styles.activityCommitted}>
-                    Committed: {activity.frequency}, {activity.duration}
-                  </p>
+                  {activity.frequency ? (
+                    <p style={styles.activityCommitted}>Committed: {activity.frequency}, {activity.duration}</p>
+                  ) : (
+                    <p style={styles.activityCommitted}>Something you've been reaching for</p>
+                  )}
                   {entry?.status && (
                     <p style={styles.activityStatus}>
-                      Status: {statusOptions.find(o => o.id === entry.status)?.label}
+                      Status: {statusOpts.find(o => o.id === entry.status)?.label}
                     </p>
                   )}
                 </div>
@@ -249,15 +288,17 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
         <button onClick={closeActivity} style={styles.backLink}>‹ All activities</button>
 
         <h2 style={styles.activityHeader}>{activity.label}</h2>
-        <p style={styles.activityHeaderSub}>
-          Committed: {activity.frequency}, {activity.duration}
-        </p>
+        {activity.frequency ? (
+          <p style={styles.activityHeaderSub}>Committed: {activity.frequency}, {activity.duration}</p>
+        ) : (
+          <p style={styles.activityHeaderSub}>Something you've been reaching for these 11 days</p>
+        )}
 
         {priorEntry && (
           <div style={styles.priorCard}>
             <p style={styles.priorLabel}>On Day 11 you said:</p>
             <p style={styles.priorText}>
-              Status: {statusOptions.find(o => o.id === priorEntry.status)?.label || priorEntry.status}
+              Status: {statusOpts.find(o => o.id === priorEntry.status)?.label || priorEntry.status}
             </p>
           </div>
         )}
@@ -266,7 +307,7 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
         <div style={styles.field}>
           <p style={styles.fieldLabel}>Status</p>
           <div style={styles.optionList}>
-            {statusOptions.map(opt => {
+            {statusOpts.map(opt => {
               const selected = entry.status === opt.id
               return (
                 <button
@@ -289,7 +330,7 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
           <div style={styles.field}>
             <p style={styles.fieldLabel}>{difficultyPrompt}</p>
             <div style={styles.optionList}>
-              {difficultyOptions.map(opt => {
+              {difficultyOpts.map(opt => {
                 const selected = entry.difficulty === opt.id
                 return (
                   <button
@@ -313,7 +354,7 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
           <div style={styles.field}>
             <p style={styles.fieldLabel}>{adjustmentPrompt}</p>
             <div style={styles.optionList}>
-              {adjustmentOptions.map(opt => {
+              {adjustmentOpts.map(opt => {
                 const selected = entry.adjustment === opt.id
                 return (
                   <button
@@ -387,11 +428,11 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
           <div key={id} style={styles.reviewCard}>
             <p style={styles.reviewActivityName}>{activity.label}</p>
             <p style={styles.reviewStatus}>
-              Status: {statusOptions.find(o => o.id === entry.status)?.label}
+              Status: {statusOpts.find(o => o.id === entry.status)?.label}
             </p>
             {!isSecondCheck && entry.adjustment && (
               <p style={styles.reviewAdjustment}>
-                Adjustment: {adjustmentOptions.find(o => o.id === entry.adjustment)?.label}
+                Adjustment: {adjustmentOpts.find(o => o.id === entry.adjustment)?.label}
               </p>
             )}
             {isSecondCheck && entry.whatChanged && (
@@ -451,6 +492,12 @@ const styles = {
     lineHeight: 1.6,
     margin: 0,
   },
+  freshChip: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '12px 14px', background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)', border: '1px solid #C5572C', borderRadius: '12px' },
+  freshChipText: { fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
+  freshChipX: { background: 'none', border: 'none', color: '#854F0B', fontSize: '18px', lineHeight: 1, cursor: 'pointer', padding: '0 2px' },
+  freshInputRow: { display: 'flex', gap: '8px', marginTop: '10px' },
+  freshInput: { flex: 1, padding: '11px 13px', border: '1px solid #C5AE8A', borderRadius: '11px', fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', outline: 'none', background: 'white' },
+  freshAddBtn: { padding: '0 18px', background: '#854F0B', color: '#FAF7F1', border: 'none', borderRadius: '11px', fontSize: '12.5px', fontWeight: 500, cursor: 'pointer' },
   activityList: { display: 'flex', flexDirection: 'column', gap: '8px' },
   activityRow: {
     display: 'flex',
