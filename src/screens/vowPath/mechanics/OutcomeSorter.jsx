@@ -1,219 +1,128 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
-export default function OutcomeSorter({
-  outcomes,
-  existingData,
-  onSave,
-  saving,
-}) {
-  const [sorts, setSorts] = useState({})
-  // Each outcome id → 'hopeful' | 'scared' | 'neutral' | null
+// =====================================================================
+// The outcomes of changing (Reflect · Day 15) — feel, then map.
+// Step 0: a dread⇄want slider for each outcome of changing.
+// Step 1: all eight plotted on a feeling spectrum, with a reading that
+// treats dread as a thing to plan for, not a reason to stay.
+// Saves sorts / counts {hopeful,scared,neutral} (portrait-compatible)
+// plus per-outcome values.
+// =====================================================================
+
+const SHORT = { money: 'Money', sleep: 'Health', time: 'Time', partner: 'Partner', identity: 'Identity', social: 'Social', emotions: 'Emotions', future: 'Future' }
+const LABELS = { 1: 'I dread this', 2: 'Uneasy', 3: 'Neutral', 4: 'Hopeful', 5: 'I want this' }
+const short = (o) => SHORT[o.id] || (o.id ? o.id.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : '')
+const bucketOf = (v) => (v >= 4 ? 'hopeful' : v <= 2 ? 'scared' : 'neutral')
+const ZONE = { hopeful: '#7A8C5A', scared: '#C5572C', neutral: '#9C8C78' }
+
+export default function OutcomeSorter({ outcomes = [], existingData, onSave, saving }) {
+  const [step, setStep] = useState(0)
+  const [values, setValues] = useState({}) // id -> 1..5
 
   useEffect(() => {
-    if (existingData?.sorts) {
-      setSorts(existingData.sorts)
+    if (!existingData) return
+    if (existingData.values) { setValues(existingData.values); setStep(1); return }
+    if (existingData.sorts) {
+      const v = {}
+      Object.entries(existingData.sorts).forEach(([id, b]) => { v[id] = b === 'hopeful' ? 4 : b === 'scared' ? 2 : 3 })
+      setValues(v); setStep(1)
     }
   }, [existingData])
 
-  const setSort = (outcomeId, value) => {
-    setSorts(prev => ({ ...prev, [outcomeId]: value }))
+  const valOf = (id) => values[id] ?? 3
+  const counts = useMemo(() => {
+    const c = { hopeful: 0, scared: 0, neutral: 0 }
+    outcomes.forEach(o => { c[bucketOf(valOf(o.id))]++ })
+    return c
+  }, [values, outcomes])
+
+  const save = () => {
+    onSave({
+      sorts: Object.fromEntries(outcomes.map(o => [o.id, bucketOf(valOf(o.id))])),
+      counts,
+      values: Object.fromEntries(outcomes.map(o => [o.id, valOf(o.id)])),
+    })
   }
 
-  const allSorted = outcomes.every(o => sorts[o.id])
-  const counts = {
-    hopeful: Object.values(sorts).filter(v => v === 'hopeful').length,
-    scared: Object.values(sorts).filter(v => v === 'scared').length,
-    neutral: Object.values(sorts).filter(v => v === 'neutral').length,
+  // ---------------- STEP 0 · FEEL EACH ----------------
+  if (step === 0) {
+    return (
+      <div>
+        <p style={S.lead}>These are some of the things that change if you stop. For each, move the slider to how you actually feel about it — not how you think you should feel.</p>
+        <div style={S.feelList}>
+          {outcomes.map(o => {
+            const v = valOf(o.id)
+            return (
+              <div key={o.id} style={S.feelRow}>
+                <p style={S.outcomeText}>{o.label}</p>
+                <input type="range" min="1" max="5" step="1" value={v} onChange={e => setValues(p => ({ ...p, [o.id]: Number(e.target.value) }))} style={S.slider} />
+                <div style={S.sliderEnds}><span>dread</span><span style={{ ...S.feelNow, color: ZONE[bucketOf(v)] }}>{LABELS[v]}</span><span>want</span></div>
+              </div>
+            )
+          })}
+        </div>
+        <button onClick={() => setStep(1)} style={S.cta}>See where they land ›</button>
+      </div>
+    )
   }
 
-  const handleSave = () => {
-    if (!allSorted) return
-    onSave({ sorts, counts })
-  }
-
+  // ---------------- STEP 1 · THE MAP ----------------
+  const reading = counts.hopeful > counts.scared
+    ? `More of what changing brings, you welcome than dread. That's the pull — worth keeping in view. The few you dread aren't reasons to stay; they're the parts of changing that need a plan, not avoidance.`
+    : counts.scared > counts.hopeful
+    ? `Right now you dread more of these outcomes than you welcome — which is honest, and common this early. Dread of an outcome is often what quietly keeps the door shut. Naming exactly which ones, instead of a vague fear of "changing", is what makes them workable.`
+    : `Your hopes and dreads about changing fall almost evenly — the shape of real ambivalence. Both lists are true. The work isn't to argue yourself out of the dread; it's to see both clearly enough to choose with your eyes open.`
   return (
     <div>
-      <h2 style={styles.header}>How does each one feel?</h2>
-      <p style={styles.subtext}>
-        For each outcome, tap hopeful, scared, or neutral.
-      </p>
-
-      <div style={styles.list}>
-        {outcomes.map(outcome => {
-          const sort = sorts[outcome.id]
-          return (
-            <div key={outcome.id} style={styles.card}>
-              <p style={styles.outcomeText}>{outcome.label}</p>
-              <div style={styles.sortRow}>
-                <button
-                  onClick={() => setSort(outcome.id, 'hopeful')}
-                  style={{
-                    ...styles.sortBtn,
-                    ...(sort === 'hopeful' ? styles.sortBtnHopeful : {}),
-                  }}
-                >
-                  Hopeful
-                </button>
-                <button
-                  onClick={() => setSort(outcome.id, 'scared')}
-                  style={{
-                    ...styles.sortBtn,
-                    ...(sort === 'scared' ? styles.sortBtnScared : {}),
-                  }}
-                >
-                  Scared
-                </button>
-                <button
-                  onClick={() => setSort(outcome.id, 'neutral')}
-                  style={{
-                    ...styles.sortBtn,
-                    ...(sort === 'neutral' ? styles.sortBtnNeutral : {}),
-                  }}
-                >
-                  Neutral
-                </button>
+      <p style={S.lead}>Every outcome, placed by how you feel about it.</p>
+      <div style={S.mapCard}>
+        <div style={S.mapField}>
+          {outcomes.map((o, i) => {
+            const v = valOf(o.id)
+            return (
+              <div key={o.id} style={{ ...S.dotWrap, left: `${((v - 1) / 4) * 100}%`, top: `${8 + (i % 4) * 34}px` }}>
+                <span style={{ ...S.dot, background: ZONE[bucketOf(v)] }} />
+                <span style={S.dotLabel}>{short(o)}</span>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
+        <div style={S.axis}><span>dread</span><span>neutral</span><span>want</span></div>
       </div>
-
-      <div style={styles.summaryRow}>
-        <span style={{ ...styles.summaryItem, color: '#3B6D11' }}>Hopeful: {counts.hopeful}</span>
-        <span style={styles.summaryDot}>·</span>
-        <span style={{ ...styles.summaryItem, color: '#854F0B' }}>Scared: {counts.scared}</span>
-        <span style={styles.summaryDot}>·</span>
-        <span style={{ ...styles.summaryItem, color: '#5C4D70' }}>Neutral: {counts.neutral}</span>
+      <div style={S.tally}>
+        <span style={{ color: ZONE.hopeful }}>● {counts.hopeful} welcomed</span>
+        <span style={{ color: ZONE.neutral }}>● {counts.neutral} neutral</span>
+        <span style={{ color: ZONE.scared }}>● {counts.scared} dreaded</span>
       </div>
-
-      <button
-        onClick={handleSave}
-        disabled={!allSorted || saving}
-        style={{
-          ...styles.saveBtn,
-          ...(!allSorted || saving ? styles.saveBtnDisabled : {}),
-        }}
-      >
-        {saving ? 'Saving...' : 'Save & continue'}
-      </button>
-
-      {!allSorted && (
-        <p style={styles.helpText}>
-          Sort all {outcomes.length} outcomes to continue.
-        </p>
-      )}
+      <p style={S.reading}>{reading}</p>
+      <div style={S.row2}>
+        <button onClick={() => setStep(0)} style={S.back}>‹ Adjust</button>
+        <button onClick={save} disabled={saving} style={{ ...S.cta, flex: 1, marginTop: 0, ...(saving ? S.ctaOff : {}) }}>
+          {saving ? 'Saving…' : 'This is the map ›'}
+        </button>
+      </div>
     </div>
   )
 }
 
-const styles = {
-  header: {
-    fontSize: '22px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    fontWeight: 500,
-    lineHeight: 1.3,
-    margin: '0 0 0.75rem',
-  },
-  subtext: {
-    fontSize: '14px',
-    color: '#6B5C4A',
-    fontFamily: 'Georgia, serif',
-    fontStyle: 'italic',
-    lineHeight: 1.6,
-    margin: '0 0 1.5rem',
-  },
-  list: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    marginBottom: '1.25rem',
-  },
-  card: {
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
-    padding: '14px 16px',
-    boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
-  },
-  outcomeText: {
-    fontSize: '14px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    lineHeight: 1.55,
-    margin: '0 0 0.85rem',
-  },
-  sortRow: {
-    display: 'flex',
-    gap: '6px',
-  },
-  sortBtn: {
-    flex: 1,
-    padding: '9px 6px',
-    background: '#FDFBF6',
-    border: '0.5px solid #DDCFB6',
-    borderRadius: '10px',
-    fontSize: '11px',
-    fontFamily: 'inherit',
-    color: '#6B5C4A',
-    cursor: 'pointer',
-    fontWeight: 500,
-    transition: 'all 0.15s',
-  },
-  sortBtnHopeful: {
-    background: 'linear-gradient(180deg, #EAF3DE 0%, #DCE9C8 100%)',
-    border: '1px solid #7A8C5A',
-    color: '#3B6D11',
-  },
-  sortBtnScared: {
-    background: 'linear-gradient(180deg, #F4ECDD 0%, #F0E5D0 100%)',
-    border: '1px solid #C5572C',
-    color: '#854F0B',
-  },
-  sortBtnNeutral: {
-    background: 'linear-gradient(180deg, #ECE6F4 0%, #DCD3E8 100%)',
-    border: '1px solid #7A6B8C',
-    color: '#5C4D70',
-  },
-  summaryRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '12px',
-    fontFamily: 'Georgia, serif',
-    fontStyle: 'italic',
-    marginBottom: '1.25rem',
-    flexWrap: 'wrap',
-  },
-  summaryItem: {
-    fontVariantNumeric: 'tabular-nums',
-    fontWeight: 500,
-  },
-  summaryDot: {
-    color: '#DDCFB6',
-  },
-  saveBtn: {
-    width: '100%', padding: '16px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    border: 'none', borderRadius: '14px',
-    fontSize: '15px', fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
-  },
-  saveBtnDisabled: {
-    background: '#C9B894',
-    boxShadow: 'none',
-    cursor: 'not-allowed',
-  },
-  helpText: {
-    fontSize: '11px',
-    color: '#9C8C78',
-    fontStyle: 'italic',
-    fontFamily: 'Georgia, serif',
-    textAlign: 'center',
-    marginTop: '0.75rem',
-    marginBottom: 0,
-  },
+const S = {
+  lead: { fontSize: '15px', color: '#4A3A28', fontFamily: 'Georgia, serif', lineHeight: 1.6, margin: '0 0 1.2rem' },
+  feelList: { display: 'flex', flexDirection: 'column', gap: '1.15rem' },
+  feelRow: { display: 'flex', flexDirection: 'column' },
+  outcomeText: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: '0 0 0.6rem' },
+  slider: { width: '100%', height: '8px', borderRadius: '4px', appearance: 'none', WebkitAppearance: 'none', background: 'linear-gradient(90deg, #C5572C 0%, #C9A86F 50%, #7A8C5A 100%)', outline: 'none', cursor: 'pointer', accentColor: '#854F0B' },
+  sliderEnds: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 0' },
+  feelNow: { fontSize: '12px', fontStyle: 'normal', fontWeight: 600, fontFamily: 'Georgia, serif' },
+  mapCard: { background: 'linear-gradient(180deg, #FFFFFF 0%, #FBF7EF 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', padding: '1rem 1rem 0.75rem', boxShadow: '0 3px 14px rgba(80,50,20,0.06)' },
+  mapField: { position: 'relative', height: '150px', borderLeft: '1px dashed #E0D5C2', borderRight: '1px dashed #E0D5C2', background: 'linear-gradient(90deg, rgba(197,87,44,0.05) 0%, rgba(255,255,255,0) 50%, rgba(122,140,90,0.06) 100%)' },
+  dotWrap: { position: 'absolute', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' },
+  dot: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, boxShadow: '0 1px 3px rgba(60,40,20,0.2)' },
+  dotLabel: { fontSize: '11.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif' },
+  axis: { display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', marginTop: '8px', padding: '0 2px' },
+  tally: { display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '12px', fontFamily: 'Georgia, serif', fontWeight: 600, margin: '0.9rem 0 0' },
+  reading: { fontSize: '15px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.65, margin: '1rem 0 1.3rem' },
+  cta: { width: '100%', padding: '16px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)', marginTop: '1.2rem' },
+  ctaOff: { background: '#C9B894', boxShadow: 'none', cursor: 'not-allowed' },
+  row2: { display: 'flex', gap: '10px', alignItems: 'center' },
+  back: { padding: '16px 18px', background: 'transparent', color: '#854F0B', border: '0.5px solid #DDCFB6', borderRadius: '14px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' },
 }
