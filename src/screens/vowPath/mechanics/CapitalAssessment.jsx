@@ -317,7 +317,7 @@ export default function CapitalAssessment({ data, onSave, saving }) {
         {lowestCapital?.why && (
           <div style={{ background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderLeft: '3px solid #C5572C', borderRadius: '0 12px 12px 0', padding: '16px' }}>
             <p style={{ fontSize: '10px', color: '#C5572C', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 600, fontFamily: 'Georgia, serif', margin: '0 0 0.5rem' }}>Why this matters — and how it's actually built</p>
-            <p style={{ fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.62, margin: 0 }}>{lowestCapital.why}</p>
+            <p style={{ fontSize: '15.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.72, margin: 0 }}>{lowestCapital.why}</p>
           </div>
         )}
 
@@ -481,7 +481,7 @@ export default function CapitalAssessment({ data, onSave, saving }) {
 const styles = {
   container: { paddingTop: '0.5rem' },
   prompt: {
-    fontSize: '20px', color: '#2A1F15',
+    fontSize: '21px', color: '#2A1F15',
     fontFamily: 'Georgia, serif', fontWeight: 500,
     lineHeight: 1.3, margin: '0 0 0.5rem',
   },
