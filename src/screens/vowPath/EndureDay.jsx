@@ -20,6 +20,7 @@ import AnhedoniaAssessment from './mechanics/AnhedoniaAssessment'
 import GuidedWitness from './mechanics/GuidedWitness'
 import ReplacementEngineCheck from './mechanics/ReplacementEngineCheck'
 import CapitalAssessment from './mechanics/CapitalAssessment'
+import CapitalProfile from './mechanics/CapitalProfile'
 import NervousSystemMap from './mechanics/NervousSystemMap'
 import LapseRelapseRecall from './mechanics/LapseRelapseRecall'
 import ValuesPortrait from './mechanics/ValuesPortrait'
@@ -51,6 +52,7 @@ const MECHANIC_COMPONENTS = {
   guidedWitness: GuidedWitness,
   replacementEngineCheck: ReplacementEngineCheck,
   capitalAssessment: CapitalAssessment,
+  capitalProfile: CapitalProfile,
   nervousSystemMap: NervousSystemMap,
   lapseRelapseRecall: LapseRelapseRecall,
   valuesPortrait: ValuesPortrait,

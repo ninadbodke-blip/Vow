@@ -1,276 +1,213 @@
 import { useState } from 'react'
 
+// DAY 4 — "A lapse is not a relapse"
+// The AVE protocol as a walked decision-path: three stations of a slip
+// (first minute / first hour / rest of the day), each a single decisive
+// move that assembles into a visible path. Then the reframe — the line that
+// interrupts the spiral — picked AND written in your own words.
+// Keeps protocol[] (Day 20 reads it). (type: 'aveProtocolBuilder')
 export default function AVEProtocolBuilder({ data, onSave, saving }) {
-  const { steps, closeConfirm } = data
+  const {
+    teachIntro = [],
+    stations = [],
+    reframePrompt,
+    reframeOptions = [],
+    reframeWritePrompt,
+    twoStories = {},
+  } = data
 
-  // Phases: 'step:0' -> 'step:1' -> 'step:2' -> 'step:3' -> 'review'
-  const [phase, setPhase] = useState('step:0')
+  const [phase, setPhase] = useState('teach')
+  const [picks, setPicks] = useState({})        // stationId -> optionId
+  const [openIdx, setOpenIdx] = useState(0)
+  const [reframePick, setReframePick] = useState(null)
+  const [ownLine, setOwnLine] = useState('')
 
-  // Per-step selections
-  const [selections, setSelections] = useState({})
+  const optLabel = (st, oid) => ((st.options.find(o => o.id === oid)) || {}).label || ''
+  const allDecided = stations.length > 0 && stations.every(s => picks[s.id])
 
-  const currentStepIdx = phase.startsWith('step:') ? parseInt(phase.split(':')[1], 10) : -1
-  const step = currentStepIdx >= 0 ? steps[currentStepIdx] : null
-
-  const toggleOption = (stepId, optionId) => {
-    setSelections(prev => {
-      const current = prev[stepId] || []
-      return {
-        ...prev,
-        [stepId]: current.includes(optionId)
-          ? current.filter(x => x !== optionId)
-          : [...current, optionId]
-      }
-    })
+  const pickOption = (sIdx, sId, oId) => {
+    setPicks(p => ({ ...p, [sId]: oId }))
+    const nextUndecided = stations.findIndex((s, i) => i > sIdx && !picks[s.id])
+    setOpenIdx(nextUndecided === -1 ? -1 : nextUndecided)
   }
-
-  const advance = () => {
-    if (currentStepIdx < steps.length - 1) {
-      setPhase(`step:${currentStepIdx + 1}`)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else {
-      setPhase('review')
-    }
-  }
-
-  const goBack = () => {
-    if (currentStepIdx > 0) {
-      setPhase(`step:${currentStepIdx - 1}`)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }
-
-  const stepHasSelection = (stepId) => (selections[stepId] || []).length > 0
-
-  const allStepsHaveSelection = steps.every(s => stepHasSelection(s.id))
 
   const finalize = () => {
-    const protocol = steps.map(s => ({
-      step_id: s.id,
-      header: s.header,
-      selected_options: selections[s.id] || [],
-      selected_labels: (selections[s.id] || []).map(optId => {
-        const opt = s.options.find(o => o.id === optId)
-        return opt?.label || optId
-      })
-    }))
+    const protocol = [
+      ...stations.map(s => ({
+        step_id: s.id, header: s.label,
+        selected_options: [picks[s.id]].filter(Boolean),
+        selected_labels: [optLabel(s, picks[s.id])].filter(Boolean),
+      })),
+      {
+        step_id: 'reframe', header: 'The reframe',
+        selected_options: [reframePick].filter(Boolean),
+        selected_labels: [((reframeOptions.find(o => o.id === reframePick)) || {}).label].filter(Boolean),
+      },
+    ]
     onSave({
       protocol,
+      reframe_choice: reframePick,
+      reframe_line: ownLine.trim(),
       built_at: new Date().toISOString(),
     })
   }
 
-  // ===================================================================
-  // PHASE: STEP
-  // ===================================================================
-  if (step) {
-    const currentSelections = selections[step.id] || []
-
+  // ===================== TEACH =====================
+  if (phase === 'teach') {
     return (
-      <div style={styles.container}>
-        <p style={styles.progressLabel}>
-          Step {currentStepIdx + 1} of {steps.length}
-        </p>
-
-        <h2 style={styles.stepHeader}>{step.header}</h2>
-        <p style={styles.subtext}>{step.subtext}</p>
-
-        <div style={styles.optionList}>
-          {step.options.map(opt => {
-            const selected = currentSelections.includes(opt.id)
-            return (
-              <button
-                key={opt.id}
-                onClick={() => toggleOption(step.id, opt.id)}
-                style={{
-                  ...styles.optionCard,
-                  ...(selected ? styles.optionCardSelected : {}),
-                }}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
-
-        <div style={styles.footer}>
-          {currentStepIdx > 0 && (
-            <button onClick={goBack} style={styles.secondaryBtn}>‹ Back</button>
-          )}
-          <button
-            onClick={advance}
-            disabled={currentSelections.length === 0}
-            style={{
-              ...styles.primaryBtnFlex,
-              ...(currentSelections.length === 0 ? styles.primaryBtnDisabled : {}),
-            }}
-          >
-            {currentStepIdx === steps.length - 1 ? 'Review' : 'Continue'}
-          </button>
+      <div style={S.container}>
+        <p style={S.eyebrow}>Day 4 · A lapse is not a relapse</p>
+        <h2 style={S.prompt}>The danger isn't the slip. It's the story after.</h2>
+        {teachIntro.map((t, i) => (
+          <p key={i} style={{ ...S.body, marginBottom: i === teachIntro.length - 1 ? '0.5rem' : '0.85rem' }}>{t}</p>
+        ))}
+        <div style={S.footer}>
+          <button onClick={() => setPhase('path')} style={S.primaryBtn}>Build the path ›</button>
         </div>
       </div>
     )
   }
 
-  // ===================================================================
-  // PHASE: REVIEW
-  // ===================================================================
-  return (
-    <div style={styles.container}>
-      <h2 style={styles.prompt}>Your AVE protocol.</h2>
-      <p style={styles.subtext}>Pre-decided. If a slip happens, this is what you do.</p>
+  // ===================== PATH =====================
+  if (phase === 'path') {
+    return (
+      <div style={S.container}>
+        <p style={S.eyebrow}>If it happens</p>
+        <h2 style={S.prompt}>Walk the slip. One move at each step.</h2>
+        <p style={S.hint}>Decide each now, while it's calm. In the moment you won't be deciding — you'll be following.</p>
 
-      <div style={styles.protocolDocument}>
-        {steps.map((s, idx) => {
-          const sels = selections[s.id] || []
-          if (sels.length === 0) return null
-          return (
-            <div key={s.id} style={styles.protocolStep}>
-              <p style={styles.protocolStepNum}>Step {idx + 1}</p>
-              <p style={styles.protocolStepHeader}>{s.header}</p>
-              <ul style={styles.protocolList}>
-                {sels.map(optId => {
-                  const opt = s.options.find(o => o.id === optId)
-                  return opt ? <li key={optId} style={styles.protocolItem}>{opt.label}</li> : null
-                })}
-              </ul>
-            </div>
-          )
-        })}
-      </div>
-
-      {closeConfirm && (
-        <div style={styles.confirmCard}>
-          <p style={styles.confirmText}>{closeConfirm}</p>
+        <div style={{ marginTop: '1.1rem' }}>
+          {stations.map((s, idx) => {
+            const decided = !!picks[s.id]
+            const open = openIdx === idx
+            const last = idx === stations.length - 1
+            return (
+              <div key={s.id} style={{ display: 'flex', gap: '12px' }}>
+                {/* rail */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                  <div style={{
+                    width: '15px', height: '15px', borderRadius: '50%', marginTop: '3px',
+                    background: decided ? '#8A5A1A' : '#FDFBF6',
+                    border: decided ? 'none' : '2px solid #D9C9B0',
+                  }} />
+                  {!last && <div style={{ width: '2px', flex: 1, minHeight: '14px', background: decided ? '#C9A86F' : '#E6DAC4' }} />}
+                </div>
+                {/* content */}
+                <div style={{ flex: 1, paddingBottom: last ? 0 : '14px' }}>
+                  <button onClick={() => setOpenIdx(open ? -1 : idx)} style={{ textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', width: '100%' }}>
+                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0 0 2px' }}>{s.label}</p>
+                    {!open && decided && <p style={{ fontSize: '13.5px', color: '#7A3A12', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0 }}>{optLabel(s, picks[s.id])}</p>}
+                    {!open && !decided && <p style={{ fontSize: '12.5px', color: '#A8946F', fontFamily: 'Georgia, serif', margin: 0 }}>Tap to choose your move</p>}
+                  </button>
+                  {open && (
+                    <>
+                      <p style={{ fontSize: '12.5px', color: '#8A7355', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: '4px 0 9px' }}>{s.cue}</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                        {s.options.map(o => {
+                          const on = picks[s.id] === o.id
+                          return <button key={o.id} onClick={() => pickOption(idx, s.id, o.id)} style={{ ...S.opt, ...(on ? S.optOn : {}) }}>{o.label}</button>
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
-      )}
 
-      <div style={styles.footer}>
-        <button onClick={() => setPhase(`step:${steps.length - 1}`)} style={styles.secondaryBtn}>‹ Back</button>
-        <button
-          onClick={finalize}
-          disabled={saving}
-          style={{ ...styles.primaryBtnFlex, ...(saving ? styles.primaryBtnDisabled : {}) }}
-        >
-          {saving ? 'Saving...' : 'Save the protocol'}
-        </button>
+        <div style={S.footer}>
+          <button onClick={() => setPhase('teach')} style={S.secondaryBtn}>‹ Back</button>
+          <button onClick={() => setPhase('reframe')} disabled={!allDecided} style={{ ...S.primaryBtnFlex, ...(!allDecided ? S.disabled : {}) }}>Continue ›</button>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  // ===================== REFRAME =====================
+  if (phase === 'reframe') {
+    const ready = !!reframePick
+    return (
+      <div style={S.container}>
+        <p style={S.eyebrow}>The reframe</p>
+        <h2 style={S.prompt}>Two voices speak after a slip. One of them lies.</h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', margin: '1rem 0 1.3rem' }}>
+          <div style={{ borderLeft: '3px solid #C5572C', background: 'linear-gradient(180deg, #FBEEE6 0%, #F8E6DB 100%)', borderRadius: '0 11px 11px 0', padding: '11px 14px' }}>
+            <p style={{ fontSize: '10.5px', color: '#B2541F', textTransform: 'uppercase', letterSpacing: '0.13em', fontFamily: 'Georgia, serif', margin: '0 0 4px' }}>The shame voice</p>
+            <p style={{ fontSize: '14px', color: '#7A3A12', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, margin: 0 }}>{twoStories.ave}</p>
+          </div>
+          <div style={{ borderLeft: '3px solid #7A8C5A', background: 'linear-gradient(180deg, #F1F4E9 0%, #E9EFDC 100%)', borderRadius: '0 11px 11px 0', padding: '11px 14px' }}>
+            <p style={{ fontSize: '10.5px', color: '#5E7040', textTransform: 'uppercase', letterSpacing: '0.13em', fontFamily: 'Georgia, serif', margin: '0 0 4px' }}>The data voice</p>
+            <p style={{ fontSize: '14px', color: '#4A5A30', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, margin: 0 }}>{twoStories.data}</p>
+          </div>
+        </div>
+
+        <p style={S.groupLabel}>{reframePrompt || 'Pick the one you can actually believe:'}</p>
+        <div style={S.optList}>
+          {reframeOptions.map(o => {
+            const on = reframePick === o.id
+            return <button key={o.id} onClick={() => setReframePick(o.id)} style={{ ...S.opt, ...(on ? S.optOn : {}) }}>{o.label}</button>
+          })}
+        </div>
+
+        <p style={{ ...S.groupLabel, marginTop: '1.3rem' }}>{reframeWritePrompt || 'In your own words (optional):'}</p>
+        <textarea value={ownLine} onChange={e => setOwnLine(e.target.value)} placeholder="The line you would actually say to yourself…" rows={2} style={S.textarea} maxLength={160} />
+
+        <div style={S.footer}>
+          <button onClick={() => setPhase('path')} style={S.secondaryBtn}>‹ Back</button>
+          <button onClick={() => setPhase('review')} disabled={!ready} style={{ ...S.primaryBtnFlex, ...(!ready ? S.disabled : {}) }}>Continue ›</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ===================== REVIEW =====================
+  if (phase === 'review') {
+    const reframeText = ownLine.trim() || ((reframeOptions.find(o => o.id === reframePick)) || {}).label || ''
+    return (
+      <div style={S.container}>
+        <p style={S.eyebrow}>If it happens — your path</p>
+        <div style={{ ...S.card, padding: '4px 0' }}>
+          {stations.map((s, i) => (
+            <div key={s.id} style={{ padding: '11px 16px', borderBottom: i < stations.length - 1 ? '0.5px solid #EADFCB' : 'none' }}>
+              <p style={{ fontSize: '10.5px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'Georgia, serif', margin: '0 0 2px' }}>{s.label}</p>
+              <p style={{ fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.4 }}>{optLabel(s, picks[s.id])}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ ...S.reviewCard, marginTop: '12px', borderLeft: '3px solid #8A5A1A' }}>
+          <p style={S.reviewLabel}>The reframe</p>
+          <p style={{ fontSize: '15.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.45 }}>"{reframeText}"</p>
+        </div>
+        <div style={S.footer}>
+          <button onClick={() => setPhase('reframe')} style={S.secondaryBtn} disabled={saving}>‹ Back</button>
+          <button onClick={finalize} disabled={saving} style={{ ...S.primaryBtnFlex, ...(saving ? S.disabled : {}) }}>{saving ? 'Saving…' : 'Save the path'}</button>
+        </div>
+      </div>
+    )
+  }
+
+  return null
 }
 
-const styles = {
-  container: { paddingTop: '0.5rem' },
-  prompt: {
-    fontSize: '20px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif', fontWeight: 500,
-    lineHeight: 1.3, margin: '0 0 0.5rem',
-  },
-  progressLabel: {
-    fontSize: '11px', color: '#9C8C78',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    textTransform: 'uppercase', letterSpacing: '0.1em',
-    margin: '0 0 0.75rem',
-  },
-  stepHeader: {
-    fontSize: '22px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    fontWeight: 500,
-    lineHeight: 1.3,
-    margin: '0 0 0.5rem',
-  },
-  subtext: {
-    fontSize: '13px', color: '#6B5C4A',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.55, margin: '0 0 1.25rem',
-  },
-  optionList: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  optionCard: {
-    padding: '12px 14px',
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '12px',
-    fontSize: '13.5px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    cursor: 'pointer', textAlign: 'left',
-    lineHeight: 1.4,
-    transition: 'all 0.15s',
-    width: '100%',
-  },
-  optionCardSelected: {
-    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
-    border: '1px solid #C5572C',
-    boxShadow: '0 2px 8px rgba(197,87,44,0.12)',
-  },
-  protocolDocument: {
-    background: '#FDFBF6',
-    border: '1px solid #E0D5C2',
-    borderRadius: '16px',
-    padding: '20px 18px',
-    marginBottom: '1rem',
-    boxShadow: '0 4px 12px rgba(80,50,20,0.06)',
-  },
-  protocolStep: { marginBottom: '1.25rem' },
-  protocolStepNum: {
-    fontSize: '10px',
-    color: '#854F0B',
-    textTransform: 'uppercase',
-    letterSpacing: '0.18em',
-    fontWeight: 500,
-    fontFamily: 'Georgia, serif',
-    margin: '0 0 4px',
-  },
-  protocolStepHeader: {
-    fontSize: '14px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    fontWeight: 500,
-    margin: '0 0 0.5rem',
-    lineHeight: 1.4,
-  },
-  protocolList: { margin: 0, padding: '0 0 0 1rem', listStyle: 'disc' },
-  protocolItem: {
-    fontSize: '13px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    lineHeight: 1.55,
-    margin: '0 0 0.35rem',
-  },
-  confirmCard: {
-    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
-    border: '0.5px solid #E0D5C2',
-    borderRadius: '14px',
-    padding: '14px',
-    marginBottom: '1rem',
-  },
-  confirmText: {
-    fontSize: '13.5px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    fontStyle: 'italic',
-    lineHeight: 1.6,
-    margin: 0,
-    textAlign: 'center',
-  },
-  footer: { marginTop: '1.5rem', display: 'flex', gap: '8px' },
-  primaryBtnFlex: {
-    flex: 1, padding: '14px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    border: 'none', borderRadius: '14px',
-    fontSize: '14px', fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
-  },
-  primaryBtnDisabled: { opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' },
-  secondaryBtn: {
-    padding: '14px 18px',
-    background: 'white',
-    color: '#2A1F15',
-    border: '0.5px solid #DDCFB6',
-    borderRadius: '14px',
-    fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'inherit',
-  },
+const S = {
+  container: { padding: 0 },
+  eyebrow: { fontSize: '11px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.18em', fontFamily: 'Georgia, serif', margin: '0 0 0.75rem' },
+  prompt: { fontSize: '20px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.32, margin: '0 0 0.6rem' },
+  body: { fontSize: '14.5px', color: '#4A3A28', fontFamily: 'Georgia, serif', lineHeight: 1.62, margin: 0 },
+  hint: { fontSize: '13px', color: '#8A7355', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: '0 0 0.25rem' },
+  groupLabel: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 600, fontFamily: 'Georgia, serif', margin: '0 0 0.5rem' },
+  footer: { display: 'flex', gap: '10px', marginTop: '1.75rem' },
+  primaryBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
+  primaryBtnFlex: { flex: 1, padding: '14px', background: 'linear-gradient(180deg, #8A5A1A 0%, #6E4410 100%)', color: '#FBF6EA', border: 'none', borderRadius: '12px', fontSize: '15px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(110,68,16,0.25)' },
+  secondaryBtn: { padding: '14px 20px', background: 'transparent', color: '#8A7355', border: '0.5px solid #D9C9B0', borderRadius: '12px', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  disabled: { opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' },
+  card: { background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderRadius: '13px', overflow: 'hidden', border: '0.5px solid #EADFCB' },
+  optList: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '0.3rem' },
+  opt: { textAlign: 'left', padding: '12px 14px', borderRadius: '11px', border: '0.5px solid #E0D5C2', background: '#FDFBF6', color: '#3A2D1E', fontSize: '14px', fontFamily: 'Georgia, serif', cursor: 'pointer', lineHeight: 1.4 },
+  optOn: { border: '1.5px solid #8A5A1A', background: 'linear-gradient(180deg, #FBF1DF 0%, #F4E7CE 100%)', color: '#5A3A0E', fontWeight: 600 },
+  textarea: { width: '100%', padding: '12px 14px', border: '0.5px solid #C9A86F', borderRadius: '11px', fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', background: '#FFFDF8', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5, resize: 'vertical' },
+  reviewCard: { background: 'linear-gradient(180deg, #FFFFFF 0%, #FBF7EF 100%)', border: '0.5px solid #EADFCB', borderRadius: '13px', padding: '14px 16px' },
+  reviewLabel: { fontSize: '10px', color: '#A8946F', textTransform: 'uppercase', letterSpacing: '0.14em', fontFamily: 'Georgia, serif', margin: '0 0 0.35rem' },
 }
