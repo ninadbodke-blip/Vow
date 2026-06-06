@@ -127,7 +127,9 @@ The first three days are different. Walk through them.`,
     artifactType: 'endure_day_2',
     intro: [
       `Most people treat stopping as a battle of will. There is a more useful lens — your nervous system, and the three states it moves through.`,
-      `Today you'll meet the three, place yourself on them, and find the earliest sign that tells you you're slipping.`,
+      `Polyvagal theory describes three physiological states — not moods you choose, but gears your body shifts into. Settled, when you feel safe. Wound up, when it senses threat and mobilises. Shut down, when threat runs too long and it powers off to protect you.`,
+      `For most people, the substance was the lever between them — something to drop from wound-up to settled, to lift out of shutdown, or to escape into numbness. It moved you between gears on command.`,
+      `None of these is good or bad. The work is simply being able to name the one you're in — because you can't shift a gear you can't feel. Today you'll place yourself on the three, and find the earliest sign that tells you you're slipping.`,
     ],
     mechanic: {
       type: 'stateLocator',
@@ -136,11 +138,6 @@ The first three days are different. Walk through them.`,
           { id: 'settled', label: 'Settled', clinical: 'ventral vagal', color: '#7A8C5A', body: `Calm but awake. Curious. Able to look someone in the eye, to work, to rest and actually be restored. The state where connection feels possible.` },
           { id: 'wound_up', label: 'Wound up', clinical: 'sympathetic', color: '#C5572C', body: `Mobilised — heart up, muscles tight, mind racing or scanning. Can be sharp focus; can be anxiety or anger. The body braced for action.` },
           { id: 'shut_down', label: 'Shut down', clinical: 'dorsal vagal', color: '#6B7A88', body: `Low, flat, far away. Numb. Sleep doesn't restore. Hard to engage with anyone or anything. The body in preservation mode.` },
-        ],
-        teachIntro: [
-          `Polyvagal theory describes three physiological states — not moods you choose, but gears your body shifts into. Settled, when you feel safe. Wound up, when it senses threat and mobilises. Shut down, when threat runs too long and it powers off to protect you.`,
-          `For most people, the substance was the lever between them — something to drop from wound-up to settled, to lift out of shutdown, or to escape into numbness. It moved you between gears on command.`,
-          `None of these is good or bad. The work is simply being able to name the one you're in — because you can't shift a gear you can't feel.`,
         ],
         placePrompt: `Here are the three. Where are you?`,
         placeNowLabel: 'Right now',
@@ -1236,16 +1233,13 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'What you actually value, surfaced.',
     artifactType: 'endure_day_19',
     intro: [
-      `Day 16 touched cultural capital — values, meaning, identity. Today goes straight at values: most people think they know theirs but have never named them in a way that holds up.`,
-      `You'll surface what actually matters, rank your top five, see what the substance crowded out — and pick one to act on this week.`,
+      `Day 16 touched cultural capital — meaning, values, identity. Today goes straight at values, because they are what holds the work once the structured days end. A value isn't a belief you keep on a shelf; it's a direction you move in — the kind of person your choices are walking you toward.`,
+      `The substance didn't only cost time and money. It crowded out the things you value, because those things needed the attention and energy it was eating. Naming your values, and acting on even one, is how an identity beyond the substance starts to come back.`,
+      `You'll surface what actually matters, rank your top five, see what it crowded out — and pick one to act on this week.`,
     ],
     mechanic: {
       type: 'valuesPortrait',
       data: {
-        teach: [
-          `Day 16 touched cultural capital — meaning, values, identity. Today goes straight at values, because they are what holds the work once the structured days end. A value isn't a belief you keep on a shelf; it's a direction you move in — the kind of person your choices are walking you toward.`,
-          `The substance didn't only cost time and money. It crowded out the things you value, because those things needed the attention and energy it was eating. Naming your values, and acting on even one, is how an identity beyond the substance starts to come back.`,
-        ],
         prompt: 'Tap each value that genuinely matters to you.',
         subtext: 'Not what you wish mattered. What actually drives the choices you make.',
         valueCategories: [
