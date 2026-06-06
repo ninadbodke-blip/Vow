@@ -780,9 +780,9 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
     arrivalSubtitle: 'The four kinds, and where you actually stand.',
     artifactType: 'endure_day_12',
     intro: [
-      `William White's framework names four kinds of recovery capital — the resources that determine whether someone sustains change. They are: physical (body, sleep, money, housing), human (skills, education, work), social (relationships, support), and cultural (values, meaning, identity, faith).`,
-      `Most people in early sobriety overinvest in one or two and ignore the others. Today is a baseline assessment of where you actually stand on all four. Not aspirationally — currently.`,
-      `On Day 16 you'll do the deep dive on whichever capital is the weakest. Today is just the snapshot.`,
+      `\u201cRecovery capital\u201d is one of the simplest predictors of whether change lasts: the more resources you have around you, the better the odds \u2014 more than willpower, more than how bad things got. Researchers sort it into four kinds, and they all carry weight.`,
+      `Physical and material: your body and your basics \u2014 sleep, health, food, money, a stable place to live, feeling safe. Human: your skills, your work, the sense that you can handle what comes. Social: the people and support around you. Cultural: meaning, values, and who you are beyond the substance.`,
+      `Most people in early sobriety lean hard on one or two of these and let the rest thin out. Today is an honest snapshot of where you actually stand on all four \u2014 not where you'd like to be, where you are. On Day 16 you'll go deeper into whichever one is thinnest.`,
     ],
     mechanic: {
       type: 'capitalAssessment',
@@ -791,8 +791,8 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
         capitals: [
           {
             key: 'physical',
-            label: 'Physical capital',
-            description: 'Your body. Sleep. Money. Housing. Health insurance. Physical safety.',
+            label: 'Physical & material',
+            description: 'The practical ground you stand on \u2014 your body and health, sleep, food, money, a stable place to live, and feeling safe day to day.',
             items: [
               { id: 'sleep_consistent', label: 'My sleep is roughly consistent and restorative' },
               { id: 'eating_normally', label: 'I am eating normally most days' },
@@ -840,7 +840,7 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
           },
         ],
         summaryHeader: 'Your baseline.',
-        summarySubtext: 'On Day 16 you will go deeper into the capital that scored lowest.',
+        summarySubtext: 'Read it as a shape, not a grade \u2014 where you are leaning, and where you are thin.',
       }
     },
     closingTitle: 'The baseline is set.',
@@ -865,12 +865,12 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
         version: 'revisit',
         pullFromArtifact: 'endure_day_6',
         revisitHeader: 'Your statement from Day 6.',
-        revisitSubtext: 'Read it whole. Then mark how each component lands now.',
+        revisitSubtext: 'Read it whole. For each part, mark which feels closer to true today \u2014 the shame line, or the more accurate version.',
         landingOptions: [
-          { id: 'less_true', label: 'Feels less true than it did' },
-          { id: 'about_same', label: 'About the same' },
-          { id: 'still_true', label: 'Still feels true' },
-          { id: 'reframe_landing', label: 'The reframe has started to land' },
+          { id: 'shame_still_truer', label: 'The shame line still feels truer.' },
+          { id: 'see_not_feel', label: "I can see the reframe is right, but I don't feel it yet." },
+          { id: 'starting_to_shift', label: "Somewhere in between \u2014 it's starting to shift." },
+          { id: 'reframe_truer', label: 'The reframe feels more true now.' },
         ],
       }
     },
@@ -959,6 +959,8 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
           { id: 'just_waited', label: 'I just waited. The urge passed on its own.' },
           { id: 'witness', label: 'The witness — watching it without becoming it' },
         ],
+        allowCustom: true,
+        customPrompt: 'Something else',
       }
     },
     closingTitle: 'It is named.',
@@ -983,6 +985,12 @@ Stay in the grey a little longer. It is not where you're going to live. It's the
         version: 'deep_dive',
         pullFromArtifact: 'endure_day_12',
         deepDivePrompt: 'For your lowest capital, what specific area needs the most work?',
+        capitals: [
+          { key: 'physical', label: 'Physical & material', description: 'The practical ground you stand on \u2014 your body and health, sleep, food, money, a stable place to live, and feeling safe day to day.' },
+          { key: 'human', label: 'Human capital', description: 'Skills, education, work, and the sense that you can handle what comes.' },
+          { key: 'social', label: 'Social capital', description: 'Relationships, support, community \u2014 the people around you.' },
+          { key: 'cultural', label: 'Cultural capital', description: 'Meaning, values, identity, and belonging beyond the substance.' },
+        ],
         physicalAreas: [
           { id: 'sleep', label: 'Sleep — make it consistent and protected' },
           { id: 'nutrition', label: 'Eating — regular, real food' },

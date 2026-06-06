@@ -4,7 +4,7 @@ import { supabase } from '../../../supabaseClient'
 export default function CapitalAssessment({ data, onSave, saving }) {
   const {
     version = 'baseline',
-    capitals,
+    capitals = [],
     summaryHeader,
     summarySubtext,
     pullFromArtifact,
@@ -182,6 +182,9 @@ export default function CapitalAssessment({ data, onSave, saving }) {
   // BASELINE — SUMMARY
   // ===================================================================
   if (phase === 'summary') {
+    const _sorted = capitals.map(c => ({ label: c.label, pct: c.items.length ? capitalScore(c) / c.items.length : 0 })).sort((a, b) => b.pct - a.pct)
+    const _strongest = _sorted[0] && _sorted[0].label
+    const _thinnest = _sorted[_sorted.length - 1] && _sorted[_sorted.length - 1].label
     return (
       <div style={styles.container}>
         <h2 style={styles.prompt}>{summaryHeader || 'Your baseline.'}</h2>
@@ -209,9 +212,10 @@ export default function CapitalAssessment({ data, onSave, saving }) {
           })}
         </div>
 
-        <p style={styles.summaryNote}>
-          On Day 16 you will go deeper into whichever capital scored lowest.
-        </p>
+        <div style={{ background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', borderLeft: '3px solid #C5572C', borderRadius: '0 12px 12px 0', padding: '14px 16px' }}>
+          <p style={{ fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0 0 0.5rem', lineHeight: 1.5 }}>Strongest right now: {_strongest}. Thinnest: {_thinnest}.</p>
+          <p style={{ fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.6 }}>Most people lean hard on one or two of these and let the rest thin out. The thin one isn't a failure \u2014 it's where the next month has the most to give. On Day 16 you'll go deeper there.</p>
+        </div>
 
         <div style={styles.footer}>
           <button onClick={() => setPhase(`capital:${capitals.length - 1}`)} style={styles.secondaryBtn}>‹ Back</button>

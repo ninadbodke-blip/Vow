@@ -8,6 +8,8 @@ export default function LapseRelapseRecall({ data, onSave, saving }) {
     conditionsOptions,
     held_pulledBack_prompt,
     held_pulledBack_options,
+    allowCustom = true,
+    customPrompt = 'Something else',
   } = data
 
   // Phases: 'status' -> 'conditions' (if applicable) -> 'pulled_back' (if applicable) -> 'review'
@@ -15,6 +17,8 @@ export default function LapseRelapseRecall({ data, onSave, saving }) {
   const [status, setStatus] = useState(null)
   const [conditions, setConditions] = useState([])
   const [pulledBack, setPulledBack] = useState([])
+  const [condInput, setCondInput] = useState('')
+  const [pbInput, setPbInput] = useState('')
 
   // Skip the deeper questions if user picked "no_close_calls"
   const shouldAskDeeper = status && status !== 'no_close_calls'
@@ -30,6 +34,16 @@ export default function LapseRelapseRecall({ data, onSave, saving }) {
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     )
   }
+
+  const addCustom = (setArr, text, clear) => {
+    const t = (text || '').trim()
+    if (!t) return
+    const val = `custom:${t}`
+    setArr(prev => (prev.includes(val) ? prev : [...prev, val]))
+    clear()
+  }
+  const labelForCond = (id) => id.startsWith('custom:') ? id.slice(7) : (conditionsOptions.find(o => o.id === id) || {}).label
+  const labelForPB = (id) => id.startsWith('custom:') ? id.slice(7) : (held_pulledBack_options.find(o => o.id === id) || {}).label
 
   const finalize = () => {
     onSave({
@@ -108,7 +122,19 @@ export default function LapseRelapseRecall({ data, onSave, saving }) {
               </button>
             )
           })}
+          {conditions.filter(id => id.startsWith('custom:')).map(id => (
+            <button key={id} onClick={() => toggleCondition(id)} style={{ ...styles.optionCard, ...styles.optionCardSelected }}>
+              {id.slice(7)}
+            </button>
+          ))}
         </div>
+
+        {allowCustom && (
+          <div style={styles.customInputRow}>
+            <input type="text" value={condInput} onChange={e => setCondInput(e.target.value)} placeholder={customPrompt} style={styles.customInput} onKeyDown={e => { if (e.key === 'Enter') addCustom(setConditions, condInput, () => setCondInput('')) }} />
+            <button onClick={() => addCustom(setConditions, condInput, () => setCondInput(''))} style={styles.customAddBtn}>Add</button>
+          </div>
+        )}
 
         <div style={styles.footer}>
           <button onClick={() => setPhase('status')} style={styles.secondaryBtn}>‹ Back</button>
@@ -152,7 +178,19 @@ export default function LapseRelapseRecall({ data, onSave, saving }) {
               </button>
             )
           })}
+          {pulledBack.filter(id => id.startsWith('custom:')).map(id => (
+            <button key={id} onClick={() => togglePulledBack(id)} style={{ ...styles.optionCard, ...styles.optionCardSelected }}>
+              {id.slice(7)}
+            </button>
+          ))}
         </div>
+
+        {allowCustom && (
+          <div style={styles.customInputRow}>
+            <input type="text" value={pbInput} onChange={e => setPbInput(e.target.value)} placeholder={customPrompt} style={styles.customInput} onKeyDown={e => { if (e.key === 'Enter') addCustom(setPulledBack, pbInput, () => setPbInput('')) }} />
+            <button onClick={() => addCustom(setPulledBack, pbInput, () => setPbInput(''))} style={styles.customAddBtn}>Add</button>
+          </div>
+        )}
 
         <div style={styles.footer}>
           <button onClick={() => setPhase('conditions')} style={styles.secondaryBtn}>‹ Back</button>
@@ -191,8 +229,8 @@ export default function LapseRelapseRecall({ data, onSave, saving }) {
           <p style={styles.reviewLabel}>When the urge was loudest</p>
           <ul style={styles.reviewList}>
             {conditions.map(id => {
-              const opt = conditionsOptions.find(o => o.id === id)
-              return opt ? <li key={id} style={styles.reviewItem}>{opt.label}</li> : null
+              const label = labelForCond(id)
+              return label ? <li key={id} style={styles.reviewItem}>{label}</li> : null
             })}
           </ul>
         </div>
@@ -203,8 +241,8 @@ export default function LapseRelapseRecall({ data, onSave, saving }) {
           <p style={styles.reviewLabel}>What pulled you back / did the work</p>
           <ul style={styles.reviewList}>
             {pulledBack.map(id => {
-              const opt = held_pulledBack_options.find(o => o.id === id)
-              return opt ? <li key={id} style={styles.reviewItem}>{opt.label}</li> : null
+              const label = labelForPB(id)
+              return label ? <li key={id} style={styles.reviewItem}>{label}</li> : null
             })}
           </ul>
         </div>
@@ -263,6 +301,9 @@ const styles = {
     border: '1px solid #C5572C',
     boxShadow: '0 2px 8px rgba(197,87,44,0.12)',
   },
+  customInputRow: { display: 'flex', gap: '8px', marginTop: '8px' },
+  customInput: { flex: 1, padding: '11px 13px', border: '1px solid #C5AE8A', borderRadius: '11px', fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', outline: 'none', background: 'white' },
+  customAddBtn: { padding: '0 18px', background: '#854F0B', color: '#FAF7F1', border: 'none', borderRadius: '11px', fontSize: '12.5px', fontWeight: 500, cursor: 'pointer' },
   reviewCard: {
     background: 'white',
     border: '0.5px solid #E8DFD0',
