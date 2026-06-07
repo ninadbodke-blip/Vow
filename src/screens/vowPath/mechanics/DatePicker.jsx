@@ -1,458 +1,172 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 
-export default function DatePicker({ data, onSave, saving }) {
+// =====================================================================
+// Stop date (Commit · Day 1) — the commitment device, made vivid.
+// A live countdown and a 10–30-day readiness-window band, the date
+// landing in range. Then reasons, then the night-before plan.
+// Saves stop_date / days_from_today / reasons / custom_reasons /
+// night_before_plan (shape preserved).
+// =====================================================================
+
+const iso = (d) => d.toISOString().slice(0, 10)
+const daysBetween = (a, b) => Math.round((a.setHours(0,0,0,0) ? a - b : a - b) / 86400000)
+
+export default function DatePicker({ data, onSave, saving, existingData }) {
   const {
-    minDaysFromNow,
-    maxDaysFromNow,
-    datePickerHeader,
-    datePickerSubtext,
-    reasonsHeader,
-    reasonsSubtext,
-    reasonOptions,
-    allowCustomReasons,
-    customReasonPrompt,
-    nightBeforeHeader,
-    nightBeforeSubtext,
-    nightBeforeOptions,
-  } = data
+    minDaysFromNow = 10, maxDaysFromNow = 30,
+    datePickerHeader = 'When does it stop?', datePickerSubtext = '',
+    reasonsHeader = 'Why this date?', reasonsSubtext = '', reasonOptions = [],
+    allowCustomReasons = true, customReasonPrompt = 'Another reason',
+    nightBeforeHeader = 'The night before.', nightBeforeSubtext = '', nightBeforeOptions = [],
+  } = data || {}
 
-  // Phases: 'date' -> 'reasons' -> 'night_before' -> 'review'
-  const [phase, setPhase] = useState('date')
+  const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d }, [])
+  const minDate = useMemo(() => { const d = new Date(today); d.setDate(d.getDate() + minDaysFromNow); return d }, [today])
+  const maxDate = useMemo(() => { const d = new Date(today); d.setDate(d.getDate() + maxDaysFromNow); return d }, [today])
 
-  const [selectedDate, setSelectedDate] = useState(null)
-  const [selectedReasons, setSelectedReasons] = useState([])
-  const [customReasons, setCustomReasons] = useState([])
-  const [customReasonInput, setCustomReasonInput] = useState('')
-  const [nightBefore, setNightBefore] = useState([])
+  const [phase, setPhase] = useState('date') // 'date' | 'reasons' | 'night'
+  const [selectedDate, setSelectedDate] = useState(existingData?.stop_date || '')
+  const [reasons, setReasons] = useState(existingData?.reasons || [])
+  const [customReasons, setCustomReasons] = useState(existingData?.custom_reasons || [])
+  const [reasonInput, setReasonInput] = useState('')
+  const [nightBefore, setNightBefore] = useState(existingData?.night_before_plan || [])
 
-  // Compute date bounds
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const minDate = new Date(today)
-  minDate.setDate(today.getDate() + minDaysFromNow)
-  const maxDate = new Date(today)
-  maxDate.setDate(today.getDate() + maxDaysFromNow)
+  const daysFromToday = useMemo(() => {
+    if (!selectedDate) return null
+    const d = new Date(selectedDate); d.setHours(0,0,0,0)
+    return Math.round((d - today) / 86400000)
+  }, [selectedDate, today])
+  const inRange = daysFromToday != null && daysFromToday >= minDaysFromNow && daysFromToday <= maxDaysFromNow
+  const bandPct = daysFromToday == null ? 0 : Math.max(0, Math.min(100, ((daysFromToday - minDaysFromNow) / (maxDaysFromNow - minDaysFromNow)) * 100))
 
-  const formatDateInput = (d) => d.toISOString().split('T')[0]
-  const formatDateDisplay = (d) => {
-    return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-  }
-  const daysFromToday = (d) => {
-    const diff = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    return diff
-  }
+  const toggle = (arr, set, id) => set(arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id])
+  const addReason = () => { const v = reasonInput.trim(); if (!v) return; setCustomReasons([...customReasons, v]); setReasonInput('') }
 
-  const toggleReason = (id) => {
-    setSelectedReasons(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
-  }
+  const prettyDate = selectedDate ? new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : ''
+  const save = () => onSave({ stop_date: selectedDate, days_from_today: daysFromToday, reasons, custom_reasons: customReasons, night_before_plan: nightBefore })
 
-  const toggleNightBefore = (id) => {
-    setNightBefore(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
-  }
-
-  const addCustomReason = () => {
-    const trimmed = customReasonInput.trim()
-    if (trimmed.length > 0 && customReasons.length < 3) {
-      setCustomReasons([...customReasons, trimmed])
-      setCustomReasonInput('')
-    }
-  }
-
-  const removeCustomReason = (idx) => {
-    setCustomReasons(customReasons.filter((_, i) => i !== idx))
-  }
-
-  const finalize = () => {
-    onSave({
-      stop_date: selectedDate,
-      days_from_today: daysFromToday(new Date(selectedDate)),
-      reasons: selectedReasons,
-      custom_reasons: customReasons,
-      night_before_plan: nightBefore,
-    })
-  }
-
-  // ===================================================================
-  // PHASE: DATE
-  // ===================================================================
+  // ============================ DATE ============================
   if (phase === 'date') {
-    const dateObj = selectedDate ? new Date(selectedDate) : null
-
     return (
-      <div style={styles.container}>
-        <h2 style={styles.prompt}>{datePickerHeader}</h2>
-        <p style={styles.subtext}>{datePickerSubtext}</p>
+      <div>
+        <p style={S.prompt}>{datePickerHeader}</p>
+        <p style={S.lead}>{datePickerSubtext}</p>
 
-        <div style={styles.dateInputCard}>
-          <input
-            type="date"
-            value={selectedDate || ''}
-            min={formatDateInput(minDate)}
-            max={formatDateInput(maxDate)}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={styles.dateInput}
-          />
+        <div style={S.countWrap}>
+          {daysFromToday == null ? (
+            <span style={S.countEmpty}>Choose a date below</span>
+          ) : (
+            <>
+              <span style={S.countNum}>{daysFromToday}</span>
+              <span style={S.countLabel}>{daysFromToday === 1 ? 'day from today' : 'days from today'}{inRange ? '' : ' — outside the window'}</span>
+              {inRange && <span style={S.countDate}>{prettyDate}</span>}
+            </>
+          )}
         </div>
 
-        {dateObj && (
-          <div style={styles.dateConfirmCard}>
-            <p style={styles.dateConfirmDay}>{daysFromToday(dateObj)} days from today</p>
-            <p style={styles.dateConfirmFull}>{formatDateDisplay(dateObj)}</p>
+        <div style={S.bandWrap}>
+          <div style={S.band}>
+            <span style={{ ...S.bandFill, opacity: inRange ? 1 : 0.35 }} />
+            {daysFromToday != null && <span style={{ ...S.marker, left: `${bandPct}%`, background: inRange ? '#C5572C' : '#B59A78' }} />}
           </div>
-        )}
-
-        <div style={styles.footer}>
-          <button
-            onClick={() => setPhase('reasons')}
-            disabled={!selectedDate}
-            style={{
-              ...styles.primaryBtn,
-              ...(selectedDate ? {} : styles.primaryBtnDisabled),
-            }}
-          >
-            Continue
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ===================================================================
-  // PHASE: REASONS
-  // ===================================================================
-  if (phase === 'reasons') {
-    return (
-      <div style={styles.container}>
-        <h2 style={styles.prompt}>{reasonsHeader}</h2>
-        <p style={styles.subtext}>{reasonsSubtext}</p>
-
-        <div style={styles.optionList}>
-          {reasonOptions.map(opt => {
-            const selected = selectedReasons.includes(opt.id)
-            return (
-              <button
-                key={opt.id}
-                onClick={() => toggleReason(opt.id)}
-                style={{
-                  ...styles.optionCard,
-                  ...(selected ? styles.optionCardSelected : {}),
-                }}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
+          <div style={S.bandLabels}><span>{minDaysFromNow} days</span><span>ready window</span><span>{maxDaysFromNow} days</span></div>
         </div>
 
-        {allowCustomReasons && (
-          <div style={styles.customSection}>
-            {customReasons.map((reason, idx) => (
-              <div key={`cr_${idx}`} style={{ ...styles.optionCard, ...styles.optionCardSelected, ...styles.customRow }}>
-                <span>{reason}</span>
-                <button onClick={() => removeCustomReason(idx)} style={styles.removeBtn}>×</button>
-              </div>
-            ))}
+        <input type="date" value={selectedDate} min={iso(minDate)} max={iso(maxDate)} onChange={e => setSelectedDate(e.target.value)} style={S.dateInput} />
+        {daysFromToday != null && !inRange && <p style={S.warn}>That's outside the {minDaysFromNow}–{maxDaysFromNow} day window. Closer and there isn't time to prepare; further and the date stops feeling real.</p>}
 
-            {customReasons.length < 3 && (
-              <div style={styles.customInputRow}>
-                <input
-                  type="text"
-                  value={customReasonInput}
-                  onChange={(e) => setCustomReasonInput(e.target.value)}
-                  placeholder={customReasonPrompt}
-                  style={styles.customInput}
-                  onKeyDown={(e) => { if (e.key === 'Enter') addCustomReason() }}
-                />
-                <button onClick={addCustomReason} style={styles.customAddBtn}>Add</button>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div style={styles.footer}>
-          <button onClick={() => setPhase('date')} style={styles.secondaryBtn}>‹ Back</button>
-          <button
-            onClick={() => setPhase('night_before')}
-            disabled={selectedReasons.length === 0 && customReasons.length === 0}
-            style={{
-              ...styles.primaryBtnFlex,
-              ...((selectedReasons.length === 0 && customReasons.length === 0) ? styles.primaryBtnDisabled : {}),
-            }}
-          >
-            Continue
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ===================================================================
-  // PHASE: NIGHT BEFORE
-  // ===================================================================
-  if (phase === 'night_before') {
-    return (
-      <div style={styles.container}>
-        <h2 style={styles.prompt}>{nightBeforeHeader}</h2>
-        <p style={styles.subtext}>{nightBeforeSubtext}</p>
-
-        <div style={styles.optionList}>
-          {nightBeforeOptions.map(opt => {
-            const selected = nightBefore.includes(opt.id)
-            return (
-              <button
-                key={opt.id}
-                onClick={() => toggleNightBefore(opt.id)}
-                style={{
-                  ...styles.optionCard,
-                  ...(selected ? styles.optionCardSelected : {}),
-                }}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
-
-        <div style={styles.footer}>
-          <button onClick={() => setPhase('reasons')} style={styles.secondaryBtn}>‹ Back</button>
-          <button
-            onClick={() => setPhase('review')}
-            disabled={nightBefore.length === 0}
-            style={{
-              ...styles.primaryBtnFlex,
-              ...(nightBefore.length === 0 ? styles.primaryBtnDisabled : {}),
-            }}
-          >
-            Continue
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ===================================================================
-  // PHASE: REVIEW
-  // ===================================================================
-  const dateObj = new Date(selectedDate)
-  return (
-    <div style={styles.container}>
-      <h2 style={styles.prompt}>Review.</h2>
-
-      <div style={styles.reviewCard}>
-        <p style={styles.reviewLabel}>Your stop date</p>
-        <p style={styles.reviewBig}>{formatDateDisplay(dateObj)}</p>
-        <p style={styles.reviewSmall}>{daysFromToday(dateObj)} days from today</p>
-      </div>
-
-      <div style={styles.reviewCard}>
-        <p style={styles.reviewLabel}>Why this date</p>
-        <ul style={styles.reviewList}>
-          {selectedReasons.map(id => {
-            const opt = reasonOptions.find(o => o.id === id)
-            return opt ? <li key={id} style={styles.reviewItem}>{opt.label}</li> : null
-          })}
-          {customReasons.map((r, idx) => (
-            <li key={`cr_${idx}`} style={styles.reviewItem}>{r}</li>
-          ))}
-        </ul>
-      </div>
-
-      <div style={styles.reviewCard}>
-        <p style={styles.reviewLabel}>Night before</p>
-        <ul style={styles.reviewList}>
-          {nightBefore.map(id => {
-            const opt = nightBeforeOptions.find(o => o.id === id)
-            return opt ? <li key={id} style={styles.reviewItem}>{opt.label}</li> : null
-          })}
-        </ul>
-      </div>
-
-      <div style={styles.footer}>
-        <button onClick={() => setPhase('night_before')} style={styles.secondaryBtn}>‹ Back</button>
-        <button
-          onClick={finalize}
-          disabled={saving}
-          style={{ ...styles.primaryBtnFlex, ...(saving ? styles.primaryBtnDisabled : {}) }}
-        >
-          {saving ? 'Saving...' : 'Set the date'}
+        <button onClick={() => setPhase('reasons')} disabled={!inRange} style={{ ...S.cta, ...(!inRange ? S.ctaOff : {}) }}>
+          {!selectedDate ? 'Pick a date' : !inRange ? 'Choose a date in the window' : 'This is the date ›'}
         </button>
+      </div>
+    )
+  }
+
+  // ============================ REASONS ============================
+  if (phase === 'reasons') {
+    const any = reasons.length + customReasons.length > 0
+    return (
+      <div>
+        <p style={S.prompt}>{reasonsHeader}</p>
+        <p style={S.lead}>{reasonsSubtext}</p>
+        <div style={S.chips}>
+          {reasonOptions.map(o => {
+            const on = reasons.includes(o.id)
+            return <button key={o.id} onClick={() => toggle(reasons, setReasons, o.id)} style={{ ...S.chip, ...(on ? S.chipOn : {}) }}>{o.label}</button>
+          })}
+          {customReasons.map((r, i) => (
+            <button key={`c${i}`} onClick={() => setCustomReasons(customReasons.filter((_, idx) => idx !== i))} style={{ ...S.chip, ...S.chipOn }}>{r} ✕</button>
+          ))}
+        </div>
+        {allowCustomReasons && (
+          <div style={S.addRow}>
+            <input value={reasonInput} onChange={e => setReasonInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addReason()} placeholder={customReasonPrompt} style={S.input} />
+            <button onClick={addReason} disabled={!reasonInput.trim()} style={{ ...S.addBtn, ...(reasonInput.trim() ? {} : S.addOff) }}>Add</button>
+          </div>
+        )}
+        <div style={S.row2}>
+          <button onClick={() => setPhase('date')} style={S.back}>‹ Back</button>
+          <button onClick={() => setPhase('night')} disabled={!any} style={{ ...S.cta, flex: 1, marginTop: 0, ...(!any ? S.ctaOff : {}) }}>{any ? 'The night before ›' : 'Pick at least one'}</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ============================ NIGHT ============================
+  const anyNight = nightBefore.length > 0
+  return (
+    <div>
+      <p style={S.prompt}>{nightBeforeHeader}</p>
+      <p style={S.lead}>{nightBeforeSubtext}</p>
+      <div style={S.list}>
+        {nightBeforeOptions.map(o => {
+          const on = nightBefore.includes(o.id)
+          return (
+            <button key={o.id} onClick={() => toggle(nightBefore, setNightBefore, o.id)} style={{ ...S.opt, ...(on ? S.optOn : {}) }}>
+              <span style={{ ...S.box, ...(on ? S.boxOn : {}) }}>{on ? '✓' : ''}</span>
+              <span style={S.optText}>{o.label}</span>
+            </button>
+          )
+        })}
+      </div>
+      <div style={S.row2}>
+        <button onClick={() => setPhase('reasons')} style={S.back}>‹ Back</button>
+        <button onClick={save} disabled={!anyNight || saving} style={{ ...S.cta, flex: 1, marginTop: 0, ...(!anyNight || saving ? S.ctaOff : {}) }}>{saving ? 'Saving…' : 'Set the date ›'}</button>
       </div>
     </div>
   )
 }
 
-const styles = {
-  container: { paddingTop: '0.5rem' },
-  prompt: {
-    fontSize: '20px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif', fontWeight: 500,
-    lineHeight: 1.3, margin: '0 0 0.5rem',
-  },
-  subtext: {
-    fontSize: '13px', color: '#6B5C4A',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    lineHeight: 1.55, margin: '0 0 1.25rem',
-  },
-  dateInputCard: {
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
-    padding: '1rem',
-    marginBottom: '1rem',
-  },
-  dateInput: {
-    width: '100%',
-    padding: '12px',
-    border: '0.5px solid #E0D5C2',
-    borderRadius: '10px',
-    fontSize: '16px',
-    fontFamily: 'Georgia, serif',
-    color: '#2A1F15',
-    background: '#FDFBF6',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  dateConfirmCard: {
-    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
-    border: '0.5px solid #E0D5C2',
-    borderRadius: '14px',
-    padding: '1rem',
-    textAlign: 'center',
-  },
-  dateConfirmDay: {
-    fontSize: '13px', color: '#854F0B',
-    fontFamily: 'Georgia, serif',
-    margin: '0 0 0.25rem',
-    textTransform: 'uppercase',
-    letterSpacing: '0.12em',
-  },
-  dateConfirmFull: {
-    fontSize: '18px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    margin: 0,
-    lineHeight: 1.3,
-  },
-  optionList: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  optionCard: {
-    padding: '12px 14px',
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '12px',
-    fontSize: '13.5px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    cursor: 'pointer', textAlign: 'left',
-    lineHeight: 1.4,
-    transition: 'all 0.15s',
-  },
-  optionCardSelected: {
-    background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
-    border: '1px solid #C5572C',
-    boxShadow: '0 2px 8px rgba(197,87,44,0.12)',
-  },
-  customRow: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-  },
-  customSection: { marginTop: '8px' },
-  customInputRow: { display: 'flex', gap: '8px', marginTop: '8px' },
-  customInput: {
-    flex: 1,
-    padding: '10px 12px',
-    border: '1px solid #C5AE8A',
-    borderRadius: '10px',
-    fontSize: '13px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    outline: 'none',
-    background: 'white',
-  },
-  customAddBtn: {
-    padding: '0 16px',
-    background: '#854F0B',
-    color: '#FAF7F1',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '12px',
-    fontWeight: 500,
-    cursor: 'pointer',
-  },
-  removeBtn: {
-    background: 'transparent', border: 'none',
-    color: '#854F0B', fontSize: '18px',
-    cursor: 'pointer', padding: 0, lineHeight: 1,
-  },
-  reviewCard: {
-    background: 'white',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
-    padding: '14px',
-    marginBottom: '10px',
-  },
-  reviewLabel: {
-    fontSize: '11px', color: '#854F0B',
-    textTransform: 'uppercase', letterSpacing: '0.14em',
-    fontWeight: 500, fontFamily: 'Georgia, serif',
-    margin: '0 0 0.5rem',
-  },
-  reviewBig: {
-    fontSize: '18px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    margin: '0 0 0.25rem',
-    lineHeight: 1.3,
-  },
-  reviewSmall: {
-    fontSize: '12px', color: '#9C8C78',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    margin: 0,
-  },
-  reviewList: {
-    margin: 0, padding: '0 0 0 1rem',
-    listStyle: 'disc',
-  },
-  reviewItem: {
-    fontSize: '13px', color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    lineHeight: 1.5,
-    margin: '0 0 0.25rem',
-  },
-  footer: {
-    marginTop: '1.5rem',
-    display: 'flex', gap: '8px',
-  },
-  primaryBtn: {
-    width: '100%', padding: '14px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    border: 'none', borderRadius: '14px',
-    fontSize: '14px', fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
-  },
-  primaryBtnFlex: {
-    flex: 1, padding: '14px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1',
-    border: 'none', borderRadius: '14px',
-    fontSize: '14px', fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25)',
-  },
-  primaryBtnDisabled: {
-    opacity: 0.4, cursor: 'not-allowed',
-    boxShadow: 'none',
-  },
-  secondaryBtn: {
-    padding: '14px 18px',
-    background: 'white',
-    color: '#2A1F15',
-    border: '0.5px solid #DDCFB6',
-    borderRadius: '14px',
-    fontSize: '13px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-  },
+const S = {
+  prompt: { fontSize: '19px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.36, margin: '0 0 0.5rem' },
+  lead: { fontSize: '14.5px', color: '#4A3A28', fontFamily: 'Georgia, serif', lineHeight: 1.55, margin: '0 0 1.2rem' },
+  countWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', padding: '1.3rem 1rem', marginBottom: '1rem' },
+  countEmpty: { fontSize: '14px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  countNum: { fontSize: '52px', color: '#C5572C', fontFamily: 'Georgia, serif', fontWeight: 700, lineHeight: 1 },
+  countLabel: { fontSize: '13px', color: '#7A6A52', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  countDate: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', marginTop: '4px' },
+  bandWrap: { marginBottom: '1.1rem' },
+  band: { position: 'relative', height: '8px', borderRadius: '4px', background: '#EFE7D7', overflow: 'visible' },
+  bandFill: { position: 'absolute', inset: 0, borderRadius: '4px', background: 'linear-gradient(90deg, #E8C9A0 0%, #C9A86F 50%, #E8C9A0 100%)' },
+  marker: { position: 'absolute', top: '-4px', width: '16px', height: '16px', borderRadius: '50%', border: '2px solid white', transform: 'translateX(-50%)', boxShadow: '0 1px 4px rgba(80,50,20,0.3)', transition: 'left 0.2s' },
+  bandLabels: { display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', marginTop: '8px' },
+  dateInput: { width: '100%', padding: '13px 14px', borderRadius: '12px', border: '0.5px solid #DDCFB6', background: 'white', fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', boxSizing: 'border-box', outline: 'none' },
+  warn: { fontSize: '12.5px', color: '#A14222', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: '0.7rem 0 0' },
+  chips: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '0.9rem' },
+  chip: { padding: '10px 14px', borderRadius: '999px', border: '0.5px solid #DDCFB6', background: 'white', fontSize: '13px', color: '#3A2D1E', fontFamily: 'Georgia, serif', cursor: 'pointer', transition: 'all 0.13s' },
+  chipOn: { background: 'linear-gradient(180deg, #FDFBF6 0%, #F7E2D5 100%)', border: '1px solid #C5572C', color: '#2A1F15' },
+  list: { display: 'flex', flexDirection: 'column', gap: '7px' },
+  opt: { display: 'flex', alignItems: 'flex-start', gap: '10px', width: '100%', padding: '12px 13px', background: 'white', border: '0.5px solid #EBE3D5', borderRadius: '11px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', transition: 'all 0.13s' },
+  optOn: { background: 'linear-gradient(180deg, #FDFBF6 0%, #F7E2D5 100%)', border: '1px solid #C5572C' },
+  box: { width: '17px', height: '17px', borderRadius: '5px', border: '1px solid #DDCFB6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#FAF7F1', flexShrink: 0, background: 'white', marginTop: '1px' },
+  boxOn: { background: 'linear-gradient(180deg, #C5572C 0%, #A14222 100%)', border: '1px solid #A14222' },
+  optText: { flex: 1, fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.45 },
+  addRow: { display: 'flex', gap: '8px', marginBottom: '0.5rem' },
+  input: { flex: 1, padding: '11px 13px', borderRadius: '10px', border: '0.5px solid #DDCFB6', background: 'white', fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', boxSizing: 'border-box', outline: 'none' },
+  addBtn: { background: 'transparent', border: '0.5px solid #C5572C', borderRadius: '10px', padding: '0 18px', fontSize: '13px', fontWeight: 600, color: '#C5572C', fontFamily: 'inherit', cursor: 'pointer' },
+  addOff: { opacity: 0.4, cursor: 'not-allowed' },
+  cta: { width: '100%', padding: '16px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)', marginTop: '0.4rem' },
+  ctaOff: { background: '#C9B894', boxShadow: 'none', cursor: 'not-allowed' },
+  row2: { display: 'flex', gap: '10px', alignItems: 'center', marginTop: '1.1rem' },
+  back: { padding: '16px 18px', background: 'transparent', color: '#854F0B', border: '0.5px solid #DDCFB6', borderRadius: '14px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' },
 }

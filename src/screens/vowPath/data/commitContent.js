@@ -48,7 +48,7 @@ export const COMMIT_DAYS = [
     founderAudio: {
       transcript: `Hi. It's Ninad.
 
-You chose to commit. I don't want to make a big ceremony out of it, because the ceremony was never the point — what you do after is. But I do want to mark it. You’ve decided this is worth doing — and deciding, really deciding, is harder than people like to admit. Okay. Let’s get to work.
+You chose to commit. I don't want to make a big ceremony out of it, because the ceremony was never the point — what you do after is. But I do want to mark it. You stood in front of three doors and you walked through the hard one. Okay. Let's get to work.
 
 Here's what Commit is, and what it isn't. It is not the part where you quit. Not yet. People get this backwards all the time. They decide to change, and then they try to white-knuckle it starting that same night, no plan, pure willpower — and willpower runs out around nine p.m., and they're back where they started by the weekend. That's not a character flaw. That's just bad preparation.
 
@@ -60,10 +60,10 @@ One thing at a time. I'll talk to you near the end, right before the date. Let's
       audioSrc: 'commit/day_01.mp3',
     },
     intro: [
-      `Today is the spine of Commit. Without a date, the next nine days have nothing to build toward.`,
-      `You'll pick a date between 10 and 30 days from today. Closer than that and you won't have time to prepare. Further than that and the date stops feeling real.`,
-      `Then you'll name why you picked that date specifically. Not why you're stopping — that work happened in Reflect. Why this date.`,
-      `Then a brief plan for the night before.`,
+      `Today is the spine of Commit. Everything across the next nine days builds toward one thing: a date. Without it, the preparation has nothing to organise around — it stays a wish, and wishes drift.`,
+      `You'll pick a date between ten and thirty days from today, and the window matters. Closer than ten days and there isn't time to prepare the ground — the environment, the people, the plans. Further than thirty and the date stops feeling real; it slides into "someday," and someday is where change quietly goes to die. Ten to thirty days is close enough to be real and far enough to be ready.`,
+      `Then you'll name why you picked this date specifically. Not why you're stopping — that work is done, you did it in Reflect. Why this date: a Monday, the week after a trip, before a birthday, the anniversary of something. A date with a reason behind it holds far better than an arbitrary one, because the reason is the part the using self can't easily argue away.`,
+      `Finally, a brief plan for the night before — the last evening has its own weight, and naming in advance how you'll spend it takes some of the charge out of it. Today you set the point that everything else from here now points toward.`,
     ],
     mechanic: {
       type: 'datePicker',
@@ -111,10 +111,10 @@ One thing at a time. I'll talk to you near the end, right before the date. Let's
     arrivalSubtitle: 'What stays, what changes, what you remove.',
     artifactType: 'commit_day_2',
     intro: [
-      `Most people who decide to stop pay attention only to themselves — their willpower, their motivation, their resolve. The environment around them stays exactly the same. The same bottle in the same cabinet. The same friends in the same group chat. The same app on the same phone. The same routes home that pass the same place.`,
-      `Then they're surprised when stopping is hard.`,
-      `Environment makes behavior. The substance was easy because the environment was set up to make it easy. Today's work is changing the environment so that not using becomes the lower-friction default.`,
-      `You'll map four zones: home, routine, phone, and social. For each, you'll mark what stays, what changes, and what gets removed entirely. The list you build today becomes your action list for the next nine days.`,
+      `Most people who decide to stop pay attention only to themselves — their willpower, their motivation, their resolve — and leave everything around them exactly as it was. The same bottle in the same cabinet. The same friends in the same group chat. The same app one tap away. The same route home past the same place. Then they're surprised that stopping is so hard.`,
+      `It isn't a failure of will. It's a failure of design. Behaviour is shaped far more by environment than by intention — what's easy to reach gets reached for, and what's out of sight stays mostly out of mind. The substance was easy, in large part, because your surroundings were quietly arranged to make it easy.`,
+      `So today's work isn't more resolve. It's changing the environment so that not using becomes the lower-friction default — the path of least resistance, rather than the thing you have to fight uphill every single day.`,
+      `You'll map four zones: home, routine, phone, and social. For each, you'll mark what stays, what changes, and what gets removed entirely. Be specific and be honest — a vague intention to "see certain people less" does nothing, but naming the exact group chat you'll mute does. The list you build today becomes your action checklist for the next nine days.`,
     ],
     mechanic: {
       type: 'environmentMapper',
@@ -198,10 +198,10 @@ One thing at a time. I'll talk to you near the end, right before the date. Let's
     arrivalSubtitle: 'One person who knows the date.',
     artifactType: 'commit_day_3',
     intro: [
-      `Most people who try to change a behavior do it privately, and most fail. The reason isn't strength of will. It's that change held privately has no external memory. The using self can rewrite the plan, soften the commitment, postpone the date — and there's nobody else to remember what was actually said.`,
-      `Today is about naming one specific person who will know the date and check in with you across the next nine days and beyond. Not a group. Not "friends." One specific person.`,
-      `The anchor person doesn't need to be your closest relationship. They need three specific qualities: they take you seriously, they won't relapse-shame, and they're reachable in a hard moment.`,
-      `You'll pick them today. You'll also draft what you'll tell them.`,
+      `Most people who try to change a behaviour do it privately, and most of them fail. The reason usually isn't strength of will. It's that a change held entirely in private has no external memory. The using self is a skilled editor — it can rewrite the plan, soften the commitment, quietly move the date — and if no one else ever heard the original, there's nobody to notice the edit.`,
+      `Today is about naming one specific person who will know your date and check in with you across the next nine days and beyond. Not a group. Not "my friends." One specific person, named — who becomes the place the commitment lives outside your own head.`,
+      `They don't need to be your closest relationship, or someone who has been through this themselves. They need three specific qualities: they take you seriously, they won't shame you if you slip, and they're genuinely reachable in a hard moment — a real person you could message at 9pm on a bad night. Choose for those three things, not for who you feel you ought to pick.`,
+      `You'll choose them today, and you'll also draft what you'll tell them — because "I should mention it sometime" never becomes a conversation. Having the words ready is what turns the intention into something that actually gets said.`,
     ],
     mechanic: {
       type: 'anchorPersonPicker',
@@ -254,6 +254,12 @@ One thing at a time. I'll talk to you near the end, right before the date. Let's
   // ===================================================================
   {
     day: 4,
+    intro: [
+      `When something leaves your life, it leaves a space — and a space doesn't stay empty. Stopping isn't subtraction; it's substitution. If you only remove the substance and put nothing where it was, the space keeps the exact shape of the thing that left, and sooner or later that shape pulls the old thing back into it.`,
+      `This is one of the most consistent findings in the research on lasting change: what predicts whether a stop holds isn't how hard you white-knuckle the absence, but what grows into the space the substance used to fill. The substance was doing real jobs — soothing, energising, marking the end of a day, giving you something to look forward to. Those jobs don't vanish when it does. Something has to take them over.`,
+      `Today is about naming what grows in — not the fast, in-the-moment fixes, which come tomorrow, but the slower things that fill the space across weeks and months: the activities, routines, and pursuits that quietly do the jobs the substance was doing, better and without the cost.`,
+      `You'll build from a starting set or your own ideas, then commit to a few that are genuinely realistic — not aspirational. A replacement you'll actually do beats an impressive one you won't. The aim isn't to fill every hour; it's to make sure the space has something real growing in it before the old thing tries to grow back.`,
+    ],
     arrivalTitle: 'The replacement engine.',
     arrivalSubtitle: 'What will grow into the space.',
     artifactType: 'commit_day_4',
@@ -391,10 +397,10 @@ Pick one from below that has the lowest barrier for you to try. Commit to it for
     arrivalSubtitle: 'What you reach for in the hard moment.',
     artifactType: 'commit_day_5',
     intro: [
-      `Yesterday was about what grows in across months. Today is about what you reach for in the hard moment — when a craving lands, when someone offers, when the using self speaks up at 9pm on a Tuesday.`,
-      `The technique is implementation intentions: if-then plans, pre-decided. "If X happens, I will do Y." Pre-decided so that you don't have to make the decision while the craving is loud.`,
-      `You'll build two sets. First: social scripts — what you say when someone offers, asks why you're not using, or pushes. Second: urge breakers — small, fast, physical actions for when a craving hits and you're alone.`,
-      `Both are pre-loaded options. You'll pick the ones that fit. Custom additions allowed.`,
+      `Yesterday was about what grows into the space across months. Today is the opposite timescale: what you reach for in the hard moment — when a craving lands without warning, when someone offers, when the using self speaks up at 9pm on an ordinary Tuesday and starts making its case.`,
+      `The technique has a name and a deep evidence base: implementation intentions, or if-then plans. "If X happens, then I will do Y" — decided now, in the calm, so that you're not trying to make a good decision while a craving is loud and your judgement is the first thing it takes. Pre-deciding moves the choice out of the worst possible moment and into the best one.`,
+      `Why it works is mechanical, not motivational. A craving narrows your attention and rushes you toward the familiar action. A pre-made if-then plan gives that narrowed attention somewhere else to go — a specific response already loaded, so there's no gap for the using voice to fill with persuasion.`,
+      `You'll build two sets. First, social scripts: what you actually say when someone offers, asks why you're not drinking, or pushes — short, easy lines you won't have to invent on the spot. Second, urge breakers: small, fast, physical things to do when a craving hits and you're alone. Both come pre-loaded; you'll keep the ones that fit you, and add your own.`,
     ],
     mechanic: {
       type: 'ifThenLibraryBuilder',
@@ -514,33 +520,42 @@ Pick one from below that has the lowest barrier for you to try. Commit to it for
     arrivalSubtitle: 'Four small things, every day.',
     artifactType: 'commit_day_6',
     intro: [
-      `Replacement activities (Day 4) grow in over weeks and months. If-then library (Day 5) is for the hard moment. Today is about the in-between — the daily rhythm that holds the days together when nothing dramatic is happening.`,
-      `Daily anchors are micro-habits. Under 5 minutes each. Done every day, no matter what.`,
-      `The point isn't the impact of any single anchor. It's that the rhythm itself becomes the structure of your day. Without it, the day stretches out and the using self has more room to fill it.`,
-      `You'll pick four. Two morning, two evening. From a curated list of micro-habits.`,
+      `Replacement activities, from Day 4, grow in over weeks and months. The if-then library, from Day 5, is for the sharp, hard moments. Today is about the in-between — the ordinary daily rhythm that holds the days together when nothing dramatic is happening, which is most of the time.`,
+      `Daily anchors are micro-habits: small, fixed actions, under five minutes each, done every day no matter what. A few minutes of movement. A made bed. A page written. A short walk after dinner. None of them is impressive on its own — and that's exactly the point. Their power isn't in the single act.`,
+      `Their power is structural. Early sobriety is destabilising partly because the day loses its shape — the substance used to be a fixed point the hours arranged themselves around, and without it the day can stretch out shapeless, leaving the using self plenty of empty room to fill. Anchors give the day a skeleton again: reliable points that make the time feel held rather than open.`,
+      `You'll pick four — two for the morning, two for the evening — from a curated list, or add your own. Choose ones small enough that you'll still do them on a bad day, not only a good one. The bad days are precisely when the rhythm has to hold.`,
     ],
     mechanic: {
       type: 'dailyAnchorPicker',
       data: {
-        perGroup: 2,
+        anchorSlots: [
+          { id: 'morning_1', label: 'Morning anchor #1', timeWindow: 'morning' },
+          { id: 'morning_2', label: 'Morning anchor #2', timeWindow: 'morning' },
+          { id: 'evening_1', label: 'Evening anchor #1', timeWindow: 'evening' },
+          { id: 'evening_2', label: 'Evening anchor #2', timeWindow: 'evening' },
+        ],
         morningOptions: [
-          { id: 'cold_water_face', label: 'Cold water on the face, first thing' },
-          { id: 'water_first', label: 'A full glass of water before anything else' },
-          { id: 'step_outside', label: 'Step outside for two minutes' },
-          { id: 'ten_min_movement', label: 'Ten minutes of movement \u2014 a walk, a stretch, anything' },
-          { id: 'one_line_today', label: 'Write the one thing that matters today, in a line' },
-          { id: 'light_no_phone', label: 'Coffee or sunlight, phone left in another room' },
+          { id: 'cold_water_face_morn', label: 'Cold water on the face, first thing' },
+          { id: 'water_before_coffee', label: 'A glass of water before coffee' },
+          { id: 'two_min_breath', label: '2 minutes of breath at the window' },
+          { id: 'one_thing_paper', label: 'Write one thing on paper — the day ahead, in one line' },
+          { id: 'make_the_bed', label: 'Make the bed' },
+          { id: 'stretch_2_min', label: '2 minutes of stretching' },
+          { id: 'open_curtains', label: 'Open the curtains, look outside for 60 seconds' },
+          { id: 'read_one_page', label: 'Read one page of a book (not phone)' },
         ],
         eveningOptions: [
-          { id: 'phone_out_of_room', label: 'Phone out of the bedroom by a set time' },
-          { id: 'one_thing_right', label: 'Note one thing that went right today' },
-          { id: 'tomorrow_first_task', label: "Write tomorrow's first task, in a line" },
-          { id: 'walk_after_dinner', label: 'A short walk after dinner' },
-          { id: 'no_screens_before_bed', label: 'No screens for 30 minutes before sleep' },
-          { id: 'lights_out_set_time', label: 'Lights out by a set time' },
+          { id: 'phone_away_30_min', label: 'Phone away from bed by [specific time]' },
+          { id: 'tea_or_water', label: 'A specific tea or water ritual' },
+          { id: 'one_line_journal', label: 'One line in a journal — what was the day' },
+          { id: 'shower_before_bed', label: 'Shower before bed' },
+          { id: 'no_screens_30_min', label: 'No screens 30 minutes before sleep' },
+          { id: 'tomorrow_one_thing', label: 'Write tomorrow on paper — one thing, one line' },
+          { id: 'read_before_sleep', label: 'Read for 15 minutes before sleep' },
+          { id: 'gratitude_one_line', label: 'One line of gratitude' },
         ],
-        allowCustom: true,
-        customPrompt: 'Your own',
+        allowCustomPerSlot: true,
+        customPrompt: 'Your own anchor',
         whyTheseHeader: 'Why these four?',
         whyTheseSubtext: 'One sentence. Optional, but worth doing.',
       }
@@ -558,9 +573,10 @@ Pick one from below that has the lowest barrier for you to try. Commit to it for
     arrivalSubtitle: 'The talks you may need to have.',
     artifactType: 'commit_day_7',
     intro: [
-      `Some of the work of Commit is internal — your environment, your daily anchors, your if-then library. Some of it requires speaking out loud to specific people.`,
-      `Today you'll plan up to six conversations. Not all of them will apply to you. Pick the ones that do. For each, you'll draft what you'd say. The draft isn't the script you have to memorize. It's the thing that makes the conversation actually possible to have.`,
-      `The point isn't to convince anyone of anything. It's to tell them what's true, briefly, in the way that's easiest for them to hear.`,
+      `Some of the work of Commit is entirely internal — your environment, your daily anchors, your if-then library, things only you need to know about. Some of it, though, means saying something out loud to specific people, and that tends to be the part people most want to avoid.`,
+      `Today you'll plan up to six conversations. Not all of them will apply to you — pick the ones that do and leave the rest. For each, you'll draft roughly what you'd say. The draft isn't a script to memorise word for word; it's the thing that makes the conversation possible at all. The reason hard conversations don't happen is almost never that the words came out wrong — it's that they were never prepared, so the moment kept getting postponed.`,
+      `The aim isn't to convince anyone of anything, or to win an argument about your choice — you don't owe anyone a defence. The aim is simply to tell the people who need to know what's true: briefly, calmly, and in the way that's easiest for them to actually hear, so that the people around you aren't unknowingly working against something they don't even know is happening.`,
+      `Pick the conversations that genuinely matter, and get the words ready today.`,
     ],
     mechanic: {
       type: 'conversationPlanner',
@@ -703,9 +719,10 @@ Pick one from below that has the lowest barrier for you to try. Commit to it for
     arrivalSubtitle: `Who knows, and how often you'll return to it.`,
     artifactType: 'commit_day_9',
     intro: [
-      `You sealed the vow yesterday. Today's interaction does two things: it names who knows about it (witnesses), and it sets how often you'll return to it (cadence).`,
-      `Witnesses aren't about asking permission. They're about telling specific people that this vow exists, so the vow has a kind of external memory beyond your own. The using self can forget. The witnesses can't.`,
-      `Cadence is the schedule for re-reading the vow. Research on written commitments is clear — they hold better when revisited at planned intervals rather than only when needed. You'll set the cadence today. Vow will surface the vow at those intervals.`,
+      `You sealed the vow yesterday. Today's work does two things with it: it names who knows the vow exists — your witnesses — and it sets how often you'll come back to it — the cadence. Both are about giving the vow a life beyond the single moment you wrote it.`,
+      `Witnesses aren't about asking anyone's permission, and they aren't the same as the anchor person from Day 3. They're about telling a few specific people that this vow exists, so the commitment has an external memory beyond your own. The using self is remarkably good at forgetting what it agreed to the moment keeping that agreement becomes inconvenient. The people who witnessed it are not.`,
+      `Cadence is the schedule for re-reading the vow. The research on written commitments is consistent: they hold considerably better when revisited at planned intervals than when they're only remembered in a crisis — by which point the using self has often already begun negotiating. A vow you reread on a set rhythm stays a living thing, rather than a sentence you wrote once and quietly filed away.`,
+      `You'll set both today. Vow will then surface your own words back to you at the intervals you choose — not as a notification to swipe away, but as a standing appointment with the thing you decided.`,
     ],
     mechanic: {
       type: 'witnessesAndCadence',
@@ -713,7 +730,6 @@ Pick one from below that has the lowest barrier for you to try. Commit to it for
         witnessesHeader: 'Who knows?',
         witnessesSubtext: `List the people who know about the vow. They don't have to be asked permission. They just have to know it exists.`,
         maxWitnesses: 4,
-        minWitnesses: 2,
         relationshipOptions: [
           { id: 'partner', label: 'Partner' },
           { id: 'parent', label: 'Parent' },
@@ -774,9 +790,10 @@ I'll talk to you on the other side, once it's actually started. You've got this 
       audioSrc: 'commit/day_10.mp3',
     },
     intro: [
-      `Today is Day 10. The last day of Commit.`,
-      `Tomorrow — or whenever your stop date arrives — Endure begins. The actual change.`,
-      `One final tap. No structured exercise today. Just a single honest moment.`,
+      `Today is Day 10 — the last day of Commit. There's no builder today, nothing to assemble. Just a single, honest tap, and a moment to take in what these ten days actually produced.`,
+      `Because you did produce something concrete. You set a date with a reason behind it. You redesigned your environment so that not using is the easier path. You named a person who will hold the date with you. You planted what grows into the space, loaded the if-then plans for the hard moments, anchored your days, prepared the conversations, sealed the vow in your own words, and set who witnesses it and how often you'll return. That isn't motivation — it's infrastructure. The scaffolding a real change actually stands on.`,
+      `Tomorrow, or whenever your stop date arrives, Endure begins — the actual change, the part all of this was built to hold. The preparation is finished. What's ahead is different work, and you've made the ground ready for it.`,
+      `For today, just one tap. Mark the end of the building, and rest before the climb.`,
     ],
     mechanic: {
       type: 'finalTap',
