@@ -8,6 +8,8 @@ import {
   getCurrentBuildWeek,
 } from './data/buildContent'
 import { useStageBackground } from './utils/silhouettes'
+import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
+import { isCadenceBypassed } from './utils/vowPathGating'
 
 const STATUS = {
   COMPLETED: 'completed',
@@ -18,6 +20,7 @@ const STATUS = {
 
 const STAGE_END = 'End of Build'
 const DAYS = [1, 2, 3, 4, 5, 6, 7]
+const MS_PER_DAY = 1000 * 60 * 60 * 24
 
 export default function BuildOverview() {
   const navigate = useNavigate()
@@ -78,6 +81,22 @@ export default function BuildOverview() {
     load()
   }, [navigate])
 
+  // When the cadence is bypassed (local dev, pilot tester, or the pilot flag),
+  // every week and every offline day opens immediately — for testing.
+  const bypass = isCadenceBypassed(progress)
+
+  // How many days into the run we are (0 on the first day), used to open each
+  // offline day only after it has actually started.
+  const daysSinceStart = progress?.build_starts_at
+    ? Math.max(0, Math.floor((Date.now() - new Date(progress.build_starts_at).getTime()) / MS_PER_DAY))
+    : 0
+
+  // Number of this week's 7 offline days that have started (and so are markable).
+  const availableDaysInWeek = (weekNum) => {
+    if (bypass) return 7
+    return Math.max(0, Math.min(7, daysSinceStart - (weekNum - 1) * 7 + 1))
+  }
+
   // Build is week-gated: the current week opens by elapsed time, completed
   // weeks come from artifacts, future weeks stay locked.
   const getDayStatus = (weekNum) => {
@@ -88,10 +107,8 @@ export default function BuildOverview() {
   }
 
   const isDayTappable = (weekNum) => {
-    if (import.meta.env.DEV) return true
-    if (progress?.is_pilot_mode) return true
-    const status = getDayStatus(weekNum)
-    return status !== STATUS.LOCKED
+    if (bypass) return true
+    return getDayStatus(weekNum) !== STATUS.LOCKED
   }
 
   const handleDayTap = (weekNum) => {
@@ -100,10 +117,15 @@ export default function BuildOverview() {
   }
 
   // ---- offline practice tracking ----
-  const doneCount = (marks) => Object.values(marks || {}).filter(v => v === 'done').length
+  const doneCountOf = (marks) => Object.values(marks || {}).filter(v => v === 'done').length
+  const markedCountOf = (marks) => Object.values(marks || {}).filter(v => v === 'done' || v === 'missed').length
   const openOffline = (week) => { setOfflineDraft({ ...(offlineMarks[week.day] || {}) }); setActiveOffline(week) }
   const closeOffline = () => setActiveOffline(null)
-  const markDay = (d, val) => setOfflineDraft(prev => ({ ...prev, [d]: prev[d] === val ? undefined : val }))
+  const markDay = (d, val) => {
+    if (!activeOffline) return
+    if (d > availableDaysInWeek(activeOffline.day)) return // can't mark a day that hasn't started
+    setOfflineDraft(prev => ({ ...prev, [d]: prev[d] === val ? undefined : val }))
+  }
 
   const saveOffline = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -168,7 +190,6 @@ export default function BuildOverview() {
   }
 
   const totalCompleted = completedDays.size
-  const isPilotOrDev = import.meta.env.DEV || progress?.is_pilot_mode
 
   return (
     <div style={styles.frame}>
@@ -191,12 +212,10 @@ export default function BuildOverview() {
           </p>
         </div>
 
-        {/* 3 — Pilot / dev note */}
-        {isPilotOrDev && (
+        {/* 3 — Testing note */}
+        {bypass && (
           <div style={styles.pilotNoteWrap}>
-            <p style={styles.pilotNote}>
-              {import.meta.env.DEV ? 'Dev mode: all weeks unlocked.' : 'Pilot mode: all weeks unlocked.'}
-            </p>
+            <p style={styles.pilotNote}>Testing mode — all weeks and days unlocked.</p>
           </div>
         )}
 
@@ -220,6 +239,7 @@ export default function BuildOverview() {
                   const isDone = status === STATUS.COMPLETED
                   const isLocked = status === STATUS.LOCKED && !tappable
                   const marks = offlineMarks[week.day] || {}
+                  const weekLogged = markedCountOf(marks) >= 7
                   const showStrip = tappable && week.offlinePractice
 
                   return (
@@ -256,24 +276,17 @@ export default function BuildOverview() {
                         </button>
                       )}
 
+                      {/* Offline practice — glyph marker, same family as the other stages */}
                       {showStrip && (
                         <button onClick={() => openOffline(week)} style={styles.offlineStrip}>
-                          <div style={styles.offlineStripTop}>
+                          <span style={{ ...styles.glyphRing, ...(weekLogged ? styles.glyphRingDone : {}) }}>
+                            <PracticeArchetypeIcon archetype={week.offlinePractice.archetype} size={16} />
+                          </span>
+                          <span style={styles.offlineBody}>
                             <span style={styles.offlineTag}>Offline practice</span>
-                            <span style={styles.offlineCount}>{doneCount(marks)}/7</span>
-                          </div>
-                          <span style={styles.offlineName}>{week.offlinePractice.title}</span>
-                          <div style={styles.offlineDots}>
-                            {DAYS.map(d => {
-                              const m = marks[d]
-                              return (
-                                <span key={d} style={{
-                                  ...styles.offDot,
-                                  ...(m === 'done' ? styles.offDotDone : m === 'missed' ? styles.offDotMissed : {}),
-                                }} />
-                              )
-                            })}
-                          </div>
+                            <span style={styles.offlineName}>{week.offlinePractice.title}</span>
+                          </span>
+                          <span style={styles.offlineProgress}>{doneCountOf(marks)}/7</span>
                         </button>
                       )}
                     </div>
@@ -290,54 +303,67 @@ export default function BuildOverview() {
           <span style={styles.anchorText}>{STAGE_END}</span>
         </div>
 
-        {/* Offline practice marking sheet */}
-        {activeOffline && activeOffline.offlinePractice && (
-          <div style={styles.sheetOverlay} onClick={closeOffline}>
-            <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.sheetHandle} aria-hidden="true" />
-              <p style={styles.sheetEyebrow}>Offline this week · Week {activeOffline.day}</p>
-              <p style={styles.sheetTitle}>{activeOffline.offlinePractice.title}</p>
-              <p style={styles.sheetAction}>{activeOffline.offlinePractice.action}</p>
-              {activeOffline.offlinePractice.why && (
-                <div style={styles.whyBox}>
-                  <p style={styles.whyText}>{activeOffline.offlinePractice.why}</p>
-                </div>
-              )}
-
-              <p style={styles.sheetQ}>Mark each day — honestly. Both answers count.</p>
-              <div style={styles.dayMarks}>
-                {DAYS.map(d => (
-                  <div key={d} style={styles.dayMarkRow}>
-                    <span style={styles.dayMarkLabel}>Day {d}</span>
-                    <div style={styles.dayMarkBtns}>
-                      <button
-                        onClick={() => markDay(d, 'done')}
-                        style={{ ...styles.markBtn, ...(offlineDraft[d] === 'done' ? styles.markBtnDone : {}) }}
-                      >
-                        Did it
-                      </button>
-                      <button
-                        onClick={() => markDay(d, 'missed')}
-                        style={{ ...styles.markBtn, ...(offlineDraft[d] === 'missed' ? styles.markBtnMissed : {}) }}
-                      >
-                        Didn't
-                      </button>
-                    </div>
+        {/* Offline practice marking sheet — tracks the whole week */}
+        {activeOffline && activeOffline.offlinePractice && (() => {
+          const avail = availableDaysInWeek(activeOffline.day)
+          return (
+            <div style={styles.sheetOverlay} onClick={closeOffline}>
+              <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
+                <div style={styles.sheetHandle} aria-hidden="true" />
+                <span style={styles.sheetGlyph}>
+                  <PracticeArchetypeIcon archetype={activeOffline.offlinePractice.archetype} size={22} />
+                </span>
+                <p style={styles.sheetEyebrow}>Offline this week · Week {activeOffline.day}</p>
+                <p style={styles.sheetTitle}>{activeOffline.offlinePractice.title}</p>
+                <p style={styles.sheetAction}>{activeOffline.offlinePractice.action}</p>
+                {activeOffline.offlinePractice.why && (
+                  <div style={styles.whyBox}>
+                    <p style={styles.whyText}>{activeOffline.offlinePractice.why}</p>
                   </div>
-                ))}
-              </div>
+                )}
 
-              <button
-                onClick={saveOffline}
-                disabled={savingOffline}
-                style={{ ...styles.sheetSave, ...(savingOffline ? styles.sheetSaveDisabled : {}) }}
-              >
-                {savingOffline ? 'Saving…' : 'Save'}
-              </button>
-              <button onClick={closeOffline} style={styles.sheetCancel}>Not now</button>
+                <p style={styles.sheetQ}>Mark each day as it comes — honestly. Both answers count.</p>
+                <div style={styles.dayMarks}>
+                  {DAYS.map(d => {
+                    const locked = d > avail
+                    return (
+                      <div key={d} style={{ ...styles.dayMarkRow, ...(locked ? styles.dayMarkRowLocked : {}) }}>
+                        <span style={styles.dayMarkLabel}>Day {d}</span>
+                        {locked ? (
+                          <span style={styles.dayLockedNote}>not yet</span>
+                        ) : (
+                          <div style={styles.dayMarkBtns}>
+                            <button
+                              onClick={() => markDay(d, 'done')}
+                              style={{ ...styles.markBtn, ...(offlineDraft[d] === 'done' ? styles.markBtnDone : {}) }}
+                            >
+                              Did it
+                            </button>
+                            <button
+                              onClick={() => markDay(d, 'missed')}
+                              style={{ ...styles.markBtn, ...(offlineDraft[d] === 'missed' ? styles.markBtnMissed : {}) }}
+                            >
+                              Didn't
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <button
+                  onClick={saveOffline}
+                  disabled={savingOffline}
+                  style={{ ...styles.sheetSave, ...(savingOffline ? styles.sheetSaveDisabled : {}) }}
+                >
+                  {savingOffline ? 'Saving…' : 'Save'}
+                </button>
+                <button onClick={closeOffline} style={styles.sheetCancel}>Not now</button>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
       </div>
     </div>
@@ -383,7 +409,7 @@ const styles = {
   progressLine: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', letterSpacing: '0.02em', margin: 0 },
   progressEmph: { color: '#854F0B' },
 
-  // 3 — Pilot note
+  // 3 — Testing note
   pilotNoteWrap: { textAlign: 'center', margin: '1.25rem 0 0' },
   pilotNote: { display: 'inline-block', fontSize: '11px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', background: '#F2ECE0', borderRadius: '999px', padding: '5px 14px' },
 
@@ -418,20 +444,22 @@ const styles = {
   vaultTitle: { fontSize: '19px', fontWeight: 500, color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
   vaultSubtitle: { fontSize: '13px', color: '#CBBA98', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.45 },
 
-  // Offline practice strip (under each accessible week)
+  // Offline practice marker — glyph ring + title + weekly progress
   offlineStrip: {
-    display: 'block', width: 'calc(100% - 42px)', marginLeft: '42px', marginTop: '-2px', marginBottom: '10px',
+    display: 'flex', alignItems: 'center', gap: '11px', width: 'calc(100% - 42px)', marginLeft: '42px',
+    marginTop: '-2px', marginBottom: '10px',
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', border: '0.5px solid #EADFCB',
-    borderRadius: '12px', padding: '11px 13px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+    borderRadius: '14px', padding: '10px 13px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
   },
-  offlineStripTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' },
+  glyphRing: {
+    width: '34px', height: '34px', flexShrink: 0, borderRadius: '50%', border: '1.5px solid #C9A86A',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#854F0B', background: '#FFFDF8', lineHeight: 1,
+  },
+  glyphRingDone: { background: '#D9B57A', border: '1.5px solid #D9B57A', color: '#3A2A1C' },
+  offlineBody: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' },
   offlineTag: { fontSize: '9.5px', color: '#A1814E', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 600, fontFamily: '-apple-system, sans-serif' },
-  offlineCount: { fontSize: '11px', color: '#854F0B', fontFamily: 'Georgia, serif', fontWeight: 600 },
-  offlineName: { display: 'block', fontSize: '13px', color: '#5A4A36', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.35, marginBottom: '8px' },
-  offlineDots: { display: 'flex', gap: '7px' },
-  offDot: { width: '9px', height: '9px', borderRadius: '50%', background: '#E6DCC8', boxSizing: 'border-box', flexShrink: 0 },
-  offDotDone: { background: '#D9B57A' },
-  offDotMissed: { background: 'transparent', border: '1.5px solid #CBB892' },
+  offlineName: { fontSize: '13px', color: '#5A4A36', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
+  offlineProgress: { flexShrink: 0, fontSize: '12px', color: '#854F0B', fontFamily: 'Georgia, serif', fontWeight: 600 },
 
   // 5 — Anchor
   anchor: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', marginTop: '2px' },
@@ -449,7 +477,11 @@ const styles = {
     padding: '14px 22px 28px', boxShadow: '0 -10px 40px rgba(40,25,10,0.25)', maxHeight: '90vh', overflowY: 'auto',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
-  sheetHandle: { width: '40px', height: '4px', borderRadius: '2px', background: '#D8CCB8', margin: '0 auto 16px' },
+  sheetHandle: { width: '40px', height: '4px', borderRadius: '2px', background: '#D8CCB8', margin: '0 auto 14px' },
+  sheetGlyph: {
+    width: '44px', height: '44px', borderRadius: '50%', border: '1.5px solid #C9A86A', color: '#854F0B',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', background: '#FFFDF8',
+  },
   sheetEyebrow: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 600, margin: '0 0 6px', textAlign: 'center' },
   sheetTitle: { fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3, margin: '0 0 10px', textAlign: 'center' },
   sheetAction: { fontSize: '14.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.6, margin: '0 0 12px' },
@@ -458,8 +490,10 @@ const styles = {
   sheetQ: { fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', margin: '20px 0 11px' },
   dayMarks: { display: 'flex', flexDirection: 'column', gap: '8px' },
   dayMarkRow: { display: 'flex', alignItems: 'center', gap: '12px' },
+  dayMarkRowLocked: { opacity: 0.55 },
   dayMarkLabel: { width: '52px', flexShrink: 0, fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif' },
   dayMarkBtns: { display: 'flex', gap: '8px', flex: 1 },
+  dayLockedNote: { flex: 1, fontSize: '12px', color: '#B0A088', fontStyle: 'italic', fontFamily: 'Georgia, serif', textAlign: 'right' },
   markBtn: {
     flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #E0D3BC', background: '#FFFDF9',
     color: '#6B5C4A', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',

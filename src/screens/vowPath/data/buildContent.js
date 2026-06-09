@@ -52,6 +52,7 @@ export const BUILD_DAYS = [
     day: 1,
     offlinePractice: {
       id: 'w1',
+      archetype: 'watch',
       title: `One ordinary good thing, fully felt`,
       action: `Each day, do one small ordinary pleasant thing — a coffee outside, a walk, a hot shower, a song — with your full attention. No phone, no second screen, no doing-something-else at the same time. The point is not the thing. It is relearning to feel a small reward.`,
       why: `Savouring an ordinary pleasure retrains a flattened, post-acute reward system to register small natural rewards again. This is the front line of getting feeling back.`,
@@ -112,6 +113,7 @@ export const BUILD_DAYS = [
     day: 2,
     offlinePractice: {
       id: 'w2',
+      archetype: 'catch',
       title: `Catch the reach`,
       action: `Each day, catch yourself once in the act of reaching for the new tenant — the phone, the snack, the extra hour of work, the scroll. Pause. Name the job it is doing for you. Then choose: continue on purpose, or put it down and do something else.`,
       why: `Catching the substitute behaviour in real time is what keeps a harmless replacement from quietly hardening into the next compulsion.`,
@@ -174,6 +176,7 @@ export const BUILD_DAYS = [
     day: 3,
     offlinePractice: {
       id: 'w3',
+      archetype: 'plant',
       title: `Re-approach one old want`,
       action: `Each day, take one small, concrete step toward something you wanted before the substance — ten minutes of the instrument, a sketch, a real meal cooked slowly, an old book, the plan you kept postponing. Small and real beats ambitious and skipped.`,
       why: `Behavioural activation toward previously-valued activities is the most direct route back to natural reward and an identity that is not organised around the substance.`,
@@ -255,6 +258,7 @@ export const BUILD_DAYS = [
     day: 4,
     offlinePractice: {
       id: 'w4',
+      archetype: 'say',
       title: `One thing done right when no one would know`,
       action: `Each day, do one small thing the honest way precisely when you could get away with not — keep a promise you made only to yourself, return the extra change, tell the small truth you could have dodged, do the unseen part of a job properly, leave uncut the corner no one would ever check.`,
       why: `The quiet self is built from the choices no one audits. Addiction runs on a widening gap between the public self and the secret one; closing that gap through small, unwitnessed acts of integrity is how self-trust — and a self you recognise — gets rebuilt.`,
@@ -342,6 +346,7 @@ export const BUILD_DAYS = [
     day: 5,
     offlinePractice: {
       id: 'w5',
+      archetype: 'document',
       title: `Spend one thing the years taught you`,
       action: `Each day, find one real moment to use a capacity the using years gave you — the hard-won empathy for someone struggling, the resourcefulness, the bluntness about what actually matters, the ability to sit inside discomfort without bolting. Do not just note it. Deploy it, on someone or something real.`,
       why: `Meaning-making becomes durable only when the inheritance is enacted rather than merely acknowledged. Using what the years taught you turns lost time into carried capital.`,
@@ -459,6 +464,7 @@ export const BUILD_DAYS = [
     day: 6,
     offlinePractice: {
       id: 'w6',
+      archetype: 'tether',
       title: `One real contact`,
       action: `Each day, make one genuine, unhurried point of contact with a person who matters — a real conversation, a phone call, time fully present with the phone face-down. Not a transaction, not only a text fired off between other things. One real exchange.`,
       why: `The substance was a third party in most of your relationships. Daily relational bids are the behavioural repair of a network that use quietly distorted.`,
@@ -530,6 +536,7 @@ export const BUILD_DAYS = [
     day: 7,
     offlinePractice: {
       id: 'w7',
+      archetype: 'map',
       title: `One brick for the year`,
       action: `Each day, do one small thing that only pays off on a long horizon — a little money set aside, a page studied, the body maintained, the slow project moved an inch, a relationship tended with no immediate return.`,
       why: `Acting toward a future months or years away is direct practice against the present-bias that addiction trains. Survival was a horizon of weeks; you are practising the horizon of years.`,
@@ -615,6 +622,7 @@ export const BUILD_DAYS = [
     day: 8,
     offlinePractice: {
       id: 'w8',
+      archetype: 'pause',
       title: `One edge, one guard`,
       action: `Each day, notice one moment that carried even a faint pull or risk — a place, a feeling, a person, or an HALT state: hungry, angry, lonely, tired. Then take one small protective action in response: eat, rest, leave, message someone, change the plan.`,
       why: `Low-key daily noticing-plus-response is relapse prevention done calmly. It builds real risk literacy instead of the exhausting hypervigilance that burns out and backfires.`,
@@ -726,6 +734,7 @@ export const BUILD_DAYS = [
     day: 9,
     offlinePractice: {
       id: 'w9',
+      archetype: 'shed',
       title: `A moment where it is the floor`,
       action: `Each day, do one thing that is purely about the life you are building — the work, the relationship, the craft, the plan, the fun — and let recovery be the ground you are standing on, not the thing you are thinking about. Live one moment forward.`,
       why: `Integration is recovery receding to background while you live. The practice is deliberately letting it be the floor — assumed, not the subject — so the life on top of it can grow.`,
