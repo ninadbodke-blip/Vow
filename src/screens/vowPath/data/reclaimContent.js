@@ -121,24 +121,24 @@ export const RECLAIM_MODULES = [
       {
         day: 4,
         arrivalTitle: 'Mending.',
-        arrivalSubtitle: 'The line is whole. The slip is part of it.',
+        arrivalSubtitle: 'The line is whole. Today is part of it.',
         artifactType: 'reclaim_day_4',
         intro: [
-          `The slip can feel like it broke something. Like the work you've been doing, the days you'd put together, the line you were walking — all of it is now in two pieces. Before, and after. And the "after" piece doesn't really count as the same work anymore.`,
-          `That feeling is the cascade. It's the same mechanism that pushes people from one slip into a full return. It says: this is broken now. There's no reason to keep going. The line has been cut.`,
-          `That's not how recovery actually moves. The slip isn't a break in the line. It's a moment in the line. The line continues through it. The people who recover long-term aren't the ones who never slipped — they're the ones who learned to see slips as included, not as cancellations.`,
-          `Today's act is to make this concrete — physically, in your hand. Below is a line with a small gap where today sits. You're going to close it. Drag your finger across the gap. The line will become whole. Today will be inside it, not outside it.`,
-          `That's the mending. The slip is part of the path, not the end of it.`,
+          `A slip can feel like it broke something. Like the days you'd put together, the steady run you were on, the line you were walking — all of it is now in two pieces. There's a "before" and an "after." And the "after" part doesn't feel like it counts as the same thing anymore.`,
+          `That feeling has a job. It's the same push that turns one slip into a long return. It whispers the same thing every time: it's broken now, so there's no real point in going on. The line has been cut. Why keep walking it?`,
+          `But that's not how recovery actually works. The slip isn't a break in the line. It's one point along the line. The line keeps going right through it. The people who make it for the long run aren't the ones who never slipped — they're the ones who learned to count the slip as part of the walk, not the end of it.`,
+          `Today you'll show yourself this with your own hand. Below is your line, with your days set along it like beads. One bead — today — has come loose. It's floating above the line, on its own, cut off. Your job is simple: take it, and drag it back down onto the line where it belongs.`,
+          `When it drops into place, you'll see the truth of it. The line runs straight through today. Nothing was ever really broken. The slip is part of the path, not the end of it.`,
         ],
         mechanic: 'reclaim_mending',
         mechanicProps: {},
-        closingLine: 'The line is whole. The slip is part of it.\nTomorrow we look at where to step next.',
+        closingLine: 'The line is whole. Today is part of it.\nTomorrow, we look at where to step next.',
         rationale: [
-          `There's a meaningful difference between a story with a break in it and a story with a difficult chapter in it. Narrative therapy research from Michael White and David Epston shows that distinction matters enormously for long-term recovery. People who frame slips as breaks tend to stop walking the path. People who frame them as chapters keep walking. The mending gesture made that frame physical, not just conceptual.`,
-          `The Abstinence Violation Effect from Day 1 has one specific job — convince you the line has been cut. That there's no point continuing because it's already broken. The mending activity directly contradicted that signal at the level of your hand and your eye. You closed the gap. The line is whole. That visual record is harder to argue with than self-talk.`,
-          `Why drag, not tap? The cognitive scientist George Lakoff and the broader embodied cognition literature have shown that physical metaphors aren't decoration — they shape thought at the level of how concepts are built. Closing a gap with your finger creates a felt sense of integration that you can't get from reading the word "integration."`,
-          `Adding the forward mark beyond the line's right edge introduced prospective time. Research on rumination by Watkins and colleagues shows that small bridges between past and future reduce the depressive looping that often follows a slip. You weren't just looking at what you mended. You were already looking past it.`,
-          `The slip was a moment in the line. The work of Day 4 was making that the only available reading.`,
+          `There's a real difference between a story with a break in it and a story with a hard chapter in it. People who study recovery have seen this for decades: when someone treats a slip as a break, they tend to stop walking the path. When they treat it as just a rough chapter, they keep going. Moving that loose day back onto the line, with your own hand, made that idea something you did — not just something you read.`,
+          `Remember that feeling from earlier — the one that says the line has been cut, so there's no point going on? It has one job: to make you quit. The act you just did argued straight back at it. You saw the loose day join the line. You saw the line stay whole. That picture is much harder to argue with than a thought in your head.`,
+          `Why drag it with your finger instead of just tapping a button? Because the body learns things the mind alone can't. Scientists who study how we think have shown that physical actions — moving something, joining two things together — shape how we understand them. Pulling the loose day back into the line gives you a felt sense of "it's all one piece" that no words on a screen can give you.`,
+          `And the beads stretching off both ends of the line did something too. They quietly placed today between a past and a future. Research on the kind of looping, stuck thinking that often follows a slip shows that small reminders of "there's a before and an after" help break the loop. You weren't only fixing today. You were already standing inside a longer story.`,
+          `The slip was one point on the line. The work today was simply to see it that way — clearly, with your own eyes and your own hand — and let every other reading fall away.`,
         ],
       },
       matchedStep('reclaim_day_5'),
@@ -146,98 +146,91 @@ export const RECLAIM_MODULES = [
   },
 
   // ===================================================================
-  // MODULE 2 — What Happened  (calm, blame-free reconstruction -> prevention)
+  // MODULE 2 — Set It Down  (release the post-slip load; gesture, not journaling)
   // ===================================================================
   {
-    id: 'reconstruct',
-    title: 'What Happened',
-    subtitle: 'Look back calmly at how the slip happened — with no blame.',
+    id: 'setdown',
+    title: 'Set It Down',
+    subtitle: 'Put down what the slip made you pick up.',
     days: [
       {
         day: 1,
-        arrivalTitle: 'The hours before.',
-        arrivalSubtitle: 'Walk back through what led up to it.',
-        artifactType: 'reclaim_reconstruct_d1',
+        arrivalTitle: 'Say the worst of it.',
+        arrivalSubtitle: 'Then let it go.',
+        artifactType: 'reclaim_setdown_d1',
         intro: [
-          `A slip almost never comes out of nowhere. Something led up to it — a hard day, a feeling, a place, a moment when the door opened.`,
-          `Today, just walk back through it. Start a few hours before the slip and tell what happened, step by step, up to the moment itself. Don't judge any of it. You're not in trouble. You're only looking.`,
-          `Write it like a simple story: this happened, then this, then this.`,
+          `After a slip, there's a voice that says the cruelest things. "You're a failure. You'll never change. What's even the point." Right now it might feel like the plain truth.`,
+          `Today you're going to do two things with it. First, get it out. Write down the harshest thing the slip is telling you — the worst of it, in its own words. Don't clean it up or make it kinder. Just put it on the screen where you can see it.`,
+          `Then you're going to set it down. You'll press and hold the words, and watch them go — until the screen is clear and the weight of them is off you.`,
         ],
-        mechanic: 'reclaim_write',
+        mechanic: 'reclaim_release',
         mechanicProps: {
-          prompt: `Tell what happened in the hours before the slip, step by step.`,
-          placeholder: `That afternoon, I…`,
+          prompt: `Write the harshest thing the slip is telling you. Don't soften it.`,
+          placeholder: `The worst of it is…`,
         },
-        closingLine: `You looked at it without flinching.\nThat's how you learn from it.`,
+        closingLine: `You said it, and then you let it go.\nIt doesn't get to ride home with you.`,
         rationale: [
-          `Slips follow a chain. Almost always there were small steps before the slip itself — a stress, a place, a choice that seemed harmless at the time. People who study relapse call these "high-risk situations," and they turn out to be surprisingly predictable once you look.`,
-          `You can't change a moment you never look at. Writing the chain down, calmly, turns the slip from a mystery into something you can understand — and next time, see coming.`,
+          `Getting a painful thought out of your head and onto a screen does something real. Researchers who study writing about hard feelings find that naming a thing plainly takes some of its sting away. While it stays trapped inside, it feels huge and true. Written down, it's just a sentence — and you can finally see it for what it is.`,
+          `And there's a reason you let it go with your hand instead of only reading it. A slip loads you with shame, and shame is exactly what turns one slip into many. Putting the harsh thought down — actually watching it disappear — tells your body the load is off. You don't have to carry that into tomorrow.`,
         ],
       },
       {
         day: 2,
-        arrivalTitle: 'The quiet fork.',
-        arrivalSubtitle: 'Find the small choice that opened the door.',
-        artifactType: 'reclaim_reconstruct_d2',
+        arrivalTitle: `What you're carrying.`,
+        arrivalSubtitle: 'Take the weight off, one piece at a time.',
+        artifactType: 'reclaim_setdown_d2',
         intro: [
-          `Look back at the story you just wrote. Somewhere in it there was a small, quiet choice — long before the slip — where things could have gone another way.`,
-          `It usually doesn't look important at the time. "I'll just stop by." "I'll keep it in the house." "I won't tell anyone I'm struggling." Small doors. But that's where the slip really started.`,
-          `Find that one moment. Write it down, and write what made it feel okay at the time.`,
+          `A slip doesn't just happen and end. It leaves you carrying things — heavy ones. The shame of it. The feeling that you let people down. The dread of going "back to zero." The quiet fear that maybe you can't do this after all.`,
+          `You've been holding all of it at once, and it's heavy. So today you're going to set it down — not all in a rush, but one piece at a time.`,
+          `Below are the weights, resting on a ledge. Take each one in your hand and drag it off. Let it drop. Feel the load get a little lighter with every one you put down.`,
         ],
-        mechanic: 'reclaim_write',
+        mechanic: 'reclaim_set_down',
         mechanicProps: {
-          prompt: `What was the small, early choice that opened the door — and why did it feel okay then?`,
-          placeholder: `The moment was when I…`,
+          weights: ['The shame', 'I let people down', 'Back to zero', `I can't do this`],
         },
-        closingLine: `That quiet fork is where your power is.\nNot at the slip — before it.`,
+        closingLine: `Lighter. You don't have to hold all of that.\nNot tonight.`,
         rationale: [
-          `These small early choices have a name in relapse research — "seemingly unimportant decisions." They feel harmless, but each one quietly moves you closer to the edge. By the time the strong urge hits, the real decision was already made hours ago.`,
-          `Finding your fork matters because that early moment is much easier to change than the urge itself. You have far more control at the quiet fork than at the cliff.`,
+          `When everything piles up at once, it feels like one giant, crushing weight you can't do anything about. But it's never really one thing — it's several smaller things stacked together. Pulling them apart and naming them is the first relief: now it's pieces, not a mountain.`,
+          `Setting each one down with your hand matters more than just thinking "I should let this go." Your body believes what it does, not what it's told. Lifting each weight off, one at a time, is you proving to yourself that these things can be put down — that you are not required to carry them every minute of every day.`,
         ],
       },
       {
         day: 3,
-        arrivalTitle: 'What it was really about.',
-        arrivalSubtitle: 'Name the thing underneath.',
-        artifactType: 'reclaim_reconstruct_d3',
+        arrivalTitle: 'Ride it out.',
+        arrivalSubtitle: 'The urge rises. Then it always falls.',
+        artifactType: 'reclaim_setdown_d3',
         intro: [
-          `The slip was about more than the substance. Underneath, something was pushing — a feeling or a need you were trying to deal with.`,
-          `It's usually one of a few things: you were upset or angry, you were lonely, you were worn out, or you were celebrating and let your guard down. Sometimes it's a person or a place that always does this to you.`,
-          `Be honest. What was really going on underneath? Name it plainly.`,
+          `After a slip, the pull often doesn't stop — it can come back, hard. "I already slipped, so what's the difference now." That's the moment that turns one slip into a whole week of them.`,
+          `Here's the thing about an urge: it isn't a straight line that climbs forever. It's a wave. It rises, it peaks, and then — if you don't feed it — it falls back down on its own. Usually faster than you'd think.`,
+          `So you're not going to fight this one. You're going to ride it. Put your finger on the wave and follow it as it rises. When it peaks, stay with it — that's the hardest part. Then watch it come back down, all the way, until it's passed.`,
         ],
-        mechanic: 'reclaim_write',
-        mechanicProps: {
-          prompt: `What feeling or need was really underneath the slip?`,
-          placeholder: `Underneath it, I think I was…`,
-        },
-        closingLine: `Now you know what to watch for.\nThe real trigger has a name.`,
+        mechanic: 'reclaim_urge_wave',
+        mechanicProps: {},
+        closingLine: `It passed. It always does.\nYou rode it instead of feeding it.`,
         rationale: [
-          `The substance is rarely the real driver. Studies of relapse find that most slips are pushed by a few underlying states — bad moods, conflict with someone, or feeling worn down. There's even a simple checklist for it: H.A.L.T. — Hungry, Angry, Lonely, Tired.`,
-          `When you can name the real thing underneath, you can deal with the real thing — instead of fighting the urge again and again on the surface.`,
+          `This is a skill called "urge surfing," and it's one of the most useful things in all of recovery. People assume an urge will just keep climbing until they give in. But cravings don't work that way. Left alone, an urge rises, crests, and fades — most pass within minutes.`,
+          `The trap is believing the only way to end the feeling is to act on it. Riding the wave proves otherwise, with your own eyes and your own hand: you stayed with it, you didn't feed it, and it passed anyway. Once you've felt that happen, the next urge has a lot less power over you — because now you know how it ends.`,
         ],
       },
       {
         day: 4,
-        arrivalTitle: 'The earlier exit.',
-        arrivalSubtitle: 'Plan the one different move for next time.',
-        artifactType: 'reclaim_reconstruct_d4',
+        arrivalTitle: 'Set the day down.',
+        arrivalSubtitle: 'Let today rest. Tomorrow is clean.',
+        artifactType: 'reclaim_setdown_d4',
         intro: [
-          `Go back to your quiet fork — that small, early moment. Next time you're there, what's one different thing you could do?`,
-          `Keep it simple and real. "If I feel that way again, I'll call this person." "If I'm near that place, I'll take the other road." "If it's in the house, I'll get rid of it tonight." One clear move you can actually make.`,
-          `Write it as an if-then: "If this happens, then I'll do that."`,
+          `It's been a hard day. You don't have to fix anything else tonight. There's only one thing left to do: put the day down, so it doesn't follow you into tomorrow.`,
+          `Below is today — this whole heavy day — held in one small light. Take it, and lower it gently into the still water. Let it sink. Let it rest.`,
+          `When it settles, the day is closed. Whatever happened in it stays in it. Tomorrow opens clean.`,
         ],
-        mechanic: 'reclaim_write',
-        mechanicProps: {
-          prompt: `Write one if-then plan for your fork: "If ___ happens, then I'll ___."`,
-          placeholder: `If I… then I'll…`,
-        },
-        closingLine: `You've got an exit now.\nThat's one less open door.`,
+        mechanic: 'reclaim_seal',
+        mechanicProps: {},
+        closingLine: `Today is set down.\nTomorrow, you begin again — clean.`,
         rationale: [
-          `Deciding your move in advance is one of the most proven tricks in all of behavior change. Psychologists call these "if-then plans," and people who make them follow through far more often — because the decision is already made before the hard moment arrives.`,
-          `You can't rely on willpower in the middle of a strong urge. But a plan you made earlier, when you were calm, can carry you through it.`,
+          `One of the quiet traps after a slip is letting the bad day bleed into the next one, and the next, until a single slip has stained a whole week. Closing the day on purpose — marking a clear end to it — stops that bleed. It says: that was one day, and it is over now.`,
+          `Endings matter to the mind. A small, deliberate closing — lowering the day into still water — tells you the chapter is finished, the way turning off a light tells you it's time to rest. You're not pretending the slip didn't happen. You're refusing to let it own tomorrow. Tonight you set it down. Tomorrow you pick the path back up — clean.`,
         ],
       },
-      matchedStep('reclaim_reconstruct_d5'),
+      matchedStep('reclaim_setdown_d5'),
     ],
   },
 
@@ -255,9 +248,10 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: `Say to them what you can't say to yourself.`,
         artifactType: 'reclaim_chair_d1',
         intro: [
-          `Here's the thing about a slip: you'd never talk to a friend the way you're talking to yourself right now.`,
-          `So today you're not going to fix anything. A friend has just messaged you. They slipped too, after doing really well. Read their message, and write back to them. Be honest, but be kind — the way you would be with someone you care about.`,
-          `Then we'll do one small thing with what you wrote.`,
+          `Here's a strange thing about a slip. The way you're talking to yourself right now — the harshness, the disappointment, the "I should have known better" — you would never, ever talk to a friend that way. If someone you cared about came to you hurting, you'd be gentle with them without even thinking about it.`,
+          `So today you're not going to try to fix anything, or feel any particular way. You're just going to do that gentle thing — but pointed in a slightly different direction. A friend has just messaged you. They slipped too, after doing really well for a long time. They feel awful about it. Read what they wrote.`,
+          `Then write back to them. Don't perform, and don't lecture. Just say what's true and kind, the way you naturally would for someone you care about who's having a hard night. Take your time with it.`,
+          `When you're done, we'll do one small thing with what you wrote. That small thing is the whole point of today.`,
         ],
         mechanic: 'reclaim_chair_flip',
         mechanicProps: {
@@ -265,8 +259,9 @@ export const RECLAIM_MODULES = [
         },
         closingLine: `Those were your words.\nThey were always meant for you too.`,
         rationale: [
-          `There's a simple reason this works. Researchers found that we are much kinder and much smarter when we give advice to someone else than when we talk to ourselves. The same problem feels lighter and clearer from the outside.`,
-          `When you wrote to your "friend," you were really writing to yourself — you just took the harshness out. That kinder voice is the one that actually helps you keep going. The cruel one only makes the next slip more likely.`,
+          `There's a simple, well-studied reason this works. We are almost always kinder, calmer, and clearer when we're giving advice to someone else than when we're talking to ourselves. The exact same problem feels lighter and more solvable when it belongs to a friend. Researchers call this "self-distancing," and it's one of the most reliable ways there is to quiet a storm of hard feelings.`,
+          `When you wrote to your "friend," you were really writing to yourself. You probably knew that, somewhere, the whole time. You just took out all the cruelty you'd normally aim inward — and what was left was the honest, caring voice underneath. That's the voice that's always been there for other people. Today you turned it toward you.`,
+          `And here's why that's not just a nice feeling: the kind voice is the one that actually keeps you going. The cruel voice doesn't make you stronger — it makes the next slip more likely, because shame and self-attack wear a person down. Learning to talk to yourself like someone worth helping isn't soft. It's one of the most practical recovery skills there is.`,
         ],
       },
       {
@@ -275,9 +270,10 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: 'Tell the story like it happened to someone you know.',
         artifactType: 'reclaim_chair_d2',
         intro: [
-          `Yesterday you wrote to a friend. Today, tell the story of your own slip — but use your name instead of "I".`,
-          `So write it like this: "Sam slipped on Tuesday. They'd had a hard day, and…" — but with your name. Keep going for a few lines. Just tell what happened, plainly, like you're talking about someone you know and care about.`,
-          `Using your name instead of "I" feels strange at first. That's the point.`,
+          `Yesterday you spoke to a friend. Today you're going to do something that sounds a little odd at first — but stick with it, because it has a real effect.`,
+          `Tell the story of your own slip. But instead of saying "I," use your own name, as if you're talking about someone else. So it comes out like: "Sam had a hard day on Tuesday. By the evening they were worn down, and…" — but with your name in place of Sam's.`,
+          `Walk through it for a few lines. What was the day like for that person? What were they carrying? How did it happen? Tell it plainly and fairly, the way you'd describe what happened to someone you know and care about — not a criminal, just a human being who was struggling.`,
+          `Using your name instead of "I" will feel strange, and maybe a little stiff. That's not a mistake. That little bit of strangeness is exactly the thing doing the work.`,
         ],
         mechanic: 'reclaim_write',
         mechanicProps: {
@@ -286,8 +282,9 @@ export const RECLAIM_MODULES = [
         },
         closingLine: `You looked at it from one step back.\nFrom there, it's easier to be fair.`,
         rationale: [
-          `This is a small trick with a big effect. Studies show that when people describe a hard moment using their own name instead of "I", they feel calmer and judge themselves less harshly. It puts a little space between you and the pain.`,
-          `From that small distance, you can see the slip as one event in a long story — not as proof of who you are.`,
+          `This is a small trick with a surprisingly big effect, and it's been tested carefully. When people describe a painful moment using their own name instead of "I," they calm down faster and judge themselves less harshly. Something about that one-word swap puts a little space between you and the raw feeling.`,
+          `From inside "I," the slip is happening to you — it's huge, it's personal, it presses right up against your face. From a step back, looking at a person with a name, the same event gets smaller and clearer. You can finally see the whole situation around it, instead of only the pain of it.`,
+          `And from that small distance, something fairer becomes possible. You start to see the slip as one event in a long and complicated life — not as the final proof of who that person is. You'd offer that fairness to anyone else without a second thought. Today you practiced offering it to yourself.`,
         ],
       },
       {
@@ -296,9 +293,10 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: 'Let the future you say something back.',
         artifactType: 'reclaim_chair_d3',
         intro: [
-          `Imagine yourself one year from today. You kept going. Things are steadier now.`,
-          `That version of you is looking back at this exact week — the slip, this hard feeling. Write a short note from them, to you. What would they want you to know right now?`,
-          `Keep it short. A few honest lines.`,
+          `Picture yourself one year from today. Not a perfect, magazine version — just you, twelve months on, having kept going. Some things are different. Some are steadier. The slip that feels so loud right now is a long way behind you.`,
+          `That version of you — the one who's a year down the road — knows something you can't quite feel today. They know how this week turned out. They know whether it mattered as much as it seems to right now. And they remember exactly what this hard moment felt like, because they lived through it themselves.`,
+          `So let them speak. Write a short note from that future you, looking back at this exact week — the slip, this heavy feeling, all of it. What do they want you to know right now? What would they tell you, gently, if they could reach back and put a hand on your shoulder?`,
+          `Keep it short, and keep it honest. A few real lines will mean more than a long speech.`,
         ],
         mechanic: 'reclaim_write',
         mechanicProps: {
@@ -307,8 +305,9 @@ export const RECLAIM_MODULES = [
         },
         closingLine: `The future you isn't angry about this week.\nThey're just glad you kept going.`,
         rationale: [
-          `When a slip happens, this week feels huge. But time shrinks it. A year from now, one bad night is a small dot, not the whole picture.`,
-          `Hearing that from "future you" lands in a way that someone else saying "it'll be okay" never does — because it's coming from you.`,
+          `When a slip happens, this week swells up and fills the whole sky. It feels enormous, like it changes everything. But time has a way of shrinking things back down to their real size. A year from now, one bad night is a small dot far back on the road — not the whole picture, just a single point on a long line.`,
+          `The catch is that knowing this and feeling it are two different things. Someone else telling you "it'll be okay" tends to bounce right off, because they're standing outside it. But when the reassurance comes from you — from a version of you who actually made it through — it lands differently. You trust yourself in a way you simply can't trust a stranger's comfort.`,
+          `This is also why looking ahead calms people down. Reaching toward a steadier future self, even just in your imagination for a minute, quietly lowers the panic of the present. You weren't only writing a note today. You were proving to yourself that there is a "later" — and that it's worth walking toward.`,
         ],
       },
       {
@@ -317,9 +316,10 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: 'Catch the cruel one. Answer it kindly.',
         artifactType: 'reclaim_chair_d4',
         intro: [
-          `There are two voices after a slip. One is cruel — "you failed, you always do this, what's the point." The other is kind, the one you used with your friend.`,
-          `First, write down exactly what the cruel voice is saying to you right now. Don't soften it. Get it out.`,
-          `Then, underneath, answer it — in the kind voice. Say back to that cruel line what a good friend would say.`,
+          `After a slip, there are usually two voices inside, talking at once. One is cruel. It says things like "you failed again," "you always do this," "what's even the point." It's loud, and it feels like it's telling you the plain truth.`,
+          `The other voice is the kind one — the same one you used when you wrote to your friend. It's quieter, but it's fairer, and it's the one that actually helps. Today you're going to put these two voices side by side, and let the kind one answer back.`,
+          `First, write down exactly what the cruel voice is saying to you right now. Don't clean it up or soften it. Get the real, harsh words out onto the screen where you can see them. There's something about seeing them written down that already starts to take the edge off.`,
+          `Then, underneath, answer it — in the kind voice. Say back to that cruel line whatever a good friend would say if they'd heard it out loud. You don't have to win the argument. You just have to answer.`,
         ],
         mechanic: 'reclaim_write',
         mechanicProps: {
@@ -330,8 +330,9 @@ export const RECLAIM_MODULES = [
         },
         closingLine: `You don't have to believe the cruel voice.\nYou can answer it. You just did.`,
         rationale: [
-          `The cruel voice feels like the truth, but it isn't — it's just a habit. And like any habit, it gets weaker when you answer it instead of obeying it.`,
-          `Every time you catch the harsh thought and reply with a kinder, fairer one, you train a new habit. Over time, the kind voice gets louder on its own.`,
+          `The cruel voice feels like the plain truth, but it isn't. It's a habit — a worn groove your mind slides into, especially when you're already down. And like any habit, it only stays strong as long as you obey it without question. The moment you start answering it, it begins to lose its grip.`,
+          `That's what you just practiced: catching the harsh thought, and then meeting it with a fairer, kinder one. The kinder thought doesn't have to be cheerful or fake — it just has to be more honest than the cruel one. Most of the time, the cruel voice is exaggerating, and simply telling the truth back to it is enough.`,
+          `Do this enough times and something quietly shifts. You're training a new groove. The kind voice, which used to be faint and easy to drown out, slowly gets stronger and starts showing up on its own. You're not just feeling a bit better today — you're teaching yourself how to be on your own side.`,
         ],
       },
       matchedStep('reclaim_chair_d5'),
@@ -341,7 +342,7 @@ export const RECLAIM_MODULES = [
 ]
 
 // Modules that are live and can be shown (in display order).
-export const RECLAIM_MODULE_POOL = ['spiral', 'reconstruct', 'chair']
+export const RECLAIM_MODULE_POOL = ['spiral', 'setdown', 'chair']
 
 export function getModule(id) {
   return RECLAIM_MODULES.find((m) => m.id === id) || null

@@ -16,6 +16,10 @@ import ReclaimMending from './mechanics/ReclaimMending'
 import ReclaimMatchedStep from './mechanics/ReclaimMatchedStep'
 import ReclaimWrite from './mechanics/ReclaimWrite'
 import ReclaimChairFlip from './mechanics/ReclaimChairFlip'
+import ReclaimRelease from './mechanics/ReclaimRelease'
+import ReclaimSetDown from './mechanics/ReclaimSetDown'
+import ReclaimUrgeWave from './mechanics/ReclaimUrgeWave'
+import ReclaimSeal from './mechanics/ReclaimSeal'
 import usePersistedStep from '../../hooks/usePersistedStep'
 
 const STEP = {
@@ -34,6 +38,10 @@ const MECHANIC_COMPONENTS = {
   reclaim_matched_step: ReclaimMatchedStep,
   reclaim_write: ReclaimWrite,
   reclaim_chair_flip: ReclaimChairFlip,
+  reclaim_release: ReclaimRelease,
+  reclaim_set_down: ReclaimSetDown,
+  reclaim_urge_wave: ReclaimUrgeWave,
+  reclaim_seal: ReclaimSeal,
 }
 
 export default function ReclaimDay() {
