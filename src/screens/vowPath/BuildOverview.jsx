@@ -543,7 +543,7 @@ const styles = {
 
   // Offline practice marker — glyph ring + title + weekly progress
   offlineStrip: {
-    display: 'flex', alignItems: 'center', gap: '11px', width: 'calc(100% - 42px)', marginLeft: '42px',
+    display: 'flex', alignItems: 'center', gap: '11px', width: 'calc(100% - 48px)', marginLeft: '42px', boxSizing: 'border-box',
     marginTop: '-2px', marginBottom: '10px',
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', border: '0.5px solid #EADFCB',
     borderRadius: '14px', padding: '10px 13px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
@@ -560,7 +560,7 @@ const styles = {
 
   // Per-day glyph chips (new daily model)
   dailyWrap: {
-    width: 'calc(100% - 42px)', marginLeft: '42px', marginTop: '-2px', marginBottom: '12px',
+    width: 'calc(100% - 48px)', marginLeft: '42px', boxSizing: 'border-box', marginTop: '-2px', marginBottom: '12px',
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', border: '0.5px solid #EADFCB',
     borderRadius: '14px', padding: '11px 12px 13px',
   },

@@ -114,6 +114,29 @@ const PATHS = {
       <path d="M12 3l1.9 6.1L20 11l-6.1 1.9L12 19l-1.9-6.1L4 11l6.1-1.9z" />
     </>
   ),
+  // Swap — hand one slot to something better (two arrows)
+  swap: (
+    <>
+      <path d="M4 9h12" />
+      <path d="M13 6l3 3-3 3" />
+      <path d="M20 15H8" />
+      <path d="M11 12l-3 3 3 3" />
+    </>
+  ),
+  // Book — read for pleasure (an open book)
+  book: (
+    <>
+      <path d="M12 6.5v13" />
+      <path d="M12 6.5C9.5 5 6.5 5 4 6v12c2.5-1 5.5-1 8 .5" />
+      <path d="M12 6.5C14.5 5 17.5 5 20 6v12c-2.5-1-5.5-1-8 .5" />
+    </>
+  ),
+  // Check — a promise kept (a checkmark)
+  check: (
+    <>
+      <path d="M5 13l4.5 4.5L20 6" />
+    </>
+  ),
 }
 
 export const PRACTICE_ARCHETYPES = Object.keys(PATHS)

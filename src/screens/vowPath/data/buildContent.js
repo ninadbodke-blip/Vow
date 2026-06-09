@@ -120,6 +120,15 @@ export const BUILD_DAYS = [
   // ===================================================================
   {
     day: 2,
+    dailyActivities: [
+      { day: 1, glyph: 'catch', title: `Catch the reach`, body: `See yourself reach for the substitute once today — phone, snack, the extra hour. Stop three seconds before. Don't judge it; just name what you're reaching past, then choose on purpose. The catching, not the stopping, is the whole skill this week.` },
+      { day: 2, glyph: 'watch', title: `Time how long it holds`, body: `Pick whatever has stepped most into the substance's place. Once today, notice how long it actually holds you — the scroll, the binge, the busywork. Don't change it; just measure it honestly. What you can see the size of, you can begin to manage.` },
+      { day: 3, glyph: 'pause', title: `The ten-minute gap`, body: `When the pull to reach comes today, wait ten minutes before giving in. Set a timer. Sometimes the urge passes; sometimes you do the thing anyway. Either way you've put a gap between the impulse and your hand, and the gap is where choice lives.` },
+      { day: 4, glyph: 'swap', title: `Hand one slot over`, body: `Take one moment you'd normally fill with the substitute and give it instead to something that gives back — a walk, a call, a few pages. Not forever. Just today, one slot, consciously reassigned. You're showing the day it can run on something better.` },
+      { day: 5, glyph: 'shed', title: `Out of sight for an hour`, body: `Put the thing you reach for automatically out of sight for one hour — phone in a drawer, snacks off the counter. Notice what rises in the gap. This isn't deprivation; it's meeting the reach without the object sitting there to answer it.` },
+      { day: 6, glyph: 'say', title: `Ask what it is for`, body: `Each time you reach today, ask yourself plainly: what am I actually wanting right now? Name the real need underneath — rest, company, relief, a jolt of something. The substitute is rarely the thing you need; it's just the thing that's nearest.` },
+      { day: 7, glyph: 'sun', title: `One unfilled hour`, body: `Give yourself one hour today with nothing filling it — not the phone, not the snack, not the busywork. Sit inside it, even bored. Boredom you can stay in without flinching is the exact muscle the substance let go slack. Today you use it once.` },
+    ],
     offlinePractice: {
       id: 'w2',
       archetype: 'catch',
@@ -183,6 +192,15 @@ export const BUILD_DAYS = [
   // ===================================================================
   {
     day: 3,
+    dailyActivities: [
+      { day: 1, glyph: 'plant', title: `One old want, one step`, body: `Pick something you wanted before the substance and take one small step toward it today — ten minutes of the instrument, the sketchbook reopened, the recipe started. Small beats ambitious. Desire rebuilds through the doing, not through waiting until you feel ready for it.` },
+      { day: 2, glyph: 'book', title: `Fifteen minutes reading`, body: `Read something you'd actually choose for fifteen minutes — a novel, an old favourite, anything but the feed. Reading for pleasure is a slow, quiet reward the substance crowded out years ago. Let your attention stretch back into a page that asks nothing of you.` },
+      { day: 3, glyph: 'watch', title: `Follow one curiosity`, body: `Notice one thing today that genuinely interests you — a question, a place, a craft — and follow it for ten minutes. Look it up properly, watch how it's done, learn one real thing. Curiosity is appetite returning; feed it the moment it shows up.` },
+      { day: 4, glyph: 'walk', title: `Move for the joy of it`, body: `Do one bit of movement today purely because it feels good — a long walk, music on in the kitchen, a stretch in the sun. Not for fitness. The body was a source of pleasure long before it became a thing to manage. Let it be that again.` },
+      { day: 5, glyph: 'cup', title: `Taste something fully`, body: `Eat one thing today slowly and with full attention — a proper meal, ripe fruit, something you actually like. No screen. Notice the flavour, the texture, the wanting and the satisfying. Appetite for food and appetite for life sit closer together than they seem.` },
+      { day: 6, glyph: 'tether', title: `Company you enjoy`, body: `Make plans with someone whose company you actually like — not an obligation, a pleasure. A coffee, a walk, an unhurried hour. Social pleasure is a want the substance quietly dulled; choosing a person for the joy of them is part of getting it back.` },
+      { day: 7, glyph: 'spark', title: `Name what you want next`, body: `At the end of today, name one thing — small or large — you find yourself wanting for tomorrow or beyond. A trip, a skill, a kind of day. Don't act on it yet. Just notice the wanting is back, and let it point somewhere ahead of you.` },
+    ],
     offlinePractice: {
       id: 'w3',
       archetype: 'plant',
@@ -265,6 +283,15 @@ export const BUILD_DAYS = [
   // ===================================================================
   {
     day: 4,
+    dailyActivities: [
+      { day: 1, glyph: 'say', title: `One unwitnessed honesty`, body: `Do one honest thing today precisely where you could get away with not — return the extra change, admit the small mistake, say the minor truth you could have dodged. No one will know but you. That private knowing is exactly where self-trust gets rebuilt.` },
+      { day: 2, glyph: 'check', title: `A promise kept to yourself`, body: `This morning, make one small promise to yourself — a thing you'll do, no one watching — and keep it by night. The size doesn't matter. Years of broken private promises taught your nervous system your word is negotiable. One kept promise begins to undo that.` },
+      { day: 3, glyph: 'watch', title: `An hour without an audience`, body: `Spend one hour today alone with no audience and no performance — no posting, no narrating, no phone held up as a mirror. Just be in the hour as you actually are. Notice who is there when there's no one to be it for.` },
+      { day: 4, glyph: 'document', title: `The unseen part, done right`, body: `Pick one task today and do the part no one will ever check — the corner, the cleanup, the second look — properly anyway. Quality that no one audits is the cleanest measure of who you are. Leave one thing right where you could have left it half-done.` },
+      { day: 5, glyph: 'shed', title: `Drop one performance`, body: `Catch yourself performing a version of you today — the fine one, the impressive one, the always-okay one — and in one small moment, let it go. Say the truer thing, or simply stop managing the impression. See what's underneath when you set the act down.` },
+      { day: 6, glyph: 'tether', title: `Word and act, lined up`, body: `Find one place today where what you say and what you do don't quite match, and close the gap in one small way — do the thing you claimed, or stop claiming it. Integrity is nothing fancier than your word and your actions pointing the same direction.` },
+      { day: 7, glyph: 'map', title: `Write your own standard`, body: `Name one standard you hold yourself to that no one imposed on you — how you treat people, what you won't cut corners on. Put it in a single line. The quiet self runs on rules you authored, not ones you inherited or perform for others.` },
+    ],
     offlinePractice: {
       id: 'w4',
       archetype: 'say',
