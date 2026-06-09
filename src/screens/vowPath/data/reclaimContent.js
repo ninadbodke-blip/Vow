@@ -61,8 +61,9 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: `You came back. That's the move.`,
         artifactType: 'reclaim_day_1',
         intro: [
-          `You came back. That's the move today — small but not nothing. The work for Day 1 is to stay here for a minute and let the rest wait.`,
-          `Two acts. The first: below is a spiral. Trace it from the outside in, slowly, with your finger. There's no hurry to reach the center. Don't think about anything specific while you trace — the gesture itself is the work.`,
+          `You came back. That's the move today — small, but not nothing. After a slip, the loudest pull is to disappear: to look away, to write the whole day off, to let it all quietly slide. You didn't. You opened this instead. Hold onto that for a second, because it counts for more than it feels like it does right now.`,
+          `The work for Day 1 is small on purpose. You don't have to understand what happened yet. You don't have to fix anything, or promise anything, or be anywhere but here. All you have to do today is land — stay for a minute, and let everything else wait.`,
+          `Two acts. The first: below is a spiral. Trace it from the outside in, slowly, with your finger. There's no hurry to reach the center. Don't think about anything in particular while you trace — the slow gesture itself is the work.`,
           `The second: when you reach the middle, place a hand on your chest and breathe with the small circle that appears. Three breaths. That's the whole day.`,
         ],
         mechanic: 'reclaim_spiral_and_breath',
@@ -81,9 +82,9 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: 'The slip is one. The path continues.',
         artifactType: 'reclaim_day_2',
         intro: [
-          `Yesterday you arrived. Today, the slip wants to fill the whole frame. Shame works by inflating one event until it feels like everything else — your recovery, your worth, your future — has been canceled by it.`,
-          `It hasn't.`,
-          `Two small acts. The first puts today in proportion to the rest of your days. The second is a single mark that says tomorrow is already on the map. Neither asks you to do anything heroic. Both are quiet.`,
+          `Yesterday you arrived. Today, the slip wants to fill the whole frame. That's exactly what shame does — it takes one event and blows it up until it feels like it has swallowed everything else. Your recovery, your worth, your future: all of it suddenly seems cancelled by a single day.`,
+          `It hasn't. Not even close. But the feeling is strong, so today isn't about arguing with it inside your head — that's a fight shame usually wins. It's about showing yourself the truth in a way you can actually see in front of you.`,
+          `Two small acts. The first sets today in proportion — placed next to all the other days you've already walked, so you can see how small one day really is against the whole. The second is a single mark that puts tomorrow on the map: already there, already waiting for you. Neither asks anything heroic of you. Both are quiet.`,
           `The slip was one day. The path continues. That's the work for today.`,
         ],
         mechanic: 'reclaim_proportion',
@@ -102,9 +103,9 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: `What the slip couldn't reach.`,
         artifactType: 'reclaim_day_3',
         intro: [
-          `The slip wants you to think it took everything. It didn't. You're farther along the spiral than you were before — even with this slip in the count.`,
-          `Today's work is to see what's still here. Not a list to make. Six small things, revealed one at a time by tapping them into being on the screen. Things that didn't disappear. Things the slip couldn't reach.`,
-          `Two acts. First, you'll surface what survived. Then you'll mark which one feels most solid — your anchor for the next move.`,
+          `The slip wants you to believe it took everything — that you're back at the very start, with nothing left to show for any of the work you put in. That's a lie. You are farther along the spiral than you were before, even with this slip counted in. The ground you gained didn't vanish because of one hard day.`,
+          `So today's work is to see what's still here. Not a list to write out — something quieter than that. Six small things, revealed one at a time as you tap them into being on the screen. Things that didn't disappear when you slipped. Things the slip simply could not reach.`,
+          `Two acts. First, you'll surface what survived. Then you'll mark the one that feels most solid — the steadiest thing you've got right now — and keep it as your anchor for the next move.`,
         ],
         mechanic: 'reclaim_still_standing',
         mechanicProps: {
@@ -159,9 +160,10 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: 'Then let it go.',
         artifactType: 'reclaim_setdown_d1',
         intro: [
-          `After a slip, there's a voice that says the cruelest things. "You're a failure. You'll never change. What's even the point." Right now it might feel like the plain truth.`,
-          `Today you're going to do two things with it. First, get it out. Write down the harshest thing the slip is telling you — the worst of it, in its own words. Don't clean it up or make it kinder. Just put it on the screen where you can see it.`,
-          `Then you're going to set it down. You'll press and hold the words, and watch them go — until the screen is clear and the weight of them is off you.`,
+          `After a slip, there's a voice that says the cruelest things. "You're a failure. You'll never change. What's even the point." Right now, in the quiet after, it can feel like the plain truth — like it's only describing what happened.`,
+          `It isn't the truth. It's shame talking, and shame always exaggerates. But you can't talk yourself out of it while it stays trapped inside, circling round and round. So today you're going to do something different with it.`,
+          `First, get it out. Write down the harshest thing the slip is telling you — the very worst of it, in its own ugly words. Don't clean it up. Don't make it kinder or more reasonable. Just put it on the screen, exactly as it sounds in your head, where you can finally see it.`,
+          `Then you're going to set it down. You'll press and hold the words, and watch them go — slowly fading until the screen is clear and the weight of them is off you.`,
         ],
         mechanic: 'reclaim_release',
         mechanicProps: {
@@ -170,8 +172,9 @@ export const RECLAIM_MODULES = [
         },
         closingLine: `You said it, and then you let it go.\nIt doesn't get to ride home with you.`,
         rationale: [
-          `Getting a painful thought out of your head and onto a screen does something real. Researchers who study writing about hard feelings find that naming a thing plainly takes some of its sting away. While it stays trapped inside, it feels huge and true. Written down, it's just a sentence — and you can finally see it for what it is.`,
-          `And there's a reason you let it go with your hand instead of only reading it. A slip loads you with shame, and shame is exactly what turns one slip into many. Putting the harsh thought down — actually watching it disappear — tells your body the load is off. You don't have to carry that into tomorrow.`,
+          `Getting a painful thought out of your head and onto a screen does something real. Researchers who study writing about hard feelings find, again and again, that naming a thing plainly takes some of its sting away. While the thought stays trapped inside, circling, it feels huge and absolutely true. Written down, it turns out to be just a sentence — and you can finally see it for what it is, instead of being stuck inside it.`,
+          `There's also a reason you let it go with your hand, rather than only reading it. A slip floods you with shame, and shame is the exact thing that turns one slip into many — it whispers that you've already failed, so you may as well keep going. Putting the harsh thought down, and actually watching it disappear, tells your body something the thinking mind can't: the load is off now.`,
+          `You said the worst of it, and then you let it go. It doesn't get to sit on your chest for the rest of the night.`,
         ],
       },
       {
@@ -180,9 +183,9 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: 'Take the weight off, one piece at a time.',
         artifactType: 'reclaim_setdown_d2',
         intro: [
-          `A slip doesn't just happen and end. It leaves you carrying things — heavy ones. The shame of it. The feeling that you let people down. The dread of going "back to zero." The quiet fear that maybe you can't do this after all.`,
-          `You've been holding all of it at once, and it's heavy. So today you're going to set it down — not all in a rush, but one piece at a time.`,
-          `Below are the weights, resting on a ledge. Take each one in your hand and drag it off. Let it drop. Feel the load get a little lighter with every one you put down.`,
+          `A slip doesn't just happen and then end. It leaves you carrying things — heavy ones. The shame of it. The feeling that you let people down. The dread of going "back to zero," of having lost all your progress. And the quiet, sinking fear that maybe you just can't do this after all.`,
+          `You've been holding all of it at once, all day, without setting any of it down. No wonder it feels crushing. So today you're not going to add anything or fix anything. You're going to put the load down — not all in one rush, but one piece at a time, the way you'd actually unload something heavy.`,
+          `Below are the weights, resting on a ledge in front of you. Take each one in your hand and drag it off. Let it drop, and let it go. Notice the load get a little lighter with every single piece you put down.`,
         ],
         mechanic: 'reclaim_set_down',
         mechanicProps: {
@@ -190,8 +193,9 @@ export const RECLAIM_MODULES = [
         },
         closingLine: `Lighter. You don't have to hold all of that.\nNot tonight.`,
         rationale: [
-          `When everything piles up at once, it feels like one giant, crushing weight you can't do anything about. But it's never really one thing — it's several smaller things stacked together. Pulling them apart and naming them is the first relief: now it's pieces, not a mountain.`,
-          `Setting each one down with your hand matters more than just thinking "I should let this go." Your body believes what it does, not what it's told. Lifting each weight off, one at a time, is you proving to yourself that these things can be put down — that you are not required to carry them every minute of every day.`,
+          `When everything piles up at once, it feels like one giant, crushing weight that you can't do a single thing about. But it's never really one thing. It's several smaller, separate things, all stacked on top of each other until they blur into one. Pulling them apart and naming them is the first relief on its own: suddenly it's a few manageable pieces, not one impossible mountain.`,
+          `Setting each one down with your hand matters far more than just thinking "I should let this go." Your body believes what it does, not what it's told. Lifting each weight off and dropping it, one at a time, is you proving to yourself — physically — that these things can be put down. That they aren't glued to you. That you are not required to carry every one of them every minute of every day.`,
+          `Tonight, you don't have to hold all of that. You're allowed to set it down and rest.`,
         ],
       },
       {
@@ -200,16 +204,16 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: 'The urge rises. Then it always falls.',
         artifactType: 'reclaim_setdown_d3',
         intro: [
-          `After a slip, the pull often doesn't stop — it can come back, hard. "I already slipped, so what's the difference now." That's the moment that turns one slip into a whole week of them.`,
-          `Here's the thing about an urge: it isn't a straight line that climbs forever. It's a wave. It rises, it peaks, and then — if you don't feed it — it falls back down on its own. Usually faster than you'd think.`,
-          `So you're not going to fight this one. You're going to ride it. Put your finger on the wave and follow it as it rises. When it peaks, stay with it — that's the hardest part. Then watch it come back down, all the way, until it's passed.`,
+          `After a slip, the pull often doesn't just stop. It can come back, and come back hard. "I've already slipped, so what's the difference now?" That single thought is the trapdoor — the one that turns one slip into a whole week of them.`,
+          `So it helps to know how an urge actually works. It isn't a straight line that climbs higher and higher forever until you finally give in. It's a wave. It rises, it reaches a peak, and then — as long as you don't feed it — it falls back down on its own. Usually a lot faster than you'd expect.`,
+          `So you're not going to fight this one, and you're not going to feed it either. You're going to ride it. Put your finger on the wave and follow it up as it rises. When it reaches the peak, stay with it — that's the hardest part, the part that feels like it will never pass. Then watch it come all the way back down, until it's gone.`,
         ],
         mechanic: 'reclaim_urge_wave',
         mechanicProps: {},
         closingLine: `It passed. It always does.\nYou rode it instead of feeding it.`,
         rationale: [
-          `This is a skill called "urge surfing," and it's one of the most useful things in all of recovery. People assume an urge will just keep climbing until they give in. But cravings don't work that way. Left alone, an urge rises, crests, and fades — most pass within minutes.`,
-          `The trap is believing the only way to end the feeling is to act on it. Riding the wave proves otherwise, with your own eyes and your own hand: you stayed with it, you didn't feed it, and it passed anyway. Once you've felt that happen, the next urge has a lot less power over you — because now you know how it ends.`,
+          `This is a skill called "urge surfing," and it's one of the most useful things in all of recovery. Most people quietly assume an urge will just keep climbing, getting stronger and stronger, until they have no choice but to give in. But cravings don't actually work that way. Left alone and not fed, an urge rises, crests, and fades — and most of them pass within a few minutes.`,
+          `The real trap is the belief that the only way to make the feeling stop is to act on it. Riding the wave proves that belief wrong, with your own eyes and your own hand: you stayed with the urge, you didn't feed it, and it passed anyway, on its own. That's the lesson your body keeps. Once you've actually felt an urge rise and fall without giving in, the next one has far less power over you — because now you know exactly how the story ends.`,
         ],
       },
       {
@@ -218,16 +222,16 @@ export const RECLAIM_MODULES = [
         arrivalSubtitle: 'Let today rest. Tomorrow is clean.',
         artifactType: 'reclaim_setdown_d4',
         intro: [
-          `It's been a hard day. You don't have to fix anything else tonight. There's only one thing left to do: put the day down, so it doesn't follow you into tomorrow.`,
-          `Below is today — this whole heavy day — held in one small light. Take it, and lower it gently into the still water. Let it sink. Let it rest.`,
-          `When it settles, the day is closed. Whatever happened in it stays in it. Tomorrow opens clean.`,
+          `It's been a hard day. You've already done the real work of it — you came back, you faced the worst of it, you set down what you were carrying, you rode out the pull. There's nothing left to fix tonight. There's only one thing left to do: put the day itself down, so it doesn't follow you into tomorrow.`,
+          `This is the last act of Reclaim, and it's a gentle one. Below is today — this whole long, heavy day — held in a single small light. Take it in your hand and lower it, slowly, into the still water. Let it sink. Let it rest there.`,
+          `When it settles, the day is closed. Whatever happened inside it stays inside it. It doesn't get to climb back out and follow you. Tomorrow opens clean — a new day, not a continuation of this one.`,
         ],
         mechanic: 'reclaim_seal',
         mechanicProps: {},
         closingLine: `Today is set down.\nTomorrow, you begin again — clean.`,
         rationale: [
-          `One of the quiet traps after a slip is letting the bad day bleed into the next one, and the next, until a single slip has stained a whole week. Closing the day on purpose — marking a clear end to it — stops that bleed. It says: that was one day, and it is over now.`,
-          `Endings matter to the mind. A small, deliberate closing — lowering the day into still water — tells you the chapter is finished, the way turning off a light tells you it's time to rest. You're not pretending the slip didn't happen. You're refusing to let it own tomorrow. Tonight you set it down. Tomorrow you pick the path back up — clean.`,
+          `One of the quietest traps after a slip is letting the bad day bleed into the next one, and then the next, until a single slip has somehow stained a whole week — or a whole month. Closing the day on purpose, marking a clear and deliberate end to it, is what stops that bleed. It draws a line and says: that was one day, and that day is over now.`,
+          `Endings matter to the mind more than we tend to notice. A small, deliberate closing — lowering the day into still water and watching it settle — tells you the chapter is finished, the same way switching off a light at night tells you it's time to stop and rest. You're not pretending the slip didn't happen, and you're not letting yourself off the hook. You're simply refusing to let one hard day own the next one. Tonight you set it down. Tomorrow you pick the path back up — clean.`,
         ],
       },
       matchedStep('reclaim_setdown_d5'),

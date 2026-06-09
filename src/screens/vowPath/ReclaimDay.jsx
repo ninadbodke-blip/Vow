@@ -109,6 +109,18 @@ export default function ReclaimDay() {
       setActiveModule(activeId)
       setDayContent(exercise)
 
+      // The persisted step is keyed by day number, but Reclaim rotates modules,
+      // so the same day number can map to a different exercise. If this is a
+      // different exercise than the saved step belongs to, start fresh at ARRIVAL
+      // (otherwise a freshly-rotated module's day would resume mid-interaction).
+      try {
+        const exKey = `vow_reclaim_ex_${dayNumber}`
+        if (localStorage.getItem(exKey) !== exercise.artifactType) {
+          setStep(STEP.ARRIVAL)
+          localStorage.setItem(exKey, exercise.artifactType)
+        }
+      } catch (e) { /* localStorage unavailable — non-fatal */ }
+
       const unlocked = isDayUnlocked(progressRow, dayNumber)
       if (!unlocked.allowed) {
         setAccessDenied(true)

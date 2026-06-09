@@ -78,16 +78,19 @@ export default function ReclaimOverview() {
       if (!resumable) {
         chosenId = pickReclaimModule(history)
         const newHistory = [...history, chosenId].slice(-6)
-        await supabase
+        const { error: stateError } = await supabase
           .from('vow_artifacts')
           .upsert({
             user_id: user.id,
             artifact_type: 'reclaim_state',
             content: { active_module: chosenId, history: newHistory, activated_at: new Date().toISOString() },
             stage: 'reclaim',
-            day_number: 0,
+            // day_number 1 (not 0): the table rejects 0, which silently dropped
+            // this row and caused the module to re-roll on every visit.
+            day_number: 1,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id,artifact_type' })
+        if (stateError) console.error('Failed to persist reclaim_state (module rotation):', stateError)
       }
 
       const mod = getModule(chosenId)
