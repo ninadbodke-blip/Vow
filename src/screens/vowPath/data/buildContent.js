@@ -683,6 +683,15 @@ export const BUILD_DAYS = [
   // ===================================================================
   {
     day: 8,
+    dailyActivities: [
+      { day: 1, glyph: 'pause', title: `Check H.A.L.T.`, body: `Once today, stop and ask yourself: am I Hungry, Angry, Lonely, or Tired? These four make everything harder. If you spot one, fix it — eat, rest, call someone, take a break. Catching them early stops small things becoming big ones.` },
+      { day: 2, glyph: 'watch', title: `Spot a risky moment`, body: `Notice one moment today that feels even a little risky — a place, a feeling, a time of day that used to mean using. Just notice it and name it: 'this is a tricky moment for me.' Knowing your risky moments is half the battle.` },
+      { day: 3, glyph: 'guard', title: `Put up one small guard`, body: `Do one thing today that lowers your risk — change your route home, plan your evening so you're not alone and bored, delete an old number. Just one. You don't have to fix everything. Putting up one small guard is enough for today.` },
+      { day: 4, glyph: 'map', title: `Have a plan ready`, body: `Decide today, in advance, what you'll do next time a strong urge hits — call one specific person, leave the place, go for a walk. Write it down. Deciding now, while you're calm, is much easier than deciding in the moment.` },
+      { day: 5, glyph: 'tether', title: `Tell someone how you really are`, body: `Once today, tell one person how you're actually doing — even just 'rough day' or 'tired but okay.' You don't have to explain. Letting one person know the real thing means you're not carrying it alone.` },
+      { day: 6, glyph: 'shed', title: `Get rid of one temptation`, body: `Find one thing today that makes slipping easy and get rid of it — a bottle in the cupboard, an app, something lying around. Out of sight, out of reach. Just make the wrong choice a little harder to make.` },
+      { day: 7, glyph: 'anchor', title: `Remember why you stopped`, body: `Take a minute today to remember one real reason you stopped — a person, your health, how bad it got, what you're building now. Picture it clearly. On a hard day, your reason is the thing that holds you. Keep it close.` },
+    ],
     offlinePractice: {
       id: 'w8',
       archetype: 'pause',
@@ -795,6 +804,15 @@ export const BUILD_DAYS = [
   // ===================================================================
   {
     day: 9,
+    dailyActivities: [
+      { day: 1, glyph: 'spark', title: `Do something just for fun`, body: `Do one thing today purely because it's fun — a game, a show you love, a laugh with a friend. Not to fix anything, not as a reward. Just fun. A good life isn't all work and repair. Enjoy something today.` },
+      { day: 2, glyph: 'map', title: `Plan a normal good thing`, body: `Plan one ordinary, nice thing for next week — see a friend, a day out, a small trip. Just a normal plan, like anyone makes. Looking forward to everyday things is a lot of what a settled life feels like.` },
+      { day: 3, glyph: 'give', title: `Help with something bigger than you`, body: `Do one small thing today for someone or something beyond yourself — help a neighbour, give a little, be useful to someone. Life feels meaningful when it points outward too, not only inward. Look up and out today.` },
+      { day: 4, glyph: 'home', title: `Let recovery be quiet today`, body: `Try to go through today without recovery being the main thing on your mind. Just live — work, people, normal stuff. It's the floor you stand on now, not the whole room. Notice how it feels to just be a person.` },
+      { day: 5, glyph: 'check', title: `Handle one boring task`, body: `Do one normal, boring grown-up task today you've been putting off — a bill, a chore, an errand, an email. Not exciting. But handling normal life calmly, before it piles up, is a quiet sign of how far you've come.` },
+      { day: 6, glyph: 'tether', title: `Be with someone, no agenda`, body: `Spend time with someone today with no goal at all — not to fix, impress, or get anything. Just be with them. Easy, ordinary time with people is one of the best parts of a normal life. Have some today.` },
+      { day: 7, glyph: 'watch', title: `Notice how far you have come`, body: `Tonight, think back to where you were a year or two ago, and notice the distance. Don't overthink it. Just see that you got here. Standing on solid ground and looking at the life you're building — that's the whole point.` },
+    ],
     offlinePractice: {
       id: 'w9',
       archetype: 'shed',

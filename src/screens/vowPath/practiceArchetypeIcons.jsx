@@ -170,6 +170,30 @@ const PATHS = {
       <path d="M3 12h4l2-5 3 10 2.5-7 1.5 2h5" />
     </>
   ),
+  // Guard — put up a small protection (a shield)
+  guard: (
+    <>
+      <path d="M12 3.5l6.5 2.3v6.2c0 4.2-2.8 7-6.5 8.5-3.7-1.5-6.5-4.3-6.5-8.5V5.8z" />
+    </>
+  ),
+  // Anchor — what holds you steady (your reason)
+  anchor: (
+    <>
+      <circle cx="12" cy="5" r="2" />
+      <path d="M12 7v14" />
+      <path d="M8 10.5h8" />
+      <path d="M4.5 14c0 4.5 3.4 7 7.5 7s7.5-2.5 7.5-7" />
+      <path d="M4.5 14h-1M19.5 14h1" />
+    </>
+  ),
+  // Home — the settled life you live in
+  home: (
+    <>
+      <path d="M4 10.5l8-6 8 6" />
+      <path d="M6 9.5V20h12V9.5" />
+      <path d="M10 20v-5.5h4V20" />
+    </>
+  ),
 }
 
 export const PRACTICE_ARCHETYPES = Object.keys(PATHS)
