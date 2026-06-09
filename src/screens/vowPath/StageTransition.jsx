@@ -55,13 +55,12 @@ const TRANSITION_CONTENT = {
     title: 'Endure is complete.',
     body: [
       `Twenty-one days of structured holding. Crash, flatness, return. The vow held.`,
-      `What comes next is Build — 8 modules over 8 weeks. Slower cadence than the daily stages. Focused on constructing the post-vow life: the body, relationships, work, meaning.`,
-      `Build is being completed and ships in the coming weeks. The work of Endure stays with you in the meantime.`,
+      `What comes next is Build — 9 modules over 9 weeks, set across a roughly twelve-week window. A slower cadence than the daily stages, by design: there is no streak to keep. You return when each week's work is ready for you.`,
+      `The daily holding is behind you. Build is the slower work of constructing the post-vow life — the body, relationships, work, meaning.`,
     ],
-    nextStageBlurb: 'Build is coming. We will notify you when it ships.',
-    continueLabel: 'Return home',
-    nextPath: '/app/home',
-    showAsComingSoon: true,
+    nextStageBlurb: 'Build is 9 modules, roughly one a week. No daily streak — you come back as each one opens.',
+    continueLabel: 'Enter Build',
+    nextPath: '/app/vow-path/build',
   },
 }
 

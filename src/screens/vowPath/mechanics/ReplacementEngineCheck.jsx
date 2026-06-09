@@ -204,9 +204,10 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
     const id = activity.activity || `idx_${activeIdx}`
     const entry = entries[id] || {}
     let prior = null
+    let priorId = null
     if (isSecondCheck && priorCheckData?.check_data) {
       const pe = priorCheckData.check_data.find(c => c.activity_id === id)
-      if (pe?.status) prior = priorResolve(pe.status)
+      if (pe?.status) { prior = priorResolve(pe.status); priorId = pe.status }
     }
     const curRank = entry.status ? rankOf(statusOpts, entry.status) : null
     const sideOpts = (statusOpts || []).filter(o => o.off)
@@ -225,37 +226,22 @@ export default function ReplacementEngineCheck({ data, onSave, saving }) {
         <p style={S.hint}>{activity.frequency ? `Committed: ${activity.frequency}, ${activity.duration}` : "Something you've been reaching for"}</p>
         {deltaBadge && <span style={{ display: 'inline-block', marginTop: '8px', fontSize: '12px', fontWeight: 600, color: deltaBadge.c, background: deltaBadge.bg, borderRadius: '20px', padding: '4px 12px', fontFamily: 'Georgia, serif' }}>{deltaBadge.t}</span>}
 
-        {/* DIAL */}
+        {/* SCALE — single select (one choice; no cascade fill) */}
         <p style={{ ...S.groupLabel, marginTop: '1.3rem' }}>{dialPrompt || 'How alive is this practice right now?'}</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {dialOpts.map(o => {
-            const filled = curRank != null && (o.rank || 0) <= curRank
+        <div style={S.optList}>
+          {[...dialOpts, ...sideOpts].map(o => {
             const selected = entry.status === o.id
-            const isPrior = prior && prior.rank === o.rank
+            const isPrior = isSecondCheck && priorId != null && priorId === o.id
             return (
               <button key={o.id} onClick={() => updateEntry(id, 'status', o.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '11px', textAlign: 'left', width: '100%',
-                  padding: '11px 14px', borderRadius: '11px', cursor: 'pointer',
-                  border: selected ? '1.5px solid #8A5A1A' : '0.5px solid #E0D5C2',
-                  background: filled ? 'linear-gradient(90deg, #F4E7CE 0%, #FBF1DF 100%)' : '#FDFBF6',
-                  transition: 'all .12s',
-                }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: filled ? '#9A6A2A' : '#DACBB2' }} />
-                <span style={{ flex: 1, fontSize: '13.5px', color: filled ? '#5A3A0E' : '#6B5840', fontWeight: selected ? 600 : 400, fontFamily: 'Georgia, serif', lineHeight: 1.35 }}>{o.label}</span>
-                {isPrior && <span style={{ fontSize: '10px', color: '#8A7355', fontFamily: 'Georgia, serif', fontStyle: 'italic', whiteSpace: 'nowrap' }}>Day 11 ◂</span>}
+                style={{ ...S.opt, ...(selected ? S.optOn : {}), display: 'flex', alignItems: 'center', gap: '11px' }}>
+                <span style={{ width: '15px', height: '15px', borderRadius: '50%', flexShrink: 0, boxSizing: 'border-box', border: selected ? '4.5px solid #8A5A1A' : '1.5px solid #D2C2A6', background: selected ? '#FBF1DF' : 'transparent' }} />
+                <span style={{ flex: 1, lineHeight: 1.35 }}>{o.label}</span>
+                {isPrior && <span style={{ fontSize: '10.5px', color: '#8A7355', fontFamily: 'Georgia, serif', fontStyle: 'italic', whiteSpace: 'nowrap' }}>Day 11 ◂</span>}
               </button>
             )
           })}
         </div>
-        {sideOpts.length > 0 && (
-          <div style={{ marginTop: '8px' }}>
-            {sideOpts.map(o => {
-              const selected = entry.status === o.id
-              return <button key={o.id} onClick={() => updateEntry(id, 'status', o.id)} style={{ ...S.opt, ...(selected ? S.optOn : {}), fontSize: '13px' }}>{o.label}</button>
-            })}
-          </div>
-        )}
 
         {/* FOLLOW-UP */}
         {!isSecondCheck && entry.status && (
