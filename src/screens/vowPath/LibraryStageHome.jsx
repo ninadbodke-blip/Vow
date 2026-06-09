@@ -5,6 +5,7 @@ import { REFLECT_DEEP_READS } from './data/reflectDeepReads'
 import { NOTICE_DEEP_READS } from './data/noticeDeepReads'
 import { COMMIT_DEEP_READS } from './data/commitDeepReads'
 import { ENDURE_DEEP_READS } from './data/endureDeepReads'
+import { BUILD_DEEP_READS } from './data/buildDeepReads'
 
 const STAGE_CONFIG = {
   notice: {
@@ -49,6 +50,19 @@ const STAGE_CONFIG = {
       { title: 'Phase 1 — Crash', subtitle: 'Days 1–7. The acute stretch.', range: [1, 7] },
       { title: 'Phase 2 — Flatness', subtitle: 'Days 8–14. The middle, where most people leave.', range: [8, 14] },
       { title: 'Phase 3 — Return', subtitle: 'Days 15–21. Pleasure flickering back. The vow held.', range: [15, 21] },
+    ],
+  },
+  build: {
+    label: 'Build',
+    eyebrow: 'Maintenance',
+    title: 'Nine weeks of building a life.',
+    subtitle: 'The maintenance-stage essays — the flat after, the new tenant, the quiet self, the long horizon, the return path, the floor.',
+    data: BUILD_DEEP_READS,
+    totalDays: 9,
+    groups: [
+      { title: 'Arriving', subtitle: 'Weeks 1–3. Settling into the quiet.', range: [1, 3] },
+      { title: 'Constructing', subtitle: 'Weeks 4–6. Who you are when no one is watching.', range: [4, 6] },
+      { title: 'Horizon', subtitle: 'Weeks 7–9. The longer view.', range: [7, 9] },
     ],
   },
 }

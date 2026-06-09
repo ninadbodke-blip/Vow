@@ -5,12 +5,14 @@ import { getReflectDeepRead } from './data/reflectDeepReads'
 import { getNoticeDeepRead } from './data/noticeDeepReads'
 import { getCommitDeepRead } from './data/commitDeepReads'
 import { getEndureDeepRead } from './data/endureDeepReads'
+import { getBuildDeepRead } from './data/buildDeepReads'
 
 const STAGE_GETTERS = {
   reflect: getReflectDeepRead,
   notice: getNoticeDeepRead,
   commit: getCommitDeepRead,
   endure: getEndureDeepRead,
+  build: getBuildDeepRead,
 }
 
 const STAGE_LABELS = {
@@ -18,6 +20,7 @@ const STAGE_LABELS = {
   notice: 'Notice',
   commit: 'Commit',
   endure: 'Endure',
+  build: 'Build',
 }
 
 export default function LibraryDeepRead() {
@@ -32,6 +35,7 @@ export default function LibraryDeepRead() {
   const getter = STAGE_GETTERS[stageKey]
   const content = getter ? getter(dayNumber) : null
   const stageLabel = STAGE_LABELS[stageKey] || 'Reflect'
+  const unitLabel = stageKey === 'build' ? 'Week' : 'Day'
 
   const [checking, setChecking] = useState(true)
   const [accessAllowed, setAccessAllowed] = useState(false)
@@ -105,14 +109,14 @@ export default function LibraryDeepRead() {
           return
         }
         setAccessAllowed(false)
-        setAccessReason(`This chapter unlocks after you complete Day ${dayNumber}.`)
+        setAccessReason(`This chapter unlocks after you complete ${unitLabel} ${dayNumber}.`)
         setChecking(false)
         return
       }
 
       // Earlier or other stage, and this chapter isn't done yet.
       setAccessAllowed(false)
-      setAccessReason(`This chapter unlocks once you complete Day ${dayNumber} of ${stageLabel}.`)
+      setAccessReason(`This chapter unlocks once you complete ${unitLabel} ${dayNumber} of ${stageLabel}.`)
       setChecking(false)
     }
     checkAccess()
@@ -134,7 +138,7 @@ export default function LibraryDeepRead() {
           <div style={styles.notFound}>
             <p style={styles.notFoundTitle}>Chapter not found</p>
             <p style={styles.notFoundText}>
-              The chapter for Day {dayNumber} doesn't exist.
+              The chapter for {unitLabel} {dayNumber} doesn't exist.
             </p>
           </div>
         </div>
@@ -172,7 +176,7 @@ export default function LibraryDeepRead() {
           <div style={styles.stageBadge}>
             <span style={styles.stageBadgeText}>{stageLabel}</span>
             <span style={styles.stageBadgeDot}>·</span>
-            <span style={styles.stageBadgeText}>Day {dayNumber}</span>
+            <span style={styles.stageBadgeText}>{unitLabel} {dayNumber}</span>
           </div>
 
           <h1 style={styles.title}>{content.title}</h1>
