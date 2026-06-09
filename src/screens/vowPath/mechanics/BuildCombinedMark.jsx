@@ -23,11 +23,14 @@ export default function BuildCombinedMark({
   // Extract ghost data from prior entries.
   // priorEntries shape: [{day, content: {a: {position, textures}, b, c, notes}}, ...]
   // We only care about activity A (the combined_mark itself).
+  // Prior entries arrive in two shapes:
+  //  - combined_mark (Week 5, 9): content.a = { position: {x,y}, textures: [...] }
+  //  - separate activities (Week 1): content.a = {x,y} (position map), content.b = [...] (textures)
   const positionGhosts = priorEntries
     .map(entry => {
-      const pos = entry.content?.a?.position
-      if (!pos) return null
-      if (typeof pos.x !== 'number' || typeof pos.y !== 'number') return null
+      const a = entry.content?.a
+      const pos = (a && typeof a.x === 'number' && typeof a.y === 'number') ? a : a?.position
+      if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number') return null
       return { day: entry.day, x: pos.x, y: pos.y }
     })
     .filter(Boolean)
@@ -35,6 +38,7 @@ export default function BuildCombinedMark({
   const textureGhosts = priorEntries
     .map(entry => {
       const tex = entry.content?.a?.textures
+        || (Array.isArray(entry.content?.b) ? entry.content.b : null)
       if (!Array.isArray(tex) || tex.length === 0) return null
       return { day: entry.day, textures: tex }
     })
