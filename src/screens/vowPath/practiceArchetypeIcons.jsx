@@ -137,6 +137,39 @@ const PATHS = {
       <path d="M5 13l4.5 4.5L20 6" />
     </>
   ),
+  // Give — spend empathy / offer care (a heart)
+  give: (
+    <>
+      <path d="M12 20S4 14.5 4 9.4A3.4 3.4 0 0 1 12 7a3.4 3.4 0 0 1 8 2.4C20 14.5 12 20 12 20z" />
+    </>
+  ),
+  // Phone — make the call (a handset device)
+  phone: (
+    <>
+      <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
+      <path d="M10.5 18.5h3" />
+    </>
+  ),
+  // Ear — listen all the way through
+  ear: (
+    <>
+      <path d="M8.5 8.5a3.5 3.5 0 0 1 7 0c0 2-1.6 2.9-2.6 3.9-.8.8-1.4 1.5-1.4 2.6a2.2 2.2 0 0 1-4.4 0" />
+      <path d="M10 9a2 2 0 0 1 4 0" />
+    </>
+  ),
+  // Coin — set a little aside (money)
+  coin: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 7.5v9M9.5 10.5h5M9.5 13.5h5" />
+    </>
+  ),
+  // Pulse — tend the body (a heartbeat line)
+  pulse: (
+    <>
+      <path d="M3 12h4l2-5 3 10 2.5-7 1.5 2h5" />
+    </>
+  ),
 }
 
 export const PRACTICE_ARCHETYPES = Object.keys(PATHS)

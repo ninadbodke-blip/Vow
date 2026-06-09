@@ -380,6 +380,15 @@ export const BUILD_DAYS = [
   // ===================================================================
   {
     day: 5,
+    dailyActivities: [
+      { day: 1, glyph: 'give', title: `Spend the empathy`, body: `Find one person today who's struggling, visibly or quietly, and offer the understanding only someone who's been there can — a real question, a steadier presence, no rushing to fix. The empathy those years cost you is worth nothing unspent. Spend it once.` },
+      { day: 2, glyph: 'pause', title: `Stay in the discomfort`, body: `When something uncomfortable comes today — boredom, tension, a hard feeling — stay in it a beat longer than is easy instead of reaching to escape. You learned, the hard way, how to sit inside discomfort. That is a real skill. Use it on purpose.` },
+      { day: 3, glyph: 'watch', title: `Read it early`, body: `Once today, catch a state forming before it has words — the unease, the restlessness, the pull. You read these signals earlier than most people ever learn to. Name it the moment it appears. Early reading is part of the inheritance; practise it on something small.` },
+      { day: 4, glyph: 'map', title: `Solve one small thing`, body: `Use the resourcefulness those years built: sort out one small problem today you'd normally avoid or hand off. Managing a hidden life took real ingenuity. Point that same ingenuity at something that actually helps you now, and let it feel as ordinary as it should.` },
+      { day: 5, glyph: 'say', title: `Say the plain true thing`, body: `Somewhere today, say the honest, unsoftened thing the years taught you to see — what actually matters here, what's being avoided. Not cruelly; plainly. The fluency in self-deception you're leaving behind has a flip side: you spot the truth fast. Use that side.` },
+      { day: 6, glyph: 'tether', title: `Keep what was real`, body: `Reach out today to one person from the using years whose friendship was real underneath the substance — the table is gone, the bond can hold. A message, a call, a plan. Not all of that time was transactional. Keep the part that was genuine.` },
+      { day: 7, glyph: 'document', title: `Name one thing you carry`, body: `Tonight, write one capacity those years gave you that you want to carry forward for good — a kind of attention, a hard-won steadiness, an empathy. Putting it in words turns lost time into something you own, and can reach for on purpose.` },
+    ],
     offlinePractice: {
       id: 'w5',
       archetype: 'document',
@@ -498,6 +507,15 @@ export const BUILD_DAYS = [
   // ===================================================================
   {
     day: 6,
+    dailyActivities: [
+      { day: 1, glyph: 'tether', title: `One real conversation`, body: `Have one genuine, unhurried conversation today — phone face-down, fully present, not a transaction. Ask a real question and actually wait for the answer. Connection is a primary reward the substance crowded out; one real exchange does more for a flat day than it promises.` },
+      { day: 2, glyph: 'phone', title: `Make the call you have put off`, body: `Call one person you've meant to reach — a parent, an old friend, someone you let drift. Voice, not text. The call you keep postponing is usually the one that matters most; make it today, even if it's brief and a little awkward.` },
+      { day: 3, glyph: 'ear', title: `Listen all the way through`, body: `In one conversation today, listen without planning your reply — don't interrupt, don't steer it back to yourself, just hear the person to the end. Being truly heard is rare. Giving it, fully, is a quiet bid that deepens a bond more than talking does.` },
+      { day: 4, glyph: 'say', title: `Say the warm thing out loud`, body: `Tell one person today something true and good you usually leave unsaid — that you're grateful for them, that they matter, that you noticed something. The using years often went quiet on warmth. Say it plainly, and let it land instead of rushing past it.` },
+      { day: 5, glyph: 'walk', title: `Be there in person`, body: `Be physically present with someone today — meet for coffee, drop by, sit in the same room with no screen between you. Presence is a different reward than messaging. Let one connection this week happen in the same air, where the small unspoken things still travel.` },
+      { day: 6, glyph: 'watch', title: `See the shape of it`, body: `Notice today who you instinctively reach for and who you keep at arm's length. No judgment — just see the real shape of your closeness in motion. Whom do you let in? Whom do you avoid? Seeing the pattern honestly is where the repair begins.` },
+      { day: 7, glyph: 'document', title: `Name one to tend`, body: `Tonight, name one relationship worth more than it's getting from you, and one small thing you'll do this week to tend it. Networks rebuild by accumulation, not grand gestures. Choose the one that matters and write down the small next move.` },
+    ],
     offlinePractice: {
       id: 'w6',
       archetype: 'tether',
@@ -570,6 +588,15 @@ export const BUILD_DAYS = [
   // ===================================================================
   {
     day: 7,
+    dailyActivities: [
+      { day: 1, glyph: 'coin', title: `Set a little aside`, body: `Put a small amount toward your future today — into savings, against a debt, into something that grows. Even tiny. Money set aside is the plainest possible bet on a future you'll be standing in. The substance spent against tomorrow; today you spend for it.` },
+      { day: 2, glyph: 'book', title: `Study one page`, body: `Spend fifteen minutes today on a skill that takes years to grow — a language, a craft, a subject you care about. One page, one lesson. Compounding is invisible day to day and enormous across years, and you only get the years by starting the pages now.` },
+      { day: 3, glyph: 'pulse', title: `Tend the later body`, body: `Do one thing today purely for the body you'll have in ten years — a real walk, decent sleep tonight, water instead of the easy thing. Not for how you look now. The long horizon includes the vessel you'll live in; maintain it before it ever gets urgent.` },
+      { day: 4, glyph: 'plant', title: `Move the slow thing an inch`, body: `Nudge one long, slow project forward by a single inch today — a paragraph, a call, one small piece. The slow accumulating things are exactly what survival-mode skips. Give one of them ten minutes, knowing full well the payoff is a long way off.` },
+      { day: 5, glyph: 'tether', title: `Invest with no return today`, body: `Put time into one slow, accumulating relationship today with nothing to gain right now — a check-in, an unhurried hour, patience held. The deep relationships of your forties are built by showing up in your thirties, unrewarded, over and over. Show up once today.` },
+      { day: 6, glyph: 'map', title: `Picture one future day`, body: `Spend two minutes today picturing one ordinary day five years out — where you wake, what you do, who's nearby. Make it concrete, not grand. Imagining the future in real detail is what pulls a present-bound mind toward it. Stand in that day for a moment.` },
+      { day: 7, glyph: 'document', title: `Name the direction`, body: `Tonight, write one direction — not a goal, a direction — you want the next five years to move in: who you're becoming, what shape your days take. Direction, not arrival. The horizon is a heading you hold; naming it out loud is how it starts to pull.` },
+    ],
     offlinePractice: {
       id: 'w7',
       archetype: 'map',
