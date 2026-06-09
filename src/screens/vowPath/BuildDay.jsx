@@ -344,15 +344,6 @@ export default function BuildDay() {
             dayNumber={dayNumber}
             priorEntries={priorEntries}
           />
-
-          <div style={styles.deepReadFooter}>
-            <button
-              onClick={() => navigate(`/app/library/build/day/${dayNumber}`)}
-              style={styles.libraryLink}
-            >
-              Curious about the science behind this week? Read the deep read →
-            </button>
-          </div>
         </div>
       </div>
     )
@@ -413,7 +404,6 @@ const styles = {
     textUnderlineOffset: '4px',
     lineHeight: 1.5,
   },
-  deepReadFooter: { textAlign: 'center' },
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
