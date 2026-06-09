@@ -145,8 +145,9 @@ export default function BuildOverview() {
           <div style={styles.tallyMarks}>
             {Array.from({ length: BUILD_TOTAL_DAYS }).map((_, i) => {
               const n = i + 1
-              const done = n <= totalCompleted
-              const today = !done && n === lastCompleted + 1
+              const st = getDayStatus(n)
+              const done = st === STATUS.COMPLETED
+              const today = st === STATUS.CURRENT
               return (
                 <span key={i} style={{
                   ...styles.tallyMark,
@@ -161,7 +162,7 @@ export default function BuildOverview() {
               ? 'Begin with Day 1.'
               : totalCompleted === BUILD_TOTAL_DAYS
                 ? 'Build is complete.'
-                : `Day ${lastCompleted + 1} is next.`}
+                : `Day ${Math.min(currentWeek, BUILD_TOTAL_DAYS)} is next.`}
           </p>
         </div>
 
