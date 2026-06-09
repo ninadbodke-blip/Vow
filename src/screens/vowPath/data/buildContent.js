@@ -50,6 +50,15 @@ export const BUILD_DAYS = [
   // ===================================================================
   {
     day: 1,
+    dailyActivities: [
+      { day: 1, glyph: 'cup', title: 'One warm thing, slowly', body: `Make something warm to drink and drink it doing nothing else — no phone, no screen. Notice the heat, the smell, the first sip. Stay until it's gone. You're not relaxing; you're teaching a dulled system to register a small, real pleasure again.` },
+      { day: 2, glyph: 'walk', title: 'A walk your body can feel', body: `Walk ten minutes with no destination and no podcast. Pay attention to your feet, your breath, the air on your skin. When your mind reaches for the to-do list, come back to the body. Movement is one of the first pleasures the system relearns.` },
+      { day: 3, glyph: 'music', title: 'A song, eyes closed', body: `Play one song you loved before — foreground, not background. Sit, close your eyes, do nothing but listen, the whole way through. Notice if anything moves in you, even faintly. Music routes straight to the reward system; it's often where feeling flickers back first.` },
+      { day: 4, glyph: 'plant', title: 'Fifteen minutes with your hands', body: `Make or fix or tend something for fifteen minutes — cook slowly, sketch, repair, plant. Not for the outcome; for the doing. Using your hands on something real, with attention, is the whole mechanism: the act comes first, and the small satisfaction follows it.` },
+      { day: 5, glyph: 'sun', title: 'Ten minutes of outside', body: `Go outside and find one living thing to actually look at — a tree, a bird, the sky changing. No phone in your hand. Let your eyes rest on it. Plain attention to the living world lowers the static and lets ordinary pleasures land.` },
+      { day: 6, glyph: 'tether', title: 'One unhurried exchange', body: `Have one small, unhurried moment with a person today — a real hello with a neighbour, a few minutes with someone you live with, phone face-down. Not a task, not a text. Connection is a primary reward; one warm exchange does more than a flat day suggests.` },
+      { day: 7, glyph: 'spark', title: 'Something to look forward to', body: `Before sleep, plan one small good thing for tomorrow and let yourself anticipate it — a coffee somewhere, a walk, a call. Anticipation is its own circuit, and the substance hijacked it for years. Tonight you give it something ordinary and real to point at.` },
+    ],
     offlinePractice: {
       id: 'w1',
       archetype: 'watch',

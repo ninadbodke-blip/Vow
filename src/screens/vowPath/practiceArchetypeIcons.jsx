@@ -73,6 +73,47 @@ const PATHS = {
       <path d="M18.4 3l1.8-1.8" />
     </>
   ),
+
+  // Cup — a warm drink, attended (mug + steam)
+  cup: (
+    <>
+      <path d="M5 10h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" />
+      <path d="M16 11h2.2a2.3 2.3 0 0 1 0 4.6H16" />
+      <path d="M8 3.4c-.7.9.7 1.7 0 2.8M12 3.4c-.7.9.7 1.7 0 2.8" />
+    </>
+  ),
+  // Walk — a body in motion
+  walk: (
+    <>
+      <circle cx="13" cy="4.3" r="1.9" />
+      <path d="M13 6.4v6.2" />
+      <path d="M13 12.6l-3.2 6.4" />
+      <path d="M13 12.6l3 5.6" />
+      <path d="M13 8.6l3.6 1.7" />
+      <path d="M13 8.6L9.4 10" />
+    </>
+  ),
+  // Music — a note, for listening
+  music: (
+    <>
+      <path d="M9 16.5V5l9-2v9" />
+      <circle cx="6.6" cy="16.5" r="2.4" />
+      <circle cx="15.6" cy="14.5" r="2.4" />
+    </>
+  ),
+  // Sun — being outside, daylight
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="3.8" />
+      <path d="M12 2.6v2.1M12 19.3v2.1M2.6 12h2.1M19.3 12h2.1M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M18.7 5.3l-1.5 1.5M6.8 17.2l-1.5 1.5" />
+    </>
+  ),
+  // Spark — something to look forward to
+  spark: (
+    <>
+      <path d="M12 3l1.9 6.1L20 11l-6.1 1.9L12 19l-1.9-6.1L4 11l6.1-1.9z" />
+    </>
+  ),
 }
 
 export const PRACTICE_ARCHETYPES = Object.keys(PATHS)

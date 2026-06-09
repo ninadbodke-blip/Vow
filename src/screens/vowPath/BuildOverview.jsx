@@ -37,6 +37,8 @@ export default function BuildOverview() {
   const [activeOffline, setActiveOffline] = useState(null) // the week object whose sheet is open
   const [offlineDraft, setOfflineDraft] = useState({})
   const [savingOffline, setSavingOffline] = useState(false)
+  const [activeDayCard, setActiveDayCard] = useState(null) // { week, act } for the per-day floating card
+  const [dayCardChoice, setDayCardChoice] = useState(null) // 'done' | 'missed' | null
 
   useEffect(() => {
     async function load() {
@@ -121,6 +123,30 @@ export default function BuildOverview() {
   const markedCountOf = (marks) => Object.values(marks || {}).filter(v => v === 'done' || v === 'missed').length
   const openOffline = (week) => { setOfflineDraft({ ...(offlineMarks[week.day] || {}) }); setActiveOffline(week) }
   const closeOffline = () => setActiveOffline(null)
+  const openDayCard = (week, act) => { setDayCardChoice((offlineMarks[week.day] || {})[act.day] || null); setActiveDayCard({ week, act }) }
+  const closeDayCard = () => setActiveDayCard(null)
+  const saveDayCard = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || !activeDayCard) return
+    setSavingOffline(true)
+    const wk = activeDayCard.week.day
+    const marks = { ...(offlineMarks[wk] || {}) }
+    if (dayCardChoice) marks[activeDayCard.act.day] = dayCardChoice
+    else delete marks[activeDayCard.act.day]
+    const { error } = await supabase
+      .from('vow_artifacts')
+      .upsert({
+        user_id: user.id,
+        artifact_type: `build_offline_week_${wk}`,
+        content: { marks },
+        stage: 'build',
+        day_number: wk,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,artifact_type' })
+    setSavingOffline(false)
+    if (!error) { setOfflineMarks(prev => ({ ...prev, [wk]: marks })); setActiveDayCard(null) }
+    else { console.error('Failed to save day mark:', error); alert('Could not save. Please try again.') }
+  }
   const markDay = (d, val) => {
     if (!activeOffline) return
     if (d > availableDaysInWeek(activeOffline.day)) return // can't mark a day that hasn't started
@@ -240,7 +266,7 @@ export default function BuildOverview() {
                   const isLocked = status === STATUS.LOCKED && !tappable
                   const marks = offlineMarks[week.day] || {}
                   const weekLogged = markedCountOf(marks) >= 7
-                  const showStrip = tappable && week.offlinePractice
+                  const showStrip = tappable && (week.dailyActivities || week.offlinePractice)
 
                   return (
                     <div key={week.day}>
@@ -276,8 +302,41 @@ export default function BuildOverview() {
                         </button>
                       )}
 
-                      {/* Offline practice — glyph marker, same family as the other stages */}
-                      {showStrip && (
+                      {/* Offline practice — per-day glyph chips (new model) */}
+                      {showStrip && week.dailyActivities && (
+                        <div style={styles.dailyWrap}>
+                          <div style={styles.dailyHead}>
+                            <span style={styles.offlineTag}>Daily practice</span>
+                            <span style={styles.offlineProgress}>{doneCountOf(marks)}/7</span>
+                          </div>
+                          <div style={styles.dailyChips}>
+                            {week.dailyActivities.map((act) => {
+                              const m = marks[act.day]
+                              const dayLocked = act.day > availableDaysInWeek(week.day)
+                              return (
+                                <button
+                                  key={act.day}
+                                  onClick={() => { if (!dayLocked) openDayCard(week, act) }}
+                                  disabled={dayLocked}
+                                  style={{ ...styles.dayChip, ...(dayLocked ? styles.dayChipLocked : {}) }}
+                                  aria-label={`Day ${act.day}: ${act.title}`}
+                                >
+                                  <span style={{
+                                    ...styles.dayChipRing,
+                                    ...(m === 'done' ? styles.dayChipRingDone : m === 'missed' ? styles.dayChipRingMissed : {}),
+                                  }}>
+                                    <PracticeArchetypeIcon archetype={act.glyph} size={15} />
+                                  </span>
+                                  <span style={styles.dayChipNum}>{act.day}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Offline practice — single glyph marker (fallback until a week is split into days) */}
+                      {showStrip && !week.dailyActivities && (
                         <button onClick={() => openOffline(week)} style={styles.offlineStrip}>
                           <span style={{ ...styles.glyphRing, ...(weekLogged ? styles.glyphRingDone : {}) }}>
                             <PracticeArchetypeIcon archetype={week.offlinePractice.archetype} size={16} />
@@ -302,6 +361,44 @@ export default function BuildOverview() {
           <span style={styles.anchorMark}>✧</span>
           <span style={styles.anchorText}>{STAGE_END}</span>
         </div>
+
+        {/* Per-day floating card (new daily model) */}
+        {activeDayCard && (
+          <div style={styles.sheetOverlay} onClick={closeDayCard}>
+            <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.sheetHandle} aria-hidden="true" />
+              <span style={styles.sheetGlyph}>
+                <PracticeArchetypeIcon archetype={activeDayCard.act.glyph} size={22} />
+              </span>
+              <p style={styles.sheetEyebrow}>Week {activeDayCard.week.day} · Day {activeDayCard.act.day}</p>
+              <p style={styles.sheetTitle}>{activeDayCard.act.title}</p>
+              <p style={styles.sheetAction}>{activeDayCard.act.body}</p>
+              <p style={styles.sheetQ}>Did you do it today?</p>
+              <div style={styles.dayMarkBtns}>
+                <button
+                  onClick={() => setDayCardChoice(dayCardChoice === 'done' ? null : 'done')}
+                  style={{ ...styles.markBtn, ...(dayCardChoice === 'done' ? styles.markBtnDone : {}) }}
+                >
+                  Did it
+                </button>
+                <button
+                  onClick={() => setDayCardChoice(dayCardChoice === 'missed' ? null : 'missed')}
+                  style={{ ...styles.markBtn, ...(dayCardChoice === 'missed' ? styles.markBtnMissed : {}) }}
+                >
+                  Didn't
+                </button>
+              </div>
+              <button
+                onClick={saveDayCard}
+                disabled={savingOffline}
+                style={{ ...styles.sheetSave, ...(savingOffline ? styles.sheetSaveDisabled : {}) }}
+              >
+                {savingOffline ? 'Saving…' : 'Save'}
+              </button>
+              <button onClick={closeDayCard} style={styles.sheetCancel}>Not now</button>
+            </div>
+          </div>
+        )}
 
         {/* Offline practice marking sheet — tracks the whole week */}
         {activeOffline && activeOffline.offlinePractice && (() => {
@@ -460,6 +557,24 @@ const styles = {
   offlineTag: { fontSize: '9.5px', color: '#A1814E', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 600, fontFamily: '-apple-system, sans-serif' },
   offlineName: { fontSize: '13px', color: '#5A4A36', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
   offlineProgress: { flexShrink: 0, fontSize: '12px', color: '#854F0B', fontFamily: 'Georgia, serif', fontWeight: 600 },
+
+  // Per-day glyph chips (new daily model)
+  dailyWrap: {
+    width: 'calc(100% - 42px)', marginLeft: '42px', marginTop: '-2px', marginBottom: '12px',
+    background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', border: '0.5px solid #EADFCB',
+    borderRadius: '14px', padding: '11px 12px 13px',
+  },
+  dailyHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '9px', padding: '0 2px' },
+  dailyChips: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '4px' },
+  dayChip: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 0', fontFamily: 'inherit', flex: 1 },
+  dayChipLocked: { opacity: 0.32, cursor: 'not-allowed' },
+  dayChipRing: {
+    width: '32px', height: '32px', borderRadius: '50%', border: '1.5px solid #C9A86A',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#854F0B', background: '#FFFDF8', lineHeight: 1,
+  },
+  dayChipRingDone: { background: '#D9B57A', border: '1.5px solid #D9B57A', color: '#3A2A1C' },
+  dayChipRingMissed: { background: '#F3EAD9', border: '1.5px dashed #C2A878', color: '#A1814E' },
+  dayChipNum: { fontSize: '10px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontWeight: 600 },
 
   // 5 — Anchor
   anchor: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', marginTop: '2px' },
