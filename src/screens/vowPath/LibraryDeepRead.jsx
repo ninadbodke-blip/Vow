@@ -6,6 +6,7 @@ import { getNoticeDeepRead } from './data/noticeDeepReads'
 import { getCommitDeepRead } from './data/commitDeepReads'
 import { getEndureDeepRead } from './data/endureDeepReads'
 import { getBuildDeepRead } from './data/buildDeepReads'
+import { isCadenceBypassed } from './utils/vowPathGating'
 
 const STAGE_GETTERS = {
   reflect: getReflectDeepRead,
@@ -68,7 +69,7 @@ export default function LibraryDeepRead() {
         return
       }
 
-      if (progress.is_pilot_mode) {
+      if (isCadenceBypassed(progress)) {
         setAccessAllowed(true)
         setChecking(false)
         return
@@ -78,15 +79,15 @@ export default function LibraryDeepRead() {
       // exact signal the overview uses to mark a day complete: a vow_artifacts row
       // for this stage + day. Independent of stage order or which stage is current,
       // so chapters done in earlier (already-unlocked) stages open normally too.
-      const { data: artifactRow } = await supabase
+      const { data: artifactRows } = await supabase
         .from('vow_artifacts')
         .select('day_number')
         .eq('user_id', user.id)
         .eq('stage', stageKey)
         .eq('day_number', dayNumber)
-        .maybeSingle()
+        .limit(1)
 
-      if (artifactRow) {
+      if (artifactRows && artifactRows.length > 0) {
         setAccessAllowed(true)
         setChecking(false)
         return

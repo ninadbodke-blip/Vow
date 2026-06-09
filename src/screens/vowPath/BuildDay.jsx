@@ -344,6 +344,15 @@ export default function BuildDay() {
             dayNumber={dayNumber}
             priorEntries={priorEntries}
           />
+
+          <div style={styles.deepReadFooter}>
+            <button
+              onClick={() => navigate(`/app/library/build/day/${dayNumber}`)}
+              style={styles.libraryLink}
+            >
+              Curious about the science behind this week? Read the deep read →
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -366,6 +375,14 @@ export default function BuildDay() {
           {dayContent.closingLine && (
             <p style={styles.closingLine}>{dayContent.closingLine}</p>
           )}
+
+          <button
+            onClick={() => navigate(`/app/library/build/day/${dayNumber}`)}
+            style={styles.libraryLink}
+          >
+            Curious about the science behind this week? Read the deep read →
+          </button>
+
           <button
             onClick={() => navigate('/app/vow-path/build')}
             style={{ ...styles.primaryBtn, marginTop: '2rem' }}
@@ -381,6 +398,22 @@ export default function BuildDay() {
 }
 
 const styles = {
+  libraryLink: {
+    background: 'transparent',
+    border: 'none',
+    color: '#854F0B',
+    fontSize: '12px',
+    fontStyle: 'italic',
+    fontFamily: 'Georgia, serif',
+    cursor: 'pointer',
+    padding: '12px 16px',
+    marginTop: '1.5rem',
+    textDecoration: 'underline',
+    textDecorationStyle: 'dotted',
+    textUnderlineOffset: '4px',
+    lineHeight: 1.5,
+  },
+  deepReadFooter: { textAlign: 'center' },
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
