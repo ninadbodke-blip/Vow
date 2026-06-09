@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { isCadenceBypassed } from './utils/vowPathGating'
+import { canEnterReclaim } from './utils/stageAccess'
 import {
   getReclaimDay,
   RECLAIM_TOTAL_DAYS,
@@ -66,9 +67,11 @@ export default function ReclaimDay() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!progressRow || progressRow.current_stage !== 'reclaim') {
+      // Reclaim is relapse support — open to any Vow Path user, not gated to a
+      // current_stage of 'reclaim'. Day 5's matched step sets the re-entry stage.
+      if (!canEnterReclaim(progressRow)) {
         setAccessDenied(true)
-        setAccessReason('You are not currently in Reclaim.')
+        setAccessReason('Reclaim is part of the Vow Path. Take the Stage Check to begin.')
         setAccessLoading(false)
         return
       }

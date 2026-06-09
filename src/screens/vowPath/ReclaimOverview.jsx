@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
-import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
+import { canEnterReclaim } from './utils/stageAccess'
+import { isCadenceBypassed } from './utils/vowPathGating'
 import {
-  BUILD_DAYS,
-  BUILD_TOTAL_DAYS,
-  BUILD_PHASES,
-  getCurrentBuildWeek,
-} from './data/buildContent'
+  RECLAIM_DAYS,
+  RECLAIM_TOTAL_DAYS,
+  RECLAIM_PHASES,
+} from './data/reclaimContent'
 import { useStageBackground } from './utils/silhouettes'
 
 const STATUS = {
@@ -17,17 +17,16 @@ const STATUS = {
   LOCKED: 'locked',
 }
 
-const STAGE_END = 'End of Build'
+const STAGE_END = 'The step back in'
 
-export default function BuildOverview() {
+export default function ReclaimOverview() {
   const navigate = useNavigate()
 
   const [progress, setProgress] = useState(null)
   const [completedDays, setCompletedDays] = useState(new Set())
   const [loaded, setLoaded] = useState(false)
   const [accessDenied, setAccessDenied] = useState(false)
-  const [currentWeek, setCurrentWeek] = useState(1)
-  const heroPaint = useStageBackground('build')
+  const heroPaint = useStageBackground('reclaim')
 
   useEffect(() => {
     async function load() {
@@ -43,20 +42,21 @@ export default function BuildOverview() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!canEnterStage(progressRow, 'build')) {
+      // Reclaim is open to any Vow Path user — it is relapse support, not a
+      // sequential stage. No stage-order gate.
+      if (!canEnterReclaim(progressRow)) {
         setAccessDenied(true)
         setLoaded(true)
         return
       }
 
       setProgress(progressRow)
-      setCurrentWeek(getCurrentBuildWeek(progressRow.build_starts_at))
 
       const { data: artifacts } = await supabase
         .from('vow_artifacts')
         .select('day_number')
         .eq('user_id', user.id)
-        .eq('stage', 'build')
+        .eq('stage', 'reclaim')
 
       const completed = new Set(
         (artifacts || [])
@@ -69,24 +69,27 @@ export default function BuildOverview() {
     load()
   }, [navigate])
 
+  // Current = the first day not yet completed (or past the end once all five are done).
+  let currentDay = RECLAIM_TOTAL_DAYS + 1
+  for (let d = 1; d <= RECLAIM_TOTAL_DAYS; d++) {
+    if (!completedDays.has(d)) { currentDay = d; break }
+  }
+
   const getDayStatus = (dayNum) => {
     if (completedDays.has(dayNum)) return STATUS.COMPLETED
-    if (dayNum === currentWeek) return STATUS.CURRENT
-    if (dayNum < currentWeek) return STATUS.OPEN
+    if (dayNum === currentDay) return STATUS.CURRENT
+    if (dayNum < currentDay) return STATUS.OPEN
     return STATUS.LOCKED
   }
 
   const isDayTappable = (dayNum) => {
-    if (import.meta.env.DEV) return true
-    if (progress?.is_pilot_mode) return true
-    if (isExploringPastStage(progress, 'build')) return true
-    const status = getDayStatus(dayNum)
-    return status !== STATUS.LOCKED
+    if (isCadenceBypassed(progress)) return true
+    return getDayStatus(dayNum) !== STATUS.LOCKED
   }
 
   const handleDayTap = (dayNum) => {
     if (!isDayTappable(dayNum)) return
-    navigate(`/app/vow-path/build/day/${dayNum}`)
+    navigate(`/app/vow-path/reclaim/day/${dayNum}`)
   }
 
   if (!loaded) {
@@ -105,13 +108,13 @@ export default function BuildOverview() {
         <div style={styles.phone}>
           <div style={styles.header}>
             <button onClick={() => navigate('/app/vow-path')} style={styles.backBtn}>‹ Vow Path</button>
-            <p style={styles.headerTitle}>Build</p>
+            <p style={styles.headerTitle}>Reclaim</p>
             <div style={{ width: '60px' }}></div>
           </div>
           <div style={styles.lockedBlock}>
-            <div style={styles.lockedIcon}>⏳</div>
+            <div style={styles.lockedIcon}>◷</div>
             <p style={styles.lockedTitle}>Not yet.</p>
-            <p style={styles.lockedReason}>{`You haven't started Build yet. Take the Stage Check first.`}</p>
+            <p style={styles.lockedReason}>{`Reclaim is part of the Vow Path. Take the Stage Check to begin — and it will be here if you ever need a place to regroup.`}</p>
             <button
               onClick={() => navigate('/app/vow-path')}
               style={{ ...styles.primaryBtn, marginTop: '1.5rem' }}
@@ -124,97 +127,81 @@ export default function BuildOverview() {
     )
   }
 
-  const lastCompleted = progress?.last_completed_day || 0
   const totalCompleted = completedDays.size
-  const isPilotOrDev = import.meta.env.DEV || progress?.is_pilot_mode
+  const phase = RECLAIM_PHASES[0]
 
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
 
-        {/* 1 — Hero bleed with nav pills overlaid */}
+        {/* 1 — Hero bleed with the back pill overlaid */}
         <div style={styles.heroWrap}>
           <div style={heroPaint} aria-hidden="true" />
           <div style={styles.heroNav}>
             <button onClick={() => navigate('/app/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
-            <button onClick={() => navigate('/app/library/build')} style={styles.pillBtn}>Library</button>
           </div>
         </div>
 
-        {/* 2 — Title + a single quiet progress line, married into the dissolve */}
+        {/* 2 — Title + the quiet framing line, married into the dissolve */}
         <div style={styles.frontispiece}>
-          <h1 style={styles.stageTitle}>Build</h1>
+          <h1 style={styles.stageTitle}>Reclaim</h1>
+          {phase?.subtitle && <p style={styles.introLine}>{phase.subtitle}</p>}
           <p style={styles.progressLine}>
-            <span style={styles.progressEmph}>{totalCompleted}</span> of {BUILD_TOTAL_DAYS} days gathered
+            <span style={styles.progressEmph}>{totalCompleted}</span> of {RECLAIM_TOTAL_DAYS} days
           </p>
         </div>
 
-        {/* 4 — The continuous thread (runs the full height behind the centred phase headers) */}
+        {/* 4 — The continuous thread + the five days */}
         <div style={styles.listWrap}>
           <div style={styles.thread} aria-hidden="true" />
-          {BUILD_PHASES.map((phase) => {
-            const [start, end] = phase.dayRange
-            const phaseDays = BUILD_DAYS.filter(d => d.day >= start && d.day <= end)
+          {RECLAIM_DAYS.map((day) => {
+            const status = getDayStatus(day.day)
+            const tappable = isDayTappable(day.day)
+            const isToday = status === STATUS.CURRENT
+            const isDone = status === STATUS.COMPLETED
+            const isLocked = status === STATUS.LOCKED && !tappable
+
+            if (isToday) {
+              return (
+                <button
+                  key={day.day}
+                  onClick={() => handleDayTap(day.day)}
+                  style={styles.vaultCard}
+                >
+                  <span style={styles.vaultEyebrow}>{day.day === 1 ? 'Begin here' : "Today's work"}</span>
+                  <span style={styles.vaultTitle}>{day.arrivalTitle}</span>
+                  {day.arrivalSubtitle && (
+                    <span style={styles.vaultSubtitle}>{day.arrivalSubtitle}</span>
+                  )}
+                </button>
+              )
+            }
+
             return (
-              <div key={phase.key}>
-                {BUILD_PHASES.length > 1 && (
-                  <div style={styles.phaseHeader}>
-                    <p style={styles.phaseTitle}>{`· ${phase.title.toUpperCase()} ·`}</p>
-                    {phase.subtitle && <p style={styles.phaseSubtitle}>{phase.subtitle}</p>}
-                  </div>
-                )}
-
-                {phaseDays.map((day) => {
-                  const status = getDayStatus(day.day)
-                  const tappable = isDayTappable(day.day)
-                  const isToday = status === STATUS.CURRENT
-                  const isDone = status === STATUS.COMPLETED
-                  const isLocked = status === STATUS.LOCKED && !tappable
-
-                  if (isToday) {
-                    return (
-                      <button
-                        key={day.day}
-                        onClick={() => handleDayTap(day.day)}
-                        style={styles.vaultCard}
-                      >
-                        <span style={styles.vaultEyebrow}>Today's work</span>
-                        <span style={styles.vaultTitle}>{day.arrivalTitle}</span>
-                        {day.arrivalSubtitle && (
-                          <span style={styles.vaultSubtitle}>{day.arrivalSubtitle}</span>
-                        )}
-                      </button>
-                    )
-                  }
-
-                  return (
-                    <button
-                      key={day.day}
-                      onClick={() => handleDayTap(day.day)}
-                      disabled={!tappable}
-                      style={{
-                        ...styles.dayRow,
-                        ...(isLocked ? styles.dayRowLocked : {}),
-                        cursor: tappable ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      <span style={{
-                        ...styles.dayNode,
-                        color: isDone ? '#D9B57A' : '#C9BBA3',
-                      }}>{isDone ? '✦' : '·'}</span>
-                      <span style={styles.dayContent}>
-                        <span style={{
-                          ...styles.dayTitle,
-                          ...(isDone ? styles.dayTitleDone : {}),
-                        }}>{day.arrivalTitle}</span>
-                        {day.arrivalSubtitle && (
-                          <span style={styles.daySubtitle}>{day.arrivalSubtitle}</span>
-                        )}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
+              <button
+                key={day.day}
+                onClick={() => handleDayTap(day.day)}
+                disabled={!tappable}
+                style={{
+                  ...styles.dayRow,
+                  ...(isLocked ? styles.dayRowLocked : {}),
+                  cursor: tappable ? 'pointer' : 'not-allowed',
+                }}
+              >
+                <span style={{
+                  ...styles.dayNode,
+                  color: isDone ? '#D9B57A' : '#C9BBA3',
+                }}>{isDone ? '✦' : '·'}</span>
+                <span style={styles.dayContent}>
+                  <span style={{
+                    ...styles.dayTitle,
+                    ...(isDone ? styles.dayTitleDone : {}),
+                  }}>{day.arrivalTitle}</span>
+                  {day.arrivalSubtitle && (
+                    <span style={styles.daySubtitle}>{day.arrivalSubtitle}</span>
+                  )}
+                </span>
+              </button>
             )
           })}
         </div>
@@ -261,7 +248,7 @@ const styles = {
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     padding: '2.25rem 1.5rem 0',
   },
   pillBtn: {
@@ -284,27 +271,23 @@ const styles = {
     fontFamily: 'Georgia, serif', fontStyle: 'italic',
     margin: '0 0 0.6rem', letterSpacing: '0.01em', lineHeight: 1.1,
   },
+  introLine: {
+    fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', textAlign: 'center', lineHeight: 1.45,
+    margin: '0 auto 0.5rem', maxWidth: '300px',
+  },
   progressLine: {
     fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif',
     fontStyle: 'italic', textAlign: 'center', letterSpacing: '0.02em', margin: 0,
   },
   progressEmph: { color: '#854F0B' },
 
-  // 4 — Continuous thread + list
+  // 4 — Continuous thread + list (single-phase: spine starts near the top)
   listWrap: { position: 'relative', marginTop: '2.5rem', paddingTop: '0.25rem', paddingBottom: '48px' },
-  // Build is multi-phase, so the thread starts BELOW the first centred phase header
-  // (Notice, single-phase, used top:18). Nudge if the spine peeks above the first header.
   thread: {
-    position: 'absolute', left: '19px', top: '88px', bottom: 0, width: '1.5px',
+    position: 'absolute', left: '19px', top: '18px', bottom: 0, width: '1.5px',
     background: 'linear-gradient(180deg, rgba(217,181,122,0.6) 0%, rgba(217,181,122,0.6) 80%, rgba(217,181,122,0) 100%)',
   },
-  phaseHeader: { textAlign: 'center', margin: '2rem 0 1.25rem' },
-  phaseTitle: {
-    fontSize: '12px', fontWeight: 600, color: '#854F0B',
-    fontFamily: '-apple-system, sans-serif', textTransform: 'uppercase',
-    letterSpacing: '0.2em', margin: '0 0 0.35rem',
-  },
-  phaseSubtitle: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.4 },
 
   dayRow: {
     position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start',
@@ -340,12 +323,12 @@ const styles = {
   anchorMark: { fontSize: '14px', color: '#D9B57A' },
   anchorText: { fontSize: '12px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', letterSpacing: '0.04em' },
 
-  // --- kept for loading / accessDenied states ---
+  // --- loading / accessDenied states ---
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' },
   backBtn: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px', minWidth: '60px', textAlign: 'left' },
   headerTitle: { fontSize: '17px', fontWeight: 500, color: '#2A1F15', margin: 0, fontFamily: 'Georgia, serif' },
   lockedBlock: { textAlign: 'center', padding: '3rem 1rem' },
-  lockedIcon: { fontSize: '40px', marginBottom: '1.25rem' },
+  lockedIcon: { fontSize: '34px', marginBottom: '1.25rem', color: '#C9BBA3' },
   lockedTitle: { fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0 0 1rem' },
   lockedReason: { fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6, margin: 0, maxWidth: '320px', marginLeft: 'auto', marginRight: 'auto' },
   primaryBtn: { width: '100%', padding: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '14px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)' },
