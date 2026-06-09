@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient'
 import { isCadenceBypassed } from './utils/vowPathGating'
 import { canEnterReclaim } from './utils/stageAccess'
 import {
-  getReclaimDay,
+  getReclaimExercise,
   RECLAIM_TOTAL_DAYS,
 } from './data/reclaimContent'
 
@@ -14,6 +14,8 @@ import ReclaimProportion from './mechanics/ReclaimProportion'
 import ReclaimStillStanding from './mechanics/ReclaimStillStanding'
 import ReclaimMending from './mechanics/ReclaimMending'
 import ReclaimMatchedStep from './mechanics/ReclaimMatchedStep'
+import ReclaimWrite from './mechanics/ReclaimWrite'
+import ReclaimChairFlip from './mechanics/ReclaimChairFlip'
 import usePersistedStep from '../../hooks/usePersistedStep'
 
 const STEP = {
@@ -30,14 +32,17 @@ const MECHANIC_COMPONENTS = {
   reclaim_still_standing: ReclaimStillStanding,
   reclaim_mending: ReclaimMending,
   reclaim_matched_step: ReclaimMatchedStep,
+  reclaim_write: ReclaimWrite,
+  reclaim_chair_flip: ReclaimChairFlip,
 }
 
 export default function ReclaimDay() {
   const navigate = useNavigate()
   const { dayNumber: dayNumberParam } = useParams()
   const dayNumber = parseInt(dayNumberParam, 10)
-  const dayContent = getReclaimDay(dayNumber)
 
+  const [dayContent, setDayContent] = useState(null)
+  const [activeModule, setActiveModule] = useState(null)
   const [step, setStep] = usePersistedStep(`vow_step_reclaim_${dayNumber}`, STEP.ARRIVAL, { skipPersist: [STEP.CLOSING] })
   const [progress, setProgress] = useState(null)
   const [accessLoading, setAccessLoading] = useState(true)
@@ -51,13 +56,6 @@ export default function ReclaimDay() {
 
   useEffect(() => {
     async function checkAccess() {
-      if (!dayContent) {
-        setAccessDenied(true)
-        setAccessReason('That day does not exist.')
-        setAccessLoading(false)
-        return
-      }
-
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/app/welcome'); return }
 
@@ -78,6 +76,31 @@ export default function ReclaimDay() {
 
       setProgress(progressRow)
 
+      // Which module is live this visit? The overview picks (or resumes) it and
+      // stores the choice in the reclaim_state artifact. Read it here.
+      const { data: stateRow } = await supabase
+        .from('vow_artifacts')
+        .select('content')
+        .eq('user_id', user.id)
+        .eq('artifact_type', 'reclaim_state')
+        .maybeSingle()
+      const activeId = stateRow && stateRow.content && stateRow.content.active_module
+      if (!activeId) {
+        // No module chosen yet — send them through the overview, which initializes it.
+        navigate('/app/vow-path/reclaim')
+        return
+      }
+
+      const exercise = getReclaimExercise(activeId, dayNumber)
+      if (!exercise) {
+        setAccessDenied(true)
+        setAccessReason('That exercise does not exist.')
+        setAccessLoading(false)
+        return
+      }
+      setActiveModule(activeId)
+      setDayContent(exercise)
+
       const unlocked = isDayUnlocked(progressRow, dayNumber)
       if (!unlocked.allowed) {
         setAccessDenied(true)
@@ -90,14 +113,14 @@ export default function ReclaimDay() {
         .from('vow_artifacts')
         .select('*')
         .eq('user_id', user.id)
-        .eq('artifact_type', dayContent.artifactType)
+        .eq('artifact_type', exercise.artifactType)
         .maybeSingle()
 
       if (artifact) {
         setInteractionData(artifact.content)
       }
 
-      const retrieveFromStages = dayContent.mechanicProps?.retrieveFromStages || []
+      const retrieveFromStages = exercise.mechanicProps?.retrieveFromStages || []
       if (retrieveFromStages.length > 0) {
         const { data: prior } = await supabase
           .from('vow_artifacts')
@@ -107,7 +130,7 @@ export default function ReclaimDay() {
         setPriorArtifacts(prior || [])
       }
 
-      if (dayContent.mechanicProps?.needsStageProgress) {
+      if (exercise.mechanicProps?.needsStageProgress) {
         const { data: allArts } = await supabase
           .from('vow_artifacts')
           .select('stage, day_number')
@@ -124,7 +147,7 @@ export default function ReclaimDay() {
       setAccessLoading(false)
     }
     checkAccess()
-  }, [dayNumber, dayContent, navigate])
+  }, [dayNumber, navigate])
 
   function isDayUnlocked(progressRow, requestedDay) {
     if (isCadenceBypassed(progressRow)) return { allowed: true }

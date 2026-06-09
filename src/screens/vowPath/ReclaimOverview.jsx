@@ -4,9 +4,9 @@ import { supabase } from '../../supabaseClient'
 import { canEnterReclaim } from './utils/stageAccess'
 import { isCadenceBypassed } from './utils/vowPathGating'
 import {
-  RECLAIM_DAYS,
   RECLAIM_TOTAL_DAYS,
-  RECLAIM_PHASES,
+  getModule,
+  pickReclaimModule,
 } from './data/reclaimContent'
 import { useStageBackground } from './utils/silhouettes'
 
@@ -23,6 +23,7 @@ export default function ReclaimOverview() {
   const navigate = useNavigate()
 
   const [progress, setProgress] = useState(null)
+  const [activeModule, setActiveModule] = useState(null)
   const [completedDays, setCompletedDays] = useState(new Set())
   const [loaded, setLoaded] = useState(false)
   const [accessDenied, setAccessDenied] = useState(false)
@@ -31,10 +32,7 @@ export default function ReclaimOverview() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        navigate('/app/welcome')
-        return
-      }
+      if (!user) { navigate('/app/welcome'); return }
 
       const { data: progressRow } = await supabase
         .from('vow_path_progress')
@@ -42,28 +40,64 @@ export default function ReclaimOverview() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      // Reclaim is open to any Vow Path user — it is relapse support, not a
+      // Reclaim is open to any Vow Path user — relapse support, not a
       // sequential stage. No stage-order gate.
       if (!canEnterReclaim(progressRow)) {
         setAccessDenied(true)
         setLoaded(true)
         return
       }
-
       setProgress(progressRow)
 
+      // Which exercises (by artifact_type) has the user finished?
       const { data: artifacts } = await supabase
         .from('vow_artifacts')
-        .select('day_number')
+        .select('artifact_type')
         .eq('user_id', user.id)
         .eq('stage', 'reclaim')
+      const doneTypes = new Set((artifacts || []).map(a => a.artifact_type))
 
-      const completed = new Set(
-        (artifacts || [])
-          .map(a => a.day_number)
-          .filter(d => d !== null && d !== undefined)
+      const moduleComplete = (id) => {
+        const m = getModule(id)
+        return !!(m && m.days.every(d => doneTypes.has(d.artifactType)))
+      }
+
+      // Rotation state lives in a single artifact (no schema change needed).
+      const { data: stateRow } = await supabase
+        .from('vow_artifacts')
+        .select('content')
+        .eq('user_id', user.id)
+        .eq('artifact_type', 'reclaim_state')
+        .maybeSingle()
+      const state = (stateRow && stateRow.content) || {}
+      const history = Array.isArray(state.history) ? state.history : []
+
+      // Resume an unfinished module; otherwise pick a fresh one (avoiding recent).
+      let chosenId = state.active_module
+      const resumable = chosenId && getModule(chosenId) && !moduleComplete(chosenId)
+      if (!resumable) {
+        chosenId = pickReclaimModule(history)
+        const newHistory = [...history, chosenId].slice(-6)
+        await supabase
+          .from('vow_artifacts')
+          .upsert({
+            user_id: user.id,
+            artifact_type: 'reclaim_state',
+            content: { active_module: chosenId, history: newHistory, activated_at: new Date().toISOString() },
+            stage: 'reclaim',
+            day_number: 0,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id,artifact_type' })
+      }
+
+      const mod = getModule(chosenId)
+      setActiveModule(mod)
+      const done = new Set(
+        (mod ? mod.days : [])
+          .filter(d => doneTypes.has(d.artifactType))
+          .map(d => d.day)
       )
-      setCompletedDays(completed)
+      setCompletedDays(done)
       setLoaded(true)
     }
     load()
@@ -102,7 +136,7 @@ export default function ReclaimOverview() {
     )
   }
 
-  if (accessDenied) {
+  if (accessDenied || !activeModule) {
     return (
       <div style={styles.frame}>
         <div style={styles.phone}>
@@ -128,7 +162,6 @@ export default function ReclaimOverview() {
   }
 
   const totalCompleted = completedDays.size
-  const phase = RECLAIM_PHASES[0]
 
   return (
     <div style={styles.frame}>
@@ -142,19 +175,20 @@ export default function ReclaimOverview() {
           </div>
         </div>
 
-        {/* 2 — Title + the quiet framing line, married into the dissolve */}
+        {/* 2 — This visit's module, married into the dissolve */}
         <div style={styles.frontispiece}>
-          <h1 style={styles.stageTitle}>Reclaim</h1>
-          {phase?.subtitle && <p style={styles.introLine}>{phase.subtitle}</p>}
+          <p style={styles.eyebrow}>· RECLAIM ·</p>
+          <h1 style={styles.stageTitle}>{activeModule.title}</h1>
+          {activeModule.subtitle && <p style={styles.introLine}>{activeModule.subtitle}</p>}
           <p style={styles.progressLine}>
-            <span style={styles.progressEmph}>{totalCompleted}</span> of {RECLAIM_TOTAL_DAYS} days
+            <span style={styles.progressEmph}>{totalCompleted}</span> of {RECLAIM_TOTAL_DAYS} steps
           </p>
         </div>
 
-        {/* 4 — The continuous thread + the five days */}
+        {/* 4 — The continuous thread + the five exercises */}
         <div style={styles.listWrap}>
           <div style={styles.thread} aria-hidden="true" />
-          {RECLAIM_DAYS.map((day) => {
+          {activeModule.days.map((day) => {
             const status = getDayStatus(day.day)
             const tappable = isDayTappable(day.day)
             const isToday = status === STATUS.CURRENT
@@ -238,7 +272,6 @@ const styles = {
     overflow: 'hidden',
   },
 
-  // 1 — Hero
   heroWrap: {
     position: 'relative',
     height: 'clamp(250px, 44vh, 400px)',
@@ -261,15 +294,19 @@ const styles = {
     padding: '7px 16px', borderRadius: '999px',
   },
 
-  // 2 — Title pulled up into the hero's dissolve
   frontispiece: {
     position: 'relative', zIndex: 1, textAlign: 'center',
     marginTop: '-52px', padding: '0 0.5rem',
   },
+  eyebrow: {
+    fontSize: '11px', fontWeight: 600, color: '#854F0B',
+    fontFamily: '-apple-system, sans-serif', textTransform: 'uppercase',
+    letterSpacing: '0.22em', margin: '0 0 0.6rem',
+  },
   stageTitle: {
-    fontSize: 'clamp(28px, 8vw, 34px)', fontWeight: 400, color: '#2A1F15',
+    fontSize: 'clamp(26px, 7.5vw, 32px)', fontWeight: 400, color: '#2A1F15',
     fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    margin: '0 0 0.6rem', letterSpacing: '0.01em', lineHeight: 1.1,
+    margin: '0 0 0.6rem', letterSpacing: '0.01em', lineHeight: 1.15,
   },
   introLine: {
     fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif',
@@ -282,7 +319,6 @@ const styles = {
   },
   progressEmph: { color: '#854F0B' },
 
-  // 4 — Continuous thread + list (single-phase: spine starts near the top)
   listWrap: { position: 'relative', marginTop: '2.5rem', paddingTop: '0.25rem', paddingBottom: '48px' },
   thread: {
     position: 'absolute', left: '19px', top: '18px', bottom: 0, width: '1.5px',
@@ -318,12 +354,10 @@ const styles = {
   vaultTitle: { fontSize: '19px', fontWeight: 500, color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
   vaultSubtitle: { fontSize: '13px', color: '#CBBA98', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.45 },
 
-  // 5 — Anchor
   anchor: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', marginTop: '2px' },
   anchorMark: { fontSize: '14px', color: '#D9B57A' },
   anchorText: { fontSize: '12px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', letterSpacing: '0.04em' },
 
-  // --- loading / accessDenied states ---
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' },
   backBtn: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px', minWidth: '60px', textAlign: 'left' },
   headerTitle: { fontSize: '17px', fontWeight: 500, color: '#2A1F15', margin: 0, fontFamily: 'Georgia, serif' },
