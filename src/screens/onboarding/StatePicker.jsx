@@ -2,51 +2,55 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 
+// =====================================================================
+// STATE PICKER — one plain question, five honest answers.
+// =====================================================================
+// The internal ids (notice/reflect/commit/endure/build) are data keys
+// only — they are NEVER shown to the user, and the six-stage map that
+// used to live here is gone. The named journey belongs to the paid
+// Vow Path. Free users just get the right home for where they are.
+//
+// Reclaim is intentionally NOT selectable here — it's only reachable
+// from inside the app, after a slip. You can't start in "I relapsed."
+// =====================================================================
+
 const STATE_OPTIONS = [
   {
     id: 'notice',
-    label: `I haven't really thought about whether it's a problem.`,
-    sublabel: 'Just curious. Not committing to anything.',
+    label: `I haven't really thought about it. Just looking.`,
+    sublabel: 'No pressure. Nothing to commit to.',
+    confirm: `Then we'll start by simply taking a closer look.`,
   },
   {
     id: 'reflect',
-    label: `I'm starting to wonder if it's costing me.`,
-    sublabel: 'Looking honestly. Not ready to decide yet.',
+    label: `I'm starting to wonder what it's costing me.`,
+    sublabel: 'Looking honestly. Not deciding anything yet.',
+    confirm: `Then we'll help you weigh it up — both sides, honestly.`,
   },
   {
     id: 'commit',
     label: `I want to stop, but I haven't yet.`,
-    sublabel: 'Getting ready. Building toward a stop date.',
+    sublabel: `We'll get you ready, step by step.`,
+    confirm: `Then we'll help you get ready, one small step at a time.`,
   },
   {
     id: 'endure',
-    label: `I've stopped recently, or I'm about to.`,
-    sublabel: 'In the early stretch. Holding the vow.',
+    label: `I've just stopped, or I'm about to.`,
+    sublabel: 'The early days. One day at a time.',
+    confirm: `Then your early days begin. We'll walk them with you.`,
   },
   {
     id: 'build',
-    label: `I've been clean a while. Building forward.`,
-    sublabel: 'The work shifts. From stopping to building.',
+    label: `I've been off it for a while now.`,
+    sublabel: `Keeping what you've built. Staying steady.`,
+    confirm: `Then we'll help you stay steady and protect what you've built.`,
   },
-  // Reclaim is intentionally NOT selectable here — it's only reachable by
-  // progressing through the earlier stages and then slipping. You can't start
-  // a recovery journey in "I relapsed."
-]
-
-const SNAPSHOT_STAGES = [
-  { key: 'notice',  label: 'Notice',  blurb: 'Seeing the habit clearly.' },
-  { key: 'reflect', label: 'Reflect', blurb: 'Weighing what it really costs.' },
-  { key: 'commit',  label: 'Commit',  blurb: 'Building toward a stop date.' },
-  { key: 'endure',  label: 'Endure',  blurb: 'Holding the early stretch.' },
-  { key: 'build',   label: 'Build',   blurb: 'From stopping to building forward.' },
-  { key: 'reclaim', label: 'Reclaim', blurb: 'Back after a slip. Nothing’s lost.' },
 ]
 
 export default function StatePicker() {
   const navigate = useNavigate()
 
   const [selectedId, setSelectedId] = useState(null)
-  const [view, setView] = useState('picker')
   const [substanceLabel, setSubstanceLabel] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -67,7 +71,7 @@ export default function StatePicker() {
         .maybeSingle()
 
       if (!progress?.substance_label) {
-        // No addiction selected yet, send them back
+        // No habit selected yet, send them back
         navigate('/app/onboarding/addiction')
         return
       }
@@ -81,7 +85,7 @@ export default function StatePicker() {
 
   const handleContinue = async () => {
     if (!selectedId) {
-      setError('Tap one option that feels closest to where you are.')
+      setError('Tap the one that feels closest to where you are.')
       return
     }
 
@@ -128,133 +132,77 @@ export default function StatePicker() {
     <div style={styles.frame}>
       <div style={styles.card}>
 
-        {view === 'picker' ? (
-          <>
-            <div style={styles.heroBlock}>
-              <p style={styles.eyebrow}>Where you are</p>
-              <h1 style={styles.title}>One question first.</h1>
-              <p style={styles.subtitle}>
-                Where are you with{' '}
-                <em style={styles.substanceEm}>{substanceLabel}</em>
-                {' '}right now?
-              </p>
-              <p style={styles.helperText}>
-                Pick the one that feels closest. You can change this anytime.
-              </p>
-            </div>
+        <div style={styles.heroBlock}>
+          <p style={styles.eyebrow}>One question first</p>
+          <h1 style={styles.title}>
+            Where are you with{' '}
+            <em style={styles.substanceEm}>{substanceLabel}</em>
+            {' '}right now?
+          </h1>
+          <p style={styles.helperText}>
+            Pick whichever feels closest. There's no wrong answer, and you can change this anytime.
+          </p>
+        </div>
 
-            <div style={styles.optionsList}>
-              {STATE_OPTIONS.map(option => {
-                const isSelected = selectedId === option.id
-                return (
-                  <button
-                    key={option.id}
-                    onClick={() => {
-                      setSelectedId(option.id)
-                      setError(null)
-                    }}
-                    style={{
-                      ...styles.optionCard,
-                      ...(isSelected ? styles.optionCardSelected : {}),
-                    }}
-                  >
-                    <div style={styles.optionContent}>
-                      <p style={{
-                        ...styles.optionLabel,
-                        ...(isSelected ? styles.optionLabelSelected : {}),
-                      }}>
-                        {option.label}
-                      </p>
-                      <p style={{
-                        ...styles.optionSublabel,
-                        ...(isSelected ? styles.optionSublabelSelected : {}),
-                      }}>
-                        {option.sublabel}
-                      </p>
-                    </div>
-                    <div style={{
-                      ...styles.optionRadio,
-                      ...(isSelected ? styles.optionRadioSelected : {}),
-                    }}>
-                      {isSelected && <div style={styles.optionRadioInner}></div>}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
+        <div style={styles.optionsList}>
+          {STATE_OPTIONS.map(option => {
+            const isSelected = selectedId === option.id
+            return (
+              <button
+                key={option.id}
+                onClick={() => {
+                  setSelectedId(option.id)
+                  setError(null)
+                }}
+                style={{
+                  ...styles.optionCard,
+                  ...(isSelected ? styles.optionCardSelected : {}),
+                }}
+              >
+                <div style={styles.optionContent}>
+                  <p style={{
+                    ...styles.optionLabel,
+                    ...(isSelected ? styles.optionLabelSelected : {}),
+                  }}>
+                    {option.label}
+                  </p>
+                  <p style={{
+                    ...styles.optionSublabel,
+                    ...(isSelected ? styles.optionSublabelSelected : {}),
+                  }}>
+                    {option.sublabel}
+                  </p>
+                  {isSelected && (
+                    <p style={styles.optionConfirm}>{option.confirm}</p>
+                  )}
+                </div>
+                <div style={{
+                  ...styles.optionRadio,
+                  ...(isSelected ? styles.optionRadioSelected : {}),
+                }}>
+                  {isSelected && <div style={styles.optionRadioInner}></div>}
+                </div>
+              </button>
+            )
+          })}
+        </div>
 
-            {error && <div style={styles.err}>{error}</div>}
+        {error && <div style={styles.err}>{error}</div>}
 
-            <button
-              onClick={() => { setError(null); setView('snapshot') }}
-              disabled={!selectedId}
-              style={{
-                ...styles.continueBtn,
-                ...(!selectedId ? styles.continueBtnDisabled : {}),
-              }}
-            >
-              Continue
-            </button>
+        <button
+          onClick={handleContinue}
+          disabled={!selectedId || saving}
+          style={{
+            ...styles.continueBtn,
+            ...((!selectedId || saving) ? styles.continueBtnDisabled : {}),
+          }}
+        >
+          {saving ? 'Setting up your home...' : 'Begin'}
+        </button>
 
-            <p style={styles.privacyNote}>
-              Your work is private. Only you see it.
-            </p>
-          </>
-        ) : (
-          <>
-            <div style={styles.heroBlock}>
-              <p style={styles.eyebrow}>Your path</p>
-              <h1 style={styles.title}>
-                You’re starting in{' '}
-                <em style={styles.substanceEm}>{SNAPSHOT_STAGES.find(st => st.key === selectedId)?.label}</em>.
-              </h1>
-              <p style={styles.subtitle}>
-                Here’s the whole path — six stages. You’ll begin where it’s lit.
-              </p>
-            </div>
-
-            <div style={styles.snapshotList}>
-              {SNAPSHOT_STAGES.map((st, idx) => {
-                const here = st.key === selectedId
-                return (
-                  <div key={st.key} style={{ ...styles.snapRow, ...(here ? styles.snapRowHere : {}) }}>
-                    <div style={{ ...styles.snapDot, ...(here ? styles.snapDotHere : {}) }}>{idx + 1}</div>
-                    <div style={styles.snapText}>
-                      <p style={{ ...styles.snapLabel, ...(here ? styles.snapLabelHere : {}) }}>{st.label}</p>
-                      <p style={{ ...styles.snapBlurb, ...(here ? styles.snapBlurbHere : {}) }}>{st.blurb}</p>
-                      {here && <span style={styles.snapTag}>You start here</span>}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            <p style={styles.snapHint}>
-              You can move between stages anytime from the top of your home.
-            </p>
-
-            {error && <div style={styles.err}>{error}</div>}
-
-            <button
-              onClick={handleContinue}
-              disabled={saving}
-              style={{
-                ...styles.continueBtn,
-                ...(saving ? styles.continueBtnDisabled : {}),
-              }}
-            >
-              {saving ? 'Setting up your home...' : 'Begin'}
-            </button>
-
-            <button
-              onClick={() => { setError(null); setView('picker') }}
-              disabled={saving}
-              style={styles.snapBack}
-            >
-              Pick a different starting point
-            </button>
-          </>
-        )}
+        <p style={styles.privacyNote}>
+          Your work is private. Only you see it.
+        </p>
 
       </div>
     </div>
@@ -305,20 +253,13 @@ const styles = {
     margin: '0 0 1rem',
   },
   title: {
-    fontSize: '28px',
+    fontSize: '25px',
     color: '#2A1F15',
     fontFamily: 'Georgia, serif',
     fontWeight: 500,
-    lineHeight: 1.25,
+    lineHeight: 1.3,
     margin: '0 0 0.85rem',
     letterSpacing: '-0.01em',
-  },
-  subtitle: {
-    fontSize: '15px',
-    color: '#2A1F15',
-    fontFamily: 'Georgia, serif',
-    lineHeight: 1.55,
-    margin: '0 0 0.75rem',
   },
   substanceEm: {
     color: '#854F0B',
@@ -326,7 +267,7 @@ const styles = {
     fontWeight: 500,
   },
   helperText: {
-    fontSize: '12px',
+    fontSize: '12.5px',
     color: '#9C8C78',
     fontFamily: 'Georgia, serif',
     fontStyle: 'italic',
@@ -385,6 +326,16 @@ const styles = {
   },
   optionSublabelSelected: {
     color: '#854F0B',
+  },
+  optionConfirm: {
+    fontSize: '12.5px',
+    color: '#6B5C4A',
+    fontStyle: 'italic',
+    fontFamily: 'Georgia, serif',
+    margin: '9px 0 0',
+    paddingTop: '9px',
+    borderTop: '0.5px solid rgba(197,87,44,0.25)',
+    lineHeight: 1.5,
   },
   optionRadio: {
     width: '20px',
@@ -445,17 +396,4 @@ const styles = {
     textAlign: 'center',
     margin: '1rem 0 0',
   },
-  snapshotList: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.25rem' },
-  snapRow: { display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '13px 14px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '13px', boxShadow: '0 2px 6px rgba(80,50,20,0.04)' },
-  snapRowHere: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '1px solid #D9B57A', boxShadow: '0 6px 18px rgba(40,25,10,0.22)' },
-  snapDot: { width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, border: '1.5px solid #DDCFB6', color: '#9C8C78', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontFamily: 'Georgia, serif', marginTop: '1px' },
-  snapDotHere: { border: '1.5px solid #D9B57A', background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)', color: '#241710', fontWeight: 700 },
-  snapText: { flex: 1, minWidth: 0 },
-  snapLabel: { fontSize: '14.5px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.35 },
-  snapLabelHere: { color: '#FAF7F1' },
-  snapBlurb: { fontSize: '12px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', margin: '3px 0 0', lineHeight: 1.4 },
-  snapBlurbHere: { color: 'rgba(250,247,241,0.78)' },
-  snapTag: { display: 'inline-block', marginTop: '7px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 600, color: '#D9B57A', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  snapHint: { fontSize: '12.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', lineHeight: 1.5, margin: '0 0 1.25rem', padding: '0 6px' },
-  snapBack: { width: '100%', marginTop: '10px', padding: '6px', background: 'transparent', border: 'none', color: '#854F0B', fontSize: '12.5px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
 }

@@ -1067,7 +1067,7 @@ function TodayCheckinTile({ checkin, onOpen }) {
   }
   return (
     <div style={styles.tile}>
-      <p style={styles.tileEyebrow}>Today's weather</p>
+      <p style={styles.tileEyebrow}>Today's check-in</p>
       <h2 style={styles.tileTitle}>How are you, really?</h2>
       <p style={styles.tileBody}>
         A quiet half-minute. Mood, energy, whether the pull came by. Nobody sees it but you.

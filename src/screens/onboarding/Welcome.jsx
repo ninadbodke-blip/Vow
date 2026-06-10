@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const slides = [
@@ -13,8 +13,8 @@ const slides = [
     illustration: 'lantern',
   },
   {
-    title: 'Reclaim\nwhat it took.',
-    body: 'Time. Energy. You. Step in.',
+    title: 'Take back\nwhat it took.',
+    body: 'Your time. Your money. Your peace.',
     illustration: 'furnace',
   },
 ]
@@ -82,40 +82,6 @@ function FurnaceIllustration() {
   )
 }
 
-// =====================================================================
-function IgniteButton({ onIgnite }) {
-  const [progress, setProgress] = useState(0)
-  const timer = useRef(null)
-
-  const clear = () => { if (timer.current) { clearInterval(timer.current); timer.current = null } }
-  const start = () => {
-    if (timer.current) return
-    timer.current = setInterval(() => {
-      setProgress(p => {
-        const n = p + 2 // ~1.5s to fill (30ms x 50 steps)
-        if (n >= 100) { clear(); onIgnite(); return 100 }
-        return n
-      })
-    }, 30)
-  }
-  const stop = () => { clear(); setProgress(p => (p >= 100 ? 100 : 0)) }
-  useEffect(() => () => clear(), [])
-
-  const holding = progress > 0 && progress < 100
-  return (
-    <button
-      style={styles.igniteBtn}
-      onPointerDown={start}
-      onPointerUp={stop}
-      onPointerLeave={stop}
-      onPointerCancel={stop}
-    >
-      <span style={{ ...styles.igniteFill, width: `${progress}%` }} />
-      <span style={styles.igniteLabel}>{holding ? 'Igniting…' : 'Hold to Ignite'}</span>
-    </button>
-  )
-}
-
 export default function Welcome() {
   const navigate = useNavigate()
   const [idx, setIdx] = useState(0)
@@ -124,7 +90,7 @@ export default function Welcome() {
   const next = () => setIdx(i => (i < slides.length - 1 ? i + 1 : i))
   const prev = () => setIdx(i => (i > 0 ? i - 1 : i))
   const skip = () => navigate('/app/signup')
-  const ignite = () => navigate('/app/signup')
+  const begin = () => navigate('/app/signup')
 
   // Swipe left = forward, right = back. Taps (dx ~ 0) pass through to buttons.
   const swipeX = useRef(null)
@@ -178,7 +144,7 @@ export default function Welcome() {
         </div>
 
         {isLast ? (
-          <IgniteButton onIgnite={ignite} />
+          <button onClick={begin} style={styles.beginBtn}>Begin</button>
         ) : (
           <button onClick={next} style={styles.continueBtn}>Continue →</button>
         )}
@@ -295,37 +261,18 @@ const styles = {
     fontFamily: 'inherit',
     letterSpacing: '0.02em',
   },
-  igniteBtn: {
-    position: 'relative',
-    overflow: 'hidden',
+  beginBtn: {
     width: '100%',
     padding: '16px',
-    background: 'rgba(250,247,241,0.04)',
-    border: '1px solid #B89456',
-    borderRadius: '14px',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    touchAction: 'none',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-  },
-  igniteFill: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
     background: 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)',
-    transition: 'width 0.03s linear',
-    zIndex: 0,
-  },
-  igniteLabel: {
-    position: 'relative',
-    zIndex: 1,
+    color: '#241710',
+    border: 'none',
+    borderRadius: '14px',
     fontSize: '15px',
     fontWeight: 600,
-    color: '#FAF7F1',
+    cursor: 'pointer',
     fontFamily: 'Georgia, serif',
     letterSpacing: '0.03em',
-    textShadow: '0 1px 3px rgba(40,20,5,0.55)',
+    boxShadow: '0 6px 18px rgba(217,181,122,0.35)',
   },
 }

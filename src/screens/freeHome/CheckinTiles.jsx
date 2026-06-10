@@ -37,7 +37,7 @@ function buildLast7(checkins) {
 export function TodayCheckinTile({
   checkin,
   onOpen,
-  eyebrow = "Today's weather",
+  eyebrow = "Today's check-in",
   title = 'How are you, really?',
   body = 'A quiet half-minute. Mood, energy, whether the pull came by. Nobody sees it but you.',
   cta = 'Check in',

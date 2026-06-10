@@ -3,38 +3,58 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../../LanguageContext'
 import { supabase } from '../../supabaseClient'
 
-function BlackHole({ selected, lit }) {
-  const glow = lit || !!selected
+// =====================================================================
+// THE SEED — the first frame of the tree story.
+// =====================================================================
+// Unselected: a seed rests on the soil, waiting. Selecting a habit
+// settles the seed into the ground and a small sprout appears — naming
+// it is the planting. The home screen's tree grows from here.
+// =====================================================================
+function SeedHero({ selected }) {
+  const planted = !!selected
   return (
     <svg viewBox="0 0 240 240" style={{ width: '100%', height: '100%' }}>
-      <defs>
-        <radialGradient id="voidGrad" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#000000" />
-          <stop offset="52%" stopColor="#0A0705" />
-          <stop offset="80%" stopColor="#1C140D" />
-          <stop offset="100%" stopColor="#2A1F15" />
-        </radialGradient>
-        <radialGradient id="holeHalo" cx="50%" cy="50%">
-          <stop offset="58%" stopColor="rgba(217,181,122,0)" />
-          <stop offset="84%" stopColor="rgba(217,181,122,0.5)" />
-          <stop offset="100%" stopColor="rgba(217,181,122,0)" />
-        </radialGradient>
-      </defs>
-      <circle cx="120" cy="120" r="116" fill="url(#holeHalo)" opacity={glow ? 1 : 0} style={{ transition: 'opacity 0.5s ease' }} />
-      <circle cx="120" cy="120" r="92" fill="url(#voidGrad)" />
-      <circle cx="120" cy="120" r="92" fill="none" stroke={glow ? '#D9B57A' : '#3A2A1C'} strokeWidth={glow ? 3 : 2} opacity={glow ? 0.95 : 0.55} style={{ transition: 'stroke 0.5s ease, opacity 0.5s ease' }} />
-      <circle cx="120" cy="120" r="62" fill="none" stroke="rgba(217,181,122,0.16)" strokeWidth="1">
-        <animate attributeName="opacity" values="0.10; 0.28; 0.10" dur="3.4s" repeatCount="indefinite" />
-        <animate attributeName="r" values="60; 66; 60" dur="3.4s" repeatCount="indefinite" />
-      </circle>
-      {selected && (
-        <text x="120" y="120" textAnchor="middle" dominantBaseline="central" fontSize="62">{selected.icon}</text>
+      {/* soft morning sun, brightens once planted */}
+      <circle cx="186" cy="52" r="17" fill="#EAD9B4" opacity={planted ? 0.9 : 0.45} style={{ transition: 'opacity 0.6s ease' }} />
+
+      {/* gentle halo around the seed while it waits */}
+      {!planted && (
+        <circle cx="120" cy="152" r="26" fill="none" stroke="#D9B57A" strokeWidth="1">
+          <animate attributeName="r" values="22; 30; 22" dur="3.2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.12; 0.4; 0.12" dur="3.2s" repeatCount="indefinite" />
+        </circle>
       )}
+
+      {/* the sprout — grows in when planted */}
+      <g style={{ opacity: planted ? 1 : 0, transition: 'opacity 0.7s ease 0.15s' }}>
+        <path d="M120 158 C120 146 119 138 120 126" stroke="#3A2A1C" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+        <path d="M120 134 C112 128 106 126 99 126 C104 134 111 137 120 136 Z" fill="#6E8A6A" />
+        <path d="M120 128 C128 121 134 119 141 120 C136 128 129 131 120 130 Z" fill="#7E9B5A" />
+      </g>
+
+      {/* the seed — rests above the line, settles into it when planted */}
+      <ellipse
+        cx="120"
+        cy={planted ? 166 : 152}
+        rx="11"
+        ry="14"
+        fill="#7A5A38"
+        stroke="#3A2A1C"
+        strokeWidth="1.6"
+        style={{ transition: 'cy 0.5s ease' }}
+      >
+        {!planted && <animate attributeName="cy" values="152; 148; 152" dur="3.2s" repeatCount="indefinite" />}
+      </ellipse>
+      <path d="M120 145 C122 150 122 158 120 162" stroke="#3A2A1C" strokeWidth="1" fill="none" opacity="0.5" />
+
+      {/* the soil line, drawn over the seed so it sits "in" the ground */}
+      <path d="M38 168 H202" stroke="#3A2A1C" strokeWidth="2" strokeLinecap="round" />
+      <path d="M54 176 H86 M104 178 H128 M150 176 H184" stroke="#3A2A1C" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
     </svg>
   )
 }
 
-const holeStyles = {
+const seedStyles = {
   nameWrap: { textAlign: 'center', margin: '0 0 1.5rem' },
   selectedName: { fontSize: '16px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0.25rem 0 0' },
   hint: { fontSize: '12px', color: '#9C8C78', fontStyle: 'italic', margin: '0.25rem 0 0', fontFamily: 'Georgia, serif' },
@@ -52,7 +72,6 @@ export default function AddictionPicker({ onboardingDone }) {
   const [error, setError] = useState(null)
   const [showFounderMessage, setShowFounderMessage] = useState(false)
   const [showAddictionList, setShowAddictionList] = useState(false)
-  const [lighting, setLighting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -65,7 +84,7 @@ export default function AddictionPicker({ onboardingDone }) {
 
         if (addictionError) {
           console.error('Failed to load addiction_types:', addictionError)
-          setError('Could not load options. Please refresh.')
+          setError('Could not load the list. Please refresh.')
           setLoading(false)
           return
         }
@@ -84,7 +103,7 @@ export default function AddictionPicker({ onboardingDone }) {
 
   const handleNext = async () => {
     if (!selected) {
-      setError('Tap the void above to name it.')
+      setError('Pick one from the list to continue.')
       return
     }
 
@@ -163,31 +182,27 @@ export default function AddictionPicker({ onboardingDone }) {
     <div style={styles.frame}>
       <div style={styles.card}>
         <h1 style={styles.title}>
-          What's pulling at you?
+          What do you want to work on?
         </h1>
         <p style={styles.subtitle}>
-          Tap the void to light it up — then name it.
+          Pick the one that brought you here. You can change it later.
         </p>
 
         <button
-          onClick={() => {
-            if (selected) { setShowAddictionList(true); return }
-            setLighting(true)
-            setTimeout(() => setShowAddictionList(true), 420)
-          }}
-          style={styles.demonBtn}
-          aria-label="Light it up"
+          onClick={() => setShowAddictionList(true)}
+          style={styles.seedBtn}
+          aria-label="Choose what you want to work on"
         >
-          <BlackHole selected={selected} lit={lighting} />
+          <SeedHero selected={selected} />
         </button>
 
         {selected ? (
-          <div style={holeStyles.nameWrap}>
-            <p style={holeStyles.selectedName}>{selected.name}</p>
-            <p style={holeStyles.hint}>Tap to change</p>
+          <div style={seedStyles.nameWrap}>
+            <p style={seedStyles.selectedName}>{selected.icon} {selected.name}</p>
+            <p style={seedStyles.hint}>Tap the seed to change</p>
           </div>
         ) : (
-          <p style={styles.hintText}>{lighting ? 'Lighting it up…' : 'Tap to light it up'}</p>
+          <p style={styles.hintText}>Tap the seed to choose</p>
         )}
 
         {error && <div style={styles.err}>{error}</div>}
@@ -200,19 +215,19 @@ export default function AddictionPicker({ onboardingDone }) {
             ...(selected && !saving ? styles.btnPrimary : styles.btnDisabled),
           }}
         >
-          {saving ? 'Saving...' : (selected ? 'Continue' : 'Light it up first')}
+          {saving ? 'Saving...' : (selected ? 'Continue' : 'Choose one to continue')}
         </button>
       </div>
 
       {/* ADDICTION LIST MODAL */}
       {showAddictionList && (
-        <div style={styles.listModal} onClick={() => { setShowAddictionList(false); setLighting(false) }}>
+        <div style={styles.listModal} onClick={() => setShowAddictionList(false)}>
           <div style={styles.listSheet} onClick={(e) => e.stopPropagation()}>
             <div style={styles.sheetHandle}></div>
-            <p style={styles.sheetTitle}>Name what's pulling at you</p>
+            <p style={styles.sheetTitle}>What do you want to work on?</p>
             <div style={styles.listGrid}>
               {displayList.length === 0 ? (
-                <p style={styles.emptyMsg}>Options didn't load — please refresh.</p>
+                <p style={styles.emptyMsg}>The list didn't load — please refresh.</p>
               ) : (
                 displayList.map(a => (
                   <button
@@ -230,7 +245,7 @@ export default function AddictionPicker({ onboardingDone }) {
                 ))
               )}
             </div>
-            <button onClick={() => { setShowAddictionList(false); setLighting(false) }} style={styles.closeSheet}>
+            <button onClick={() => setShowAddictionList(false)} style={styles.closeSheet}>
               Close
             </button>
           </div>
@@ -261,7 +276,6 @@ export default function AddictionPicker({ onboardingDone }) {
     </div>
   )
 }
-
 const styles = {
   frame: {
     minHeight: '100vh',
@@ -299,7 +313,7 @@ const styles = {
     fontStyle: 'italic',
     fontFamily: 'Georgia, serif',
   },
-  demonBtn: {
+  seedBtn: {
     width: '240px',
     height: '240px',
     background: 'transparent',

@@ -3,27 +3,32 @@ import { supabase } from '../../supabaseClient'
 import SheetPortal from '../../components/SheetPortal'
 
 // ===================================================================
-// DAILY CHECK-IN  (shared across all six free homes)
+// DAILY CHECK-IN  (shared across all free homes)
 // ===================================================================
-// One reflective check per day. Upserts a single row into
-// free_daily_checkins (unique on user_id + checkin_date), so re-opening
-// the same day edits rather than duplicates.
+// One short check per day — three taps in plain English. Upserts a
+// single row into free_daily_checkins (unique on user_id + checkin_date),
+// so re-opening the same day edits rather than duplicates.
 //
-// This is the spine of the Mirror: mood, energy, whether the pull showed
-// up, what was around it, and (Notice only) where it sat in the body.
+// Steps: how you're feeling → did the urge come → what was around it
+// (+ where it sat in the body, for the looking-closely home only).
+// Picking a mood washes the whole sheet in that mood's colour — the
+// check-in is bathed in the day's mood from then on.
 //
 // Props:
 //   isOpen        bool
 //   onClose       () => void
-//   stage         'notice'|'reflect'|'commit'|'endure'|'build'|'reclaim'
-//   includeBody   bool   — show the body-signal step (Notice uses true)
+//   stage         data key ('notice'|'reflect'|'commit'|'endure'|'build'|'reclaim')
+//   includeBody   bool   — show the body step (the notice home uses true)
 //   existing      row | null — today's check-in, to pre-fill on edit
 //   onSaved       (row) => void
 //
-// Reused by every home; only `stage` and `includeBody` change.
+// Data shape is unchanged: mood/mood_score/energy/felt_pull/
+// pull_intensity/contexts/body_signals/note. The energy question was
+// removed from the UI for simplicity; an existing row's energy value is
+// preserved on edit, new rows save energy as null.
 // ===================================================================
 
-// Mood vocabulary — ordinal score drives all trend math in the Mirror.
+// Mood vocabulary — ordinal score drives all trend math in the Oracle.
 // Colour runs warm-clay (heavy) → soft-sage (good); deliberately NOT a
 // red/green traffic light. Exported so homes render summaries the same way.
 export const MOOD_META = [
@@ -38,26 +43,35 @@ export const MOOD_META = [
 export const moodByValue = (v) => MOOD_META.find(m => m.value === v) || null
 export const moodByScore = (s) => MOOD_META.find(m => m.score === s) || null
 
-// felt_pull is derived: 'none' => false; everything else => true + 1..5
-const PULL_OPTIONS = [
-  { value: 'none',     label: "Didn't show up", felt: false, intensity: null },
-  { value: 'faint',    label: 'Faint',          felt: true,  intensity: 1 },
-  { value: 'mild',     label: 'Mild',           felt: true,  intensity: 2 },
-  { value: 'moderate', label: 'Moderate',       felt: true,  intensity: 3 },
-  { value: 'strong',   label: 'Strong',         felt: true,  intensity: 4 },
-  { value: 'intense',  label: 'Intense',        felt: true,  intensity: 5 },
+// felt_pull is derived: 'none' => false; everything else => true + intensity.
+// Four plain choices instead of the old six-step intensity ladder.
+const URGE_OPTIONS = [
+  { value: 'none',    label: 'No, not today',  felt: false, intensity: null },
+  { value: 'mild',    label: 'A little',       felt: true,  intensity: 2 },
+  { value: 'strong',  label: 'Quite strong',   felt: true,  intensity: 4 },
+  { value: 'intense', label: 'Very strong',    felt: true,  intensity: 5 },
 ]
+
+// Map any stored intensity (including old 6-step rows) back to an option.
+const urgeFromExisting = (row) => {
+  if (!row || row.felt_pull == null) return null
+  if (!row.felt_pull) return URGE_OPTIONS[0]
+  const i = row.pull_intensity || 3
+  if (i <= 2) return URGE_OPTIONS[1]
+  if (i <= 4) return URGE_OPTIONS[2]
+  return URGE_OPTIONS[3]
+}
 
 const CONTEXT_OPTIONS = [
   { value: 'stress',      label: 'Stress' },
-  { value: 'lonely',      label: 'Loneliness' },
+  { value: 'lonely',      label: 'Feeling alone' },
   { value: 'bored',       label: 'Boredom' },
-  { value: 'social',      label: 'Social' },
+  { value: 'social',      label: 'Out with people' },
   { value: 'tired',       label: 'Tired' },
-  { value: 'conflict',    label: 'Conflict' },
+  { value: 'conflict',    label: 'A fight or argument' },
   { value: 'restless',    label: 'Restless' },
-  { value: 'celebration', label: 'Celebration' },
-  { value: 'nothing',     label: 'Nothing I can name' },
+  { value: 'celebration', label: 'Celebrating something' },
+  { value: 'nothing',     label: 'Nothing I can point to' },
 ]
 
 const BODY_OPTIONS = [
@@ -68,12 +82,18 @@ const BODY_OPTIONS = [
   { value: 'shoulders', label: 'Shoulders' },
   { value: 'hands',     label: 'Hands' },
   { value: 'restless',  label: 'Restless all over' },
-  { value: 'none',      label: 'Nowhere / calm' },
+  { value: 'none',      label: 'Nowhere — I felt calm' },
 ]
 
 function localDateStr(d = new Date()) {
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+// Soft wash of the mood colour, layered over cream.
+const hexToRgba = (hex, a) => {
+  const n = parseInt(hex.slice(1), 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
 }
 
 export default function DailyCheckin({
@@ -84,15 +104,15 @@ export default function DailyCheckin({
   existing = null,
   onSaved,
 }) {
-  // Build the step list dynamically — body step only when asked for.
-  const stepKeys = ['mood', 'energy', 'pull', 'contexts', ...(includeBody ? ['body'] : [])]
+  // Three plain steps; the body step joins only when asked for.
+  const stepKeys = ['mood', 'urge', 'contexts', ...(includeBody ? ['body'] : [])]
   const totalSteps = stepKeys.length
   const lastIdx = totalSteps - 1
 
   const [stepIdx, setStepIdx] = useState(0)
   const [mood, setMood] = useState(null)
-  const [energy, setEnergy] = useState(null)
-  const [pull, setPull] = useState(null)        // a PULL_OPTIONS entry
+  const [energy, setEnergy] = useState(null)   // preserved from existing rows; no UI
+  const [urge, setUrge] = useState(null)       // an URGE_OPTIONS entry
   const [contexts, setContexts] = useState([])
   const [bodySignals, setBodySignals] = useState([])
   const [note, setNote] = useState('')
@@ -106,16 +126,12 @@ export default function DailyCheckin({
     if (existing) {
       setMood(moodByValue(existing.mood))
       setEnergy(existing.energy ?? null)
-      setPull(PULL_OPTIONS.find(p =>
-        existing.felt_pull
-          ? p.intensity === existing.pull_intensity
-          : p.value === 'none'
-      ) || null)
+      setUrge(urgeFromExisting(existing))
       setContexts(existing.contexts || [])
       setBodySignals(existing.body_signals || [])
       setNote(existing.note || '')
     } else {
-      setMood(null); setEnergy(null); setPull(null)
+      setMood(null); setEnergy(null); setUrge(null)
       setContexts([]); setBodySignals([]); setNote('')
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -150,8 +166,8 @@ export default function DailyCheckin({
         mood: mood?.value ?? null,
         mood_score: mood?.score ?? null,
         energy: energy ?? null,
-        felt_pull: pull ? pull.felt : null,
-        pull_intensity: pull ? pull.intensity : null,
+        felt_pull: urge ? urge.felt : null,
+        pull_intensity: urge ? urge.intensity : null,
         contexts,
         body_signals: includeBody ? bodySignals : [],
         note: note.trim() || null,
@@ -184,13 +200,13 @@ export default function DailyCheckin({
 
   if (key === 'mood') {
     eyebrow = `Step 1 of ${totalSteps}`
-    question = "How's the weather in there today?"
+    question = 'How are you feeling today?'
     bodyEl = (
       <div style={styles.moodGrid}>
         {MOOD_META.map(m => (
           <button
             key={m.value}
-            onClick={() => { setMood(m); advance() }}
+            onClick={() => { setMood(m); setTimeout(advance, 380) }}
             disabled={saving}
             style={{
               ...styles.moodChip,
@@ -203,43 +219,19 @@ export default function DailyCheckin({
         ))}
       </div>
     )
-  } else if (key === 'energy') {
+  } else if (key === 'urge') {
     eyebrow = `Step 2 of ${totalSteps}`
-    question = 'And your energy?'
-    bodyEl = (
-      <>
-        <div style={styles.energyRow}>
-          {[1, 2, 3, 4, 5].map(n => (
-            <button
-              key={n}
-              onClick={() => { setEnergy(n); advance() }}
-              disabled={saving}
-              style={{
-                ...styles.energyDot,
-                ...(energy && n <= energy ? styles.energyDotOn : {}),
-              }}
-              aria-label={`Energy ${n}`}
-            />
-          ))}
-        </div>
-        <div style={styles.energyLabels}>
-          <span>Empty</span><span>Full</span>
-        </div>
-      </>
-    )
-  } else if (key === 'pull') {
-    eyebrow = `Step 3 of ${totalSteps}`
-    question = 'Did the pull show up today?'
+    question = 'Did you feel the urge today?'
     bodyEl = (
       <div style={styles.optionsGrid}>
-        {PULL_OPTIONS.map(p => (
+        {URGE_OPTIONS.map(p => (
           <button
             key={p.value}
-            onClick={() => { setPull(p); advance() }}
+            onClick={() => { setUrge(p); advance() }}
             disabled={saving}
             style={{
               ...styles.optionChip,
-              ...(pull?.value === p.value ? styles.optionChipSelected : {}),
+              ...(urge?.value === p.value ? styles.optionChipSelected : {}),
             }}
           >
             {p.label}
@@ -248,8 +240,8 @@ export default function DailyCheckin({
       </div>
     )
   } else if (key === 'contexts') {
-    eyebrow = `Step 4 of ${totalSteps}`
-    question = 'What was around it today?'
+    eyebrow = `Step 3 of ${totalSteps}`
+    question = urge && urge.felt ? 'What was happening around it?' : 'What was today like, mostly?'
     bodyEl = (
       <div style={styles.optionsGrid}>
         {CONTEXT_OPTIONS.map(c => (
@@ -294,55 +286,65 @@ export default function DailyCheckin({
   return (
     <SheetPortal><div style={styles.overlay} onClick={onClose}>
       <div style={styles.card} onClick={(e) => e.stopPropagation()}>
+        {/* the day's mood washes over the whole sheet */}
+        <div
+          style={{
+            ...styles.moodWash,
+            background: mood ? hexToRgba(mood.color, 0.16) : 'transparent',
+            opacity: mood ? 1 : 0,
+          }}
+        />
+        <div style={styles.content}>
 
-        <div style={styles.header}>
-          {stepIdx > 0 ? (
-            <button onClick={back} style={styles.backBtn} disabled={saving}>‹ Back</button>
-          ) : <div style={styles.headerSpacer} />}
-          <div style={styles.stepDots}>
-            {stepKeys.map((_, n) => (
-              <div key={n} style={{
-                ...styles.stepDot,
-                ...(n === stepIdx ? styles.stepDotActive : {}),
-                ...(n < stepIdx ? styles.stepDotDone : {}),
-              }} />
-            ))}
+          <div style={styles.header}>
+            {stepIdx > 0 ? (
+              <button onClick={back} style={styles.backBtn} disabled={saving}>‹ Back</button>
+            ) : <div style={styles.headerSpacer} />}
+            <div style={styles.stepDots}>
+              {stepKeys.map((_, n) => (
+                <div key={n} style={{
+                  ...styles.stepDot,
+                  ...(n === stepIdx ? styles.stepDotActive : {}),
+                  ...(n < stepIdx ? styles.stepDotDone : {}),
+                }} />
+              ))}
+            </div>
+            <button onClick={onClose} style={styles.closeBtn} disabled={saving}>×</button>
           </div>
-          <button onClick={onClose} style={styles.closeBtn} disabled={saving}>×</button>
-        </div>
 
-        <p style={styles.eyebrow}>{eyebrow}</p>
-        <h2 style={styles.question}>{question}</h2>
+          <p style={styles.eyebrow}>{eyebrow}</p>
+          <h2 style={styles.question}>{question}</h2>
 
-        {bodyEl}
+          {bodyEl}
 
-        {/* Multi-select steps need an explicit continue/save. */}
-        {isMulti && (
-          <>
-            {onLastStep && (
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="A word or two, if you want (optional)"
-                style={styles.noteInput}
+          {/* Multi-select steps need an explicit continue/save. */}
+          {isMulti && (
+            <>
+              {onLastStep && (
+                <input
+                  type="text"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="A word or two, if you want (optional)"
+                  style={styles.noteInput}
+                  disabled={saving}
+                  maxLength={140}
+                />
+              )}
+              <button
+                onClick={onLastStep ? handleSave : advance}
                 disabled={saving}
-                maxLength={140}
-              />
-            )}
-            <button
-              onClick={onLastStep ? handleSave : advance}
-              disabled={saving}
-              style={styles.continueBtn}
-            >
-              {saving ? 'Saving…' : onLastStep ? 'Save check-in' : 'Continue'}
-            </button>
-          </>
-        )}
+                style={styles.continueBtn}
+              >
+                {saving ? 'Saving…' : onLastStep ? 'Save check-in' : 'Continue'}
+              </button>
+            </>
+          )}
 
-        <p style={styles.helper}>
-          {isMulti ? 'Tap any that fit, or none. No wrong answer.' : "No right answer. What's true."}
-        </p>
+          <p style={styles.helper}>
+            {isMulti ? 'Tap any that fit, or none. There is no wrong answer.' : 'There is no wrong answer. Just what is true.'}
+          </p>
+        </div>
       </div>
     </div></SheetPortal>
   )
@@ -356,9 +358,19 @@ const styles = {
     padding: '1rem', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   card: {
+    position: 'relative', overflow: 'hidden',
     background: '#FAF7F1', maxWidth: '400px', width: '100%',
-    borderRadius: '20px', padding: '1.5rem 1.5rem 1.25rem',
+    borderRadius: '20px',
     boxShadow: '0 20px 60px rgba(40,25,15,0.3)',
+  },
+  moodWash: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    pointerEvents: 'none',
+    transition: 'background 0.6s ease, opacity 0.6s ease',
+  },
+  content: {
+    position: 'relative',
+    padding: '1.5rem 1.5rem 1.25rem',
   },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -399,19 +411,6 @@ const styles = {
   },
   moodChipSelected: { border: '1.5px solid #854F0B', background: '#FBF6EE' },
   moodDot: { width: '14px', height: '14px', borderRadius: '50%' },
-
-  // energy
-  energyRow: { display: 'flex', justifyContent: 'center', gap: '14px', margin: '4px 0 6px' },
-  energyDot: {
-    width: '34px', height: '34px', borderRadius: '50%', background: 'white',
-    border: '1px solid #E0D5C2', cursor: 'pointer', transition: 'all 0.15s', padding: 0,
-  },
-  energyDotOn: { background: '#C8A86A', border: '1px solid #B6924E' },
-  energyLabels: {
-    display: 'flex', justifyContent: 'space-between', maxWidth: '230px',
-    margin: '0 auto 14px', fontSize: '10px', color: '#9C8C78',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-  },
 
   // generic chips
   optionsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '14px' },
