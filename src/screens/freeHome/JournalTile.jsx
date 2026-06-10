@@ -145,29 +145,29 @@ export default function JournalTile({ stage }) {
         <div style={styles.doneRow}>
           <span style={styles.doneCheck}>{'\u2713'}</span>
           <div>
-            <p style={styles.doneTitle}>{doneCount} written this {periodWord}.</p>
-            <p style={styles.doneSub}>That's a full {periodWord}. You can stop here, or keep going.</p>
+            <p style={styles.doneTitle}>{doneCount} written. Well said.</p>
+            <p style={styles.doneSub}>You can stop here, or keep going — the page never closes.</p>
           </div>
         </div>
-        <button onClick={openModal} style={styles.ghostBtn}>Open journal</button>
+        <button onClick={openModal} style={styles.ghostBtn}>Read it back, or add more</button>
       </div>
     )
   } else if (doneCount > 0) {
     face = (
       <div style={styles.tile}>
         <p style={styles.eyebrow}>Journal</p>
-        <h2 style={styles.title}>{doneCount} of {TARGET} this {periodWord}.</h2>
-        <p style={styles.body}>A little more, if you have it in you. Any three makes a full {periodWord}.</p>
-        <button onClick={openModal} style={styles.ctaBtn}>Continue</button>
+        <h2 style={styles.title}>{doneCount} written. The page is still open.</h2>
+        <p style={styles.body}>Add more if you have it in you — or come back to it later. It keeps.</p>
+        <button onClick={openModal} style={styles.ctaBtn}>Keep writing</button>
       </div>
     )
   } else {
     face = (
       <div style={styles.tile}>
         <p style={styles.eyebrow}>Journal</p>
-        <h2 style={styles.title}>Write a little, this {periodWord}.</h2>
-        <p style={styles.body}>Five small things to think about. Do any three — a few honest lines is plenty.</p>
-        <button onClick={openModal} style={styles.ctaBtn}>Open journal</button>
+        <h2 style={styles.title}>Say it in writing.</h2>
+        <p style={styles.body}>Five small questions. Answer any three — or just the one that pulls at you. Nobody reads this but you.</p>
+        <button onClick={openModal} style={styles.ctaBtn}>Start writing</button>
       </div>
     )
   }
@@ -186,7 +186,7 @@ export default function JournalTile({ stage }) {
               <button onClick={() => setOpen(false)} style={styles.closeBtn} aria-label="Close">{'\u00d7'}</button>
             </div>
             <p style={styles.sheetSub}>
-              Pick whichever ones speak to you. Any three is a full {periodWord} &mdash; {doneCount} so far.
+              Answer whichever ones pull at you. A few honest lines is plenty &mdash; and only you will ever read them.
             </p>
 
             <div style={styles.promptList}>
@@ -215,7 +215,7 @@ export default function JournalTile({ stage }) {
                         <textarea
                           value={drafts[p.id] || ''}
                           onChange={(e) => setDrafts(prev => ({ ...prev, [p.id]: e.target.value }))}
-                          placeholder="A few honest lines…"
+                          placeholder="Say it the way you’d say it out loud…"
                           rows={4}
                           style={styles.textarea}
                           autoFocus

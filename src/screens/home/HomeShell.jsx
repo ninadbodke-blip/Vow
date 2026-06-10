@@ -4,20 +4,19 @@ import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import SheetPortal from '../../components/SheetPortal'
 import DailyCheckin from '../freeHome/DailyCheckin'
+import UrgeFlow from '../UrgeFlow'
+import SlipFlow from '../SlipFlow'
 import TreeHero from './TreeHero'
 import { modeFor } from './modes'
+import { UrgeWavesGlyph, SlipRiseGlyph, AnchorGlyph, MilestoneGlyph } from './glyphs'
 
 // ===================================================================
 // HOME SHELL — one home for every free mode.
 // ===================================================================
-// Layout (six things, no tile stack):
-//   eyebrow + greeting → THE TREE (tend = check-in) → one practice
-//   card for today → "when it hits" (urge/slip, per mode) → anchors
-//   and milestones whisper lines → one surfacing line when earned.
-//
-// The mode's data key drives the sky, the practices, and nothing the
-// user can read. HomeRouter only sends migrated modes here; the rest
-// stay on their old homes.
+// Layout: eyebrow + greeting → THE TREE (tend = check-in) → today's
+// practice + a glyph-tile row of all practices → "In the moment"
+// (urge/slip opened as floating cards, not new screens) → anchors &
+// milestones rows → one surfacing line when earned.
 // ===================================================================
 
 function localDateStr(d = new Date()) {
@@ -59,6 +58,21 @@ function PracticeSheet({ open, onClose, eyebrow, title, children }) {
   )
 }
 
+// The urge/slip flows, floating over the home instead of replacing it.
+function FlowCard({ open, onClose, children }) {
+  if (!open) return null
+  return (
+    <SheetPortal>
+      <div style={styles.flowOverlay}>
+        <div style={styles.flowCard}>
+          <button onClick={onClose} style={styles.flowClose} aria-label="Close">×</button>
+          <div style={styles.flowScroll}>{children}</div>
+        </div>
+      </div>
+    </SheetPortal>
+  )
+}
+
 export default function HomeShell({ progress }) {
   const navigate = useNavigate()
   const freeState = progress?.free_state || 'notice'
@@ -76,67 +90,67 @@ export default function HomeShell({ progress }) {
 
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [openPractice, setOpenPractice] = useState(null)   // a practice object
-  const [allOpen, setAllOpen] = useState(false)
+  const [flowOpen, setFlowOpen] = useState(null)           // 'urge' | 'slip' | null
   const [movingToReclaim, setMovingToReclaim] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      if (!cancelled) setUserId(user.id)
+  async function loadAll(silent = false) {
+    if (!silent) setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    setUserId(user.id)
 
-      // fresh slip count for the slip→step-back indicator
-      const { data: vppRow } = await supabase
-        .from('vow_path_progress').select('endure_slip_count')
-        .eq('user_id', user.id).maybeSingle()
-      if (!cancelled && vppRow) setSlipCount(vppRow.endure_slip_count || 0)
+    const { data: vppRow } = await supabase
+      .from('vow_path_progress').select('endure_slip_count')
+      .eq('user_id', user.id).maybeSingle()
+    if (vppRow) setSlipCount(vppRow.endure_slip_count || 0)
 
-      const { data: profile } = await supabase
-        .from('profiles').select('first_name, full_name')
-        .eq('id', user.id).maybeSingle()
-      if (!cancelled) {
-        if (profile?.first_name) setFirstName(profile.first_name)
-        else if (profile?.full_name) setFirstName(profile.full_name.split(' ')[0])
-        else if (user.email) setFirstName(user.email.split('@')[0])
-      }
+    const { data: profile } = await supabase
+      .from('profiles').select('first_name, full_name')
+      .eq('id', user.id).maybeSingle()
+    if (profile?.first_name) setFirstName(profile.first_name)
+    else if (profile?.full_name) setFirstName(profile.full_name.split(' ')[0])
+    else if (user.email) setFirstName(user.email.split('@')[0])
 
-      const { data: trackers } = await supabase
-        .from('trackers')
-        .select(`*, addiction_types (id, name, icon), tracker_savings (savings_type, per_day_amount)`)
-        .eq('user_id', user.id).eq('is_active', true).order('created_at')
-      if (!cancelled && trackers && trackers.length > 0) setTracker(trackers[0])
+    const { data: trackers } = await supabase
+      .from('trackers')
+      .select(`*, addiction_types (id, name, icon), tracker_savings (savings_type, per_day_amount)`)
+      .eq('user_id', user.id).eq('is_active', true).order('created_at')
+    setTracker(trackers && trackers.length > 0 ? trackers[0] : null)
 
-      const { data: tc } = await supabase
-        .from('free_daily_checkins').select('*')
-        .eq('user_id', user.id).eq('checkin_date', localDateStr()).maybeSingle()
-      if (!cancelled && tc) setTodayCheckin(tc)
+    const { data: tc } = await supabase
+      .from('free_daily_checkins').select('*')
+      .eq('user_id', user.id).eq('checkin_date', localDateStr()).maybeSingle()
+    setTodayCheckin(tc || null)
 
-      const { count } = await supabase
-        .from('free_daily_checkins').select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-      if (!cancelled && typeof count === 'number') setCheckinCount(count)
+    const { count } = await supabase
+      .from('free_daily_checkins').select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+    if (typeof count === 'number') setCheckinCount(count)
 
-      const { data: recents } = await supabase
-        .from('free_daily_checkins').select('felt_pull, contexts, checkin_date')
-        .eq('user_id', user.id).order('checkin_date', { ascending: false }).limit(14)
-      if (!cancelled && recents) setRecentCheckins(recents)
+    const { data: recents } = await supabase
+      .from('free_daily_checkins').select('felt_pull, contexts, checkin_date')
+      .eq('user_id', user.id).order('checkin_date', { ascending: false }).limit(14)
+    if (recents) setRecentCheckins(recents)
 
-      const { data: anchors } = await supabase
-        .from('anchors').select('name')
-        .eq('user_id', user.id).order('position').limit(1)
-      if (!cancelled && anchors && anchors.length > 0) setAnchor(anchors[0])
+    const { data: anchors } = await supabase
+      .from('anchors').select('name')
+      .eq('user_id', user.id).order('position').limit(1)
+    setAnchor(anchors && anchors.length > 0 ? anchors[0] : null)
 
-      if (!cancelled) setLoading(false)
-    }
-    load()
-    return () => { cancelled = true }
-  }, [])
+    setLoading(false)
+  }
+
+  useEffect(() => { loadAll() }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCheckinSaved = (row) => {
     const isNewToday = !todayCheckin
     setTodayCheckin(row)
     if (isNewToday) setCheckinCount(c => c + 1)   // the tree grows
+  }
+
+  const closeFlow = () => {
+    setFlowOpen(null)
+    loadAll(true)   // tracker, slip count, free_state may all have changed
   }
 
   const handleMoveToReclaim = async () => {
@@ -179,7 +193,7 @@ export default function HomeShell({ progress }) {
     }
   }
   if (!surfacing && checkinCount >= 7) {
-    surfacing = `You've checked in ${checkinCount} times. Patterns are forming.`
+    surfacing = `You’ve checked in ${checkinCount} times. Patterns are forming.`
   }
 
   return (
@@ -214,27 +228,49 @@ export default function HomeShell({ progress }) {
           </button>
         )}
 
-        {/* TODAY'S PRACTICE */}
+        {/* TODAY'S PRACTICE + ALL PRACTICES */}
         {todayPractice && (
           <>
             <p style={styles.sectionLabel}>Today</p>
             <button onClick={() => setOpenPractice(todayPractice)} style={styles.practiceCard}>
-              <p style={styles.practiceTitle}>{todayPractice.title}</p>
-              <p style={styles.practiceLine}>{todayPractice.line} · {todayPractice.minutes} min</p>
+              <span style={styles.practiceGlyph}>{todayPractice.Glyph && <todayPractice.Glyph />}</span>
+              <span style={styles.practiceText}>
+                <span style={styles.practiceTitle}>{todayPractice.title}</span>
+                <span style={styles.practiceLine}>{todayPractice.line} · {todayPractice.minutes} min</span>
+              </span>
             </button>
             {practices.length > 1 && (
-              <button onClick={() => setAllOpen(true)} style={styles.moreLink}>All practices</button>
+              <div style={styles.practiceGrid}>
+                {practices.map(p => (
+                  <button key={p.id} onClick={() => setOpenPractice(p)} style={styles.miniTile}>
+                    <span style={styles.miniGlyph}>{p.Glyph && <p.Glyph />}</span>
+                    <span style={styles.miniTitle}>{p.title}</span>
+                  </button>
+                ))}
+              </div>
             )}
           </>
         )}
 
-        {/* WHEN IT HITS */}
+        {/* IN THE MOMENT — the urge/slip flows, as floating cards */}
         {mode.inTheMoment && tracker && (
           <>
-            <p style={styles.sectionLabel}>When it hits</p>
+            <p style={styles.sectionLabel}>In the moment</p>
             <div style={styles.hitRow}>
-              <button onClick={() => navigate(`/app/urge/${tracker.id}`)} style={styles.hitBtn}>Ride it out</button>
-              <button onClick={() => navigate(`/app/slip/${tracker.id}`)} style={styles.hitBtn}>I slipped</button>
+              <button onClick={() => setFlowOpen('urge')} style={styles.hitCard}>
+                <span style={styles.hitGlyph}><UrgeWavesGlyph /></span>
+                <span style={styles.hitText}>
+                  <span style={styles.hitTitle}>Ride the urge</span>
+                  <span style={styles.hitSub}>Tools that work in minutes</span>
+                </span>
+              </button>
+              <button onClick={() => setFlowOpen('slip')} style={styles.hitCard}>
+                <span style={styles.hitGlyph}><SlipRiseGlyph /></span>
+                <span style={styles.hitText}>
+                  <span style={styles.hitTitle}>I slipped</span>
+                  <span style={styles.hitSub}>Log it gently. Nothing is lost.</span>
+                </span>
+              </button>
             </div>
             {slipCount > 0 && slipCount < 3 && (
               <p style={styles.slipNote}>{slipCount} of 3 slips this stretch — still here, still counts.</p>
@@ -252,18 +288,22 @@ export default function HomeShell({ progress }) {
           </>
         )}
 
-        {/* WHISPER ROWS */}
+        {/* YOURS — anchors & milestones */}
         <div style={styles.whispers}>
-          <button onClick={() => navigate('/app/anchors')} style={styles.whisper}>
-            {anchor ? `For ${anchor.name} · your anchors →` : 'Add the people you\u2019re doing this for →'}
+          <button onClick={() => navigate('/app/anchors')} style={styles.glyphRow}>
+            <span style={styles.rowGlyph}><AnchorGlyph /></span>
+            <span style={styles.rowText}>{anchor ? `For ${anchor.name} · your anchors` : 'Add the people you’re doing this for'}</span>
+            <span style={styles.rowArrow}>→</span>
           </button>
           {tracker && (
-            <button onClick={() => navigate(`/app/milestones/${tracker.id}`)} style={styles.whisper}>
-              What you’ve kept · milestones →
+            <button onClick={() => navigate(`/app/milestones/${tracker.id}`)} style={styles.glyphRow}>
+              <span style={styles.rowGlyph}><MilestoneGlyph /></span>
+              <span style={styles.rowText}>What you’ve kept · milestones</span>
+              <span style={styles.rowArrow}>→</span>
             </button>
           )}
           {surfacing && (
-            <button onClick={() => navigate('/app/mirror')} style={{ ...styles.whisper, ...styles.surfacing }}>
+            <button onClick={() => navigate('/app/mirror')} style={styles.surfacingRow}>
               {surfacing} →
             </button>
           )}
@@ -290,16 +330,12 @@ export default function HomeShell({ progress }) {
         {openPractice && <openPractice.Component stage={freeState} tracker={tracker} />}
       </PracticeSheet>
 
-      <PracticeSheet open={allOpen} onClose={() => setAllOpen(false)} eyebrow={mode.label} title="Practices">
-        <div style={styles.allList}>
-          {practices.map(p => (
-            <button key={p.id} onClick={() => { setAllOpen(false); setOpenPractice(p) }} style={styles.allItem}>
-              <span style={styles.allTitle}>{p.title}</span>
-              <span style={styles.allLine}>{p.line} · {p.minutes} min</span>
-            </button>
-          ))}
-        </div>
-      </PracticeSheet>
+      <FlowCard open={flowOpen === 'urge'} onClose={closeFlow}>
+        {flowOpen === 'urge' && tracker && <UrgeFlow trackerId={tracker.id} onExit={closeFlow} />}
+      </FlowCard>
+      <FlowCard open={flowOpen === 'slip'} onClose={closeFlow}>
+        {flowOpen === 'slip' && tracker && <SlipFlow trackerId={tracker.id} onExit={closeFlow} />}
+      </FlowCard>
     </div>
   )
 }
@@ -331,21 +367,36 @@ const styles = {
   setupSub: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '4px 0 0', lineHeight: 1.45 },
 
   sectionLabel: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '20px 0 8px', paddingLeft: '2px' },
-  practiceCard: { display: 'block', width: '100%', textAlign: 'left', padding: '15px 16px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(80,50,20,0.05)' },
-  practiceTitle: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0 },
-  practiceLine: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '4px 0 0', lineHeight: 1.45 },
-  moreLink: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '12.5px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', padding: '7px 2px 0' },
+
+  practiceCard: { display: 'flex', alignItems: 'center', gap: '14px', width: '100%', textAlign: 'left', padding: '15px 16px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(80,50,20,0.05)' },
+  practiceGlyph: { width: '46px', height: '46px', flexShrink: 0, borderRadius: '14px', background: 'rgba(217,181,122,0.18)', color: '#854F0B', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  practiceText: { display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 },
+  practiceTitle: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2 },
+  practiceLine: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
+
+  practiceGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '8px' },
+  miniTile: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', padding: '12px 6px 10px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
+  miniGlyph: { width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(217,181,122,0.16)', color: '#854F0B', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  miniTitle: { fontSize: '11.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.25 },
 
   hitRow: { display: 'flex', gap: '9px' },
-  hitBtn: { flex: 1, padding: '13px 8px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '13px', fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
+  hitCard: { flex: 1, display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
+  hitGlyph: { width: '38px', height: '38px', flexShrink: 0, borderRadius: '50%', background: 'rgba(217,181,122,0.16)', color: '#854F0B', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  hitText: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 },
+  hitTitle: { fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2 },
+  hitSub: { fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
+
   slipNote: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '8px 2px 0' },
   reclaimInvite: { marginTop: '10px', padding: '14px 15px', background: '#FBF4E6', border: '0.5px solid #E4D5BB', borderRadius: '14px' },
   reclaimText: { fontSize: '13px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.55, margin: '0 0 10px' },
   reclaimBtn: { width: '100%', padding: '11px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '11px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' },
 
-  whispers: { display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '20px' },
-  whisper: { background: 'transparent', border: 'none', textAlign: 'left', padding: '7px 2px', fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
-  surfacing: { color: '#854F0B' },
+  whispers: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '20px' },
+  glyphRow: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '11px 13px', background: 'rgba(255,255,255,0.6)', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit' },
+  rowGlyph: { width: '34px', height: '34px', flexShrink: 0, borderRadius: '50%', background: 'rgba(217,181,122,0.16)', color: '#854F0B', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  rowText: { flex: 1, fontSize: '13.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
+  rowArrow: { fontSize: '13px', color: '#B9A07E' },
+  surfacingRow: { background: 'transparent', border: 'none', textAlign: 'left', padding: '4px 2px', fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
 
   sheetOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '0 0.5rem' },
   sheet: { background: '#FAF7F1', width: '100%', maxWidth: '440px', maxHeight: '85vh', borderRadius: '24px 24px 0 0', padding: '0.75rem 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', boxShadow: '0 -10px 40px rgba(40,25,15,0.3)' },
@@ -355,8 +406,8 @@ const styles = {
   sheetBody: { overflowY: 'auto', flex: 1, paddingBottom: '6px' },
   sheetClose: { width: '100%', padding: '12px', background: 'white', color: '#2A1F15', border: '0.5px solid #DDCFB6', borderRadius: '12px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', marginTop: '10px', flexShrink: 0 },
 
-  allList: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  allItem: { display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'left', padding: '13px 14px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '13px', cursor: 'pointer', fontFamily: 'inherit' },
-  allTitle: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500 },
-  allLine: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
+  flowOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(36,23,16,0.6)', backdropFilter: 'blur(4px)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem' },
+  flowCard: { position: 'relative', width: '100%', maxWidth: '460px', height: 'min(92vh, 780px)', background: '#FAF7F1', borderRadius: '22px', overflow: 'hidden', boxShadow: '0 24px 70px rgba(30,18,8,0.45)' },
+  flowClose: { position: 'absolute', top: '10px', right: '10px', zIndex: 5, width: '34px', height: '34px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'rgba(250,247,241,0.92)', color: '#6B5C4A', fontSize: '17px', lineHeight: 1, cursor: 'pointer' },
+  flowScroll: { height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' },
 }

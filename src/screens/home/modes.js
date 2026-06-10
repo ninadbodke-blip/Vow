@@ -15,6 +15,7 @@
 import TheHardHour from './practices/TheHardHour'
 import InsteadI from './practices/InsteadI'
 import JournalTile from '../freeHome/JournalTile'
+import { HardHourGlyph, InsteadGlyph, WordsGlyph } from './glyphs'
 
 export const MODES = {
   notice: {
@@ -50,6 +51,7 @@ export const MODES = {
         line: 'Name tonight\u2019s hardest hour — and guard it in advance.',
         minutes: 1,
         Component: TheHardHour,
+        Glyph: HardHourGlyph,
       },
       {
         id: 'instead',
@@ -57,13 +59,15 @@ export const MODES = {
         line: 'What did you do with the time it used to take?',
         minutes: 2,
         Component: InsteadI,
+        Glyph: InsteadGlyph,
       },
       {
         id: 'words',
         title: 'In your words',
-        line: 'A few lines about today, gently prompted.',
+        line: 'Whatever\u2019s on your mind, said your way. Only you read it.',
         minutes: 3,
         Component: JournalTile,
+        Glyph: WordsGlyph,
       },
     ],
   },

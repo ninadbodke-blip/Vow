@@ -3,9 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useLang } from '../LanguageContext'
 import { supabase } from '../supabaseClient'
 
-export default function SlipFlow() {
-  const { trackerId } = useParams()
+// Works two ways: as a routed screen (/app/slip/:trackerId) or embedded
+// in a floating card (pass trackerId + onExit props). Every path that
+// used to navigate home now goes through exit().
+export default function SlipFlow({ trackerId: trackerIdProp = null, onExit = null } = {}) {
+  const { trackerId: trackerIdParam } = useParams()
+  const trackerId = trackerIdProp || trackerIdParam
   const navigate = useNavigate()
+  const exit = () => { if (onExit) onExit(); else navigate('/app/home') }
   const { t } = useLang()
 
   const [step, setStep] = useState(1) // 1=confirm, 2=acknowledgment, 3=reflection, 4=slip result
@@ -25,7 +30,7 @@ export default function SlipFlow() {
         .eq('id', trackerId)
         .single()
       if (error) {
-        navigate('/app/home')
+        exit()
         return
       }
       setTracker(data)
@@ -103,7 +108,7 @@ export default function SlipFlow() {
         return
       }
 
-      navigate('/app/home')
+      exit()
     } catch (err) {
       alert('Could not save: ' + err.message)
       setSaving(false)
@@ -146,7 +151,7 @@ export default function SlipFlow() {
             </p>
             <div style={styles.actions}>
               <button 
-                onClick={() => navigate('/app/home')}
+                onClick={() => exit()}
                 style={{...styles.btn, ...styles.btnSecondary}}
               >
                 Not yet, take me back
@@ -229,7 +234,7 @@ export default function SlipFlow() {
             </p>
             <div style={styles.actions}>
               <button
-                onClick={() => navigate('/app/home', { replace: true })}
+                onClick={() => exit()}
                 style={{ ...styles.btn, ...styles.btnPrimary }}
               >
                 Back to home

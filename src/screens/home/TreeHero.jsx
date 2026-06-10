@@ -15,7 +15,12 @@ import { useMemo, useRef, useEffect } from 'react'
 // count 0 → the planted seed from onboarding. count 1 → first stem.
 // ===================================================================
 
-const MAX_GROWTH = 110
+// Phase 1 (1..SKELETON_CAP): branches + first leaves — the shape.
+// Phase 2 (..MAX_GROWTH): the canopy fills in, leaf by leaf, with the
+// occasional new twig. One element per check-in for 400 check-ins —
+// more than a year of daily tending before the tree is "full".
+const SKELETON_CAP = 110
+const MAX_GROWTH = 400
 
 // Small fast deterministic PRNG + string hash
 function mulberry32(a) {
@@ -40,10 +45,12 @@ function generateTree(seed) {
   const rng = mulberry32(seed)
   const segs = []
   const leaves = []
+  const anchors = []   // endpoints of every branch — where canopy leaves gather
   let tips = [{ x: BASE_X, y: SOIL_Y, ang: -Math.PI / 2, depth: 0, w: 4.4 }]
   let i = 1
 
-  while (i <= MAX_GROWTH && tips.length > 0) {
+  // ---- PHASE 1: the skeleton (identical stream to the original) ----
+  while (i <= SKELETON_CAP && tips.length > 0) {
     const ti = Math.floor(rng() * tips.length)
     const t = tips[ti]
 
@@ -64,6 +71,7 @@ function generateTree(seed) {
       d: `M${t.x.toFixed(1)} ${t.y.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`,
       w: Math.max(0.9, t.w),
     })
+    anchors.push({ x: x2, y: y2 })
     i++
 
     const next = { x: x2, y: y2, ang, depth: t.depth + 1, w: t.w * 0.8 }
@@ -80,7 +88,7 @@ function generateTree(seed) {
     }
 
     // leaves arrive once the tree has some shape
-    if (i <= MAX_GROWTH && i > 10 && t.depth >= 2 && rng() < 0.7) {
+    if (i <= SKELETON_CAP && i > 10 && t.depth >= 2 && rng() < 0.7) {
       leaves.push({
         idx: i,
         x: Math.min(214, Math.max(26, x2 + (rng() - 0.5) * 9)),
@@ -91,6 +99,42 @@ function generateTree(seed) {
       i++
     }
   }
+  // ---- PHASE 2: the canopy fills, one check-in at a time ----
+  const clampX = (v) => Math.min(216, Math.max(24, v))
+  const clampY = (v) => Math.min(SOIL_Y - 10, Math.max(24, v))
+  while (i <= MAX_GROWTH) {
+    // every so often, a small new twig keeps the wood growing too
+    if (i % 16 === 0 && anchors.length > 0) {
+      const a = anchors[Math.floor(rng() * anchors.length)]
+      if (a.y < SOIL_Y - 30) {
+        const ang = -Math.PI / 2 + (rng() - 0.5) * 1.6
+        const len = 5 + rng() * 5
+        const x2 = clampX(a.x + Math.cos(ang) * len)
+        const y2 = clampY(a.y + Math.sin(ang) * len)
+        segs.push({
+          idx: i,
+          d: `M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${((a.x + x2) / 2).toFixed(1)} ${((a.y + y2) / 2).toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`,
+          w: 1,
+        })
+        anchors.push({ x: x2, y: y2 })
+        i++
+        continue
+      }
+    }
+    const a = anchors.length > 0
+      ? anchors[Math.floor(rng() * anchors.length)]
+      : { x: BASE_X, y: SOIL_Y - 50 }
+    const spread = 7 + Math.min(15, (i - SKELETON_CAP) / 22)
+    leaves.push({
+      idx: i,
+      x: clampX(a.x + (rng() - 0.5) * 2 * spread),
+      y: clampY(a.y + (rng() - 0.5) * 2 * spread),
+      r: 2 + rng() * 2.2,
+      c: LEAF_COLORS[Math.floor(rng() * LEAF_COLORS.length)],
+    })
+    i++
+  }
+
   return { segs, leaves }
 }
 

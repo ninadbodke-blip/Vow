@@ -44,10 +44,15 @@ function WhyFooter({ text }) {
   return <p style={styles.whyFooter}>Why this works — {text}</p>
 }
 
-export default function UrgeFlow() {
-  const { trackerId } = useParams()
+// Works two ways: as a routed screen (/app/urge/:trackerId) or embedded
+// in a floating card (pass trackerId + onExit props). Every path that
+// used to navigate home now goes through exit().
+export default function UrgeFlow({ trackerId: trackerIdProp = null, onExit = null } = {}) {
+  const { trackerId: trackerIdParam } = useParams()
+  const trackerId = trackerIdProp || trackerIdParam
   const navigate = useNavigate()
   const location = useLocation()
+  const exit = () => { if (onExit) onExit(); else navigate('/app/home') }
   const { t } = useLang()
 
   const initialVelocity = (location.state && location.state.velocity) || null
@@ -79,7 +84,7 @@ export default function UrgeFlow() {
           .select('*, addiction_types(name, icon)')
           .eq('id', trackerId)
           .single()
-        if (!trackerData) { navigate('/app/home'); return }
+        if (!trackerData) { exit(); return }
         setTracker(trackerData)
 
         const { data: profile } = await supabase
@@ -89,7 +94,7 @@ export default function UrgeFlow() {
           .single()
         setProfileBio(profile?.bio || null)
       } catch (err) {
-        navigate('/app/home')
+        exit()
       } finally {
         setLoading(false)
       }
@@ -113,7 +118,7 @@ export default function UrgeFlow() {
         technique_used: passed ? passedTechnique : null,
         technique_helped: passed ? true : false,
       })
-      navigate('/app/home')
+      exit()
     } catch (err) {
       alert('Could not save: ' + err.message)
       setSaving(false)
@@ -152,8 +157,8 @@ export default function UrgeFlow() {
   return (
     <div style={styles.frame}>
       <div style={styles.card}>
-        {step === 'velocity' && <VelocityPicker onChoose={chooseVelocity} onCancel={() => navigate('/app/home')} />}
-        {step === 'intro' && <Intro tracker={tracker} onStart={startTechniques} onCancel={() => navigate('/app/home')} />}
+        {step === 'velocity' && <VelocityPicker onChoose={chooseVelocity} onCancel={() => exit()} />}
+        {step === 'intro' && <Intro tracker={tracker} onStart={startTechniques} onCancel={() => exit()} />}
         {step === 'technique' && (
           <Technique
             technique={techniques[techniqueIdx]}
