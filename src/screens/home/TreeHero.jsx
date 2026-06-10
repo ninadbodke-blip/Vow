@@ -1,172 +1,57 @@
-import { useMemo, useRef, useEffect } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { gsap } from 'gsap'
+import { buildTree, GROUND_Y, MAX_GROWTH } from './treeEngine'
 
 // ===================================================================
-// THE VOW TREE
+// THE VOW TREE — the home's living hero.
 // ===================================================================
-// A hand-drawn ink tree that grows one stroke per daily check-in.
-// It grows from honesty, not abstinence: it never shrinks, never
-// resets, and a slip logged honestly grows it like any other day.
-//
-// The structure is generated deterministically from a per-user seed,
-// so every tree is unique and identical across sessions. Growth is
-// simply: show the first `count` elements of the generated sequence.
-// The sky behind the tree shifts quietly with the user's mode.
-//
-// count 0 → the planted seed from onboarding. count 1 → first stem.
+// Art + growth rules live in treeEngine.js (pure, tested). This
+// component composes the per-mode sky behind it, renders the settled
+// tree, and uses GSAP for the two moments of life:
+//   • new leaves pop out of their branch when a check-in saves
+//   • a slow idle breeze, its rhythm seeded per user
+// It grows from honesty: count = total check-ins ever. It never
+// shrinks, never resets; a slip logged honestly grows it like any
+// other day. count 0 = the planted seed from onboarding.
 // ===================================================================
 
-// Phase 1 (1..SKELETON_CAP): branches + first leaves — the shape.
-// Phase 2 (..MAX_GROWTH): the canopy fills in, leaf by leaf, with the
-// occasional new twig. One element per check-in for 400 check-ins —
-// more than a year of daily tending before the tree is "full".
-const SKELETON_CAP = 110
-const MAX_GROWTH = 400
-
-// Small fast deterministic PRNG + string hash
-function mulberry32(a) {
-  return function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
 function hashStr(s) {
   let h = 2166136261
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) }
   return h >>> 0
 }
 
-const LEAF_COLORS = ['#D9B57A', '#6E8A6A', '#7E9B5A', '#C8A86A']
-const SOIL_Y = 146
-const BASE_X = 120
+const VIEW_H = 232
 
-function generateTree(seed) {
-  const rng = mulberry32(seed)
-  const segs = []
-  const leaves = []
-  const anchors = []   // endpoints of every branch — where canopy leaves gather
-  let tips = [{ x: BASE_X, y: SOIL_Y, ang: -Math.PI / 2, depth: 0, w: 4.4 }]
-  let i = 1
-
-  // ---- PHASE 1: the skeleton (identical stream to the original) ----
-  while (i <= SKELETON_CAP && tips.length > 0) {
-    const ti = Math.floor(rng() * tips.length)
-    const t = tips[ti]
-
-    const len = Math.max(7, 16 - t.depth * 1.5) * (0.8 + rng() * 0.5)
-    let ang = t.ang + (rng() - 0.5) * 0.55
-    ang = ang * 0.82 + (-Math.PI / 2) * 0.18   // gentle pull upright
-
-    let x2 = t.x + Math.cos(ang) * len
-    let y2 = t.y + Math.sin(ang) * len
-    x2 = Math.min(216, Math.max(24, x2))
-    y2 = Math.min(SOIL_Y - 4, Math.max(26, y2))
-
-    const mx = (t.x + x2) / 2 + (rng() - 0.5) * 6
-    const my = (t.y + y2) / 2 + (rng() - 0.5) * 6
-
-    segs.push({
-      idx: i,
-      d: `M${t.x.toFixed(1)} ${t.y.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`,
-      w: Math.max(0.9, t.w),
-    })
-    anchors.push({ x: x2, y: y2 })
-    i++
-
-    const next = { x: x2, y: y2, ang, depth: t.depth + 1, w: t.w * 0.8 }
-
-    // branch sometimes
-    if (t.depth >= 1 && t.depth < 6 && tips.length < 7 && rng() < 0.42) {
-      tips.push({ ...next, ang: ang + (0.35 + rng() * 0.45) * (rng() < 0.5 ? -1 : 1), w: next.w * 0.9 })
-    }
-
-    tips[ti] = next
-    if (next.depth > 7) {
-      tips.splice(tips.indexOf(next), 1)
-      if (tips.length === 0) tips = [{ x: BASE_X, y: SOIL_Y - 40, ang: -Math.PI / 2, depth: 3, w: 1.6 }]
-    }
-
-    // leaves arrive once the tree has some shape
-    if (i <= SKELETON_CAP && i > 10 && t.depth >= 2 && rng() < 0.7) {
-      leaves.push({
-        idx: i,
-        x: Math.min(214, Math.max(26, x2 + (rng() - 0.5) * 9)),
-        y: Math.min(SOIL_Y - 8, Math.max(24, y2 + (rng() - 0.5) * 9)),
-        r: 2.4 + rng() * 2.3,
-        c: LEAF_COLORS[Math.floor(rng() * LEAF_COLORS.length)],
-      })
-      i++
-    }
-  }
-  // ---- PHASE 2: the canopy fills, one check-in at a time ----
-  const clampX = (v) => Math.min(216, Math.max(24, v))
-  const clampY = (v) => Math.min(SOIL_Y - 10, Math.max(24, v))
-  while (i <= MAX_GROWTH) {
-    // every so often, a small new twig keeps the wood growing too
-    if (i % 16 === 0 && anchors.length > 0) {
-      const a = anchors[Math.floor(rng() * anchors.length)]
-      if (a.y < SOIL_Y - 30) {
-        const ang = -Math.PI / 2 + (rng() - 0.5) * 1.6
-        const len = 5 + rng() * 5
-        const x2 = clampX(a.x + Math.cos(ang) * len)
-        const y2 = clampY(a.y + Math.sin(ang) * len)
-        segs.push({
-          idx: i,
-          d: `M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${((a.x + x2) / 2).toFixed(1)} ${((a.y + y2) / 2).toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`,
-          w: 1,
-        })
-        anchors.push({ x: x2, y: y2 })
-        i++
-        continue
-      }
-    }
-    const a = anchors.length > 0
-      ? anchors[Math.floor(rng() * anchors.length)]
-      : { x: BASE_X, y: SOIL_Y - 50 }
-    const spread = 7 + Math.min(15, (i - SKELETON_CAP) / 22)
-    leaves.push({
-      idx: i,
-      x: clampX(a.x + (rng() - 0.5) * 2 * spread),
-      y: clampY(a.y + (rng() - 0.5) * 2 * spread),
-      r: 2 + rng() * 2.2,
-      c: LEAF_COLORS[Math.floor(rng() * LEAF_COLORS.length)],
-    })
-    i++
-  }
-
-  return { segs, leaves }
-}
-
-// Per-mode skies — the part that quietly tells you where you are.
+// Per-mode skies — the quiet signal of where you are.
 const SKIES = {
   notice:  { top: '#E9E3D9', bottom: '#F5F0E5', ground: '#EDE6D6', sun: { cx: 184, cy: 56, r: 13, o: 0.35 }, extra: 'mist' },
   reflect: { top: '#E4DED6', bottom: '#F3EBDA', ground: '#ECE3D0', sun: { cx: 184, cy: 48, r: 14, o: 0.5 },  extra: null },
-  commit:  { top: '#EFE0C8', bottom: '#F8EFDC', ground: '#EFE6D2', sun: { cx: 120, cy: 144, r: 20, o: 0.85 }, extra: null },
-  endure:  { top: '#F3EBDA', bottom: '#FBF5E8', ground: '#EFE6D2', sun: { cx: 184, cy: 42, r: 16, o: 0.9 },  extra: null },
-  build:   { top: '#F1EBD8', bottom: '#FAF4E6', ground: '#EBE2CD', sun: { cx: 150, cy: 34, r: 17, o: 0.95 }, extra: 'roots' },
-  reclaim: { top: '#DDDCD8', bottom: '#EFEBE2', ground: '#E6E1D4', sun: { cx: 184, cy: 48, r: 13, o: 0.25 }, extra: 'rain' },
+  commit:  { top: '#EFE0C8', bottom: '#F8EFDC', ground: '#EFE6D2', sun: { cx: 120, cy: GROUND_Y - 2, r: 20, o: 0.85 }, extra: null },
+  endure:  { top: '#F3EBDA', bottom: '#FBF5E8', ground: '#EFE6D2', sun: { cx: 192, cy: 46, r: 13, o: 0.9 },  extra: 'ring' },
+  build:   { top: '#F1EBD8', bottom: '#FAF4E6', ground: '#EBE2CD', sun: { cx: 150, cy: 38, r: 15, o: 0.95 }, extra: 'ring' },
+  reclaim: { top: '#DDDCD8', bottom: '#EFEBE2', ground: '#E6E1D4', sun: { cx: 184, cy: 48, r: 12, o: 0.25 }, extra: 'rain' },
 }
 
 function Rain() {
   const drops = (offset) => {
     const lines = []
-    for (let k = 0; k < 9; k++) {
-      const x = 30 + k * 22 + (k % 2 === 0 ? 6 : 0) + offset
-      const y = 18 + ((k * 37) % 70)
-      lines.push(<line key={k} x1={x} y1={y} x2={x - 2.5} y2={y + 9} stroke="#8E939B" strokeWidth="1" strokeLinecap="round" opacity="0.4" />)
+    for (let k = 0; k < 10; k++) {
+      const x = 26 + k * 20 + (k % 2 === 0 ? 6 : 0) + offset
+      const y = 14 + ((k * 41) % 150)
+      lines.push(<line key={k} x1={x} y1={y} x2={x - 2.5} y2={y + 10} stroke="#8E939B" strokeWidth="1" strokeLinecap="round" opacity="0.4" />)
     }
     return lines
   }
   return (
     <>
       <g>
-        <animateTransform attributeName="transform" type="translate" from="0 -34" to="0 34" dur="1.5s" repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="translate" from="0 -44" to="0 44" dur="1.5s" repeatCount="indefinite" />
         {drops(0)}
       </g>
       <g>
-        <animateTransform attributeName="transform" type="translate" from="0 -34" to="0 34" dur="2.1s" repeatCount="indefinite" />
-        {drops(11)}
+        <animateTransform attributeName="transform" type="translate" from="0 -44" to="0 44" dur="2.1s" repeatCount="indefinite" />
+        {drops(10)}
       </g>
     </>
   )
@@ -177,25 +62,61 @@ export default function TreeHero({
   mode = 'endure',          // data key, drives the sky only
   count = 0,                // total check-ins ever — the tree's growth
   counter = 'days',         // 'days' | 'tending' | 'standing'
-  daysFree = null,          // for counter='days', when a tracker exists
+  daysFree = null,
   tendedToday = false,
   onTend,
-  caption = null,           // optional override for the line under the count
+  caption = null,
 }) {
   const sky = SKIES[mode] || SKIES.endure
-  const tree = useMemo(() => generateTree(hashStr(String(seed))), [seed])
-
   const shown = Math.min(count, MAX_GROWTH)
-  const prevRef = useRef(shown)
-  useEffect(() => { prevRef.current = shown }, [shown])
-  const prevShown = prevRef.current
+
+  const prevShownRef = useRef(shown)
+  const treeGRef = useRef(null)
+  const freshGRef = useRef(null)
+
+  // settled art (batched) + the new check-in's leaves, separately
+  const built = useMemo(
+    () => buildTree(seed, shown, prevShownRef.current),
+    [seed, shown]   // prevShownRef is read on purpose; it updates with shown
+  )
+
+  // idle breeze — rhythm seeded per user, honours reduced-motion
+  useEffect(() => {
+    const g = treeGRef.current
+    if (!g) return
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const dur = 5.6 + (hashStr(String(seed)) % 100) / 42
+    gsap.set(g, { rotation: -0.65, svgOrigin: `120 ${GROUND_Y}` })
+    const tween = gsap.to(g, { rotation: 0.65, duration: dur, ease: 'sine.inOut', yoyo: true, repeat: -1 })
+    return () => { tween.kill() }
+  }, [seed])
+
+  // the day's new leaves pop out of their branch
+  useLayoutEffect(() => {
+    const grew = shown > prevShownRef.current
+    prevShownRef.current = shown
+    const host = freshGRef.current
+    if (!grew || !host) return
+    const nodes = host.querySelectorAll('path')
+    if (nodes.length === 0) return
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const tweens = []
+    nodes.forEach((el, i) => {
+      tweens.push(gsap.from(el, {
+        scale: 0, opacity: 0,
+        svgOrigin: `${el.dataset.ox} ${el.dataset.oy}`,
+        duration: 0.7, ease: 'back.out(2.2)', delay: 0.08 * i,
+      }))
+    })
+    return () => { tweens.forEach(t => t.kill()) }
+  }, [shown])
 
   // ---- the line under the tree ----
   let countLine = null, subLine = null
   if (counter === 'days') {
     if (daysFree !== null) {
       countLine = `Day ${daysFree + 1}`
-      subLine = caption || 'Your tree grows when you check in — a slip can\u2019t shrink it.'
+      subLine = caption || 'Your tree grows when you check in — a slip can’t shrink it.'
     } else {
       countLine = 'Your tree'
       subLine = caption || 'It grows a little every time you check in.'
@@ -207,13 +128,14 @@ export default function TreeHero({
     countLine = 'Still standing'
     subLine = caption || 'Rain is how it grows.'
   }
+  if (!caption && shown >= MAX_GROWTH) {
+    subLine = 'A year of tending, in full leaf.'
+  }
 
   return (
     <div style={styles.card}>
-      <style>{'@keyframes vowGrow { from { opacity: 0; } to { opacity: 1; } }'}</style>
-
       <div style={styles.skyWrap}>
-        <svg viewBox="0 0 240 170" style={{ width: '100%', display: 'block' }} role="img" aria-label="Your tree">
+        <svg viewBox={`0 0 240 ${VIEW_H}`} style={{ width: '100%', display: 'block' }} role="img" aria-label="Your tree">
           <defs>
             <linearGradient id="vowSky" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={sky.top} />
@@ -222,56 +144,51 @@ export default function TreeHero({
           </defs>
 
           {/* sky */}
-          <rect x="0" y="0" width="240" height="170" fill="url(#vowSky)" />
+          <rect x="0" y="0" width="240" height={VIEW_H} fill="url(#vowSky)" />
+          {sky.extra !== 'rain' && (
+            <>
+              <ellipse cx="58" cy="74" rx="20" ry="4.5" fill="#FFFFFF" opacity="0.4" />
+              <ellipse cx="78" cy="80" rx="13" ry="3.5" fill="#FFFFFF" opacity="0.3" />
+            </>
+          )}
 
-          {/* sun (drawn before ground so a horizon sun half-sets into it) */}
+          {/* sun (a horizon sun half-sets into the ground band) */}
           <circle cx={sky.sun.cx} cy={sky.sun.cy} r={sky.sun.r} fill="#EAD9B4" opacity={sky.sun.o} />
+          {sky.extra === 'ring' && (
+            <circle cx={sky.sun.cx} cy={sky.sun.cy} r={sky.sun.r + 4.5} fill="none" stroke="#E6C685" strokeWidth="1.6" opacity="0.5" strokeDasharray="22 7" />
+          )}
 
           {sky.extra === 'rain' && <Rain />}
 
           {/* ground band + soil line */}
-          <rect x="0" y={SOIL_Y} width="240" height={170 - SOIL_Y} fill={sky.ground} />
-          <path d={`M16 ${SOIL_Y} H224`} stroke="#3A2A1C" strokeWidth="1.8" strokeLinecap="round" opacity="0.85" />
+          <rect x="0" y={GROUND_Y} width="240" height={VIEW_H - GROUND_Y} fill={sky.ground} />
+          <path d={`M14 ${GROUND_Y} H226`} stroke="#3A2A1C" strokeWidth="1.6" strokeLinecap="round" opacity="0.5" />
 
           {sky.extra === 'mist' && (
             <>
-              <ellipse cx="86" cy={SOIL_Y - 14} rx="58" ry="9" fill="#FFFFFF" opacity="0.35" />
-              <ellipse cx="168" cy={SOIL_Y - 5} rx="52" ry="8" fill="#FFFFFF" opacity="0.28" />
-            </>
-          )}
-          {sky.extra === 'roots' && (
-            <>
-              <path d={`M${BASE_X - 8} ${SOIL_Y} q-7 8 -16 11`} stroke="#3A2A1C" strokeWidth="1.3" fill="none" opacity="0.35" strokeLinecap="round" />
-              <path d={`M${BASE_X} ${SOIL_Y} v12`} stroke="#3A2A1C" strokeWidth="1.3" fill="none" opacity="0.35" strokeLinecap="round" />
-              <path d={`M${BASE_X + 8} ${SOIL_Y} q7 8 16 11`} stroke="#3A2A1C" strokeWidth="1.3" fill="none" opacity="0.35" strokeLinecap="round" />
+              <ellipse cx="86" cy={GROUND_Y - 12} rx="58" ry="9" fill="#FFFFFF" opacity="0.35" />
+              <ellipse cx="168" cy={GROUND_Y - 4} rx="52" ry="8" fill="#FFFFFF" opacity="0.28" />
             </>
           )}
 
-          {/* the seed — always there, from the day they planted it */}
-          <ellipse cx={BASE_X} cy={SOIL_Y + 4} rx="7" ry="8.5" fill="#7A5A38" stroke="#3A2A1C" strokeWidth="1.2" opacity={shown > 0 ? 0.55 : 1} />
-
-          {/* growth: branches then leaves, in planted order */}
-          {tree.segs.filter(s => s.idx <= shown).map(s => (
-            <path
-              key={`s${s.idx}`}
-              d={s.d}
-              stroke="#3A2A1C"
-              strokeWidth={s.w}
-              fill="none"
-              strokeLinecap="round"
-              style={s.idx > prevShown ? { animation: 'vowGrow 0.9s ease forwards', opacity: 0 } : undefined}
-            />
-          ))}
-          {tree.leaves.filter(l => l.idx <= shown).map(l => (
-            <circle
-              key={`l${l.idx}`}
-              cx={l.x}
-              cy={l.y}
-              r={l.r}
-              fill={l.c}
-              style={l.idx > prevShown ? { animation: 'vowGrow 1.1s ease forwards', opacity: 0 } : undefined}
-            />
-          ))}
+          {/* the tree — settled art batched, the day's new leaves on top */}
+          <g ref={treeGRef}>
+            <g dangerouslySetInnerHTML={{ __html: built.html }} />
+            <g ref={freshGRef}>
+              {built.fresh.map((l, i) => (
+                <path
+                  key={`${shown}-${i}`}
+                  d={l.d}
+                  fill={l.fill}
+                  stroke={l.outline ? '#5F7048' : undefined}
+                  strokeWidth={l.outline ? 0.8 : undefined}
+                  strokeLinejoin={l.outline ? 'round' : undefined}
+                  data-ox={l.ox}
+                  data-oy={l.oy}
+                />
+              ))}
+            </g>
+          </g>
         </svg>
       </div>
 
