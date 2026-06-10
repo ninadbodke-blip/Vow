@@ -81,3 +81,92 @@ export const MilestoneGlyph = () => (
     <path d="M6.5 5h10l-2.7 3.5L16.5 12h-10" />
   </svg>
 )
+
+// ===== Practice glyphs for the five migrated modes =====
+
+// Your autopilot — the loop that runs itself.
+export const AutopilotGlyph = () => (
+  <svg {...base}>
+    <path d="M19 12a7 7 0 1 1-2.05-4.95" />
+    <path d="M17.5 3.5v4h-4" />
+  </svg>
+)
+
+// What it gives, what it takes — two directions of the same ledger.
+export const LedgerGlyph = () => (
+  <svg {...base}>
+    <path d="M7 14V5M7 5l-2.6 2.6M7 5l2.6 2.6" />
+    <path d="M17 10v9M17 19l-2.6-2.6M17 19l2.6-2.6" />
+  </svg>
+)
+
+// The scales — both ends honest.
+export const ScalesGlyph = () => (
+  <svg {...base}>
+    <path d="M12 4v16M8.5 20h7" />
+    <path d="M4 7h16" />
+    <path d="M6.5 7l-2.3 4.5h4.6L6.5 7zM4.2 11.5a2.3 2.3 0 0 0 4.6 0" />
+    <path d="M17.5 7l-2.3 4.5h4.6L17.5 7zM15.2 11.5a2.3 2.3 0 0 0 4.6 0" />
+  </svg>
+)
+
+// What it costs — the hours running out.
+export const CostGlyph = () => (
+  <svg {...base}>
+    <path d="M7 3.5h10M7 20.5h10" />
+    <path d="M8 3.5c0 4 3 5.5 4 8.5 1-3 4-4.5 4-8.5M8 20.5c0-4 3-5.5 4-8.5 1 3 4 4.5 4 8.5" />
+  </svg>
+)
+
+// Your vow & your day — the sun coming up on it.
+export const VowDayGlyph = () => (
+  <svg {...base}>
+    <path d="M4 17h16" />
+    <path d="M7.5 17a4.5 4.5 0 0 1 9 0" />
+    <path d="M12 8.5V6M6.8 10.8l-1.6-1.6M17.2 10.8l1.6-1.6" />
+  </svg>
+)
+
+// Clear the path — the way through, opened.
+export const PathGlyph = () => (
+  <svg {...base}>
+    <path d="M6 20c6-2 0-6 5-8.5S17 6 17 4" />
+    <path d="M14.5 4H17v2.5" />
+  </svg>
+)
+
+// Pressure points — the gauge of the week.
+export const GaugeGlyph = () => (
+  <svg {...base}>
+    <path d="M4.5 16.5a7.5 7.5 0 0 1 15 0" />
+    <path d="M12 16.5l3.6-4.4" />
+    <path d="M5.5 16.5h-1M19.5 16.5h-1M12 8.5v-1" />
+  </svg>
+)
+
+// The blind spot — looking, with one thing just outside the look.
+export const BlindspotGlyph = () => (
+  <svg {...base}>
+    <path d="M3.5 12.5s3-4.5 7.5-4.5 7.5 4.5 7.5 4.5-3 4.5-7.5 4.5-7.5-4.5-7.5-4.5z" />
+    <circle cx="11" cy="12.5" r="1.9" />
+    <circle cx="19.8" cy="5.4" r="1.1" />
+  </svg>
+)
+
+// What still stands — the pillar that held.
+export const StandsGlyph = () => (
+  <svg {...base}>
+    <path d="M5 20h14" />
+    <path d="M7 5h10" />
+    <path d="M9 5v15M15 5v15" />
+    <path d="M6 5l1-1.5h10L18 5" />
+  </svg>
+)
+
+// The kinder voice — the gentler thing, said.
+export const KinderGlyph = () => (
+  <svg {...base}>
+    <path d="M20 11.5a8 7 0 0 1-8 7c-1 0-2-.15-2.9-.45L4.5 19.5l1.2-3.4A7 7 0 0 1 4 11.5a8 7 0 0 1 16 0z" />
+    <path d="M12 14.2s-2.6-1.5-2.6-3.1c0-.9.7-1.6 1.5-1.6.5 0 .9.25 1.1.65.2-.4.6-.65 1.1-.65.8 0 1.5.7 1.5 1.6 0 1.6-2.6 3.1-2.6 3.1z" />
+  </svg>
+)

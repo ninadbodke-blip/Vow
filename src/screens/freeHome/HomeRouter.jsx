@@ -2,25 +2,16 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 
-// The new unified home (Tree + shell). Modes migrate onto it one at a
-// time; until then they keep their existing stage homes below.
 import HomeShell from '../home/HomeShell'
-
-import NoticeFreeHome from './NoticeFreeHome'
-import ReflectFreeHome from './ReflectFreeHome'
-import CommitFreeHome from './CommitFreeHome'
-import BuildFreeHome from './BuildFreeHome'
-import ReclaimFreeHome from './ReclaimFreeHome'
 
 // ===================================================================
 // HOME ROUTER
 // ===================================================================
-// Gates onboarding, then routes by free_state:
-//   endure                        → HomeShell (the new Tree home)
-//   notice/reflect/commit/build/
-//   reclaim                       → their existing homes (unchanged)
-// As each mode's practices migrate, move its case up to HomeShell and
-// delete its old import.
+// Gates onboarding, then routes every free_state to the unified
+// HomeShell (the Tree home). The mode key only decides the sky, the
+// counter, and which practices the shell offers — see home/modes.js.
+// The old stage-home files remain in the repo but are no longer
+// routed; they can be deleted in a later cleanup pass.
 // ===================================================================
 
 export default function HomeRouter() {
@@ -103,27 +94,13 @@ export default function HomeRouter() {
 
   if (!progress) return null
 
-  switch (progress.free_state) {
-    case 'endure':
-      return <HomeShell progress={progress} />
-
-    // Not yet migrated to the new home — unchanged for pilot users.
-    case 'notice':
-      return <NoticeFreeHome progress={progress} />
-    case 'reflect':
-      return <ReflectFreeHome progress={progress} />
-    case 'commit':
-      return <CommitFreeHome progress={progress} />
-    case 'build':
-      return <BuildFreeHome progress={progress} />
-    case 'reclaim':
-      return <ReclaimFreeHome progress={progress} />
-
-    default:
-      // Unknown state — send back to picker
-      navigate('/app/onboarding/state-picker')
-      return null
+  const KNOWN = ['notice', 'reflect', 'commit', 'endure', 'build', 'reclaim']
+  if (!KNOWN.includes(progress.free_state)) {
+    navigate('/app/onboarding/state-picker')
+    return null
   }
+
+  return <HomeShell progress={progress} />
 }
 
 const loadingStyles = {
