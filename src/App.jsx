@@ -32,7 +32,6 @@ import MarketingContact from './marketing/Contact'
 
 // ===== Home (free tier router) =====
 import HomeRouter from './screens/freeHome/HomeRouter'
-import CollectionScreen from './screens/freeHome/collections/CollectionScreen'
 
 // ===== Vow Path =====
 import VowPathIntro from './screens/vowPath/VowPathIntro'
@@ -214,9 +213,6 @@ function AppRoutes() {
       <Route path="/app/slips" element={session ? <SlipHistory /> : <Navigate to="/app/welcome" />} />
       <Route path="/app/urges" element={session ? <UrgeLog /> : <Navigate to="/app/welcome" />} />
       <Route path="/app/anchors" element={session ? <Anchors /> : <Navigate to="/app/welcome" />} />
-
-      {/* ===== PRACTICE COLLECTIONS (free) ===== */}
-      <Route path="/app/practices/:collectionId" element={session ? <CollectionScreen /> : <Navigate to="/app/welcome" />} />
 
       {/* ===== VOW PATH ===== */}
       <Route path="/app/vow-path" element={vowGate(session, <VowPathIntro />)} />
