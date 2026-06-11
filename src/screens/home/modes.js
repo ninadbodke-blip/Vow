@@ -9,31 +9,53 @@
 //           'tending'  → counts check-ins, not abstinence
 //           'standing' → no number at all (getting back up)
 //
-// All six modes now run on the HomeShell. Each carries two bespoke
-// practices plus the shared journal — no interaction is duplicated
-// across modes.
+// The home's practice area is the same for every mode:
+//   DAILY    — "One steady minute", the permanent Today card
+//   JOURNAL  — "In your words", its own long bar
+//   tools[3] — the mode's three bespoke tools, under the Tools header
 // ===================================================================
+import OneSteadyMinute from './practices/OneSteadyMinute'
 import TheHardHour from './practices/TheHardHour'
 import InsteadI from './practices/InsteadI'
 import YourAutopilot from './practices/YourAutopilot'
 import GivesAndTakes from './practices/GivesAndTakes'
+import WhereItHappens from './practices/WhereItHappens'
 import TheScales from './practices/TheScales'
 import WhatItCosts from './practices/WhatItCosts'
+import TheExcuses from './practices/TheExcuses'
 import VowAndDay from './practices/VowAndDay'
 import ClearThePath from './practices/ClearThePath'
+import HowReady from './practices/HowReady'
+import RenewYourVow from './practices/RenewYourVow'
 import PressurePoints from './practices/PressurePoints'
 import TheBlindSpot from './practices/TheBlindSpot'
+import WeeksProof from './practices/WeeksProof'
 import WhatStillStands from './practices/WhatStillStands'
 import KinderVoice from './practices/KinderVoice'
+import WhatItWasReachingFor from './practices/WhatItWasReachingFor'
 import JournalTile from '../freeHome/JournalTile'
 import {
-  HardHourGlyph, InsteadGlyph, WordsGlyph,
-  AutopilotGlyph, LedgerGlyph, ScalesGlyph, CostGlyph,
-  VowDayGlyph, PathGlyph, GaugeGlyph, BlindspotGlyph,
-  StandsGlyph, KinderGlyph,
+  BreathGlyph, WordsGlyph,
+  HardHourGlyph, InsteadGlyph, RenewGlyph,
+  AutopilotGlyph, LedgerGlyph, PinGlyph,
+  ScalesGlyph, CostGlyph, ExcuseGlyph,
+  VowDayGlyph, PathGlyph, ReadyGlyph,
+  GaugeGlyph, BlindspotGlyph, ProofGlyph,
+  StandsGlyph, KinderGlyph, ReachGlyph,
 } from './glyphs'
 
-const words = {
+// The permanent Today card — same door, every mode, every day.
+export const DAILY = {
+  id: 'steady',
+  title: 'One steady minute',
+  line: 'Sixty seconds of steadying breath — same door, every day.',
+  minutes: 1,
+  Component: OneSteadyMinute,
+  Glyph: BreathGlyph,
+}
+
+// The journal — its own long bar beneath the daily.
+export const JOURNAL = {
   id: 'words',
   title: 'In your words',
   line: 'Whatever\u2019s on your mind, said your way. Only you read it.',
@@ -48,7 +70,7 @@ export const MODES = {
     label: 'A closer look',
     counter: 'tending',
     inTheMoment: false,
-    practices: [
+    tools: [
       {
         id: 'autopilot',
         title: 'Your autopilot',
@@ -65,7 +87,14 @@ export const MODES = {
         Component: GivesAndTakes,
         Glyph: LedgerGlyph,
       },
-      words,
+      {
+        id: 'context',
+        title: 'Where it happens',
+        line: 'Place, company, hour — the pattern has an address.',
+        minutes: 1,
+        Component: WhereItHappens,
+        Glyph: PinGlyph,
+      },
     ],
   },
   reflect: {
@@ -73,7 +102,7 @@ export const MODES = {
     label: 'Weighing it up',
     counter: 'tending',
     inTheMoment: false,
-    practices: [
+    tools: [
       {
         id: 'lean',
         title: 'The scales',
@@ -90,7 +119,14 @@ export const MODES = {
         Component: WhatItCosts,
         Glyph: CostGlyph,
       },
-      words,
+      {
+        id: 'excuses',
+        title: 'The excuses',
+        line: 'The lines it uses on you. Name the loudest.',
+        minutes: 2,
+        Component: TheExcuses,
+        Glyph: ExcuseGlyph,
+      },
     ],
   },
   commit: {
@@ -98,7 +134,7 @@ export const MODES = {
     label: 'Getting ready',
     counter: 'tending',
     inTheMoment: false,
-    practices: [
+    tools: [
       {
         id: 'vow_day',
         title: 'Your vow & your day',
@@ -115,7 +151,14 @@ export const MODES = {
         Component: ClearThePath,
         Glyph: PathGlyph,
       },
-      words,
+      {
+        id: 'ready',
+        title: 'How ready, honestly',
+        line: 'A number, and the one thing in the way.',
+        minutes: 1,
+        Component: HowReady,
+        Glyph: ReadyGlyph,
+      },
     ],
   },
   endure: {
@@ -123,7 +166,7 @@ export const MODES = {
     label: 'Early days',
     counter: 'days',
     inTheMoment: true,
-    practices: [
+    tools: [
       {
         id: 'hard_hour',
         title: 'The hard hour',
@@ -140,7 +183,14 @@ export const MODES = {
         Component: InsteadI,
         Glyph: InsteadGlyph,
       },
-      words,
+      {
+        id: 'renew',
+        title: 'Renew your vow',
+        line: 'Yesterday\u2019s reason, said again today.',
+        minutes: 1,
+        Component: RenewYourVow,
+        Glyph: RenewGlyph,
+      },
     ],
   },
   build: {
@@ -148,7 +198,7 @@ export const MODES = {
     label: 'Staying steady',
     counter: 'days',
     inTheMoment: true,
-    practices: [
+    tools: [
       {
         id: 'pressure',
         title: 'Pressure points',
@@ -165,7 +215,14 @@ export const MODES = {
         Component: TheBlindSpot,
         Glyph: BlindspotGlyph,
       },
-      words,
+      {
+        id: 'proof',
+        title: 'The week\u2019s proof',
+        line: 'One thing you did instead — entered into evidence.',
+        minutes: 2,
+        Component: WeeksProof,
+        Glyph: ProofGlyph,
+      },
     ],
   },
   reclaim: {
@@ -173,7 +230,7 @@ export const MODES = {
     label: 'Getting back up',
     counter: 'standing',
     inTheMoment: true,
-    practices: [
+    tools: [
       {
         id: 'stands',
         title: 'What still stands',
@@ -190,7 +247,14 @@ export const MODES = {
         Component: KinderVoice,
         Glyph: KinderGlyph,
       },
-      words,
+      {
+        id: 'reach',
+        title: 'What it was reaching for',
+        line: 'The need under the slip, and one other way to meet it.',
+        minutes: 2,
+        Component: WhatItWasReachingFor,
+        Glyph: ReachGlyph,
+      },
     ],
   },
 }

@@ -170,3 +170,63 @@ export const KinderGlyph = () => (
     <path d="M12 14.2s-2.6-1.5-2.6-3.1c0-.9.7-1.6 1.5-1.6.5 0 .9.25 1.1.65.2-.4.6-.65 1.1-.65.8 0 1.5.7 1.5 1.6 0 1.6-2.6 3.1-2.6 3.1z" />
   </svg>
 )
+
+// ===== Daily + tool-three glyphs =====
+
+// One steady minute — the breath, ringed.
+export const BreathGlyph = () => (
+  <svg {...base}>
+    <circle cx="12" cy="12" r="8.5" />
+    <circle cx="12" cy="12" r="3.6" />
+  </svg>
+)
+
+// Where it happens — the pattern's address.
+export const PinGlyph = () => (
+  <svg {...base}>
+    <path d="M12 21s-6.5-5.6-6.5-10.5a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z" />
+    <circle cx="12" cy="10.3" r="2.3" />
+  </svg>
+)
+
+// The excuses — the lines it speaks.
+export const ExcuseGlyph = () => (
+  <svg {...base}>
+    <path d="M20 11.5a8 7 0 0 1-8 7c-1 0-2-.15-2.9-.45L4.5 19.5l1.2-3.4A7 7 0 0 1 4 11.5a8 7 0 0 1 16 0z" />
+    <path d="M8.6 9.6q1.4.4 1.4 1.7t-1.4 1.7M13.6 9.6q1.4.4 1.4 1.7t-1.4 1.7" />
+  </svg>
+)
+
+// How ready, honestly — the dial of it.
+export const ReadyGlyph = () => (
+  <svg {...base}>
+    <path d="M5 16.5a7.5 7.5 0 0 1 14.4-2.9" />
+    <path d="M12 16.5l4.6-3.1" />
+    <path d="M19.4 16.5h-1M5.6 16.5h-1" />
+  </svg>
+)
+
+// Renew your vow — the small flame, kept lit.
+export const RenewGlyph = () => (
+  <svg {...base}>
+    <path d="M12 3.5q4.5 5 4.5 10a4.5 5.5 0 0 1-9 0q0-5 4.5-10z" />
+    <path d="M12 11q1.9 2.4 1.9 4.2a1.9 2.4 0 0 1-3.8 0Q10.1 13.4 12 11z" />
+  </svg>
+)
+
+// The week's proof — entered into evidence.
+export const ProofGlyph = () => (
+  <svg {...base}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M8.3 12.4l2.5 2.6 4.9-5.4" />
+  </svg>
+)
+
+// What it was reaching for — the open reach.
+export const ReachGlyph = () => (
+  <svg {...base}>
+    <path d="M5 18.5q7-1.5 14 0" />
+    <path d="M12 15V6.5" />
+    <path d="M8.6 9.4 12 6l3.4 3.4" />
+  </svg>
+)

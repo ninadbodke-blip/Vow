@@ -7,7 +7,7 @@ import DailyCheckin from '../freeHome/DailyCheckin'
 import UrgeFlow from '../UrgeFlow'
 import SlipFlow from '../SlipFlow'
 import TreeHero from './TreeHero'
-import { modeFor } from './modes'
+import { modeFor, DAILY, JOURNAL } from './modes'
 import StageWayfinder from '../freeHome/StageWayfinder'
 import { UrgeWavesGlyph, SlipRiseGlyph, AnchorGlyph, MilestoneGlyph } from './glyphs'
 
@@ -87,6 +87,27 @@ export default function HomeShell({ progress }) {
   const [recentCheckins, setRecentCheckins] = useState([])
   const [anchor, setAnchor] = useState(null)
   const [slipCount, setSlipCount] = useState(progress?.endure_slip_count || 0)
+  const [commitTarget, setCommitTarget] = useState(null)
+
+  // The chosen day-one date (from "Your vow & your day") powers the
+  // countdown ticker under the tree in Getting ready.
+  useEffect(() => {
+    if (freeState !== 'commit') { setCommitTarget(null); return }
+    let cancelled = false
+    ;(async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+      const { data } = await supabase
+        .from('free_stage_signals')
+        .select('payload')
+        .eq('user_id', user.id)
+        .eq('signal_type', 'commit_start_date')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (!cancelled) setCommitTarget(data?.[0]?.payload?.date || null)
+    })()
+    return () => { cancelled = true }
+  }, [freeState])
   const [loading, setLoading] = useState(true)
 
   const [checkinOpen, setCheckinOpen] = useState(false)
@@ -176,8 +197,7 @@ export default function HomeShell({ progress }) {
 
   const daysFree = tracker ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 86400000) : null
 
-  const practices = mode.practices || []
-  const todayPractice = practices.length > 0 ? practices[dayOfYear() % practices.length] : null
+  const tools = mode.tools || []
 
   // ---- one surfacing line, only when the data has earned it ----
   let surfacing = null
@@ -217,6 +237,8 @@ export default function HomeShell({ progress }) {
           count={checkinCount}
           counter={mode.counter}
           daysFree={daysFree}
+          trackerStartISO={tracker?.start_date || null}
+          commitTargetISO={commitTarget}
           tendedToday={!!todayCheckin}
           onTend={() => setCheckinOpen(true)}
         />
@@ -229,28 +251,39 @@ export default function HomeShell({ progress }) {
           </button>
         )}
 
-        {/* TODAY'S PRACTICE + ALL PRACTICES */}
-        {todayPractice && (
+        {/* TODAY — the permanent daily, then the journal, then the mode's tools */}
+        <p style={styles.sectionLabel}>Today</p>
+        <button onClick={() => setOpenPractice({ ...DAILY, eyebrow: 'Today' })} style={styles.practiceCard}>
+          <span style={styles.practiceGlyph}><DAILY.Glyph /></span>
+          <span style={styles.practiceText}>
+            <span style={styles.practiceTitle}>{DAILY.title}</span>
+            <span style={styles.practiceLine}>{DAILY.line} · {DAILY.minutes} min</span>
+          </span>
+          <span style={styles.practiceArrow}>›</span>
+        </button>
+
+        {/* IN YOUR WORDS — the journal, its own long bar */}
+        <button onClick={() => setOpenPractice({ ...JOURNAL, eyebrow: 'In your words' })} style={styles.journalBar}>
+          <span style={styles.journalGlyph}><JOURNAL.Glyph /></span>
+          <span style={styles.practiceText}>
+            <span style={styles.journalTitle}>{JOURNAL.title}</span>
+            <span style={styles.practiceLine}>{JOURNAL.line}</span>
+          </span>
+          <span style={styles.practiceArrow}>›</span>
+        </button>
+
+        {/* TOOLS — the mode's three */}
+        {tools.length > 0 && (
           <>
-            <p style={styles.sectionLabel}>Today</p>
-            <button onClick={() => setOpenPractice(todayPractice)} style={styles.practiceCard}>
-              <span style={styles.practiceGlyph}>{todayPractice.Glyph && <todayPractice.Glyph />}</span>
-              <span style={styles.practiceText}>
-                <span style={styles.practiceTitle}>{todayPractice.title}</span>
-                <span style={styles.practiceLine}>{todayPractice.line} · {todayPractice.minutes} min</span>
-              </span>
-              <span style={styles.practiceArrow}>›</span>
-            </button>
-            {practices.length > 1 && (
-              <div style={styles.practiceGrid}>
-                {practices.map(p => (
-                  <button key={p.id} onClick={() => setOpenPractice(p)} style={styles.miniTile}>
-                    <span style={styles.miniGlyph}>{p.Glyph && <p.Glyph />}</span>
-                    <span style={styles.miniTitle}>{p.title}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            <p style={styles.sectionLabel}>Tools</p>
+            <div style={styles.practiceGrid}>
+              {tools.map(p => (
+                <button key={p.id} onClick={() => setOpenPractice({ ...p, eyebrow: 'Tools' })} style={styles.miniTile}>
+                  <span style={styles.miniGlyph}>{p.Glyph && <p.Glyph />}</span>
+                  <span style={styles.miniTitle}>{p.title}</span>
+                </button>
+              ))}
+            </div>
           </>
         )}
 
@@ -326,7 +359,7 @@ export default function HomeShell({ progress }) {
       <PracticeSheet
         open={!!openPractice}
         onClose={() => setOpenPractice(null)}
-        eyebrow="Today’s practice"
+        eyebrow={openPractice?.eyebrow || 'Practice'}
         title={openPractice?.title}
       >
         {openPractice && <openPractice.Component stage={freeState} tracker={tracker} />}
@@ -346,7 +379,7 @@ const styles = {
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
-    padding: '1.25rem 1rem 6rem',
+    padding: '3.2rem 1rem 6rem',
     display: 'flex',
     justifyContent: 'center',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -376,6 +409,9 @@ const styles = {
   practiceTitle: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2 },
   practiceLine: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
   practiceArrow: { marginLeft: 'auto', fontSize: '22px', color: '#B9A07E', fontFamily: 'Georgia, serif', lineHeight: 1, paddingLeft: '6px' },
+  journalBar: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', marginTop: '10px', padding: '13px 16px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(80,50,20,0.05)' },
+  journalGlyph: { width: '40px', height: '40px', flexShrink: 0, borderRadius: '12px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  journalTitle: { fontSize: '15.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2 },
 
   practiceGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '9px', marginTop: '9px', alignItems: 'stretch' },
   miniTile: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '8px', minHeight: '98px', padding: '13px 6px 11px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },

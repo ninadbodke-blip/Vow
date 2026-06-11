@@ -108,7 +108,12 @@ function leafEl(x, y, len, rot, fill, outline, opacity, variant) {
 function grass(x, y, o){ return '<g stroke="' + C.deep + '" stroke-width="1.1" stroke-linecap="round" fill="none" opacity="' + f1(0.8*o) + '">' +
   '<path d="M' + x + ' ' + y + ' q-1.5 -4 -3.5 -5.5"/><path d="M' + x + ' ' + y + ' q0.3 -5 0 -7"/><path d="M' + x + ' ' + y + ' q1.8 -3.5 3.8 -5"/></g>' }
 function stoneEl(x, y, r, o){ return '<ellipse cx="' + x + '" cy="' + y + '" rx="' + f1(r) + '" ry="' + f1(r*0.62) + '" fill="' + C.stone + '" stroke="' + C.ink + '" stroke-width="0.8" opacity="' + f1(0.85*o) + '"/>' }
-function birdEl(x, y, sc, o){ return '<path d="M' + x + ' ' + y + ' q ' + 3*sc + ' ' + (-2.6*sc) + ' ' + 6*sc + ' 0 M' + (x+6*sc) + ' ' + y + ' q ' + 3*sc + ' ' + (-2.6*sc) + ' ' + 6*sc + ' 0" stroke="' + C.ink + '" stroke-width="1.1" fill="none" stroke-linecap="round" opacity="' + f1(0.75*o) + '"/>' }
+// Birds are no longer baked into the static art — TreeHero animates them
+// live from this schedule (gliding flight, wing-flap), still earned by growth.
+export const BIRD_SCHEDULE = [
+  { b: 150, y: 58, sc: 0.9, dur: 36, delay: 0 },
+  { b: 300, y: 44, sc: 0.7, dur: 52, delay: 9 },
+]
 function seedShape(x, y, rot, sc){ return '<g transform="translate(' + f1(x) + ' ' + f1(y) + ') rotate(' + f1(rot) + ') scale(' + f1(sc) + ')">' +
   '<ellipse rx="9.5" ry="7" fill="#6E4E2F" stroke="' + C.ink + '" stroke-width="1.3"/>' +
   '<path d="M-7 -1 Q0 3 7 -1.5" stroke="' + C.ink + '" stroke-width="0.9" fill="none" opacity="0.7"/>' +
@@ -225,7 +230,6 @@ function homeForLeaf(n, r){
 }
 
 var VINEPICKS = [ { piece:'sec', i:2, b:150 }, { piece:'sec', i:5, b:195 }, { piece:'twig', i:9, b:245 }, { piece:'twig', i:13, b:330 } ]
-var BIRDS  = [ {x:56,y:60,sc:0.9,b:150},{x:186,y:46,sc:0.75,b:300} ]
 var GRASSP = [ {x:96,y:212,b:22},{x:152,y:212,b:34},{x:74,y:213,b:64},{x:166,y:213,b:96},{x:58,y:214,b:158},{x:182,y:214,b:230},{x:120,y:218,b:306} ]
 var STONES = [ {x:146,y:212,r:4,b:0},{x:178,y:214,r:4.5,b:66},{x:46,y:215,r:5,b:154},{x:198,y:215,r:4,b:308} ]
 var FALLEN = [ {b:190,x:100,y:209},{b:240,x:138,y:211},{b:285,x:88,y:212},{b:330,x:150,y:209.5},{b:370,x:112,y:211.5} ]
@@ -244,8 +248,14 @@ export function buildTree(seed, count, newSince) {
   var bulk = trunkBulk(count)
   var s = ''
   var fresh = []
-  var batches = {}   // tone → concatenated path d (settled, full-opacity leaves)
-  var batchAdd = function(tone, d){ batches[tone] = (batches[tone] || '') + d + ' ' }
+  var batches = {}   // tone|region → compound path d (settled leaves); region
+  var batchOrder = []   // = left/center/right of the canopy, so the breeze can
+  var batchAdd = function(tone, x, d){   // flutter each patch independently
+    var region = x < 102 ? 'l' : x > 138 ? 'r' : 'c'
+    var key = tone + '|' + region
+    if (!batches[key]) { batches[key] = ''; batchOrder.push(key) }
+    batches[key] += d + ' '
+  }
 
   // ground
   var washRx = kf([[0,28],[21,36],[60,46],[150,58],[300,68],[400,80]], count)[0]
@@ -303,7 +313,7 @@ export function buildTree(seed, count, newSince) {
     if (n > newSince && opacity >= 0.98) {
       fresh.push({ d: leafPathD(x, y, len, rot, variant), fill: tone, outline: !!outline, ox: f1(x), oy: f1(y) })
     } else if (opacity >= 0.98 && !outline) {
-      batchAdd(tone, leafPathD(x, y, len, rot, variant))
+      batchAdd(tone, x, leafPathD(x, y, len, rot, variant))
     } else {
       s += leafEl(x, y, len, rot, tone, outline, opacity, variant)
     }
@@ -357,9 +367,11 @@ export function buildTree(seed, count, newSince) {
     }
   }
 
-  // settled leaves, batched: one compound path per tone
-  var tones = Object.keys(batches)
-  for (i = 0; i < tones.length; i++) s += '<path d="' + batches[tones[i]].trim() + '" fill="' + tones[i] + '"/>'
+  // settled leaves, batched: one compound path per tone-and-region patch
+  for (i = 0; i < batchOrder.length; i++) {
+    var bk = batchOrder[i]
+    s += '<path class="vow-canopy" d="' + batches[bk].trim() + '" fill="' + bk.split('|')[0] + '"/>'
+  }
 
   for (i = 0; i < FALLEN.length; i++) {
     if (count < FALLEN[i].b) continue
@@ -373,10 +385,11 @@ export function buildTree(seed, count, newSince) {
     var vg = ss(VINEPICKS[i].b, VINEPICKS[i].b + 20, count)
     var tip = host.spine[2]
     var vl = f1((26 + i * 5) * vg)
+    s += '<g class="vow-vine">'
     s += '<path d="M' + f1(tip[0]) + ' ' + f1(tip[1]) + ' q2.5 ' + f1(vl*0.3) + ' -0.5 ' + f1(vl*0.6) + ' q-2.5 ' + f1(vl*0.25) + ' 0.5 ' + vl + '" stroke="' + C.deep + '" stroke-width="1.2" fill="none" opacity="' + f1(0.85*vg) + '"/>'
     if (vg > 0.5) for (var k2 = 1; k2 <= (vl > 26 ? 3 : 2); k2++) s += leafEl(tip[0] + (k2%2 ? 2.5 : -2.5), tip[1] + vl*k2/3.4, 5, k2%2 ? 30 : 150, C.light, false, vg, k2 % 2)
+    s += '</g>'
   }
-  for (i = 0; i < BIRDS.length; i++) if (count >= BIRDS[i].b) s += birdEl(BIRDS[i].x, BIRDS[i].y, BIRDS[i].sc, ss(BIRDS[i].b, BIRDS[i].b+8, count))
 
   return { html: s, fresh: fresh }
 }

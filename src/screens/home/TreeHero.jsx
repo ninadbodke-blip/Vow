@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { gsap } from 'gsap'
-import { buildTree, GROUND_Y, MAX_GROWTH } from './treeEngine'
+import { buildTree, GROUND_Y, MAX_GROWTH, BIRD_SCHEDULE } from './treeEngine'
 
 // ===================================================================
 // THE VOW TREE — the home's living hero.
@@ -21,6 +21,21 @@ function hashStr(s) {
   return h >>> 0
 }
 
+const reducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// Bird flight + wing-flap live in CSS (cheap, GPU-friendly); GSAP handles
+// the canopy rustle and vine sway because those targets live inside the
+// engine's injected SVG string.
+const MOTION_CSS = `
+@keyframes vowFly { from { transform: translateX(-46px); } to { transform: translateX(286px); } }
+@keyframes vowBob { from { transform: translateY(-2.5px); } to { transform: translateY(2.5px); } }
+@keyframes vowWing { from { transform: scaleY(1); } to { transform: scaleY(0.45); } }
+@keyframes vowDrift { from { transform: translateX(-260px); } to { transform: translateX(260px); } }
+@media (prefers-reduced-motion: reduce) {
+  .vowFly, .vowBob, .vowWing, .vowCloud { animation: none !important; }
+}`
+
 const VIEW_H = 232
 
 // Per-mode skies — the quiet signal of where you are.
@@ -32,7 +47,7 @@ const SKIES = {
   reflect: { top: '#E3DACA', bottom: '#F4ECDC', ground: '#EBE2CE', sun: { cx: 184, cy: 48, r: 14, o: 0.55 }, extra: null,
              clouds: [[60, 70, 21, 4.5], [166, 62, 14, 3.5]] },
   // Getting ready — dawn. The sun sits on the horizon, about to rise.
-  commit:  { top: '#EFD9B6', bottom: '#FAF0DC', ground: '#EFE6D2', sun: { cx: 120, cy: GROUND_Y - 2, r: 20, o: 0.9 }, extra: 'horizon',
+  commit:  { top: '#EFD9B6', bottom: '#FAF0DC', ground: '#EFE6D2', sun: { cx: 66, cy: GROUND_Y - 2, r: 20, o: 0.9 }, extra: 'horizon',
              clouds: [[66, 60, 22, 4.5]] },
   // Early days — clear morning, the ringed sun of held days.
   endure:  { top: '#F3EBDA', bottom: '#FBF5E8', ground: '#EFE6D2', sun: { cx: 192, cy: 46, r: 13, o: 0.9 }, extra: 'ring',
@@ -78,13 +93,24 @@ export default function TreeHero({
   tendedToday = false,
   onTend,
   caption = null,
+  trackerStartISO = null,
+  commitTargetISO = null,
 }) {
   const sky = SKIES[mode] || SKIES.endure
   const shown = Math.min(count, MAX_GROWTH)
 
   const prevShownRef = useRef(shown)
-  const treeGRef = useRef(null)
   const freshGRef = useRef(null)
+  const artRef = useRef(null)
+
+  // 1-second heartbeat for the live tickers (commit countdown / endure count-up)
+  const [, setTickNow] = useState(0)
+  useEffect(() => {
+    const ticking = (counter === 'days' && trackerStartISO) || (mode === 'commit' && commitTargetISO)
+    if (!ticking) return
+    const id = setInterval(() => setTickNow((n) => n + 1), 1000)
+    return () => clearInterval(id)
+  }, [counter, mode, trackerStartISO, commitTargetISO])
 
   // settled art (batched) + the new check-in's leaves, separately
   const built = useMemo(
@@ -92,16 +118,29 @@ export default function TreeHero({
     [seed, shown]   // prevShownRef is read on purpose; it updates with shown
   )
 
-  // idle breeze — rhythm seeded per user, honours reduced-motion
+  // the rustle — each batched canopy layer sways on its own rhythm, slightly
+  // out of phase with the others, so the foliage shimmers against the wood;
+  // vines swing from where they hang. Re-bound whenever the art re-renders.
   useEffect(() => {
-    const g = treeGRef.current
-    if (!g) return
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const dur = 5.6 + (hashStr(String(seed)) % 100) / 42
-    gsap.set(g, { rotation: -0.65, svgOrigin: `120 ${GROUND_Y}` })
-    const tween = gsap.to(g, { rotation: 0.65, duration: dur, ease: 'sine.inOut', yoyo: true, repeat: -1 })
-    return () => { tween.kill() }
-  }, [seed])
+    const root = artRef.current
+    if (!root || reducedMotion()) return
+    const tweens = []
+    root.querySelectorAll('.vow-canopy').forEach((el, i) => {
+      const dur = 1.9 + ((i * 0.37) % 1.6)
+      const amp = 0.8 + ((i * 0.23) % 0.8)
+      tweens.push(gsap.fromTo(el,
+        { rotation: -amp, y: 0, transformOrigin: '50% 45%' },
+        { rotation: amp, y: 0.6, transformOrigin: '50% 45%', duration: dur, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: (i * 0.31) % 1.4 },
+      ))
+    })
+    root.querySelectorAll('.vow-vine').forEach((el, i) => {
+      tweens.push(gsap.fromTo(el,
+        { rotation: -2.2, transformOrigin: '50% 0%' },
+        { rotation: 2.2, transformOrigin: '50% 0%', duration: 2.3 + i * 0.55, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: i * 0.35 },
+      ))
+    })
+    return () => { tweens.forEach(tw => tw.kill()) }
+  }, [built])
 
   // the day's new leaves pop out of their branch
   useLayoutEffect(() => {
@@ -123,10 +162,24 @@ export default function TreeHero({
     return () => { tweens.forEach(t => t.kill()) }
   }, [shown])
 
-  // ---- the line under the tree ----
-  let countLine = null, subLine = null
+  // ---- the line under the tree (live tickers for endure + commit) ----
+  const pad2 = (n) => String(n).padStart(2, '0')
+  const friendly = (iso) => {
+    const [fy, fm, fd] = iso.split('-').map(Number)
+    return new Date(fy, fm - 1, fd).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+  }
+  const nowMs = Date.now()
+
+  let countLine = null, tickLine = null, subLine = null, bigIsTick = false
   if (counter === 'days') {
-    if (daysFree !== null) {
+    const startMs = trackerStartISO ? new Date(trackerStartISO).getTime() : null
+    if (startMs && startMs <= nowMs) {
+      const el = nowMs - startMs
+      const d = Math.floor(el / 86400000)
+      countLine = `Day ${d + 1}`
+      tickLine = `${d}d ${pad2(Math.floor(el / 3600000) % 24)}:${pad2(Math.floor(el / 60000) % 60)}:${pad2(Math.floor(el / 1000) % 60)} — and counting`
+      subLine = caption || 'Your tree grows when you check in — a slip can’t shrink it.'
+    } else if (daysFree !== null) {
       countLine = `Day ${daysFree + 1}`
       subLine = caption || 'Your tree grows when you check in — a slip can’t shrink it.'
     } else {
@@ -134,8 +187,24 @@ export default function TreeHero({
       subLine = caption || 'It grows a little every time you check in.'
     }
   } else if (counter === 'tending') {
-    countLine = count === 0 ? 'Your tree is planted' : `Tended ${count} ${count === 1 ? 'time' : 'times'}`
-    subLine = caption || 'It grows a little every time you check in.'
+    if (mode === 'commit' && commitTargetISO) {
+      const targetMs = new Date(commitTargetISO + 'T00:00:00').getTime()
+      const diff = targetMs - nowMs
+      if (diff > 0) {
+        const d = Math.floor(diff / 86400000)
+        countLine = `${d}d ${pad2(Math.floor(diff / 3600000) % 24)}:${pad2(Math.floor(diff / 60000) % 60)}:${pad2(Math.floor(diff / 1000) % 60)}`
+        bigIsTick = true
+        subLine = caption || `until day one — ${friendly(commitTargetISO)}`
+      } else {
+        countLine = 'Day one has arrived'
+        subLine = caption || `${friendly(commitTargetISO)}. Early days is one tap away in the map above.`
+      }
+    } else {
+      countLine = count === 0 ? 'Your tree is planted' : `Tended ${count} ${count === 1 ? 'time' : 'times'}`
+      subLine = caption || (mode === 'commit'
+        ? 'Pick your day inside “Your vow & your day” — a countdown will live here.'
+        : 'It grows a little every time you check in.')
+    }
   } else {
     countLine = 'Still standing'
     subLine = caption || 'Rain is how it grows.'
@@ -146,6 +215,7 @@ export default function TreeHero({
 
   return (
     <div style={styles.card}>
+      <style>{MOTION_CSS}</style>
       <div style={styles.skyWrap}>
         <svg viewBox={`0 0 240 ${VIEW_H}`} style={{ width: '100%', display: 'block' }} role="img" aria-label="Your tree">
           <defs>
@@ -158,7 +228,12 @@ export default function TreeHero({
           {/* sky */}
           <rect x="0" y="0" width="240" height={VIEW_H} fill="url(#vowSky)" />
           {(sky.clouds || []).map((c, i) => (
-            <ellipse key={i} cx={c[0]} cy={c[1]} rx={c[2]} ry={c[3]} fill="#FFFFFF" opacity={0.42 - i * 0.07} />
+            <ellipse
+              key={i}
+              className="vowCloud"
+              style={{ animation: `vowDrift ${110 + i * 35}s linear infinite`, animationDelay: `${-(i * 47 + 22)}s` }}
+              cx={c[0]} cy={c[1]} rx={c[2]} ry={c[3]} fill="#FFFFFF" opacity={0.42 - i * 0.07}
+            />
           ))}
 
           {/* sun (a horizon sun half-rises out of the ground band) */}
@@ -172,6 +247,23 @@ export default function TreeHero({
 
           {sky.extra === 'rain' && <Rain />}
 
+          {/* birds — alive after day 150, a second after 300; they glide
+              behind the canopy, flapping as they go */}
+          {BIRD_SCHEDULE.filter((b) => shown >= b.b).map((b, i) => (
+            <g key={i} transform={`translate(0 ${b.y})`} opacity="0.75">
+              <g className="vowFly" style={{ animation: `vowFly ${b.dur}s linear infinite`, animationDelay: `${b.delay}s` }}>
+                <g className="vowBob" style={{ animation: `vowBob ${2.2 + i * 0.7}s ease-in-out infinite alternate` }}>
+                  <path
+                    className="vowWing"
+                    style={{ animation: `vowWing ${0.62 + i * 0.16}s ease-in-out infinite alternate`, transformBox: 'fill-box', transformOrigin: 'center' }}
+                    d={`M0 0 q ${3 * b.sc} ${-2.6 * b.sc} ${6 * b.sc} 0 M${6 * b.sc} 0 q ${3 * b.sc} ${-2.6 * b.sc} ${6 * b.sc} 0`}
+                    stroke="#3A2A1C" strokeWidth="1.1" fill="none" strokeLinecap="round"
+                  />
+                </g>
+              </g>
+            </g>
+          ))}
+
           {/* ground band + soil line */}
           <rect x="0" y={GROUND_Y} width="240" height={VIEW_H - GROUND_Y} fill={sky.ground} />
           <path d={`M14 ${GROUND_Y} H226`} stroke="#3A2A1C" strokeWidth="1.6" strokeLinecap="round" opacity="0.5" />
@@ -184,8 +276,8 @@ export default function TreeHero({
           )}
 
           {/* the tree — settled art batched, the day's new leaves on top */}
-          <g ref={treeGRef}>
-            <g dangerouslySetInnerHTML={{ __html: built.html }} />
+          <g>
+            <g ref={artRef} dangerouslySetInnerHTML={{ __html: built.html }} />
             <g ref={freshGRef}>
               {built.fresh.map((l, i) => (
                 <path
@@ -205,7 +297,8 @@ export default function TreeHero({
       </div>
 
       <div style={styles.below}>
-        <p style={styles.countLine}>{countLine}</p>
+        <p style={bigIsTick ? styles.tickBig : styles.countLine}>{countLine}</p>
+        {tickLine && <p style={styles.tickLine}>{tickLine}</p>}
         <p style={styles.subLine}>{subLine}</p>
 
         {tendedToday ? (
@@ -233,6 +326,8 @@ const styles = {
   skyWrap: { display: 'block' },
   below: { padding: '12px 16px 16px', textAlign: 'center' },
   countLine: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0 },
+  tickBig: { fontSize: '21px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '10px 0 0', textAlign: 'center', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em' },
+  tickLine: { fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', margin: '3px 0 0', textAlign: 'center', fontVariantNumeric: 'tabular-nums' },
   subLine: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '3px 0 12px', lineHeight: 1.45 },
   tendBtn: {
     width: '100%', padding: '13px',
