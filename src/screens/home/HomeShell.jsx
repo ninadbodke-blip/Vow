@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import SheetPortal from '../../components/SheetPortal'
+import VowBrandMark from '../../components/VowBrandMark'
 import DailyCheckin from '../freeHome/DailyCheckin'
 import UrgeFlow from '../UrgeFlow'
 import SlipFlow from '../SlipFlow'
@@ -224,6 +225,7 @@ export default function HomeShell({ progress }) {
         {/* TOP */}
         <div style={styles.topBar}>
           <StageWayfinder progress={progress} />
+          <span style={styles.brandCenter}><VowBrandMark size={17} /></span>
           <button onClick={() => navigate('/app/profile')} style={styles.iconBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
@@ -379,7 +381,7 @@ const styles = {
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
-    padding: '3.2rem 1rem 6rem',
+    padding: '1.25rem 1rem 6rem',
     display: 'flex',
     justifyContent: 'center',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -392,7 +394,8 @@ const styles = {
     boxShadow: '0 14px 40px rgba(60,40,20,0.10)', alignSelf: 'flex-start',
   },
 
-  topBar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' },
+  topBar: { position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' },
+  brandCenter: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', pointerEvents: 'none' },
   eyebrow: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: 0 },
   iconBtn: { width: '38px', height: '38px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'rgba(255,255,255,0.7)', color: '#6B5C4A', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   greeting: { fontSize: '22px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 14px', lineHeight: 1.25 },

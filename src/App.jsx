@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import PageTransition from './components/PageTransition'
-import VowTopBar from './components/VowTopBar'
 import { LanguageProvider } from './LanguageContext'
 import { supabase } from './supabaseClient'
 import { Capacitor } from '@capacitor/core'
@@ -139,9 +138,7 @@ function AppRoutes() {
   }
 
   return (
-    <>
-      {location.pathname.startsWith('/app') && <VowTopBar />}
-      <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait">
       <PageTransition key={location.pathname}>
         <Routes location={location}>
       {/* ===== PUBLIC ROUTES (no auth, no /app prefix) ===== */}
@@ -257,7 +254,6 @@ function AppRoutes() {
     </Routes>
       </PageTransition>
     </AnimatePresence>
-    </>
   )
 }
 

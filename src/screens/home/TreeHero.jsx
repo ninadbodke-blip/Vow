@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { buildTree, GROUND_Y, MAX_GROWTH, BIRD_SCHEDULE } from './treeEngine'
 
