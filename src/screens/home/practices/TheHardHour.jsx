@@ -130,6 +130,13 @@ export default function TheHardHour() {
 
   const heldCount = rows.filter(r => r.payload?.outcome === 'clean' || r.payload?.outcome === 'held').length
 
+  // the pattern: which hours keep getting named
+  const hourTally = {}
+  rows.forEach(r => { const h = r.payload?.hour; if (h != null) hourTally[h] = (hourTally[h] || 0) + 1 })
+  const hourPattern = HOURS.filter(h => hourTally[h]).map(h => ({ h, n: hourTally[h] }))
+  const patternMax = hourPattern.reduce((m, x) => Math.max(m, x.n), 0)
+  const patternTotal = hourPattern.reduce((s, x) => s + x.n, 0)
+
   const answerOutcome = async (row, outcome) => {
     if (saving) return
     setSaving(true)
@@ -283,6 +290,22 @@ export default function TheHardHour() {
       </svg>
       <p style={styles.hourLine}>{hour != null ? `Tonight, ${hourLabel(hour)}` : 'Tap the hour on the arc'}</p>
 
+      {patternTotal >= 3 && (
+        <div style={styles.patternBox}>
+          <p style={styles.patternHead}>When it usually gets hard</p>
+          {hourPattern.map(({ h, n }) => (
+            <div key={h} style={styles.patternRow}>
+              <span style={styles.patternLabel}>{hourLabel(h)}</span>
+              <div style={styles.patternTrack}>
+                <div style={{ ...styles.patternFill, width: `${(n / patternMax) * 100}%` }} />
+              </div>
+              <span style={styles.patternVal}>{n}</span>
+            </div>
+          ))}
+          <p style={styles.patternFoot}>{patternTotal} hard {patternTotal === 1 ? 'hour' : 'hours'} named so far — the pattern is the useful part.</p>
+        </div>
+      )}
+
       {hour != null && (
         <>
           <p style={styles.fieldLabel}>What will you be doing instead?</p>
@@ -344,6 +367,14 @@ export default function TheHardHour() {
 }
 
 const styles = {
+  patternBox: { background: '#FDFBF6', border: '0.5px solid #E8DFD0', borderRadius: 14, padding: '12px 14px', margin: '4px 0 12px' },
+  patternHead: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11, color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 8px' },
+  patternRow: { display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 },
+  patternLabel: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12, color: '#6B5C4A', width: 56, flexShrink: 0 },
+  patternTrack: { flex: 1, height: 7, borderRadius: 999, background: '#EFE9DA', border: '0.5px solid #E2D7C3', position: 'relative', overflow: 'hidden' },
+  patternFill: { position: 'absolute', left: 0, top: 0, bottom: 0, background: 'linear-gradient(90deg, #D9C9A4, #C9A85C)' },
+  patternVal: { fontFamily: 'Georgia, serif', fontSize: 12, color: '#2A1F15', width: 18, textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+  patternFoot: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11.5, color: '#9C8C78', margin: '6px 0 0', lineHeight: 1.45 },
   body: { fontSize: '13.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', lineHeight: 1.55, margin: '0 0 8px' },
   hourLine: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', textAlign: 'center', margin: '2px 0 14px' },
   fieldLabel: { fontSize: '12px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 8px' },

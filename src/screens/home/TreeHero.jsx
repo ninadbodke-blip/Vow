@@ -97,6 +97,8 @@ export default function TreeHero({
   trackerStartISO = null,
   commitTargetISO = null,
   onSetDay = null,
+  trackerId = null,
+  onStartChanged = null,
 }) {
   const sky = SKIES[mode] || SKIES.endure
   const shown = Math.min(count, MAX_GROWTH)
@@ -307,7 +309,7 @@ export default function TreeHero({
         <p style={bigIsTick ? styles.tickBig : styles.countLine}>{countLine}</p>
         {tickLine && <p style={styles.tickLine}>{tickLine}</p>}
         {mode === 'endure' && counter === 'days' && trackerStartISO && (
-          <JarCounter startISO={trackerStartISO} />
+          <JarCounter startISO={trackerStartISO} trackerId={trackerId} onStartChanged={onStartChanged} />
         )}
         <p style={styles.subLine}>{subLine}</p>
         {showSetDay && onSetDay && (

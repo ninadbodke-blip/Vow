@@ -240,6 +240,8 @@ export default function HomeShell({ progress }) {
           trackerStartISO={tracker?.start_date || null}
           commitTargetISO={commitTarget}
           onSetDay={() => { const t = tools.find((x) => x.id === 'vow_day'); if (t) setOpenPractice({ ...t, eyebrow: 'Tools' }) }}
+          trackerId={tracker?.id || null}
+          onStartChanged={(iso) => setTracker((p) => (p ? { ...p, start_date: iso } : p))}
           tendedToday={!!todayCheckin}
           onTend={() => setCheckinOpen(true)}
         />
@@ -329,25 +331,26 @@ export default function HomeShell({ progress }) {
         )}
 
         {/* YOURS — anchors & milestones */}
-        <div style={styles.whispers}>
-          <button onClick={() => navigate('/app/anchors')} style={styles.glyphRow}>
-            <span style={styles.rowGlyph}><AnchorGlyph /></span>
-            <span style={styles.rowText}>{anchor ? `For ${anchor.name} · your anchors` : 'Add the people you’re doing this for'}</span>
-            <span style={styles.rowArrow}>→</span>
+        <p style={{ ...styles.sectionLabel, marginTop: '22px' }}>Yours</p>
+        <div style={{ ...styles.yoursGrid, gridTemplateColumns: tracker ? '1fr 1fr' : '1fr' }}>
+          <button onClick={() => navigate('/app/anchors')} style={styles.yoursCard}>
+            <span style={styles.yoursGlyph}><AnchorGlyph /></span>
+            <span style={styles.yoursTitle}>Your anchors</span>
+            <span style={styles.yoursSub}>{anchor ? `For ${anchor.name}, and the people who hold you to it` : 'The people you’re doing this for'}</span>
           </button>
           {tracker && (
-            <button onClick={() => navigate(`/app/milestones/${tracker.id}`)} style={styles.glyphRow}>
-              <span style={styles.rowGlyph}><MilestoneGlyph /></span>
-              <span style={styles.rowText}>What you’ve kept · milestones</span>
-              <span style={styles.rowArrow}>→</span>
-            </button>
-          )}
-          {surfacing && (
-            <button onClick={() => navigate('/app/mirror')} style={styles.surfacingRow}>
-              {surfacing} →
+            <button onClick={() => navigate(`/app/milestones/${tracker.id}`)} style={styles.yoursCard}>
+              <span style={styles.yoursGlyph}><MilestoneGlyph /></span>
+              <span style={styles.yoursTitle}>Milestones</span>
+              <span style={styles.yoursSub}>What you’ve kept, marked along the way</span>
             </button>
           )}
         </div>
+        {surfacing && (
+          <button onClick={() => navigate('/app/mirror')} style={styles.surfacingRow}>
+            {surfacing} →
+          </button>
+        )}
 
         <BottomNav />
       </div>
@@ -441,7 +444,12 @@ const styles = {
   rowGlyph: { width: '34px', height: '34px', flexShrink: 0, borderRadius: '11px', background: 'rgba(58,42,28,0.07)', color: '#6B4F23', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1, fontSize: '13.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
   rowArrow: { fontSize: '13px', color: '#B9A07E' },
-  surfacingRow: { background: 'transparent', border: 'none', textAlign: 'left', padding: '4px 2px', fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
+  surfacingRow: { background: 'transparent', border: 'none', textAlign: 'left', padding: '10px 2px 0', fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
+  yoursGrid: { display: 'grid', gap: '10px', marginTop: '10px' },
+  yoursCard: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '7px', textAlign: 'left', padding: '14px 13px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 10px rgba(120,90,40,0.05)' },
+  yoursGlyph: { width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid rgba(217,181,122,0.35)' },
+  yoursTitle: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500 },
+  yoursSub: { fontSize: '11.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
 
   sheetOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '0 0.5rem' },
   sheet: { background: '#FAF7F1', width: '100%', maxWidth: '440px', maxHeight: '85vh', borderRadius: '24px 24px 0 0', padding: '0.75rem 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', boxShadow: '0 -10px 40px rgba(40,25,15,0.3)' },

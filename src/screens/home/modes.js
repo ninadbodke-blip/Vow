@@ -213,8 +213,8 @@ export const MODES = {
       },
       {
         id: 'vitals',
-        title: 'Sleep & weather',
-        line: 'Last night\u2019s sleep, today\u2019s inner weather — thirty seconds.',
+        title: 'The basics',
+        line: 'Sleep, food, movement — the three things that decide how hard tonight feels.',
         minutes: 1,
         Component: SleepAndWeather,
         Glyph: VitalsGlyph,

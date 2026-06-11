@@ -1008,7 +1008,7 @@ function SensesTechnique({ stepNum, total, onDone, onSkip }) {
 // ────────── 9. THE VAULT LOCK (spatial puzzle reveals your vow) ──────────
 function WhyTechnique({ stepNum, total, profileBio, onDone }) {
   const [quote, setQuote] = useState(null)
-  const [offsets, setOffsets] = useState([-58, 64, -40])
+  const [offsets, setOffsets] = useState([-48, 56, -36])
   const [unlocked, setUnlocked] = useState(false)
   const dragRef = useRef(null)
   useEffect(() => {
@@ -1027,7 +1027,7 @@ function WhyTechnique({ stepNum, total, profileBio, onDone }) {
   const move = (e) => {
     const d = dragRef.current
     if (!d) return
-    const nx = Math.max(-92, Math.min(92, d.startOffset + (e.clientX - d.startX)))
+    const nx = Math.max(-62, Math.min(62, d.startOffset + (e.clientX - d.startX)))
     setOffsets(prev => { const n = [...prev]; n[d.idx] = nx; return n })
   }
   const up = () => {
@@ -1058,13 +1058,23 @@ function WhyTechnique({ stepNum, total, profileBio, onDone }) {
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', left: '50%', top: '-6px', bottom: '-6px', width: '1px', background: 'rgba(217,181,122,0.35)' }} />
             {offsets.map((off, i) => (
-              <div key={i} onPointerDown={down(i)} style={{
-                height: '34px', margin: '8px 0', borderRadius: '8px',
-                transform: `translateX(${off}px)`,
-                background: off === 0 ? 'linear-gradient(180deg, #E9C98E 0%, #CBA767 100%)' : 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)',
-                boxShadow: off === 0 ? '0 0 16px rgba(217,181,122,0.5)' : '0 2px 8px rgba(0,0,0,0.35)',
-                touchAction: 'none', cursor: 'grab', transition: 'background 0.2s, box-shadow 0.2s',
-              }} />
+              <div key={i} style={{
+                position: 'relative', height: '30px', margin: '10px 0', borderRadius: '999px',
+                background: 'rgba(0,0,0,0.28)', border: '0.5px solid rgba(217,181,122,0.18)',
+                boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)',
+              }}>
+                <div onPointerDown={down(i)} style={{
+                  position: 'absolute', top: '3px', bottom: '3px', left: '50%', width: '54%',
+                  transform: `translateX(calc(-50% + ${off}px))`,
+                  borderRadius: '999px',
+                  background: off === 0 ? 'linear-gradient(180deg, #E9C98E 0%, #CBA767 100%)' : 'linear-gradient(180deg, #D9B57A 0%, #B89456 100%)',
+                  boxShadow: off === 0 ? '0 0 16px rgba(217,181,122,0.55)' : '0 2px 8px rgba(0,0,0,0.35)',
+                  touchAction: 'none', cursor: 'grab', transition: 'background 0.2s, box-shadow 0.2s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ width: '3px', height: '12px', borderRadius: '2px', background: 'rgba(58,42,28,0.45)' }} />
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -1303,8 +1313,8 @@ const styles = {
   velocityPickIcon: { fontSize: '24px', lineHeight: 1 },
   velocityPickLabel: { fontSize: '17px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif' },
   velocityPickSub: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
-  haltGrid: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', margin: '1rem 0' },
-  haltCell: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '12px 14px', minWidth: '84px', background: '#FFFFFF', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit' },
+  haltGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', margin: '1rem 0', width: '100%' },
+  haltCell: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '13px 6px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.05)' },
   haltCellOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid #241710' },
   haltIcon: { fontSize: '22px', lineHeight: 1 },
   haltLabel: { fontSize: '13px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif' },
@@ -1326,7 +1336,7 @@ const styles = {
   },
   clenchBlob: {
     width: '130px', height: '130px',
-    borderRadius: '46% 54% 52% 48% / 50% 46% 54% 50%',
+    borderRadius: '50%',
     border: '2px solid rgba(197,87,44,0.5)',
     transition: 'transform 0.15s ease-out, background 0.3s, border-color 0.3s', pointerEvents: 'none',
   },
@@ -1581,7 +1591,7 @@ const styles = {
     lineHeight: 1.5, fontFamily: 'Georgia, serif',
   },
   tapRow: {
-    display: 'flex', flexWrap: 'wrap', gap: '6px',
+    display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center',
     justifyContent: 'center', marginTop: '0.5rem',
   },
   tapChip: {
