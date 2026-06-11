@@ -146,8 +146,8 @@ export default function UrgeFlow({ trackerId: trackerIdProp = null, onExit = nul
 
   if (loading || !tracker) {
     return (
-      <div style={styles.frame}>
-        <div style={styles.card}>
+      <div style={onExit ? styles.frameEmbedded : styles.frame}>
+        <div style={onExit ? styles.cardEmbedded : styles.card}>
           <p style={{textAlign: 'center', color: '#9C8C78'}}>Loading...</p>
         </div>
       </div>
@@ -155,8 +155,8 @@ export default function UrgeFlow({ trackerId: trackerIdProp = null, onExit = nul
   }
 
   return (
-    <div style={styles.frame}>
-      <div style={styles.card}>
+    <div style={onExit ? styles.frameEmbedded : styles.frame}>
+      <div style={onExit ? styles.cardEmbedded : styles.card}>
         {step === 'velocity' && <VelocityPicker onChoose={chooseVelocity} onCancel={() => exit()} />}
         {step === 'intro' && <Intro tracker={tracker} onStart={startTechniques} onCancel={() => exit()} />}
         {step === 'technique' && (
@@ -342,12 +342,10 @@ function VelocityPicker({ onChoose, onCancel }) {
       <p style={styles.body}>Naming how it is coming at you changes what actually helps.</p>
       <div style={styles.velocityPickRow}>
         <button onClick={() => onChoose('spike')} style={styles.velocityPickBtn}>
-          <span style={styles.velocityPickIcon}>⚡</span>
           <span style={styles.velocityPickLabel}>Sudden spike</span>
           <span style={styles.velocityPickSub}>A trigger hit. It came on fast and strong.</span>
         </button>
         <button onClick={() => onChoose('creep')} style={styles.velocityPickBtn}>
-          <span style={styles.velocityPickIcon}>🌫️</span>
           <span style={styles.velocityPickLabel}>Slow creep</span>
           <span style={styles.velocityPickSub}>Worn down. It has been building all evening.</span>
         </button>
@@ -398,7 +396,6 @@ function HALTTechnique({ stepNum, total, onDone, onSkip }) {
         {HALT_OPTIONS.map(o => (
           <button key={o.key} onClick={() => setPicked(o.key)}
             style={{ ...styles.haltCell, ...(picked === o.key ? styles.haltCellOn : {}) }}>
-            <span style={styles.haltIcon}>{o.icon}</span>
             <span style={{ ...styles.haltLabel, ...(picked === o.key ? styles.haltLabelOn : {}) }}>{o.label}</span>
           </button>
         ))}
@@ -1309,12 +1306,12 @@ const styles = {
   vaultWhy: { fontSize: '17px', color: '#EFDCAF', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, margin: '0 0 1rem', textAlign: 'center' },
   vaultQuote: { fontSize: '13px', color: '#CBBA98', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: 0, textAlign: 'center' },
   velocityPickRow: { display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', margin: '1rem 0 1.5rem' },
-  velocityPickBtn: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '16px 18px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', textAlign: 'left', boxShadow: '0 4px 14px rgba(80,50,20,0.06)', fontFamily: 'inherit' },
+  velocityPickBtn: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '14px 24px', background: '#FDFBF6', border: '0.5px solid #E2D7C3', borderRadius: '999px', cursor: 'pointer', textAlign: 'center', boxShadow: '0 3px 12px rgba(80,50,20,0.05)', fontFamily: 'inherit' },
   velocityPickIcon: { fontSize: '24px', lineHeight: 1 },
-  velocityPickLabel: { fontSize: '17px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif' },
+  velocityPickLabel: { fontSize: '16px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif' },
   velocityPickSub: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
-  haltGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', margin: '1rem 0', width: '100%' },
-  haltCell: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '13px 6px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.05)' },
+  haltGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '9px', margin: '1rem 0', width: '100%' },
+  haltCell: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '13px 8px', background: '#FDFBF6', border: '0.5px solid #E2D7C3', borderRadius: '999px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
   haltCellOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid #241710' },
   haltIcon: { fontSize: '22px', lineHeight: 1 },
   haltLabel: { fontSize: '13px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif' },
@@ -1360,6 +1357,17 @@ const styles = {
     borderRadius: '28px',
     padding: '2.5rem 1.75rem',
     boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
+    display: 'flex', flexDirection: 'column', justifyContent: 'center',
+  },
+  frameEmbedded: {
+    background: 'transparent', padding: 0,
+    display: 'flex', justifyContent: 'center',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  cardEmbedded: {
+    background: 'transparent', maxWidth: '440px', width: '100%',
+    borderRadius: 0, padding: '2rem 1.5rem 1.8rem', boxSizing: 'border-box',
+    boxShadow: 'none',
     display: 'flex', flexDirection: 'column', justifyContent: 'center',
   },
   center: {
@@ -1421,11 +1429,12 @@ const styles = {
   actions: {
     display: 'flex', gap: '10px', width: '100%',
     marginTop: '1.25rem', maxWidth: '320px',
+    justifyContent: 'center',
   },
   btn: {
-    padding: '12px 20px', borderRadius: '12px', fontSize: '14px',
+    padding: '12px 26px', borderRadius: '999px', fontSize: '14px',
     fontWeight: 500, border: 'none', cursor: 'pointer',
-    fontFamily: 'inherit', flex: 1,
+    fontFamily: 'inherit', alignSelf: 'center',
   },
   btnPill: {
     padding: '11px 28px', borderRadius: '999px',
@@ -1558,7 +1567,7 @@ const styles = {
     padding: '10px',
     background: 'linear-gradient(180deg, #7A8C5A 0%, #5A6B45 100%)',
     color: 'white',
-    border: 'none', borderRadius: '12px',
+    border: 'none', borderRadius: '999px',
     fontSize: '13px', fontWeight: 500,
     cursor: 'pointer', fontFamily: 'inherit',
     boxShadow: '0 3px 10px rgba(122,140,90,0.3)',
@@ -1569,7 +1578,7 @@ const styles = {
     padding: '10px',
     background: 'linear-gradient(180deg, #25D366 0%, #1da955 100%)',
     color: 'white',
-    border: 'none', borderRadius: '12px',
+    border: 'none', borderRadius: '999px',
     fontSize: '13px', fontWeight: 500,
     cursor: 'pointer', fontFamily: 'inherit',
     boxShadow: '0 3px 10px rgba(37,211,102,0.3)',

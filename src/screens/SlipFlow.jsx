@@ -117,7 +117,7 @@ export default function SlipFlow({ trackerId: trackerIdProp = null, onExit = nul
 
   if (loading || !tracker) {
     return (
-      <div style={styles.frame}>
+      <div style={onExit ? styles.frameEmbedded : styles.frame}>
         <div style={{...styles.card, textAlign: 'center', color: '#9C8C78'}}>Loading...</div>
       </div>
     )
@@ -133,8 +133,8 @@ export default function SlipFlow({ trackerId: trackerIdProp = null, onExit = nul
   )
 
   return (
-    <div style={styles.frame}>
-      <div style={styles.card}>
+    <div style={onExit ? styles.frameEmbedded : styles.frame}>
+      <div style={onExit ? styles.cardEmbedded : styles.card}>
 
         {step === 1 && (
           <>
@@ -266,6 +266,16 @@ const styles = {
     padding: '2.5rem 2rem',
     boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
     textAlign: 'center',
+  },
+  frameEmbedded: {
+    background: 'transparent', padding: 0,
+    display: 'flex', justifyContent: 'center',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  cardEmbedded: {
+    background: 'transparent', maxWidth: '440px', width: '100%',
+    borderRadius: 0, padding: '2rem 1.6rem 1.8rem', boxSizing: 'border-box',
+    boxShadow: 'none', textAlign: 'center',
   },
   iconCircle: {
     width: '72px', height: '72px',
