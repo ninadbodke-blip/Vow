@@ -8,7 +8,7 @@ import DailyCheckin from '../freeHome/DailyCheckin'
 import UrgeFlow from '../UrgeFlow'
 import SlipFlow from '../SlipFlow'
 import TreeHero from './TreeHero'
-import { modeFor, DAILY, JOURNAL } from './modes'
+import { modeFor, JOURNAL } from './modes'
 import StageWayfinder from '../freeHome/StageWayfinder'
 import { UrgeWavesGlyph, SlipRiseGlyph, AnchorGlyph, MilestoneGlyph } from './glyphs'
 
@@ -91,24 +91,22 @@ export default function HomeShell({ progress }) {
   const [commitTarget, setCommitTarget] = useState(null)
 
   // The chosen day-one date (from "Your vow & your day") powers the
-  // countdown ticker under the tree in Getting ready.
-  useEffect(() => {
+  // countdown ticker under the tree in Getting ready. Re-fetched when
+  // a practice sheet closes, so setting the date updates it live.
+  const refreshCommitTarget = async () => {
     if (freeState !== 'commit') { setCommitTarget(null); return }
-    let cancelled = false
-    ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || cancelled) return
-      const { data } = await supabase
-        .from('free_stage_signals')
-        .select('payload')
-        .eq('user_id', user.id)
-        .eq('signal_type', 'commit_start_date')
-        .order('created_at', { ascending: false })
-        .limit(1)
-      if (!cancelled) setCommitTarget(data?.[0]?.payload?.date || null)
-    })()
-    return () => { cancelled = true }
-  }, [freeState])
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase
+      .from('free_stage_signals')
+      .select('payload')
+      .eq('user_id', user.id)
+      .eq('signal_type', 'commit_start_date')
+      .order('created_at', { ascending: false })
+      .limit(1)
+    setCommitTarget(data?.[0]?.payload?.date || null)
+  }
+  useEffect(() => { refreshCommitTarget() }, [freeState])
   const [loading, setLoading] = useState(true)
 
   const [checkinOpen, setCheckinOpen] = useState(false)
@@ -253,16 +251,20 @@ export default function HomeShell({ progress }) {
           </button>
         )}
 
-        {/* TODAY — the permanent daily, then the journal, then the mode's tools */}
-        <p style={styles.sectionLabel}>Today</p>
-        <button onClick={() => setOpenPractice({ ...DAILY, eyebrow: 'Today' })} style={styles.practiceCard}>
-          <span style={styles.practiceGlyph}><DAILY.Glyph /></span>
-          <span style={styles.practiceText}>
-            <span style={styles.practiceTitle}>{DAILY.title}</span>
-            <span style={styles.practiceLine}>{DAILY.line} · {DAILY.minutes} min</span>
-          </span>
-          <span style={styles.practiceArrow}>›</span>
-        </button>
+        {/* TODAY — this mode's own daily, then the journal, then the mode's tools */}
+        {mode.daily && (
+          <>
+            <p style={styles.sectionLabel}>Today</p>
+            <button onClick={() => setOpenPractice({ ...mode.daily, eyebrow: 'Today' })} style={styles.practiceCard}>
+              <span style={styles.practiceGlyph}>{mode.daily.Glyph && <mode.daily.Glyph />}</span>
+              <span style={styles.practiceText}>
+                <span style={styles.practiceTitle}>{mode.daily.title}</span>
+                <span style={styles.practiceLine}>{mode.daily.line} · {mode.daily.minutes} min</span>
+              </span>
+              <span style={styles.practiceArrow}>›</span>
+            </button>
+          </>
+        )}
 
         {/* IN YOUR WORDS — the journal, its own long bar */}
         <button onClick={() => setOpenPractice({ ...JOURNAL, eyebrow: 'In your words' })} style={styles.journalBar}>
@@ -360,7 +362,7 @@ export default function HomeShell({ progress }) {
 
       <PracticeSheet
         open={!!openPractice}
-        onClose={() => setOpenPractice(null)}
+        onClose={() => { setOpenPractice(null); refreshCommitTarget() }}
         eyebrow={openPractice?.eyebrow || 'Practice'}
         title={openPractice?.title}
       >

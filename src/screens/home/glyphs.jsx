@@ -230,3 +230,54 @@ export const ReachGlyph = () => (
     <path d="M8.6 9.4 12 6l3.4 3.4" />
   </svg>
 )
+
+// ===== Per-mode daily glyphs =====
+
+// Catch it in the act — the moment, seen.
+export const CatchGlyph = () => (
+  <svg {...base}>
+    <circle cx="12" cy="12" r="8.5" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2" />
+  </svg>
+)
+
+// Both true today — two truths, overlapping.
+export const GapGlyph = () => (
+  <svg {...base}>
+    <circle cx="9.2" cy="12" r="5.6" />
+    <circle cx="14.8" cy="12" r="5.6" />
+  </svg>
+)
+
+// The worry, answered — the cloud with a plan.
+export const WorryGlyph = () => (
+  <svg {...base}>
+    <path d="M7 16.5a4 4 0 0 1-.6-7.96 5.2 5.2 0 0 1 10.1-.9A3.7 3.7 0 0 1 17 16.5H7z" />
+    <path d="M9.4 13.1l1.8 1.9 3.4-3.7" />
+  </svg>
+)
+
+// Sleep & weather — the pulse of the day.
+export const VitalsGlyph = () => (
+  <svg {...base}>
+    <path d="M3.5 12h4l2-4.5 3 9 2-4.5h6" />
+  </svg>
+)
+
+// Today's deposit — time, banked.
+export const DepositGlyph = () => (
+  <svg {...base}>
+    <circle cx="12" cy="8" r="4.2" />
+    <path d="M12 6.2v3.6M10.4 8h3.2" />
+    <path d="M5.5 16.5h13M8.5 16.5v4M15.5 16.5v4M5 20.5h14" />
+  </svg>
+)
+
+// Today's shield — one window, held.
+export const ShieldGlyph = () => (
+  <svg {...base}>
+    <path d="M12 3.5l7 2.7v5.3c0 4.3-2.9 7.5-7 9-4.1-1.5-7-4.7-7-9V6.2l7-2.7z" />
+    <path d="M12 8v4.5l2.6 1.8" />
+  </svg>
+)

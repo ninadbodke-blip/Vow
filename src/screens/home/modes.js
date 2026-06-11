@@ -9,14 +9,20 @@
 //           'tending'  → counts check-ins, not abstinence
 //           'standing' → no number at all (getting back up)
 //
-// The home's practice area is the same for every mode:
-//   DAILY    — "One steady minute", the permanent Today card
-//   JOURNAL  — "In your words", its own long bar
+// The home's practice area, per mode:
+//   daily    — that mode's OWN permanent Today card (unique each mode)
+//   JOURNAL  — "In your words", its own long bar (shared)
 //   tools[3] — the mode's three bespoke tools, under the Tools header
 // ===================================================================
-import OneSteadyMinute from './practices/OneSteadyMinute'
+import CatchItInTheAct from './practices/CatchItInTheAct'
+import BothTrueToday from './practices/BothTrueToday'
+import TheWorryAnswered from './practices/TheWorryAnswered'
 import TheHardHour from './practices/TheHardHour'
+import TodaysDeposit from './practices/TodaysDeposit'
+import TodaysShield from './practices/TodaysShield'
 import InsteadI from './practices/InsteadI'
+import RenewYourVow from './practices/RenewYourVow'
+import SleepAndWeather from './practices/SleepAndWeather'
 import YourAutopilot from './practices/YourAutopilot'
 import GivesAndTakes from './practices/GivesAndTakes'
 import WhereItHappens from './practices/WhereItHappens'
@@ -26,7 +32,6 @@ import TheExcuses from './practices/TheExcuses'
 import VowAndDay from './practices/VowAndDay'
 import ClearThePath from './practices/ClearThePath'
 import HowReady from './practices/HowReady'
-import RenewYourVow from './practices/RenewYourVow'
 import PressurePoints from './practices/PressurePoints'
 import TheBlindSpot from './practices/TheBlindSpot'
 import WeeksProof from './practices/WeeksProof'
@@ -35,8 +40,9 @@ import KinderVoice from './practices/KinderVoice'
 import WhatItWasReachingFor from './practices/WhatItWasReachingFor'
 import JournalTile from '../freeHome/JournalTile'
 import {
-  BreathGlyph, WordsGlyph,
-  HardHourGlyph, InsteadGlyph, RenewGlyph,
+  WordsGlyph,
+  CatchGlyph, GapGlyph, WorryGlyph, HardHourGlyph, DepositGlyph, ShieldGlyph,
+  InsteadGlyph, RenewGlyph, VitalsGlyph,
   AutopilotGlyph, LedgerGlyph, PinGlyph,
   ScalesGlyph, CostGlyph, ExcuseGlyph,
   VowDayGlyph, PathGlyph, ReadyGlyph,
@@ -44,17 +50,7 @@ import {
   StandsGlyph, KinderGlyph, ReachGlyph,
 } from './glyphs'
 
-// The permanent Today card — same door, every mode, every day.
-export const DAILY = {
-  id: 'steady',
-  title: 'One steady minute',
-  line: 'Sixty seconds of steadying breath — same door, every day.',
-  minutes: 1,
-  Component: OneSteadyMinute,
-  Glyph: BreathGlyph,
-}
-
-// The journal — its own long bar beneath the daily.
+// The journal — its own long bar beneath each mode's daily.
 export const JOURNAL = {
   id: 'words',
   title: 'In your words',
@@ -70,6 +66,14 @@ export const MODES = {
     label: 'A closer look',
     counter: 'tending',
     inTheMoment: false,
+    daily: {
+      id: 'catch',
+      title: 'Catch it in the act',
+      line: 'Each time you feel the pull today, mark it — seeing it is the practice.',
+      minutes: 1,
+      Component: CatchItInTheAct,
+      Glyph: CatchGlyph,
+    },
     tools: [
       {
         id: 'autopilot',
@@ -102,6 +106,14 @@ export const MODES = {
     label: 'Weighing it up',
     counter: 'tending',
     inTheMoment: false,
+    daily: {
+      id: 'gap',
+      title: 'Both true today',
+      line: 'What you value, what you did — and the gap, named.',
+      minutes: 2,
+      Component: BothTrueToday,
+      Glyph: GapGlyph,
+    },
     tools: [
       {
         id: 'lean',
@@ -134,6 +146,14 @@ export const MODES = {
     label: 'Getting ready',
     counter: 'tending',
     inTheMoment: false,
+    daily: {
+      id: 'worry',
+      title: 'The worry, answered',
+      line: 'Today\u2019s likeliest threat, its first sign, your counter-move.',
+      minutes: 2,
+      Component: TheWorryAnswered,
+      Glyph: WorryGlyph,
+    },
     tools: [
       {
         id: 'vow_day',
@@ -166,15 +186,15 @@ export const MODES = {
     label: 'Early days',
     counter: 'days',
     inTheMoment: true,
+    daily: {
+      id: 'hard_hour',
+      title: 'The hard hour',
+      line: 'Name tonight\u2019s hardest hour — and guard it in advance.',
+      minutes: 1,
+      Component: TheHardHour,
+      Glyph: HardHourGlyph,
+    },
     tools: [
-      {
-        id: 'hard_hour',
-        title: 'The hard hour',
-        line: 'Name tonight\u2019s hardest hour — and guard it in advance.',
-        minutes: 1,
-        Component: TheHardHour,
-        Glyph: HardHourGlyph,
-      },
       {
         id: 'instead',
         title: 'Instead, I…',
@@ -191,6 +211,14 @@ export const MODES = {
         Component: RenewYourVow,
         Glyph: RenewGlyph,
       },
+      {
+        id: 'vitals',
+        title: 'Sleep & weather',
+        line: 'Last night\u2019s sleep, today\u2019s inner weather — thirty seconds.',
+        minutes: 1,
+        Component: SleepAndWeather,
+        Glyph: VitalsGlyph,
+      },
     ],
   },
   build: {
@@ -198,6 +226,14 @@ export const MODES = {
     label: 'Staying steady',
     counter: 'days',
     inTheMoment: true,
+    daily: {
+      id: 'deposit',
+      title: 'Today\u2019s deposit',
+      line: 'Where did the reclaimed time go today? Bank it.',
+      minutes: 1,
+      Component: TodaysDeposit,
+      Glyph: DepositGlyph,
+    },
     tools: [
       {
         id: 'pressure',
@@ -230,6 +266,14 @@ export const MODES = {
     label: 'Getting back up',
     counter: 'standing',
     inTheMoment: true,
+    daily: {
+      id: 'shield',
+      title: 'Today\u2019s shield',
+      line: 'One small promise, for one short window.',
+      minutes: 1,
+      Component: TodaysShield,
+      Glyph: ShieldGlyph,
+    },
     tools: [
       {
         id: 'stands',
