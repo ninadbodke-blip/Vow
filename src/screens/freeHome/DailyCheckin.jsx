@@ -1,36 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../supabaseClient'
 import SheetPortal from '../../components/SheetPortal'
 
 // ===================================================================
-// DAILY CHECK-IN  (shared across all free homes)
+// DAILY CHECK-IN — the tending ritual  (shared across all free homes)
 // ===================================================================
-// One short check per day — three taps in plain English. Upserts a
-// single row into free_daily_checkins (unique on user_id + checkin_date),
-// so re-opening the same day edits rather than duplicates.
+// This is the thirty seconds that grows the tree, so it should feel
+// like tending, not form-filling. One calm surface instead of paged
+// steps: the day's weather is set by DRAGGING a thumb along a band
+// that blends all six mood colours (the whole sheet washes in the
+// chosen colour as you move); the pull is one row of quiet capsules;
+// contexts (and the body row, where asked for) are light italic chips
+// that fade in as you go. The closing act is named for what it does:
+// "Tend the tree."
 //
-// Steps: how you're feeling → did the urge come → what was around it
-// (+ where it sat in the body, for the looking-closely home only).
-// Picking a mood washes the whole sheet in that mood's colour — the
-// check-in is bathed in the day's mood from then on.
+// Props (unchanged):
+//   isOpen, onClose, stage, includeBody, existing, onSaved
 //
-// Props:
-//   isOpen        bool
-//   onClose       () => void
-//   stage         data key ('notice'|'reflect'|'commit'|'endure'|'build'|'reclaim')
-//   includeBody   bool   — show the body step (the notice home uses true)
-//   existing      row | null — today's check-in, to pre-fill on edit
-//   onSaved       (row) => void
-//
-// Data shape is unchanged: mood/mood_score/energy/felt_pull/
-// pull_intensity/contexts/body_signals/note. The energy question was
-// removed from the UI for simplicity; an existing row's energy value is
-// preserved on edit, new rows save energy as null.
+// Data shape (unchanged, byte for byte): mood / mood_score / energy
+// (preserved from existing rows; no UI) / felt_pull / pull_intensity /
+// contexts / body_signals / note — upserted on user_id + checkin_date.
+// MOOD_META and the moodBy* helpers are exported exactly as before;
+// the Mirror and older homes read them.
 // ===================================================================
 
-// Mood vocabulary — ordinal score drives all trend math in the Oracle.
-// Colour runs warm-clay (heavy) → soft-sage (good); deliberately NOT a
-// red/green traffic light. Exported so homes render summaries the same way.
 export const MOOD_META = [
   { value: 'heavy', label: 'Heavy', score: 1, color: '#8A5A3C' },
   { value: 'low',   label: 'Low',   score: 2, color: '#A6764A' },
@@ -43,16 +36,13 @@ export const MOOD_META = [
 export const moodByValue = (v) => MOOD_META.find(m => m.value === v) || null
 export const moodByScore = (s) => MOOD_META.find(m => m.score === s) || null
 
-// felt_pull is derived: 'none' => false; everything else => true + intensity.
-// Four plain choices instead of the old six-step intensity ladder.
 const URGE_OPTIONS = [
-  { value: 'none',    label: 'No, not today',  felt: false, intensity: null },
+  { value: 'none',    label: 'It stayed away', felt: false, intensity: null },
   { value: 'mild',    label: 'A little',       felt: true,  intensity: 2 },
   { value: 'strong',  label: 'Quite strong',   felt: true,  intensity: 4 },
   { value: 'intense', label: 'Very strong',    felt: true,  intensity: 5 },
 ]
 
-// Map any stored intensity (including old 6-step rows) back to an option.
 const urgeFromExisting = (row) => {
   if (!row || row.felt_pull == null) return null
   if (!row.felt_pull) return URGE_OPTIONS[0]
@@ -90,10 +80,92 @@ function localDateStr(d = new Date()) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
-// Soft wash of the mood colour, layered over cream.
 const hexToRgba = (hex, a) => {
   const n = parseInt(hex.slice(1), 16)
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
+}
+
+const LeafGlyph = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 19C5 9 12 4 20 4c0 8-5 15-15 15z" />
+    <path d="M5 19c3-5 7-9 11-11" />
+  </svg>
+)
+
+const FADE_CSS = `
+@keyframes vowCkFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .vowCkFade { animation: none !important; } }`
+
+// ---- the weather band: drag (or tap) along a blend of all six moods ----
+function MoodBand({ mood, onPick, disabled }) {
+  const trackRef = useRef(null)
+  const draggingRef = useRef(false)
+
+  const pickFromX = (clientX) => {
+    const el = trackRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const t = Math.min(1, Math.max(0, (clientX - r.left) / r.width))
+    const idx = Math.round(t * (MOOD_META.length - 1))
+    const next = MOOD_META[idx]
+    if (!mood || next.value !== mood.value) onPick(next)
+  }
+
+  const onDown = (e) => {
+    if (disabled) return
+    draggingRef.current = true
+    if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId)
+    pickFromX(e.clientX)
+  }
+  const onMove = (e) => { if (draggingRef.current) pickFromX(e.clientX) }
+  const onUp = () => { draggingRef.current = false }
+
+  const idx = mood ? MOOD_META.findIndex(m => m.value === mood.value) : null
+  const stops = MOOD_META.map((m, i) => `${m.color} ${(i / (MOOD_META.length - 1)) * 100}%`).join(', ')
+
+  return (
+    <div style={S.bandWrap}>
+      <div style={S.bandWordRow}>
+        {mood ? (
+          <span key={mood.value} className="vowCkFade" style={{ ...S.bandWord, color: mood.color, animation: 'vowCkFade 0.3s ease' }}>
+            {mood.label}
+          </span>
+        ) : (
+          <span style={S.bandWordEmpty}>slide to where the day sits</span>
+        )}
+      </div>
+      <div
+        ref={trackRef}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        role="slider"
+        aria-label="How the day feels, from heavy to good"
+        aria-valuemin={1}
+        aria-valuemax={6}
+        aria-valuenow={mood ? mood.score : undefined}
+        style={{ ...S.bandTrack, background: `linear-gradient(90deg, ${stops})`, touchAction: 'none' }}
+      >
+        {MOOD_META.map((m, i) => (
+          <span key={m.value} style={{ ...S.bandTick, left: `${(i / (MOOD_META.length - 1)) * 100}%` }} />
+        ))}
+        {idx != null && (
+          <span
+            style={{
+              ...S.bandThumb,
+              left: `${(idx / (MOOD_META.length - 1)) * 100}%`,
+              borderColor: mood.color,
+            }}
+          />
+        )}
+      </div>
+      <div style={S.bandEnds}>
+        <span style={S.bandEnd}>heavy</span>
+        <span style={S.bandEnd}>good</span>
+      </div>
+    </div>
+  )
 }
 
 export default function DailyCheckin({
@@ -104,24 +176,16 @@ export default function DailyCheckin({
   existing = null,
   onSaved,
 }) {
-  // Three plain steps; the body step joins only when asked for.
-  const stepKeys = ['mood', 'urge', 'contexts', ...(includeBody ? ['body'] : [])]
-  const totalSteps = stepKeys.length
-  const lastIdx = totalSteps - 1
-
-  const [stepIdx, setStepIdx] = useState(0)
   const [mood, setMood] = useState(null)
   const [energy, setEnergy] = useState(null)   // preserved from existing rows; no UI
-  const [urge, setUrge] = useState(null)       // an URGE_OPTIONS entry
+  const [urge, setUrge] = useState(null)
   const [contexts, setContexts] = useState([])
   const [bodySignals, setBodySignals] = useState([])
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // Reset / pre-fill whenever the modal opens
   useEffect(() => {
     if (!isOpen) return
-    setStepIdx(0)
     setSaving(false)
     if (existing) {
       setMood(moodByValue(existing.mood))
@@ -138,12 +202,7 @@ export default function DailyCheckin({
 
   if (!isOpen) return null
 
-  const key = stepKeys[stepIdx]
-  const advance = () => setStepIdx(i => Math.min(i + 1, lastIdx))
-  const back = () => setStepIdx(i => Math.max(i - 1, 0))
-
   const toggle = (arr, setArr, value) => {
-    // "nothing"/"none" are mutually exclusive with the rest
     if (value === 'nothing' || value === 'none') {
       setArr(arr.includes(value) ? [] : [value])
       return
@@ -152,8 +211,10 @@ export default function DailyCheckin({
     setArr(cleaned.includes(value) ? cleaned.filter(v => v !== value) : [...cleaned, value])
   }
 
+  const [tended, setTended] = useState(false)
+
   const handleSave = async () => {
-    if (saving) return
+    if (saving || !mood || !urge) return
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -186,7 +247,9 @@ export default function DailyCheckin({
         return
       }
       if (onSaved) onSaved(data)
-      onClose()
+      setSaving(false)
+      setTended(true)
+      setTimeout(() => { setTended(false); onClose() }, 1300)
     } catch (err) {
       console.error(err)
       alert('Something went wrong. Please try again.')
@@ -194,163 +257,129 @@ export default function DailyCheckin({
     }
   }
 
-  // ---- step content ------------------------------------------------
-  let eyebrow, question, bodyEl
-  const isMulti = key === 'contexts' || key === 'body'
-
-  if (key === 'mood') {
-    eyebrow = `Step 1 of ${totalSteps}`
-    question = 'How are you feeling today?'
-    bodyEl = (
-      <div style={styles.moodGrid}>
-        {MOOD_META.map(m => (
-          <button
-            key={m.value}
-            onClick={() => { setMood(m); setTimeout(advance, 380) }}
-            disabled={saving}
-            style={{
-              ...styles.moodChip,
-              ...(mood?.value === m.value ? styles.moodChipSelected : {}),
-            }}
-          >
-            <span style={{ ...styles.moodDot, background: m.color }} />
-            {m.label}
-          </button>
-        ))}
-      </div>
-    )
-  } else if (key === 'urge') {
-    eyebrow = `Step 2 of ${totalSteps}`
-    question = 'Did you feel the urge today?'
-    bodyEl = (
-      <div style={styles.optionsGrid}>
-        {URGE_OPTIONS.map(p => (
-          <button
-            key={p.value}
-            onClick={() => { setUrge(p); advance() }}
-            disabled={saving}
-            style={{
-              ...styles.optionChip,
-              ...(urge?.value === p.value ? styles.optionChipSelected : {}),
-            }}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-    )
-  } else if (key === 'contexts') {
-    eyebrow = `Step 3 of ${totalSteps}`
-    question = urge && urge.felt ? 'What was happening around it?' : 'What was today like, mostly?'
-    bodyEl = (
-      <div style={styles.optionsGrid}>
-        {CONTEXT_OPTIONS.map(c => (
-          <button
-            key={c.value}
-            onClick={() => toggle(contexts, setContexts, c.value)}
-            disabled={saving}
-            style={{
-              ...styles.optionChip,
-              ...(contexts.includes(c.value) ? styles.optionChipSelected : {}),
-            }}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-    )
-  } else if (key === 'body') {
-    eyebrow = `Step ${totalSteps} of ${totalSteps}`
-    question = 'Where did you feel it in your body?'
-    bodyEl = (
-      <div style={styles.optionsGrid}>
-        {BODY_OPTIONS.map(b => (
-          <button
-            key={b.value}
-            onClick={() => toggle(bodySignals, setBodySignals, b.value)}
-            disabled={saving}
-            style={{
-              ...styles.optionChip,
-              ...(bodySignals.includes(b.value) ? styles.optionChipSelected : {}),
-            }}
-          >
-            {b.label}
-          </button>
-        ))}
-      </div>
-    )
-  }
-
-  const onLastStep = stepIdx === lastIdx
+  const todayNice = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+  const showPull = !!mood
+  const showRest = !!urge
+  const canTend = !!mood && !!urge
 
   return (
-    <SheetPortal><div style={styles.overlay} onClick={onClose}>
-      <div style={styles.card} onClick={(e) => e.stopPropagation()}>
-        {/* the day's mood washes over the whole sheet */}
+    <SheetPortal><div style={S.overlay} onClick={onClose}>
+      <style>{FADE_CSS}</style>
+      <div style={S.card} onClick={(e) => e.stopPropagation()}>
         <div
           style={{
-            ...styles.moodWash,
-            background: mood ? hexToRgba(mood.color, 0.16) : 'transparent',
+            ...S.moodWash,
+            background: mood ? hexToRgba(mood.color, 0.17) : 'transparent',
             opacity: mood ? 1 : 0,
           }}
         />
-        <div style={styles.content}>
+        {tended && (
+          <div className="vowCkFade" style={{ ...S.tendedLayer, animation: 'vowCkFade 0.3s ease' }}>
+            <span style={{ ...S.tendedRing, color: mood ? mood.color : '#854F0B', borderColor: mood ? hexToRgba(mood.color, 0.55) : '#C9A85C' }}>
+              <LeafGlyph />
+            </span>
+            <p style={S.tendedTitle}>Tended.</p>
+            <p style={S.tendedSub}>The tree drinks. Come back tomorrow.</p>
+          </div>
+        )}
+        <div style={S.content}>
 
-          <div style={styles.header}>
-            {stepIdx > 0 ? (
-              <button onClick={back} style={styles.backBtn} disabled={saving}>‹ Back</button>
-            ) : <div style={styles.headerSpacer} />}
-            <div style={styles.stepDots}>
-              {stepKeys.map((_, n) => (
-                <div key={n} style={{
-                  ...styles.stepDot,
-                  ...(n === stepIdx ? styles.stepDotActive : {}),
-                  ...(n < stepIdx ? styles.stepDotDone : {}),
-                }} />
-              ))}
+          <div style={S.header}>
+            <span style={S.headerGlyph}><LeafGlyph /></span>
+            <div style={S.headerText}>
+              <p style={S.eyebrow}>Tending</p>
+              <p style={S.dateLine}>{todayNice}</p>
             </div>
-            <button onClick={onClose} style={styles.closeBtn} disabled={saving}>×</button>
+            <button onClick={onClose} style={S.closeBtn} disabled={saving} aria-label="Close">×</button>
           </div>
 
-          <p style={styles.eyebrow}>{eyebrow}</p>
-          <h2 style={styles.question}>{question}</h2>
+          <p style={S.q}>How did the day sit with you?</p>
+          <MoodBand mood={mood} onPick={setMood} disabled={saving} />
 
-          {bodyEl}
-
-          {/* Multi-select steps need an explicit continue/save. */}
-          {isMulti && (
-            <>
-              {onLastStep && (
-                <input
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="A word or two, if you want (optional)"
-                  style={styles.noteInput}
-                  disabled={saving}
-                  maxLength={140}
-                />
-              )}
-              <button
-                onClick={onLastStep ? handleSave : advance}
-                disabled={saving}
-                style={styles.continueBtn}
-              >
-                {saving ? 'Saving…' : onLastStep ? 'Save check-in' : 'Continue'}
-              </button>
-            </>
+          {showPull && (
+            <div className="vowCkFade" style={{ animation: 'vowCkFade 0.35s ease' }}>
+              <p style={S.q}>And the pull — did it come by?</p>
+              <div style={S.pullRow}>
+                {URGE_OPTIONS.map(p => (
+                  <button
+                    key={p.value}
+                    onClick={() => setUrge(p)}
+                    disabled={saving}
+                    style={{ ...S.pullChip, ...(urge?.value === p.value ? S.pullChipOn : {}) }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
-          <p style={styles.helper}>
-            {isMulti ? 'Tap any that fit, or none. There is no wrong answer.' : 'There is no wrong answer. Just what is true.'}
-          </p>
+          {showRest && (
+            <div className="vowCkFade" style={{ animation: 'vowCkFade 0.35s ease' }}>
+              <p style={S.q}>{urge.felt ? 'What was around it?' : 'What was the day made of, mostly?'}</p>
+              <div style={S.chipWrap}>
+                {CONTEXT_OPTIONS.map(c => (
+                  <button
+                    key={c.value}
+                    onClick={() => toggle(contexts, setContexts, c.value)}
+                    disabled={saving}
+                    style={{ ...S.chip, ...(contexts.includes(c.value) ? S.chipOn : {}) }}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+
+              {includeBody && (
+                <>
+                  <p style={S.q}>Where did it sit in your body?</p>
+                  <div style={S.chipWrap}>
+                    {BODY_OPTIONS.map(b => (
+                      <button
+                        key={b.value}
+                        onClick={() => toggle(bodySignals, setBodySignals, b.value)}
+                        disabled={saving}
+                        style={{ ...S.chip, ...(bodySignals.includes(b.value) ? S.chipOn : {}) }}
+                      >
+                        {b.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="A line worth keeping, if there is one…"
+                style={S.noteInput}
+                disabled={saving}
+                maxLength={140}
+              />
+            </div>
+          )}
+
+          <button
+            onClick={handleSave}
+            disabled={saving || !canTend}
+            style={{ ...S.tendBtn, opacity: canTend ? 1 : 0.4 }}
+          >
+            {saving ? 'Tending…' : existing ? 'Tend again' : 'Tend the tree'}
+          </button>
+
+          <p style={S.helper}>There’s no wrong answer here. Just what’s true.</p>
         </div>
       </div>
     </div></SheetPortal>
   )
 }
 
-const styles = {
+const S = {
+  tendedLayer: { position: 'absolute', inset: 0, zIndex: 4, background: 'rgba(250,247,241,0.97)', borderRadius: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, textAlign: 'center', padding: 24 },
+  tendedRing: { width: 52, height: 52, borderRadius: '50%', border: '1px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6, background: '#FDFBF6' },
+  tendedTitle: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 21, color: '#2A1F15', margin: 0 },
+  tendedSub: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 13, color: '#9C8C78', margin: 0 },
   overlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
     background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(4px)',
@@ -360,81 +389,80 @@ const styles = {
   card: {
     position: 'relative', overflow: 'hidden',
     background: '#FAF7F1', maxWidth: '400px', width: '100%',
-    borderRadius: '20px',
+    maxHeight: '90vh', overflowY: 'auto',
+    borderRadius: '22px',
     boxShadow: '0 20px 60px rgba(40,25,15,0.3)',
   },
   moodWash: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     pointerEvents: 'none',
-    transition: 'background 0.6s ease, opacity 0.6s ease',
+    transition: 'background 0.5s ease, opacity 0.5s ease',
   },
-  content: {
-    position: 'relative',
-    padding: '1.5rem 1.5rem 1.25rem',
-  },
-  header: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: '1.25rem',
-  },
-  backBtn: {
-    background: 'transparent', border: 'none', color: '#854F0B',
-    fontSize: '13px', fontStyle: 'italic', cursor: 'pointer',
-    fontFamily: 'Georgia, serif', padding: '4px 0', minWidth: '50px', textAlign: 'left',
-  },
-  headerSpacer: { minWidth: '50px' },
-  stepDots: { display: 'flex', alignItems: 'center', gap: '6px' },
-  stepDot: { width: '6px', height: '6px', borderRadius: '50%', background: '#E0D5C2', transition: 'all 0.2s' },
-  stepDotActive: { background: '#854F0B', width: '20px', borderRadius: '3px' },
-  stepDotDone: { background: '#C2D49A' },
-  closeBtn: {
-    background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '22px',
-    cursor: 'pointer', fontFamily: 'inherit', padding: '0 4px', minWidth: '50px',
-    textAlign: 'right', lineHeight: 1,
-  },
-  eyebrow: {
-    fontSize: '10px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.24em',
-    fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 8px', textAlign: 'center',
-  },
-  question: {
-    fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500,
-    lineHeight: 1.3, margin: '0 0 18px', textAlign: 'center',
-  },
+  content: { position: 'relative', padding: '1.25rem 1.4rem 1.25rem' },
 
-  // mood
-  moodGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' },
-  moodChip: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
-    padding: '14px 8px', background: 'white', border: '0.5px solid #E0D5C2',
-    borderRadius: '12px', fontSize: '13px', fontWeight: 500, color: '#2A1F15',
-    fontFamily: 'Georgia, serif', cursor: 'pointer', transition: 'all 0.15s',
-    boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
+  header: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' },
+  headerGlyph: {
+    width: '32px', height: '32px', flexShrink: 0, borderRadius: '10px',
+    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  moodChipSelected: { border: '1.5px solid #854F0B', background: '#FBF6EE' },
-  moodDot: { width: '14px', height: '14px', borderRadius: '50%' },
+  headerText: { flex: 1 },
+  eyebrow: { fontSize: '10px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: 0 },
+  dateLine: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '2px 0 0' },
+  closeBtn: { background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '24px', cursor: 'pointer', padding: '0 2px', lineHeight: 1 },
 
-  // generic chips
-  optionsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '14px' },
-  optionChip: {
-    padding: '14px 10px', background: 'white', border: '0.5px solid #E0D5C2',
-    borderRadius: '12px', fontSize: '13px', fontWeight: 500, color: '#2A1F15',
-    fontFamily: 'Georgia, serif', cursor: 'pointer', transition: 'all 0.15s',
-    boxShadow: '0 2px 6px rgba(80,50,20,0.04)', lineHeight: 1.4,
+  q: { fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '16px 0 8px' },
+
+  // the weather band
+  bandWrap: { padding: '2px 4px 0' },
+  bandWordRow: { height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  bandWord: { fontSize: '24px', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 500, lineHeight: 1 },
+  bandWordEmpty: { fontSize: '12.5px', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#B9A88E' },
+  bandTrack: {
+    position: 'relative', height: '18px', borderRadius: '999px',
+    border: '0.5px solid rgba(60,40,20,0.18)', cursor: 'pointer',
+    boxShadow: 'inset 0 1px 3px rgba(60,40,20,0.18)', marginTop: '6px',
   },
-  optionChipSelected: { border: '1.5px solid #854F0B', background: '#FBF6EE' },
+  bandTick: { position: 'absolute', top: '50%', width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(250,247,241,0.75)', transform: 'translate(-50%, -50%)', pointerEvents: 'none' },
+  bandThumb: {
+    position: 'absolute', top: '50%', width: '28px', height: '28px', borderRadius: '50%',
+    background: '#FAF7F1', border: '2.5px solid', transform: 'translate(-50%, -50%)',
+    boxShadow: '0 2px 8px rgba(60,40,20,0.35)', pointerEvents: 'none',
+    transition: 'left 0.16s ease, border-color 0.16s ease',
+  },
+  bandEnds: { display: 'flex', justifyContent: 'space-between', marginTop: '6px', padding: '0 2px' },
+  bandEnd: { fontSize: '10.5px', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#B9A88E' },
+
+  // the pull
+  pullRow: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '7px' },
+  pullChip: {
+    padding: '11px 8px', background: '#FDFBF6', border: '0.5px solid #E2D7C3',
+    borderRadius: '12px', fontSize: '12.5px', color: '#3A2A1C',
+    fontFamily: 'Georgia, serif', cursor: 'pointer', lineHeight: 1.3,
+  },
+  pullChipOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: '0.5px solid #241710' },
+
+  // contexts / body
+  chipWrap: { display: 'flex', flexWrap: 'wrap', gap: '7px' },
+  chip: {
+    padding: '8px 12px', borderRadius: '999px', border: '0.5px solid #E2D7C3',
+    background: '#FDFBF6', color: '#3A2A1C', fontFamily: 'Georgia, serif',
+    fontSize: '12.5px', cursor: 'pointer',
+  },
+  chipOn: { background: '#F4ECDD', border: '1px solid #C9A85C' },
 
   noteInput: {
-    width: '100%', boxSizing: 'border-box', padding: '12px 14px',
-    border: '0.5px solid #E0D5C2', borderRadius: '12px', background: 'white',
-    fontSize: '13px', color: '#2A1F15', fontFamily: 'Georgia, serif',
-    marginBottom: '10px', outline: 'none',
+    width: '100%', boxSizing: 'border-box', marginTop: '14px', padding: '11px 13px',
+    border: '0.5px solid #E2D7C3', borderRadius: '12px', background: '#FFFFFF',
+    fontSize: '13px', fontStyle: 'italic', color: '#2A1F15', fontFamily: 'Georgia, serif', outline: 'none',
   },
-  continueBtn: {
-    width: '100%', padding: '14px', background: '#854F0B', border: 'none',
-    borderRadius: '12px', color: '#FBF6EE', fontSize: '14px', fontWeight: 500,
-    fontFamily: 'Georgia, serif', cursor: 'pointer', marginBottom: '12px',
+  tendBtn: {
+    width: '100%', marginTop: '16px', padding: '14px',
+    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    border: '0.5px solid rgba(217,181,122,0.35)',
+    borderRadius: '13px', color: '#FAF7F1', fontSize: '14.5px', fontWeight: 500,
+    fontFamily: 'Georgia, serif', cursor: 'pointer',
+    boxShadow: '0 6px 16px -6px rgba(30,18,8,0.5)',
   },
-  helper: {
-    fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif',
-    fontStyle: 'italic', textAlign: 'center', margin: 0,
-  },
+  helper: { fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '10px 0 0' },
 }
