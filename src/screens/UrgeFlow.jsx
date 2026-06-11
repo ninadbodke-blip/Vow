@@ -337,17 +337,14 @@ function SemiCircleMeter({ percent }) {
 function VelocityPicker({ onChoose, onCancel }) {
   return (
     <div style={styles.center}>
-      <div style={styles.softIcon}>🌊</div>
       <h2 style={styles.bigTitle}>What kind of urge is this?</h2>
       <p style={styles.body}>Naming how it is coming at you changes what actually helps.</p>
       <div style={styles.velocityPickRow}>
         <button onClick={() => onChoose('spike')} style={styles.velocityPickBtn}>
-          <span style={styles.velocityPickIcon}>⚡</span>
           <span style={styles.velocityPickLabel}>Sudden spike</span>
           <span style={styles.velocityPickSub}>A trigger hit. It came on fast and strong.</span>
         </button>
         <button onClick={() => onChoose('creep')} style={styles.velocityPickBtn}>
-          <span style={styles.velocityPickIcon}>🌫️</span>
           <span style={styles.velocityPickLabel}>Slow creep</span>
           <span style={styles.velocityPickSub}>Worn down. It has been building all evening.</span>
         </button>
@@ -398,7 +395,6 @@ function HALTTechnique({ stepNum, total, onDone, onSkip }) {
         {HALT_OPTIONS.map(o => (
           <button key={o.key} onClick={() => setPicked(o.key)}
             style={{ ...styles.haltCell, ...(picked === o.key ? styles.haltCellOn : {}) }}>
-            <span style={styles.haltIcon}>{o.icon}</span>
             <span style={{ ...styles.haltLabel, ...(picked === o.key ? styles.haltLabelOn : {}) }}>{o.label}</span>
           </button>
         ))}
@@ -1309,12 +1305,12 @@ const styles = {
   vaultWhy: { fontSize: '17px', color: '#EFDCAF', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, margin: '0 0 1rem', textAlign: 'center' },
   vaultQuote: { fontSize: '13px', color: '#CBBA98', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: 0, textAlign: 'center' },
   velocityPickRow: { display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', margin: '1rem 0 1.5rem' },
-  velocityPickBtn: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '16px 18px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', textAlign: 'left', boxShadow: '0 4px 14px rgba(80,50,20,0.06)', fontFamily: 'inherit' },
+  velocityPickBtn: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '15px 24px', background: '#FDFBF6', border: '0.5px solid #E2D7C3', borderRadius: '999px', cursor: 'pointer', textAlign: 'center', boxShadow: '0 3px 12px rgba(80,50,20,0.05)', fontFamily: 'inherit' },
   velocityPickIcon: { fontSize: '24px', lineHeight: 1 },
-  velocityPickLabel: { fontSize: '17px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif' },
+  velocityPickLabel: { fontSize: '16px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif' },
   velocityPickSub: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
-  haltGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', margin: '1rem 0', width: '100%' },
-  haltCell: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '13px 6px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.05)' },
+  haltGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '9px', margin: '1rem 0', width: '100%' },
+  haltCell: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '13px 8px', background: '#FDFBF6', border: '0.5px solid #E2D7C3', borderRadius: '999px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
   haltCellOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid #241710' },
   haltIcon: { fontSize: '22px', lineHeight: 1 },
   haltLabel: { fontSize: '13px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif' },
@@ -1323,7 +1319,7 @@ const styles = {
   haltFixRow: { display: 'flex', gap: '8px', alignItems: 'flex-start' },
   haltFixDot: { color: '#C5572C', fontSize: '18px', lineHeight: 1.3, flexShrink: 0 },
   haltFixText: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.5 },
-  suggestCard: { width: '100%', boxSizing: 'border-box', padding: '20px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', margin: '1rem 0 0.5rem', boxShadow: '0 4px 14px rgba(80,50,20,0.06)' },
+  suggestCard: { width: '100%', boxSizing: 'border-box', padding: '20px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #EBE1CF', borderRadius: '18px', margin: '1rem 0 0.5rem', boxShadow: '0 4px 14px rgba(80,50,20,0.05)' },
   suggestText: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: 0 },
   suggestAnother: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '13px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', marginBottom: '1.25rem' },
   // ---- revamped interactive urge-breakers (dissolve / wipe / pulse) ----
@@ -1347,19 +1343,20 @@ const styles = {
 
 
   frame: {
-    minHeight: '100vh',
-    background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
-    padding: '2rem 1rem',
-    display: 'flex', justifyContent: 'center', alignItems: 'center',
+    minHeight: '100%',
+    background: 'linear-gradient(180deg, #FDFBF6 0%, #F4EDDC 100%)',
+    padding: 0,
+    display: 'flex', justifyContent: 'center', alignItems: 'stretch',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   card: {
-    background: '#FAF7F1',
-    maxWidth: '440px', width: '100%',
-    minHeight: '600px',
-    borderRadius: '28px',
-    padding: '2.5rem 1.75rem',
-    boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)',
+    background: 'transparent',
+    maxWidth: '460px', width: '100%',
+    minHeight: '100%',
+    borderRadius: 0,
+    padding: '2.5rem 1.5rem 2.5rem',
+    boxSizing: 'border-box',
+    boxShadow: 'none',
     display: 'flex', flexDirection: 'column', justifyContent: 'center',
   },
   center: {
@@ -1369,8 +1366,8 @@ const styles = {
   softIcon: { fontSize: '44px', marginBottom: '1rem' },
   meterCard: {
     background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '16px',
+    border: '0.5px solid #EBE1CF',
+    borderRadius: '18px',
     padding: '1.25rem 1rem 1rem',
     margin: '0.5rem 0 1.25rem',
     width: '100%',
@@ -1423,7 +1420,7 @@ const styles = {
     marginTop: '1.25rem', maxWidth: '320px',
   },
   btn: {
-    padding: '12px 20px', borderRadius: '12px', fontSize: '14px',
+    padding: '12px 20px', borderRadius: '999px', fontSize: '14px',
     fontWeight: 500, border: 'none', cursor: 'pointer',
     fontFamily: 'inherit', flex: 1,
   },
@@ -1476,8 +1473,8 @@ const styles = {
   },
   anchorCardUrge: {
     background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',
-    border: '0.5px solid #E8DFD0',
-    borderRadius: '14px',
+    border: '0.5px solid #EBE1CF',
+    borderRadius: '16px',
     padding: '12px',
     boxShadow: '0 2px 6px rgba(80,50,20,0.04)',
   },
@@ -1526,7 +1523,7 @@ const styles = {
   whyExpanded: {
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)',
     border: '0.5px solid #E8DCC2',
-    borderRadius: '10px',
+    borderRadius: '14px',
     padding: '10px 12px',
     margin: '6px 0 8px',
     display: 'flex', alignItems: 'flex-start', gap: '6px',
@@ -1558,7 +1555,7 @@ const styles = {
     padding: '10px',
     background: 'linear-gradient(180deg, #7A8C5A 0%, #5A6B45 100%)',
     color: 'white',
-    border: 'none', borderRadius: '12px',
+    border: 'none', borderRadius: '999px',
     fontSize: '13px', fontWeight: 500,
     cursor: 'pointer', fontFamily: 'inherit',
     boxShadow: '0 3px 10px rgba(122,140,90,0.3)',
@@ -1569,7 +1566,7 @@ const styles = {
     padding: '10px',
     background: 'linear-gradient(180deg, #25D366 0%, #1da955 100%)',
     color: 'white',
-    border: 'none', borderRadius: '12px',
+    border: 'none', borderRadius: '999px',
     fontSize: '13px', fontWeight: 500,
     cursor: 'pointer', fontFamily: 'inherit',
     boxShadow: '0 3px 10px rgba(37,211,102,0.3)',
@@ -1577,7 +1574,7 @@ const styles = {
   anchorsEmptyBox: {
     background: '#F4ECDD',
     border: '0.5px dashed #C9B894',
-    borderRadius: '12px', padding: '16px',
+    borderRadius: '16px', padding: '16px',
     margin: '1rem 0 0', width: '100%', boxSizing: 'border-box',
   },
   anchorsEmptyText: {
@@ -1607,7 +1604,7 @@ const styles = {
   finalBox: {
     background: 'linear-gradient(180deg, #F4ECDD 0%, #F0E5D0 100%)',
     border: '0.5px solid #E8DCC2',
-    borderRadius: '14px', padding: '1.5rem',
+    borderRadius: '18px', padding: '1.5rem',
     margin: '1rem 0', width: '100%', boxSizing: 'border-box',
   },
   finalText: {

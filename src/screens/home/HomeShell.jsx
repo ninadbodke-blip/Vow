@@ -61,12 +61,17 @@ function PracticeSheet({ open, onClose, eyebrow, title, children }) {
 }
 
 // The urge/slip flows, floating over the home instead of replacing it.
+const FLOW_CSS = `
+@keyframes vowFlowIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .vowFlowIn { animation: none !important; } }`
+
 function FlowCard({ open, onClose, children }) {
   if (!open) return null
   return (
     <SheetPortal>
       <div style={styles.flowOverlay}>
-        <div style={styles.flowCard}>
+        <style>{FLOW_CSS}</style>
+        <div className="vowFlowIn" style={styles.flowCard}>
           <button onClick={onClose} style={styles.flowClose} aria-label="Close">×</button>
           <div style={styles.flowScroll}>{children}</div>
         </div>
@@ -459,8 +464,8 @@ const styles = {
   sheetBody: { overflowY: 'auto', flex: 1, paddingBottom: '6px' },
   sheetClose: { width: '100%', padding: '12px', background: 'white', color: '#2A1F15', border: '0.5px solid #DDCFB6', borderRadius: '12px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', marginTop: '10px', flexShrink: 0 },
 
-  flowOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(36,23,16,0.6)', backdropFilter: 'blur(4px)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem' },
-  flowCard: { position: 'relative', width: '100%', maxWidth: '460px', height: 'min(92vh, 780px)', background: '#FAF7F1', borderRadius: '22px', overflow: 'hidden', boxShadow: '0 24px 70px rgba(30,18,8,0.45)' },
-  flowClose: { position: 'absolute', top: '10px', right: '10px', zIndex: 5, width: '34px', height: '34px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'rgba(250,247,241,0.92)', color: '#6B5C4A', fontSize: '17px', lineHeight: 1, cursor: 'pointer' },
+  flowOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(180deg, #FDFBF6 0%, #F4EDDC 100%)', zIndex: 400 },
+  flowCard: { position: 'relative', width: '100%', maxWidth: '520px', margin: '0 auto', height: '100%', background: 'transparent', animation: 'vowFlowIn 0.32s ease' },
+  flowClose: { position: 'absolute', top: '12px', right: '12px', zIndex: 6, width: '36px', height: '36px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'rgba(251,247,238,0.95)', color: '#6B5C4A', fontSize: '18px', lineHeight: 1, cursor: 'pointer', boxShadow: '0 2px 8px rgba(80,50,20,0.08)' },
   flowScroll: { height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' },
 }
