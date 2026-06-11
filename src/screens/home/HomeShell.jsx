@@ -239,6 +239,7 @@ export default function HomeShell({ progress }) {
           daysFree={daysFree}
           trackerStartISO={tracker?.start_date || null}
           commitTargetISO={commitTarget}
+          onSetDay={() => { const t = tools.find((x) => x.id === 'vow_day'); if (t) setOpenPractice({ ...t, eyebrow: 'Tools' }) }}
           tendedToday={!!todayCheckin}
           onTend={() => setCheckinOpen(true)}
         />

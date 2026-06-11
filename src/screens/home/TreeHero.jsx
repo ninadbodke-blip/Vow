@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { buildTree, GROUND_Y, MAX_GROWTH, BIRD_SCHEDULE } from './treeEngine'
+import JarCounter from './JarCounter'
 
 // ===================================================================
 // THE VOW TREE — the home's living hero.
@@ -95,6 +96,7 @@ export default function TreeHero({
   caption = null,
   trackerStartISO = null,
   commitTargetISO = null,
+  onSetDay = null,
 }) {
   const sky = SKIES[mode] || SKIES.endure
   const shown = Math.min(count, MAX_GROWTH)
@@ -170,14 +172,16 @@ export default function TreeHero({
   }
   const nowMs = Date.now()
 
-  let countLine = null, tickLine = null, subLine = null, bigIsTick = false
+  let countLine = null, tickLine = null, subLine = null, bigIsTick = false, showSetDay = false
   if (counter === 'days') {
     const startMs = trackerStartISO ? new Date(trackerStartISO).getTime() : null
     if (startMs && startMs <= nowMs) {
       const el = nowMs - startMs
       const d = Math.floor(el / 86400000)
       countLine = `Day ${d + 1}`
-      tickLine = `${d}d ${pad2(Math.floor(el / 3600000) % 24)}:${pad2(Math.floor(el / 60000) % 60)}:${pad2(Math.floor(el / 1000) % 60)} — and counting`
+      if (mode !== 'endure') {
+        tickLine = `${d}d ${pad2(Math.floor(el / 3600000) % 24)}:${pad2(Math.floor(el / 60000) % 60)}:${pad2(Math.floor(el / 1000) % 60)} — and counting`
+      }
       subLine = caption || 'Your tree grows when you check in — a slip can’t shrink it.'
     } else if (daysFree !== null) {
       countLine = `Day ${daysFree + 1}`
@@ -201,9 +205,12 @@ export default function TreeHero({
       }
     } else {
       countLine = count === 0 ? 'Your tree is planted' : `Tended ${count} ${count === 1 ? 'time' : 'times'}`
-      subLine = caption || (mode === 'commit'
-        ? 'Pick your day inside “Your vow & your day” — a countdown will live here.'
-        : 'It grows a little every time you check in.')
+      if (mode === 'commit') {
+        showSetDay = true
+        subLine = caption || 'A countdown to day one will live right here.'
+      } else {
+        subLine = caption || 'It grows a little every time you check in.'
+      }
     }
   } else {
     countLine = 'Still standing'
@@ -299,7 +306,13 @@ export default function TreeHero({
       <div style={styles.below}>
         <p style={bigIsTick ? styles.tickBig : styles.countLine}>{countLine}</p>
         {tickLine && <p style={styles.tickLine}>{tickLine}</p>}
+        {mode === 'endure' && counter === 'days' && trackerStartISO && (
+          <JarCounter startISO={trackerStartISO} />
+        )}
         <p style={styles.subLine}>{subLine}</p>
+        {showSetDay && onSetDay && (
+          <button onClick={onSetDay} style={styles.setDayBtn}>Set your day ›</button>
+        )}
 
         {tendedToday ? (
           <div style={styles.tendedRow}>
@@ -328,6 +341,7 @@ const styles = {
   countLine: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0 },
   tickBig: { fontSize: '21px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '10px 0 0', textAlign: 'center', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em' },
   tickLine: { fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', margin: '3px 0 0', textAlign: 'center', fontVariantNumeric: 'tabular-nums' },
+  setDayBtn: { display: 'block', margin: '9px auto 0', padding: '9px 18px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: '0.5px solid rgba(217,181,122,0.4)', borderRadius: '999px', fontSize: '12.5px', fontFamily: 'Georgia, serif', cursor: 'pointer', boxShadow: '0 4px 12px -4px rgba(30,18,8,0.4)' },
   subLine: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '3px 0 12px', lineHeight: 1.45 },
   tendBtn: {
     width: '100%', padding: '13px',
