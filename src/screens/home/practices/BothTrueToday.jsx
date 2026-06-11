@@ -15,8 +15,8 @@ import { supabase } from '../../../supabaseClient'
 // ===================================================================
 
 const VALUES = ['My health', 'My family', 'My self-respect', 'My freedom', 'My calm', 'My money']
-const ACTIONS = ['Lined up with it', 'Slightly off it', 'Pulled against it']
-const DRIFTS = ['No gap today', 'A small gap', 'A wide gap']
+const ACTIONS = ['Matched it', 'A little off', 'Went against it']
+const DRIFTS = ['No gap', 'A small gap', 'A big gap']
 
 const localDateStr = () => {
   const d = new Date()
@@ -95,25 +95,25 @@ export default function BothTrueToday({ stage = 'reflect' }) {
   if (!editing && canSave) {
     return (
       <div style={S.wrap}>
-        <p style={S.intro}>Held for today. Naming the gap doesn’t close it — but a named gap stops steering quietly.</p>
+        <p style={S.intro}>Saved for today. Seeing the gap clearly is the first step to closing it.</p>
         <div style={S.savedCard}>
           <p style={S.pairTop}>{value}</p>
           <p style={S.pairMid}>{action.toLowerCase()} today</p>
           <p style={S.pairGap}>{drift.toLowerCase()}</p>
         </div>
-        <button style={S.editLink} onClick={() => setEditing(true)}>Weigh today again</button>
+        <button style={S.editLink} onClick={() => setEditing(true)}>Answer again</button>
       </div>
     )
   }
 
   return (
     <div style={S.wrap}>
-      <p style={S.intro}>Two true things can disagree. Today only — no verdict, just the honest pair.</p>
-      <Row label="One thing you genuinely value" options={VALUES} val={value} onPick={setValue} />
-      <Row label="Today, around the habit, your choices…" options={ACTIONS} val={action} onPick={setAction} />
-      <Row label="The gap between the two felt like…" options={DRIFTS} val={drift} onPick={setDrift} />
+      <p style={S.intro}>Two things can both be true at once. Just answer honestly, for today.</p>
+      <Row label="Pick one thing that really matters to you" options={VALUES} val={value} onPick={setValue} />
+      <Row label="Today, what you did about the habit…" options={ACTIONS} val={action} onPick={setAction} />
+      <Row label="How big is the gap between the two?" options={DRIFTS} val={drift} onPick={setDrift} />
       <button style={{ ...S.saveBtn, opacity: canSave ? 1 : 0.45 }} disabled={!canSave || saving} onClick={handleSave}>
-        {saving ? 'Saving…' : 'Hold both'}
+        {saving ? 'Saving…' : 'Save for today'}
       </button>
     </div>
   )

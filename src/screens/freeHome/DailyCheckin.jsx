@@ -37,10 +37,10 @@ export const moodByValue = (v) => MOOD_META.find(m => m.value === v) || null
 export const moodByScore = (s) => MOOD_META.find(m => m.score === s) || null
 
 const URGE_OPTIONS = [
-  { value: 'none',    label: 'It stayed away', felt: false, intensity: null },
+  { value: 'none',    label: 'Not at all', felt: false, intensity: null },
   { value: 'mild',    label: 'A little',       felt: true,  intensity: 2 },
-  { value: 'strong',  label: 'Quite strong',   felt: true,  intensity: 4 },
-  { value: 'intense', label: 'Very strong',    felt: true,  intensity: 5 },
+  { value: 'strong',  label: 'Quite a lot',   felt: true,  intensity: 4 },
+  { value: 'intense', label: 'Very strongly',    felt: true,  intensity: 5 },
 ]
 
 const urgeFromExisting = (row) => {
@@ -292,12 +292,12 @@ export default function DailyCheckin({
             <button onClick={onClose} style={S.closeBtn} disabled={saving} aria-label="Close">×</button>
           </div>
 
-          <p style={S.q}>How did the day sit with you?</p>
+          <p style={S.q}>How was today, mostly?</p>
           <MoodBand mood={mood} onPick={setMood} disabled={saving} />
 
           {showPull && (
             <div className="vowCkFade" style={{ animation: 'vowCkFade 0.35s ease' }}>
-              <p style={S.q}>And the pull — did it come by?</p>
+              <p style={S.q}>Did you feel like doing it today?</p>
               <div style={S.pullRow}>
                 {URGE_OPTIONS.map(p => (
                   <button
@@ -315,7 +315,7 @@ export default function DailyCheckin({
 
           {showRest && (
             <div className="vowCkFade" style={{ animation: 'vowCkFade 0.35s ease' }}>
-              <p style={S.q}>{urge.felt ? 'What was around it?' : 'What was the day made of, mostly?'}</p>
+              <p style={S.q}>{urge.felt ? 'What was going on around then?' : 'What was most of your day like?'}</p>
               <div style={S.chipWrap}>
                 {CONTEXT_OPTIONS.map(c => (
                   <button
@@ -331,7 +331,7 @@ export default function DailyCheckin({
 
               {includeBody && (
                 <>
-                  <p style={S.q}>Where did it sit in your body?</p>
+                  <p style={S.q}>Where did you feel it in your body?</p>
                   <div style={S.chipWrap}>
                     {BODY_OPTIONS.map(b => (
                       <button
@@ -351,7 +351,7 @@ export default function DailyCheckin({
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="A line worth keeping, if there is one…"
+                placeholder="Anything you want to remember about today…"
                 style={S.noteInput}
                 disabled={saving}
                 maxLength={140}

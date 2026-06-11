@@ -95,7 +95,7 @@ export default function GivesAndTakes({ stage = 'notice' }) {
   if (!editing && canSave) {
     return (
       <div style={S.wrap}>
-        <p style={S.intro}>Both columns, side by side. No verdict — that part stays yours.</p>
+        <p style={S.intro}>Side by side: what it promises you, and what it leaves you with. What you make of that is up to you.</p>
         <div style={S.ledger}>
           <div style={S.col}>
             <p style={S.colHead}>It promises</p>
@@ -109,7 +109,7 @@ export default function GivesAndTakes({ stage = 'notice' }) {
             <p style={S.colSub}>an hour later</p>
           </div>
         </div>
-        <button style={S.editLink} onClick={() => setEditing(true)}>Weigh it again</button>
+        <button style={S.editLink} onClick={() => setEditing(true)}>Look again</button>
       </div>
     )
   }
@@ -121,7 +121,7 @@ export default function GivesAndTakes({ stage = 'notice' }) {
       <Row label="And it promises…" options={PROMISES} value={promise} onPick={setPromise} />
       <Row label="An hour after, it actually leaves you…" options={AFTERS} value={after} onPick={setAfter} />
       <button style={{ ...S.saveBtn, opacity: canSave ? 1 : 0.45 }} disabled={!canSave || saving} onClick={handleSave}>
-        {saving ? 'Saving…' : 'Save the ledger'}
+        {saving ? 'Saving…' : 'Save both sides'}
       </button>
     </div>
   )

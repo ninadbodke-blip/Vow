@@ -92,7 +92,7 @@ export default function WhereItHappens({ stage = 'notice' }) {
   if (!editing && canSave) {
     return (
       <div style={S.wrap}>
-        <p style={S.intro}>The address, as you last saw it. Patterns drift — look again whenever it feels different.</p>
+        <p style={S.intro}>This is where it usually finds you. If that changes, just update it.</p>
         <div style={S.savedCard}>
           <p style={S.savedLine}>{location} · {company.toLowerCase()} · {timeOfDay.toLowerCase()}</p>
           <p style={S.savedSub}>that is where it usually finds you</p>
@@ -104,12 +104,12 @@ export default function WhereItHappens({ stage = 'notice' }) {
 
   return (
     <div style={S.wrap}>
-      <p style={S.intro}>Think of the usual time — not the exception. Where does it tend to find you?</p>
-      <Row label="The place" options={PLACES} value={location} onPick={setLocation} />
-      <Row label="The company" options={COMPANY} value={company} onPick={setCompany} />
-      <Row label="The hour" options={TIMES} value={timeOfDay} onPick={setTimeOfDay} />
+      <p style={S.intro}>Think of how it usually goes — not the odd one out. Where does it usually happen?</p>
+      <Row label="Where?" options={PLACES} value={location} onPick={setLocation} />
+      <Row label="Who is around?" options={COMPANY} value={company} onPick={setCompany} />
+      <Row label="What time of day?" options={TIMES} value={timeOfDay} onPick={setTimeOfDay} />
       <button style={{ ...S.saveBtn, opacity: canSave ? 1 : 0.45 }} disabled={!canSave || saving} onClick={handleSave}>
-        {saving ? 'Saving…' : 'Pin the address'}
+        {saving ? 'Saving…' : 'Save it'}
       </button>
     </div>
   )

@@ -92,7 +92,7 @@ export default function TheScales({ stage = 'reflect' }) {
   if (savedToday && !editing) {
     return (
       <div style={S.wrap}>
-        <p style={S.intro}>Weighed in for today. The scales will be here tomorrow — they usually move.</p>
+        <p style={S.intro}>Saved for today. Come back tomorrow — the answer usually moves.</p>
         <div style={S.savedCard}>
           <ScaleBar lean={lean} />
           <p style={S.savedLine}>You lean {leanText}{word ? ` — feeling ${word.toLowerCase()}` : ''}.</p>
@@ -116,11 +116,11 @@ export default function TheScales({ stage = 'reflect' }) {
         style={S.range}
       />
       <div style={S.endLabels}>
-        <span style={S.endLabel}>Staying as I am</span>
-        <span style={S.endLabel}>Changing this</span>
+        <span style={S.endLabel}>Keep things the same</span>
+        <span style={S.endLabel}>Change this</span>
       </div>
 
-      <p style={S.q}>One word for today?</p>
+      <p style={S.q}>One word for how it feels?</p>
       <div style={S.chips}>
         {WORDS.map((w) => (
           <button key={w} onClick={() => setWord(word === w ? '' : w)} style={{ ...S.chip, ...(word === w ? S.chipOn : {}) }}>{w}</button>
@@ -128,7 +128,7 @@ export default function TheScales({ stage = 'reflect' }) {
       </div>
 
       <button style={S.saveBtn} disabled={saving} onClick={handleSave}>
-        {saving ? 'Saving…' : 'Weigh in'}
+        {saving ? 'Saving…' : 'Save for today'}
       </button>
     </div>
   )

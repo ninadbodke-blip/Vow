@@ -20,9 +20,9 @@ const localDateStr = () => {
 
 const lineFor = (n) => {
   if (n === 0) return 'Nothing caught yet today — and that can be true too.'
-  if (n === 1) return 'One catch. The pattern just became visible.'
+  if (n === 1) return 'One catch. Now you can see it happening.'
   if (n <= 3) return `${n} catches today. You\u2019re watching it, not the other way round.`
-  return `${n} catches today. Seeing it this clearly is the practice working.`
+  return `${n} catches today. You are really seeing it now.`
 }
 
 export default function CatchItInTheAct({ stage = 'notice' }) {
@@ -85,7 +85,7 @@ export default function CatchItInTheAct({ stage = 'notice' }) {
   return (
     <div style={S.wrap}>
       <p style={S.intro}>
-        Whenever you feel the pull today — even faintly — come back and tap once. That moment of noticing is the entire exercise.
+        Whenever you feel like doing it today — even a little — come back and tap once. Just noticing it is the whole exercise.
       </p>
       <button
         onClick={catchOne}

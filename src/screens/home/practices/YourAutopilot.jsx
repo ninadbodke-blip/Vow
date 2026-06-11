@@ -14,10 +14,10 @@ import { supabase } from '../../../supabaseClient'
 // ===================================================================
 
 const LEVELS = [
-  { value: 0, label: 'Fully awake — I chose it' },
-  { value: 1, label: 'Half-aware' },
-  { value: 2, label: 'Barely noticed' },
-  { value: 3, label: 'Only saw it afterwards' },
+  { value: 0, label: 'I fully chose it' },
+  { value: 1, label: 'I half noticed' },
+  { value: 2, label: 'I barely noticed' },
+  { value: 3, label: 'I only realised afterwards' },
 ]
 
 const BEFORE = ['Scrolling', 'Work stress', 'After dinner', 'Boredom', 'Being social', 'An argument', 'Late night', 'Just habit']
@@ -104,9 +104,9 @@ export default function YourAutopilot({ stage = 'notice' }) {
 
   return (
     <div style={S.wrap}>
-      <p style={S.intro}>Think of the last time it just… happened. No judging it — only noticing.</p>
+      <p style={S.intro}>Think of the last time it happened almost on its own. No need to judge it — just remember it.</p>
 
-      <p style={S.q}>How awake were you?</p>
+      <p style={S.q}>How much did you choose it?</p>
       <div style={S.levels}>
         {LEVELS.map((l) => (
           <button key={l.value} onClick={() => setLevel(l.value)}

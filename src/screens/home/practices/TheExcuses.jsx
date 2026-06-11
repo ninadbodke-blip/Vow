@@ -91,7 +91,7 @@ export default function TheExcuses({ stage = 'reflect' }) {
   if (!editing && canSave) {
     return (
       <div style={S.wrap}>
-        <p style={S.intro}>Named. They don’t vanish — they just work less well once you can see them coming.</p>
+        <p style={S.intro}>You’ve named them. They don’t disappear — but once you can see them coming, they don’t work as well.</p>
         <div style={S.savedCard}>
           {loudest && <p style={S.loudLine}>“{loudest}”</p>}
           {loudest && <p style={S.loudTag}>the loudest one</p>}
@@ -113,7 +113,7 @@ export default function TheExcuses({ stage = 'reflect' }) {
 
       {selected.length > 1 && (
         <>
-          <p style={S.q}>And the loudest?</p>
+          <p style={S.q}>Which one is the loudest?</p>
           <div style={S.chips}>
             {selected.map((l) => (
               <button key={l} onClick={() => setLoudest(loudest === l ? '' : l)} style={{ ...S.chip, ...(loudest === l ? S.loudOn : {}) }}>{l}</button>
@@ -123,7 +123,7 @@ export default function TheExcuses({ stage = 'reflect' }) {
       )}
 
       <button style={{ ...S.saveBtn, opacity: canSave ? 1 : 0.45 }} disabled={!canSave || saving} onClick={handleSave}>
-        {saving ? 'Saving…' : 'Name them'}
+        {saving ? 'Saving…' : 'Save them'}
       </button>
     </div>
   )

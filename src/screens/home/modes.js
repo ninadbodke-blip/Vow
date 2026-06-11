@@ -69,7 +69,7 @@ export const MODES = {
     daily: {
       id: 'catch',
       title: 'Catch it in the act',
-      line: 'Each time you feel the pull today, mark it — seeing it is the practice.',
+      line: 'Every time you feel like doing it, tap once. Just noticing counts.',
       minutes: 1,
       Component: CatchItInTheAct,
       Glyph: CatchGlyph,
@@ -77,8 +77,8 @@ export const MODES = {
     tools: [
       {
         id: 'autopilot',
-        title: 'Your autopilot',
-        line: 'When it runs without you choosing — name the moments.',
+        title: 'Without thinking',
+        line: 'Sometimes it happens before you even decide. When?',
         minutes: 2,
         Component: YourAutopilot,
         Glyph: AutopilotGlyph,
@@ -86,7 +86,7 @@ export const MODES = {
       {
         id: 'ledger',
         title: 'What it gives, what it takes',
-        line: 'Both columns, honestly. No verdict today.',
+        line: 'What it promises you, and what it really leaves you with.',
         minutes: 2,
         Component: GivesAndTakes,
         Glyph: LedgerGlyph,
@@ -94,7 +94,7 @@ export const MODES = {
       {
         id: 'context',
         title: 'Where it happens',
-        line: 'Place, company, hour — the pattern has an address.',
+        line: 'The places, people, and times it usually shows up.',
         minutes: 1,
         Component: WhereItHappens,
         Glyph: PinGlyph,
@@ -108,8 +108,8 @@ export const MODES = {
     inTheMoment: false,
     daily: {
       id: 'gap',
-      title: 'Both true today',
-      line: 'What you value, what you did — and the gap, named.',
+      title: 'What matters vs what I did',
+      line: 'One thing you care about, what you did today, and the gap.',
       minutes: 2,
       Component: BothTrueToday,
       Glyph: GapGlyph,
@@ -118,7 +118,7 @@ export const MODES = {
       {
         id: 'lean',
         title: 'The scales',
-        line: 'Where are you leaning today — staying or changing?',
+        line: 'Which way do you lean today — keep things the same, or change?',
         minutes: 1,
         Component: TheScales,
         Glyph: ScalesGlyph,
@@ -134,7 +134,7 @@ export const MODES = {
       {
         id: 'excuses',
         title: 'The excuses',
-        line: 'The lines it uses on you. Name the loudest.',
+        line: 'The things it says to talk you into it. Pick the loudest.',
         minutes: 2,
         Component: TheExcuses,
         Glyph: ExcuseGlyph,
