@@ -8,6 +8,7 @@ import UrgeFlow from '../UrgeFlow'
 import SlipFlow from '../SlipFlow'
 import TreeHero from './TreeHero'
 import { modeFor } from './modes'
+import StageWayfinder from '../freeHome/StageWayfinder'
 import { UrgeWavesGlyph, SlipRiseGlyph, AnchorGlyph, MilestoneGlyph } from './glyphs'
 
 // ===================================================================
@@ -202,7 +203,7 @@ export default function HomeShell({ progress }) {
 
         {/* TOP */}
         <div style={styles.topBar}>
-          <p style={styles.eyebrow}>{mode.label}</p>
+          <StageWayfinder progress={progress} />
           <button onClick={() => navigate('/app/profile')} style={styles.iconBtn} aria-label="Profile">
             <ProfileIcon />
           </button>
@@ -238,6 +239,7 @@ export default function HomeShell({ progress }) {
                 <span style={styles.practiceTitle}>{todayPractice.title}</span>
                 <span style={styles.practiceLine}>{todayPractice.line} · {todayPractice.minutes} min</span>
               </span>
+              <span style={styles.practiceArrow}>›</span>
             </button>
             {practices.length > 1 && (
               <div style={styles.practiceGrid}>
@@ -362,29 +364,30 @@ const styles = {
   iconBtn: { width: '38px', height: '38px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'rgba(255,255,255,0.7)', color: '#6B5C4A', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   greeting: { fontSize: '22px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 14px', lineHeight: 1.25 },
 
-  setupCard: { display: 'block', width: '100%', textAlign: 'left', marginTop: '12px', padding: '14px 16px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.05)' },
+  setupCard: { display: 'block', width: '100%', textAlign: 'left', marginTop: '12px', padding: '14px 16px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.05)' },
   setupTitle: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0 },
   setupSub: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '4px 0 0', lineHeight: 1.45 },
 
   sectionLabel: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '20px 0 8px', paddingLeft: '2px' },
 
-  practiceCard: { display: 'flex', alignItems: 'center', gap: '14px', width: '100%', textAlign: 'left', padding: '15px 16px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(80,50,20,0.05)' },
-  practiceGlyph: { width: '46px', height: '46px', flexShrink: 0, borderRadius: '14px', background: 'rgba(217,181,122,0.18)', color: '#854F0B', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  practiceCard: { display: 'flex', alignItems: 'center', gap: '14px', width: '100%', textAlign: 'left', padding: '16px', background: 'linear-gradient(180deg, #FBF7EE 0%, #F6EFE0 100%)', border: '0.5px solid #E5D9C2', borderRadius: '18px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 18px rgba(80,50,20,0.07)' },
+  practiceGlyph: { width: '48px', height: '48px', flexShrink: 0, borderRadius: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px -4px rgba(30,18,8,0.45)' },
   practiceText: { display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 },
   practiceTitle: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2 },
   practiceLine: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
+  practiceArrow: { marginLeft: 'auto', fontSize: '22px', color: '#B9A07E', fontFamily: 'Georgia, serif', lineHeight: 1, paddingLeft: '6px' },
 
-  practiceGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '8px' },
-  miniTile: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', padding: '12px 6px 10px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
-  miniGlyph: { width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(217,181,122,0.16)', color: '#854F0B', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  practiceGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '9px', marginTop: '9px', alignItems: 'stretch' },
+  miniTile: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '8px', minHeight: '98px', padding: '13px 6px 11px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
+  miniGlyph: { width: '38px', height: '38px', flexShrink: 0, borderRadius: '12px', background: 'rgba(58,42,28,0.07)', color: '#6B4F23', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   miniTitle: { fontSize: '11.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.25 },
 
-  hitRow: { display: 'flex', gap: '9px' },
-  hitCard: { flex: 1, display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
-  hitGlyph: { width: '38px', height: '38px', flexShrink: 0, borderRadius: '50%', background: 'rgba(217,181,122,0.16)', color: '#854F0B', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  hitRow: { display: 'flex', gap: '10px', alignItems: 'stretch' },
+  hitCard: { flex: 1, display: 'flex', alignItems: 'center', gap: '10px', minHeight: '66px', padding: '13px 12px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid rgba(217,181,122,0.35)', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', boxShadow: '0 8px 20px -8px rgba(30,18,8,0.5)' },
+  hitGlyph: { width: '38px', height: '38px', flexShrink: 0, borderRadius: '50%', background: 'rgba(217,181,122,0.16)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   hitText: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 },
-  hitTitle: { fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2 },
-  hitSub: { fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
+  hitTitle: { fontSize: '13.5px', color: '#FAF7F1', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2 },
+  hitSub: { fontSize: '10.5px', color: '#CBBA98', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
 
   slipNote: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '8px 2px 0' },
   reclaimInvite: { marginTop: '10px', padding: '14px 15px', background: '#FBF4E6', border: '0.5px solid #E4D5BB', borderRadius: '14px' },
@@ -392,8 +395,8 @@ const styles = {
   reclaimBtn: { width: '100%', padding: '11px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '11px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' },
 
   whispers: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '20px' },
-  glyphRow: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '11px 13px', background: 'rgba(255,255,255,0.6)', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit' },
-  rowGlyph: { width: '34px', height: '34px', flexShrink: 0, borderRadius: '50%', background: 'rgba(217,181,122,0.16)', color: '#854F0B', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  glyphRow: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 13px', background: 'rgba(255,255,255,0.7)', border: '0.5px solid #E5D9C2', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit' },
+  rowGlyph: { width: '34px', height: '34px', flexShrink: 0, borderRadius: '11px', background: 'rgba(58,42,28,0.07)', color: '#6B4F23', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1, fontSize: '13.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
   rowArrow: { fontSize: '13px', color: '#B9A07E' },
   surfacingRow: { background: 'transparent', border: 'none', textAlign: 'left', padding: '4px 2px', fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },

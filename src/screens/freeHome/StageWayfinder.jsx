@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../supabaseClient'
 import { createStageMove } from './stageMove'
 
-// Shared wayfinding header for every free-stage home: a quiet dot-tally
-// breadcrumb that opens the 6-stage map. The map respects the SAME Build
-// gate as the Profile stage navigator — Build stays locked until the user
-// has held 30 days on the tracker (or has already reached Build / Reclaim).
+// The home's wayfinder: the tappable mode eyebrow on HomeShell. Shows the
+// current mode and a quiet dot tally; opens the six-mode map. Carries the
+// same guards as the Profile navigator — "Staying steady" stays locked
+// until 30 held days (or the user already reached build / reclaim).
 
 const ChevronDown = () => (
   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -13,13 +13,20 @@ const ChevronDown = () => (
   </svg>
 )
 
+const Compass = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M15.5 8.5l-2.2 5-5 2.2 2.2-5 5-2.2z" />
+  </svg>
+)
+
 const STAGE_MAP = [
-  { key: 'notice', label: 'Notice', blurb: 'See the pattern, without pressure.' },
-  { key: 'reflect', label: 'Reflect', blurb: 'Weigh what it really costs you.' },
-  { key: 'commit', label: 'Commit', blurb: 'Draw the line, on your terms.' },
-  { key: 'endure', label: 'Endure', blurb: 'Hold the line, one day at a time.' },
-  { key: 'build', label: 'Build', blurb: 'Rebuild the life around it.' },
-  { key: 'reclaim', label: 'Reclaim', blurb: 'Find your feet again after a slip.' },
+  { key: 'notice', label: 'A closer look', blurb: 'Seeing the pattern clearly, no pressure.' },
+  { key: 'reflect', label: 'Weighing it up', blurb: 'Holding both sides of it, honestly.' },
+  { key: 'commit', label: 'Getting ready', blurb: 'Picking the day, clearing the path.' },
+  { key: 'endure', label: 'Early days', blurb: 'Holding the line, one day at a time.' },
+  { key: 'build', label: 'Staying steady', blurb: 'Protecting what the days have built.' },
+  { key: 'reclaim', label: 'Getting back up', blurb: 'Finding your feet after a slip.' },
 ]
 
 export default function StageWayfinder({ progress }) {
@@ -90,18 +97,10 @@ export default function StageWayfinder({ progress }) {
 
   return (
     <>
-      <button onClick={() => setMapOpen(true)} style={styles.breadcrumb} aria-label="Where you are">
-        <span style={styles.breadcrumbDots}>
-          {STAGE_MAP.map((st, i) => (
-            <span key={st.key} style={{ ...styles.breadcrumbDot, color: i === stageIdx ? '#D9B57A' : '#CDBFA8' }}>
-              {i === stageIdx ? '•' : '·'}
-            </span>
-          ))}
-        </span>
-        <span style={styles.breadcrumbName}>
-          Where you are
-          <ChevronDown />
-        </span>
+      <button onClick={() => setMapOpen(true)} style={styles.wayPill} aria-label="Where you are — open the map">
+        <span style={styles.wayCompass}><Compass /></span>
+        <span style={styles.wayLabel}>{(STAGE_MAP[stageIdx] || STAGE_MAP[0]).label}</span>
+        <span style={styles.wayChevron}><ChevronDown /></span>
       </button>
 
       {mapOpen && (
@@ -110,7 +109,7 @@ export default function StageWayfinder({ progress }) {
             <div style={styles.sheetHead}>
               <div>
                 <p style={styles.sheetEyebrow}>Where you are</p>
-                <h3 style={styles.sheetTitle}>The 6-stage journey</h3>
+                <h3 style={styles.sheetTitle}>Where this can meet you</h3>
               </div>
               <button onClick={() => setMapOpen(false)} style={styles.sheetClose}>✕</button>
             </div>
@@ -134,14 +133,14 @@ export default function StageWayfinder({ progress }) {
                       {isCurrent && <span style={styles.mapEyebrowCurrent}>You're here</span>}
                       <span style={{ ...styles.mapLabel, ...(isCurrent ? styles.mapLabelCurrent : {}) }}>{st.label}</span>
                       {isLocked
-                        ? <span style={styles.mapLockTag}>Unlocks after 30 days in Endure</span>
+                        ? <span style={styles.mapLockTag}>Unlocks after 30 days in Early days</span>
                         : <span style={{ ...styles.mapBlurb, ...(isCurrent ? styles.mapBlurbCurrent : {}) }}>{st.blurb}</span>}
                     </span>
                   </button>
                 )
               })}
             </div>
-            <p style={styles.mapFootnote}>Move to any stage whenever it fits where you actually are.</p>
+            <p style={styles.mapFootnote}>Move any time — this is a map of where you are, not a ladder.</p>
           </div>
         </div>
       )}
@@ -171,10 +170,10 @@ export default function StageWayfinder({ progress }) {
 }
 
 const styles = {
-  breadcrumb: { background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '4px 10px' },
-  breadcrumbDots: { display: 'flex', alignItems: 'center', gap: '5px', lineHeight: 1 },
-  breadcrumbDot: { fontSize: '11px', lineHeight: 1 },
-  breadcrumbName: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  wayPill: { display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '8px 13px 8px 11px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid rgba(217,181,122,0.4)', borderRadius: '999px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 12px -4px rgba(30,18,8,0.4)' },
+  wayCompass: { display: 'flex', color: '#D9B57A' },
+  wayLabel: { fontSize: '12.5px', color: '#FAF7F1', fontFamily: 'Georgia, serif', fontWeight: 500, letterSpacing: '0.01em' },
+  wayChevron: { display: 'flex', color: '#CBBA98' },
 
   sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
   sheetCard: { width: '100%', maxWidth: '430px', maxHeight: '88vh', overflowY: 'auto', background: '#FCFAF5', borderRadius: '22px', padding: '20px 20px 22px', boxShadow: '0 24px 70px rgba(40,25,15,0.4)' },

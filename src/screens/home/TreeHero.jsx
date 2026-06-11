@@ -25,12 +25,24 @@ const VIEW_H = 232
 
 // Per-mode skies — the quiet signal of where you are.
 const SKIES = {
-  notice:  { top: '#E9E3D9', bottom: '#F5F0E5', ground: '#EDE6D6', sun: { cx: 184, cy: 56, r: 13, o: 0.35 }, extra: 'mist' },
-  reflect: { top: '#E4DED6', bottom: '#F3EBDA', ground: '#ECE3D0', sun: { cx: 184, cy: 48, r: 14, o: 0.5 },  extra: null },
-  commit:  { top: '#EFE0C8', bottom: '#F8EFDC', ground: '#EFE6D2', sun: { cx: 120, cy: GROUND_Y - 2, r: 20, o: 0.85 }, extra: null },
-  endure:  { top: '#F3EBDA', bottom: '#FBF5E8', ground: '#EFE6D2', sun: { cx: 192, cy: 46, r: 13, o: 0.9 },  extra: 'ring' },
-  build:   { top: '#F1EBD8', bottom: '#FAF4E6', ground: '#EBE2CD', sun: { cx: 150, cy: 38, r: 15, o: 0.95 }, extra: 'ring' },
-  reclaim: { top: '#DDDCD8', bottom: '#EFEBE2', ground: '#E6E1D4', sun: { cx: 184, cy: 48, r: 12, o: 0.25 }, extra: 'rain' },
+  // A closer look — pale, misty early light; the sun barely there.
+  notice:  { top: '#E5E1D9', bottom: '#F4F0E6', ground: '#ECE5D4', sun: { cx: 184, cy: 56, r: 12, o: 0.3 }, extra: 'mist',
+             clouds: [[56, 66, 24, 5.5], [88, 74, 15, 4], [150, 58, 19, 4.5]] },
+  // Weighing it up — neutral, even afternoon. Nothing leans.
+  reflect: { top: '#E3DACA', bottom: '#F4ECDC', ground: '#EBE2CE', sun: { cx: 184, cy: 48, r: 14, o: 0.55 }, extra: null,
+             clouds: [[60, 70, 21, 4.5], [166, 62, 14, 3.5]] },
+  // Getting ready — dawn. The sun sits on the horizon, about to rise.
+  commit:  { top: '#EFD9B6', bottom: '#FAF0DC', ground: '#EFE6D2', sun: { cx: 120, cy: GROUND_Y - 2, r: 20, o: 0.9 }, extra: 'horizon',
+             clouds: [[66, 60, 22, 4.5]] },
+  // Early days — clear morning, the ringed sun of held days.
+  endure:  { top: '#F3EBDA', bottom: '#FBF5E8', ground: '#EFE6D2', sun: { cx: 192, cy: 46, r: 13, o: 0.9 }, extra: 'ring',
+             clouds: [[58, 74, 20, 4.5], [78, 80, 13, 3.5]] },
+  // Staying steady — high bright noon, the sun at full strength.
+  build:   { top: '#EDEAD4', bottom: '#FAF4E4', ground: '#EAE1CB', sun: { cx: 150, cy: 34, r: 16, o: 0.95 }, extra: 'ring',
+             clouds: [[50, 52, 16, 3.5], [176, 64, 12, 3]] },
+  // Getting back up — grey rain that the line below answers: rain is how it grows.
+  reclaim: { top: '#D2D2CF', bottom: '#E9E6DE', ground: '#E1DDD0', sun: { cx: 184, cy: 48, r: 11, o: 0.2 }, extra: 'rain',
+             clouds: [] },
 }
 
 function Rain() {
@@ -145,14 +157,14 @@ export default function TreeHero({
 
           {/* sky */}
           <rect x="0" y="0" width="240" height={VIEW_H} fill="url(#vowSky)" />
-          {sky.extra !== 'rain' && (
-            <>
-              <ellipse cx="58" cy="74" rx="20" ry="4.5" fill="#FFFFFF" opacity="0.4" />
-              <ellipse cx="78" cy="80" rx="13" ry="3.5" fill="#FFFFFF" opacity="0.3" />
-            </>
-          )}
+          {(sky.clouds || []).map((c, i) => (
+            <ellipse key={i} cx={c[0]} cy={c[1]} rx={c[2]} ry={c[3]} fill="#FFFFFF" opacity={0.42 - i * 0.07} />
+          ))}
 
-          {/* sun (a horizon sun half-sets into the ground band) */}
+          {/* sun (a horizon sun half-rises out of the ground band) */}
+          {sky.extra === 'horizon' && (
+            <ellipse cx={sky.sun.cx} cy={GROUND_Y - 5} rx="78" ry="20" fill="#F0D9A0" opacity="0.35" />
+          )}
           <circle cx={sky.sun.cx} cy={sky.sun.cy} r={sky.sun.r} fill="#EAD9B4" opacity={sky.sun.o} />
           {sky.extra === 'ring' && (
             <circle cx={sky.sun.cx} cy={sky.sun.cy} r={sky.sun.r + 4.5} fill="none" stroke="#E6C685" strokeWidth="1.6" opacity="0.5" strokeDasharray="22 7" />
