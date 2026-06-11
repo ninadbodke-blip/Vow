@@ -183,6 +183,7 @@ export default function DailyCheckin({
   const [bodySignals, setBodySignals] = useState([])
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
+  const [tended, setTended] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -210,8 +211,6 @@ export default function DailyCheckin({
     const cleaned = arr.filter(v => v !== 'nothing' && v !== 'none')
     setArr(cleaned.includes(value) ? cleaned.filter(v => v !== value) : [...cleaned, value])
   }
-
-  const [tended, setTended] = useState(false)
 
   const handleSave = async () => {
     if (saving || !mood || !urge) return
