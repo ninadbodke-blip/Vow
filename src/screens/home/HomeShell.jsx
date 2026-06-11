@@ -9,6 +9,7 @@ import UrgeFlow from '../UrgeFlow'
 import SlipFlow from '../SlipFlow'
 import TreeHero from './TreeHero'
 import { modeFor, JOURNAL } from './modes'
+import SetYourDay from './practices/SetYourDay'
 import StageWayfinder from '../freeHome/StageWayfinder'
 import { UrgeWavesGlyph, SlipRiseGlyph, AnchorGlyph, MilestoneGlyph } from './glyphs'
 
@@ -239,7 +240,7 @@ export default function HomeShell({ progress }) {
           daysFree={daysFree}
           trackerStartISO={tracker?.start_date || null}
           commitTargetISO={commitTarget}
-          onSetDay={() => { const t = tools.find((x) => x.id === 'vow_day'); if (t) setOpenPractice({ ...t, eyebrow: 'Tools' }) }}
+          onSetDay={() => setOpenPractice({ id: 'set_day', title: 'Day one', minutes: 1, Component: SetYourDay, Glyph: null, eyebrow: 'Your day' })}
           trackerId={tracker?.id || null}
           onStartChanged={(iso) => setTracker((p) => (p ? { ...p, start_date: iso } : p))}
           tendedToday={!!todayCheckin}

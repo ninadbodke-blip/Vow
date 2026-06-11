@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { buildTree, GROUND_Y, MAX_GROWTH, BIRD_SCHEDULE } from './treeEngine'
 import JarCounter from './JarCounter'
+import DayOneCounter from './DayOneCounter'
 
 // ===================================================================
 // THE VOW TREE — the home's living hero.
@@ -195,17 +196,9 @@ export default function TreeHero({
     }
   } else if (counter === 'tending') {
     if (mode === 'commit' && commitTargetISO) {
-      const targetMs = new Date(commitTargetISO + 'T00:00:00').getTime()
-      const diff = targetMs - nowMs
-      if (diff > 0) {
-        const d = Math.floor(diff / 86400000)
-        countLine = `${d}d ${pad2(Math.floor(diff / 3600000) % 24)}:${pad2(Math.floor(diff / 60000) % 60)}:${pad2(Math.floor(diff / 1000) % 60)}`
-        bigIsTick = true
-        subLine = caption || `until day one — ${friendly(commitTargetISO)}`
-      } else {
-        countLine = 'Day one has arrived'
-        subLine = caption || `${friendly(commitTargetISO)}. Early days is one tap away in the map above.`
-      }
+      // The DayOneCounter tile below renders the full reverse counter
+      // (old-home style) with its own change-the-day affordance.
+      subLine = null
     } else {
       countLine = count === 0 ? 'Your tree is planted' : `Tended ${count} ${count === 1 ? 'time' : 'times'}`
       if (mode === 'commit') {
@@ -312,7 +305,10 @@ export default function TreeHero({
         {mode === 'endure' && counter === 'days' && trackerStartISO && (
           <JarCounter startISO={trackerStartISO} trackerId={trackerId} onStartChanged={onStartChanged} />
         )}
-        <p style={styles.subLine}>{subLine}</p>
+        {mode === 'commit' && commitTargetISO && (
+          <DayOneCounter targetISO={commitTargetISO} onChange={onSetDay} />
+        )}
+        {subLine && <p style={styles.subLine}>{subLine}</p>}
         {showSetDay && onSetDay && (
           <button onClick={onSetDay} style={styles.setDayBtn}>Set your day ›</button>
         )}

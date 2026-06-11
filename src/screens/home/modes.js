@@ -157,8 +157,8 @@ export const MODES = {
     tools: [
       {
         id: 'vow_day',
-        title: 'Your vow & your day',
-        line: 'One honest line, and the day you begin.',
+        title: 'Your vow',
+        line: 'One honest line, written to the 11 p.m. version of you.',
         minutes: 2,
         Component: VowAndDay,
         Glyph: VowDayGlyph,
@@ -166,8 +166,8 @@ export const MODES = {
       {
         id: 'path',
         title: 'Clear the path',
-        line: 'Small moves now that make day one easier.',
-        minutes: 2,
+        line: 'Six fights your future self never has to have.',
+        minutes: 3,
         Component: ClearThePath,
         Glyph: PathGlyph,
       },
