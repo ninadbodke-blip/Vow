@@ -180,9 +180,10 @@ export default function TreeHero({
     if (startMs && startMs <= nowMs) {
       const el = nowMs - startMs
       const d = Math.floor(el / 86400000)
-      countLine = `Day ${d + 1}`
-      if (mode !== 'endure') {
-        tickLine = `${d}d ${pad2(Math.floor(el / 3600000) % 24)}:${pad2(Math.floor(el / 60000) % 60)}:${pad2(Math.floor(el / 1000) % 60)} — and counting`
+      if (mode === 'endure') {
+        countLine = `Day ${d + 1}`
+      } else {
+        tickLine = `Day ${d + 1} · ${pad2(Math.floor(el / 3600000) % 24)}:${pad2(Math.floor(el / 60000) % 60)}:${pad2(Math.floor(el / 1000) % 60)} — and counting`
       }
       subLine = caption || 'Your tree grows when you check in — a slip can’t shrink it.'
     } else if (daysFree !== null) {
@@ -306,7 +307,7 @@ export default function TreeHero({
       </div>
 
       <div style={styles.below}>
-        <p style={bigIsTick ? styles.tickBig : styles.countLine}>{countLine}</p>
+        {countLine && <p style={bigIsTick ? styles.tickBig : styles.countLine}>{countLine}</p>}
         {tickLine && <p style={styles.tickLine}>{tickLine}</p>}
         {mode === 'endure' && counter === 'days' && trackerStartISO && (
           <JarCounter startISO={trackerStartISO} trackerId={trackerId} onStartChanged={onStartChanged} />

@@ -46,6 +46,7 @@ export default function TheBlindSpot({ stage = 'build' }) {
   const [exposure, setExposure] = useState(30)
   const [editing, setEditing] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [history, setHistory] = useState([])
 
   useEffect(() => {
     let cancelled = false
@@ -58,10 +59,11 @@ export default function TheBlindSpot({ stage = 'build' }) {
         .eq('user_id', user.id)
         .eq('signal_type', 'build_drift')
         .order('created_at', { ascending: false })
-        .limit(3)
+        .limit(14)
       if (cancelled) return
       const today = localDateStr()
       const todays = (data || []).find((r) => r.payload?.date === today)
+      setHistory((data || []).map((r) => r.payload).filter((p) => p?.date))
       if (todays) {
         setTodayRowId(todays.id)
         setConfidence(Number(todays.payload.confidence) ?? 50)
@@ -82,12 +84,12 @@ export default function TheBlindSpot({ stage = 'build' }) {
     const payload = { confidence, exposure, date: localDateStr() }
     if (todayRowId) {
       const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', todayRowId)
-      if (!error) setEditing(false)
+      if (!error) { setEditing(false); setHistory((h) => [payload, ...h.filter((p) => p.date !== payload.date)]) }
     } else {
       const { data, error } = await supabase.from('free_stage_signals')
         .insert({ user_id: user.id, stage, signal_type: 'build_drift', payload })
         .select('id').single()
-      if (!error && data) { setTodayRowId(data.id); setEditing(false) }
+      if (!error && data) { setTodayRowId(data.id); setEditing(false); setHistory((h) => [payload, ...h.filter((p) => p.date !== payload.date)]) }
     }
     setSaving(false)
   }
@@ -103,6 +105,7 @@ export default function TheBlindSpot({ stage = 'build' }) {
           <p style={S.readLine}>{readFor(confidence, exposure)}</p>
         </div>
         <button style={S.editLink} onClick={() => setEditing(true)}>Check again</button>
+        <HistoryStrip history={history} />
       </div>
     )
   }
@@ -123,6 +126,31 @@ export default function TheBlindSpot({ stage = 'build' }) {
       <button style={S.saveBtn} disabled={saving} onClick={handleSave}>
         {saving ? 'Saving…' : 'See where that lands'}
       </button>
+      <HistoryStrip history={history} />
+    </div>
+  )
+}
+
+function HistoryStrip({ history }) {
+  const entries = (history || []).slice(0, 7)
+  if (entries.length < 2) return null
+  const nice = (iso) => {
+    const [y, m, d] = iso.split('-').map(Number)
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' })
+  }
+  return (
+    <div style={S.histCard}>
+      <p style={S.histHead}>The record</p>
+      {entries.map((p) => (
+        <div key={p.date} style={S.histDay}>
+          <span style={S.histDate}>{nice(p.date)}</span>
+          <div style={S.histBars}>
+            <div style={S.miniTrack}><div style={{ ...S.miniFill, width: `${p.confidence}%` }} /></div>
+            <div style={S.miniTrack}><div style={{ ...S.histFillExp, width: `${p.exposure}%` }} /></div>
+          </div>
+        </div>
+      ))}
+      <p style={S.histFoot}>top: feels solid · bottom: stood close. Watch for the gold staying high while the clay creeps up.</p>
     </div>
   )
 }
@@ -154,4 +182,11 @@ const S = {
   miniFill: { position: 'absolute', left: 0, top: 0, bottom: 0, background: 'linear-gradient(90deg, #D9C9A4, #C9A85C)' },
   readLine: { fontFamily: 'Georgia, serif', fontSize: 13.5, color: '#2A1F15', margin: '8px 0 0', lineHeight: 1.55, textAlign: 'center' },
   editLink: { display: 'block', margin: '12px auto 0', background: 'transparent', border: 'none', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer' },
+  histCard: { marginTop: 16, background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: 14, padding: '12px 14px' },
+  histHead: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11, color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 9px' },
+  histDay: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 },
+  histDate: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11, color: '#9C8C78', width: 56, flexShrink: 0 },
+  histBars: { flex: 1, display: 'flex', flexDirection: 'column', gap: 3 },
+  histFillExp: { position: 'absolute', left: 0, top: 0, bottom: 0, background: 'linear-gradient(90deg, #DCA284, #C5572C)' },
+  histFoot: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 10.5, color: '#9C8C78', margin: '4px 0 0', lineHeight: 1.5 },
 }
