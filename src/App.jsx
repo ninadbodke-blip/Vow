@@ -58,6 +58,7 @@ import ReclaimDay from './screens/vowPath/ReclaimDay'
 // ===== Motivation =====
 import MotivationHome from './screens/motivation/MotivationHome'
 import MotivationArticle from './screens/motivation/MotivationArticle'
+import MotivationLibrary from './screens/motivation/MotivationLibrary'
 
 // ===== Mirror =====
 import MirrorScreen from './screens/mirror/MirrorScreen'
@@ -248,6 +249,8 @@ function AppRoutes() {
       {/* ===== MOTIVATION ===== */}
       <Route path="/app/motivation" element={session ? <MotivationHome /> : <Navigate to="/app/welcome" />} />
       <Route path="/app/motivation/article/:slug" element={session ? <MotivationArticle /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/motivation/library" element={session ? <MotivationLibrary /> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/motivation/library/:theme" element={session ? <MotivationLibrary /> : <Navigate to="/app/welcome" />} />
 
       {/* ===== MIRROR ===== */}
       <Route path="/app/mirror" element={session ? <MirrorScreen /> : <Navigate to="/app/welcome" />} />

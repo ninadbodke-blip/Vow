@@ -189,6 +189,9 @@ export default function NightSky({ lit = 0, total = 21, quote = '', attribution 
           </svg>
           {complete ? 'The whole tree, in stars' : `${litCount} of ${shownTotal} stars lit`}
         </p>
+        {!complete && (
+          <p style={S.hint}>Finish an essay on the shelf, and a star lights here.</p>
+        )}
         <div style={S.hairline} />
         {quote && (
           <>
@@ -211,6 +214,7 @@ const S = {
   art: { display: 'block', width: '100%', height: 'auto' },
   under: { padding: '14px 18px 17px', textAlign: 'center' },
   count: { fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#D9B57A', fontFamily: 'Georgia, serif', margin: '0 0 9px' },
+  hint: { fontSize: 10.5, color: '#CBBA98', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 9px', letterSpacing: '0.01em' },
   hairline: { width: 54, height: 1, background: 'linear-gradient(90deg, transparent, #C9A85C, transparent)', margin: '0 auto 9px' },
   eyebrow: { fontSize: 9.5, letterSpacing: '0.28em', textTransform: 'uppercase', color: 'rgba(217,181,122,0.65)', fontFamily: 'Georgia, serif', margin: '0 0 7px' },
   line: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 15.5, color: '#FAF7F1', lineHeight: 1.58, margin: 0 },

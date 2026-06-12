@@ -5,6 +5,8 @@ import { ARTICLES } from './data/articles'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import NightSky from './NightSky'
+import VowBrandMark from '../../components/VowBrandMark'
+import { THEMES, THEME_MAP } from './data/themes'
 
 // =====================================================================
 // MOTIVATION — "The Antidote to Amnesia."
@@ -26,19 +28,6 @@ const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN')
 // The Apothecary — maps tonight's "weather" to the essays that treat it.
 // Edit freely; slugs come from data/articles.js. Essays not listed here are
 // still reachable under "All".
-const THEMES = [
-  { key: 'nostalgia', label: 'Nostalgia' },
-  { key: 'exhaustion', label: 'Exhaustion' },
-  { key: 'vacuum', label: 'The Vacuum' },
-  { key: 'justone', label: '"Just one"' },
-]
-const THEME_MAP = {
-  nostalgia: ['the-room-you-were-trying-to-leave', 'what-it-was-doing-for-you', 'the-same-evening-two-thousand-times', 'the-myth-of-the-creative-spark'],
-  exhaustion: ['the-person-you-are-at-3-am', 'the-20-minute-wave-anatomy', 'the-dopamine-debt-collection'],
-  vacuum: ['the-8-pm-vacuum', 'the-evacuation-protocol', 'after-the-peaks', 'why-sobriety-is-lonelier-than-use'],
-  justone: ['the-math-of-just-one-time', 'the-permission-slip', 'waiting-for-rock-bottom-is-a-trap', 'the-high-functioning-paradox'],
-}
-
 const ProfileIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -145,9 +134,9 @@ export default function MotivationHome() {
   const [anchors, setAnchors] = useState([])
   const [daysFree, setDaysFree] = useState(null)
   const [trackerId, setTrackerId] = useState(null)
-  const [theme, setTheme] = useState(null)
   const [override, setOverride] = useState(false)
   const [readSlugs, setReadSlugs] = useState([])
+  // theme filtering now lives in MotivationLibrary
 
   useEffect(() => {
     let active = true
@@ -208,7 +197,6 @@ export default function MotivationHome() {
 
   const todayQuote = getTodayQuote()
   const visibleArticles = ARTICLES.filter(a => a.substance === null || a.substance === substance)
-  const themed = theme ? visibleArticles.filter(a => (THEME_MAP[theme] || []).includes(a.slug)) : visibleArticles
   const vowDateStr = vowDate ? new Date(vowDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null
 
   const readCount = visibleArticles.filter(a => readSlugs.includes(a.slug)).length
@@ -219,7 +207,7 @@ export default function MotivationHome() {
 
         <div style={styles.header}>
           <div style={{ width: '40px' }} />
-          <p style={styles.headerTitle}>Vow</p>
+          <span style={styles.brandCenter}><VowBrandMark size={17} /></span>
           <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
         </div>
 
@@ -261,43 +249,26 @@ export default function MotivationHome() {
           <span style={styles.overrideLabel}>The urge is here</span>
         </button>
 
-        {/* THE SHELF — essays for tonight's weather */}
+        {/* THE SHELF — four weathers, then the whole library */}
         <div>
           <p style={styles.sectionLabel}>The shelf</p>
           <p style={styles.weatherTitle}>What&rsquo;s the weather tonight?</p>
-          <div style={styles.pillRow}>
-            <button onClick={() => setTheme(null)} style={{ ...styles.pill, ...(theme === null ? styles.pillActive : {}) }}>All</button>
-            {THEMES.map(t => (
-              <button key={t.key} onClick={() => setTheme(theme === t.key ? null : t.key)}
-                style={{ ...styles.pill, ...(theme === t.key ? styles.pillActive : {}) }}>{t.label}</button>
-            ))}
-          </div>
-          <div style={styles.shelfList}>
-            {themed.length === 0 ? (
-              <p style={styles.shelfEmpty}>Nothing tagged for that yet &mdash; try another, or &ldquo;All&rdquo;.</p>
-            ) : themed.map(a => {
-              const isRead = readSlugs.includes(a.slug)
+          <div style={styles.catGrid}>
+            {THEMES.map(t => {
+              const arts = visibleArticles.filter(a => (THEME_MAP[t.key] || []).includes(a.slug))
+              const read = arts.filter(a => readSlugs.includes(a.slug)).length
               return (
-                <button key={a.id} onClick={() => navigate(`/app/motivation/article/${a.slug}`)} style={styles.row}>
-                  <span style={styles.rowGlyph}>
-                    {isRead ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="#D9B57A"><path d="M12 3l2.2 5.3L20 9l-4.3 3.8L17 19l-5-3-5 3 1.3-6.2L4 9l5.8-.7z" /></svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D9B57A" strokeWidth="1.5"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z" /><path d="M5 4v13a3 3 0 003 3" /></svg>
-                    )}
-                  </span>
-                  <span style={styles.rowText}>
-                    <span style={styles.rowTitle}>{a.title}</span>
-                    {a.subtitle && <span style={styles.rowSub}>{a.subtitle}</span>}
-                  </span>
-                  <span style={styles.rowMeta}>
-                    <span style={isRead ? styles.litStar : styles.hollowStar}>{isRead ? '✦' : '✧'}</span>
-                    <span style={styles.rowMetaText}>{isRead ? 'read' : `${a.readMinutes} min`}</span>
-                  </span>
+                <button key={t.key} onClick={() => navigate(`/app/motivation/library/${t.key}`)} style={styles.catTile}>
+                  <span style={styles.catLabel}>{t.label}</span>
+                  <span style={styles.catMeta}>{arts.length} essays{read ? ` \u00B7 ${read} read` : ''}</span>
                 </button>
               )
             })}
           </div>
+          <button onClick={() => navigate('/app/motivation/library')} style={styles.allTile}>
+            <span style={styles.allLabel}>All essays</span>
+            <span style={styles.allMeta}>{visibleArticles.length} on the shelf &middot; {readCount} read &rarr;</span>
+          </button>
         </div>
 
         <BottomNav />
@@ -321,8 +292,8 @@ const styles = {
   frame: { minHeight: '100vh', background: 'linear-gradient(180deg, #FDFBF6 0%, #F6EFDD 100%)', padding: '1.25rem 1rem 2rem', display: 'flex', justifyContent: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
   phone: { maxWidth: '440px', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' },
 
-  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  headerTitle: { fontSize: '17px', fontWeight: 500, color: '#3A2A1C', margin: 0, fontFamily: 'Georgia, serif', fontStyle: 'italic', letterSpacing: '0.04em', textAlign: 'center', flex: 1 },
+  header: { position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  brandCenter: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', pointerEvents: 'none' },
   profileBtn: { background: 'transparent', border: 'none', color: '#854F0B', cursor: 'pointer', padding: '4px 8px', minWidth: '40px', display: 'flex', justifyContent: 'flex-end' },
 
   sectionLabel: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.16em', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '4px 2px 9px' },
@@ -342,17 +313,13 @@ const styles = {
   pill: { padding: '7px 14px', borderRadius: '999px', border: '0.5px solid #DDCFB6', background: '#FDFBF6', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontSize: '12.5px', cursor: 'pointer', transition: 'all 0.15s' },
   pillActive: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A', border: '0.5px solid #3A2A1C' },
 
-  shelfList: { display: 'flex', flexDirection: 'column', gap: '9px' },
-  shelfEmpty: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', padding: '1rem 0', margin: 0 },
-  row: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '13px', background: '#FDFBF6', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' },
-  rowGlyph: { width: '40px', height: '40px', flexShrink: 0, borderRadius: '12px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid rgba(217,181,122,0.35)' },
-  rowText: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' },
-  rowTitle: { fontSize: '14px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
-  rowSub: { fontSize: '11.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
-  rowMeta: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px', flexShrink: 0 },
-  litStar: { color: '#C9A85C', fontSize: '15px', lineHeight: 1 },
-  hollowStar: { color: '#C9B894', fontSize: '15px', lineHeight: 1, opacity: 0.6 },
-  rowMetaText: { fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontVariantNumeric: 'tabular-nums' },
+  catGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' },
+  catTile: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px', padding: '16px 14px', minHeight: '72px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', boxShadow: '0 2px 10px rgba(120,90,40,0.05)' },
+  catLabel: { fontSize: '15px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif' },
+  catMeta: { fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontVariantNumeric: 'tabular-nums' },
+  allTile: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '9px', padding: '13px 16px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid rgba(217,181,122,0.35)', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 5px 16px -6px rgba(30,18,8,0.4)' },
+  allLabel: { fontSize: '14px', fontWeight: 500, color: '#FAF7F1', fontFamily: 'Georgia, serif' },
+  allMeta: { fontSize: '11px', color: '#D9B57A', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontVariantNumeric: 'tabular-nums' },
 }
 
 const oStyles = {
