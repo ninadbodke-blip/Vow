@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import { moodByScore, moodByValue } from '../freeHome/DailyCheckin'
+import OraclePool from './OraclePool'
+import VowBrandMark from '../../components/VowBrandMark'
 
 // =====================================================================
 // THE MIRROR — a patient, literary reflection of the longer view.
@@ -52,7 +54,6 @@ const ProfileIcon = () => (
   </svg>
 )
 
-const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN')
 const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0)
 function mostCommon(arr) {
   const m = {}; let best = null, bc = 0
@@ -180,6 +181,7 @@ export default function MirrorScreen() {
   const [checkins, setCheckins] = useState([])
   const [byType, setByType] = useState({})
   const [aiReflection, setAiReflection] = useState(null)
+  const [pebbleLive, setPebbleLive] = useState(null)
   const nowTs = Date.now()
 
   useEffect(() => {
@@ -252,6 +254,16 @@ export default function MirrorScreen() {
     }, grew: grewWeek,
   })
 
+  // ---- THE ORACLE POOL — clarity earned by tending; the day's pebble ----
+  const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
+  const poolClarity = Math.min(100, Math.round((ciWeek.length / 7) * 100))
+  const pebbleRows = g('oracle_pebble')
+  const pebbleDates = [...new Set(pebbleRows.map(r => r.payload?.date).filter(Boolean))]
+  const pebbleCountStored = Math.min(7, pebbleDates.filter(d => d >= weekAgoStr).length)
+  const pebbleTodayStored = pebbleDates.includes(todayStr)
+  const storedTodayInsight = pebbleRows.find(r => r.payload?.date === todayStr)?.payload?.insight || null
+  const pebbleInsight = pebbleLive || storedTodayInsight
+
   // ---- PORTRAIT A — the shape of the pull (awareness / reckoning) ----
   const ctxLoc = mostCommon(g('notice_context').map(r => r.payload?.location))
   const ctxCompany = mostCommon(g('notice_context').map(r => r.payload?.company))
@@ -269,7 +281,7 @@ export default function MirrorScreen() {
   if (apAvg && pullLines.length < 3) pullLines.push(`It tends to arrive while you are ${apAvg}.`)
 
   const pullChips = []
-  if (costSpend != null) pullChips.push({ v: inr(costSpend), l: 'it would cost' })
+  if (costSpend != null) pullChips.push({ v: Math.round(costSpend).toLocaleString(), l: 'it would cost, in money' })
   if (costDays) pullChips.push({ v: costDays + (costDays === 1 ? ' day' : ' days'), l: 'of life, mapped' })
   if (lies.size) pullChips.push({ v: lies.size, l: lies.size === 1 ? 'lie named' : 'lies named' })
   if (urge.total) pullChips.push({ v: urge.total, l: urge.total === 1 ? 'urge met' : 'urges met' })
@@ -321,6 +333,32 @@ export default function MirrorScreen() {
   const fractureGhost = mostCommon(g('build_blindspot').flatMap(r => r.payload?.ghosts || []))
   const fractureGhostLabel = fractureGhost ? (GHOSTS[fractureGhost[0]] || fractureGhost[0]) : null
 
+  // ---- the pebble's voice — one line per day, drawn from their own week ----
+  const insightPool = []
+  const catches7 = within7(g('notice_catch')).reduce((a, r) => a + (r.payload?.count || 0), 0)
+  const waves7 = within7(urges).length
+  if (catches7 > 0) insightPool.push(`You caught the pull ${catches7} ${catches7 === 1 ? 'time' : 'times'} this week — seeing it is half the fight.`)
+  if (waves7 > 0) insightPool.push(`${waves7} ${waves7 === 1 ? 'wave' : 'waves'} met this week — and you are still here after every one.`)
+  if (ctxLoc) insightPool.push(`It keeps finding you ${ctxLoc[0]} — ${ctxLoc[1]} ${ctxLoc[1] === 1 ? 'time' : 'times'} now. Knowing the address is power.`)
+  if (pullDays > 0) insightPool.push(`The pull surfaced on ${pullDays} of the last 7 days, and the week still held.`)
+  if (ciWeek.length > 0) insightPool.push(`You showed up ${ciWeek.length} of the last 7 days. The water remembers every one.`)
+  if (energyAvg >= 3.5) insightPool.push(`Energy held near ${energyAvg.toFixed(1)} of 5 this week — steadier water than you think.`)
+  if (vow) insightPool.push('Your vow still stands in the record, written in your own hand.')
+  insightPool.push('Still water shows true. Keep tending — the picture sharpens by the day.')
+  const seedHash = todayStr.split('').reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 9973, 7)
+  const todaysLine = insightPool[seedHash % insightPool.length]
+  const dropPebble = async () => {
+    setPebbleLive(todaysLine)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('free_stage_signals').insert({
+      user_id: user.id, stage: 'notice', signal_type: 'oracle_pebble',
+      payload: { date: todayStr, insight: todaysLine },
+    })
+  }
+  const pebbleToday = pebbleTodayStored || !!pebbleLive
+  const pebbleCount = Math.min(7, pebbleCountStored + (pebbleLive && !pebbleTodayStored ? 1 : 0))
+
   const totalSignals = Object.values(byType).reduce((a, v) => a + v.length, 0)
   const isEmpty = !tracker && totalSignals === 0 && checkins.length === 0
 
@@ -341,8 +379,19 @@ export default function MirrorScreen() {
 
         <div style={styles.topRow}>
           <div style={{ width: '40px' }} />
+          <span style={styles.brandCenter}><VowBrandMark size={17} /></span>
           <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
         </div>
+
+        {/* THE ORACLE POOL — the tree, reflected in still water at dusk */}
+        <OraclePool
+          clarity={poolClarity}
+          daysTended={ciWeek.length}
+          pebbleCount={pebbleCount}
+          pebbleToday={pebbleToday}
+          insight={pebbleInsight}
+          onPebble={dropPebble}
+        />
 
         {isEmpty ? (
           <div style={styles.emptyBlock}>
@@ -354,12 +403,6 @@ export default function MirrorScreen() {
           </div>
         ) : (
           <>
-            <div style={styles.lead}>
-              <p style={styles.leadEyebrow}>The longer view</p>
-              <h1 style={styles.pageTitle}>Oracle of Vow</h1>
-              <p style={styles.pageSubtitle}>{firstName ? `${firstName}, the patterns underneath — gathered over time.` : 'The patterns underneath — gathered over time.'}</p>
-            </div>
-
             {/* TOP: Fracture (reclaim) OR the Seal + Oracle */}
             {isReclaim && fr ? (
               <div style={styles.clinicalCard}>
@@ -484,11 +527,12 @@ export default function MirrorScreen() {
 }
 
 const styles = {
-  frame: { minHeight: '100vh', background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)', padding: '2rem 1rem', display: 'flex', justifyContent: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  frame: { minHeight: '100vh', background: 'linear-gradient(180deg, #FDFBF6 0%, #F6EFDD 100%)', padding: '2rem 1rem', display: 'flex', justifyContent: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
   phone: { background: '#FAF7F1', maxWidth: '440px', width: '100%', borderRadius: '28px', padding: '1.5rem 1.5rem 2rem', boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' },
   loading: { textAlign: 'center', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', padding: '4rem 0' },
 
-  topRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  topRow: { position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  brandCenter: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', pointerEvents: 'none' },
   profileBtn: { background: 'transparent', border: 'none', color: '#854F0B', cursor: 'pointer', padding: '4px 8px', minWidth: '40px', display: 'flex', justifyContent: 'flex-end' },
 
   lead: { padding: '0.25rem 0 0.25rem' },
