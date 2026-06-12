@@ -4,6 +4,7 @@ import { getTodayQuote } from './data/quotes'
 import { ARTICLES } from './data/articles'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
+import NightSky from './NightSky'
 
 // =====================================================================
 // MOTIVATION — "The Antidote to Amnesia."
@@ -146,6 +147,7 @@ export default function MotivationHome() {
   const [trackerId, setTrackerId] = useState(null)
   const [theme, setTheme] = useState(null)
   const [override, setOverride] = useState(false)
+  const [readSlugs, setReadSlugs] = useState([])
 
   useEffect(() => {
     let active = true
@@ -187,6 +189,10 @@ export default function MotivationHome() {
         .select('name, relationship').eq('user_id', user.id).limit(3)
       if (active && anchorRows) setAnchors(anchorRows)
 
+      const { data: readRows } = await supabase.from('free_stage_signals')
+        .select('payload').eq('user_id', user.id).eq('signal_type', 'motivation_read')
+      if (active && readRows) setReadSlugs(readRows.map(r => r.payload?.slug).filter(Boolean))
+
       const { data: trk } = await supabase.from('trackers')
         .select('id, start_date').eq('user_id', user.id).eq('is_active', true).order('created_at').limit(1)
       if (active && trk && trk[0]) {
@@ -205,52 +211,60 @@ export default function MotivationHome() {
   const themed = theme ? visibleArticles.filter(a => (THEME_MAP[theme] || []).includes(a.slug)) : visibleArticles
   const vowDateStr = vowDate ? new Date(vowDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null
 
+  const readCount = visibleArticles.filter(a => readSlugs.includes(a.slug)).length
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
 
         <div style={styles.header}>
           <div style={{ width: '40px' }} />
-          <p style={styles.headerTitle}>Motivation</p>
+          <p style={styles.headerTitle}>Vow</p>
           <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
         </div>
 
-        {/* THE PRIMARY ARTIFACT — their own Vow as the hero */}
-        <div style={styles.artifact}>
-          {vow ? (
-            <>
-              <p style={styles.artifactVow}>"{vow}"</p>
-              <p style={styles.artifactMeta}>{vowDateStr ? `WRITTEN BY YOU · ${vowDateStr.toUpperCase()}` : 'WRITTEN BY YOU'} · DON'T LET TONIGHT ERASE THIS</p>
-            </>
-          ) : why ? (
-            <>
-              <p style={styles.artifactVow}>"{why}"</p>
-              <p style={styles.artifactMeta}>YOUR REASON · THE ONE THAT STARTED THIS</p>
-            </>
-          ) : (
-            <>
-              <p style={styles.artifactEmpty}>Your vow will live here — the largest thing on the screen.</p>
-              <p style={styles.artifactMeta}>WRITE IT IN THE COMMIT STAGE, AND IT BECOMES YOUR ANCHOR HERE</p>
-            </>
-          )}
+        {/* THE NIGHT SKY — the tree, drawn in stars */}
+        <NightSky
+          lit={readCount}
+          total={visibleArticles.length}
+          quote={todayQuote.text}
+          attribution={todayQuote.attribution}
+        />
+
+        {/* YOUR VOW — the illuminated artifact */}
+        <div>
+          <p style={styles.sectionLabel}>Your vow</p>
+          <div style={styles.vowCard}>
+            <span style={styles.vowQuoteMark}>&ldquo;</span>
+            {vow ? (
+              <>
+                <p style={styles.vowText}>{vow}</p>
+                <p style={styles.vowMeta}>&mdash; sealed {vowDateStr || 'by you'} &middot; don&rsquo;t let tonight erase this</p>
+              </>
+            ) : why ? (
+              <>
+                <p style={styles.vowText}>{why}</p>
+                <p style={styles.vowMeta}>&mdash; your reason, the one that started this</p>
+              </>
+            ) : (
+              <>
+                <p style={styles.vowEmpty}>Your vow will live here.</p>
+                <p style={styles.vowMeta}>write it in Getting ready, and it becomes your anchor here</p>
+              </>
+            )}
+          </div>
         </div>
 
         {/* THE OVERRIDE — break glass */}
-        <button style={styles.overrideBtn} onClick={() => setOverride(true)}>
-          <span style={styles.overrideBolt}>⚡</span>
+        <button style={styles.override} onClick={() => setOverride(true)}>
+          <span style={styles.overrideDot} />
           <span style={styles.overrideLabel}>The urge is here</span>
         </button>
 
-        {/* FROM THE ARCHITECTS — the daily quote, demoted */}
-        <div style={styles.architectsCard}>
-          <p style={styles.architectsLabel}>From the architects</p>
-          <p style={styles.architectsQuote}>{todayQuote.text}</p>
-          {todayQuote.attribution && <p style={styles.architectsAttr}>— {todayQuote.attribution}</p>}
-        </div>
-
-        {/* THE APOTHECARY — essays for tonight's weather */}
-        <div style={styles.apothecary}>
-          <p style={styles.weatherTitle}>What's the weather tonight?</p>
+        {/* THE SHELF — essays for tonight's weather */}
+        <div>
+          <p style={styles.sectionLabel}>The shelf</p>
+          <p style={styles.weatherTitle}>What&rsquo;s the weather tonight?</p>
           <div style={styles.pillRow}>
             <button onClick={() => setTheme(null)} style={{ ...styles.pill, ...(theme === null ? styles.pillActive : {}) }}>All</button>
             {THEMES.map(t => (
@@ -258,15 +272,31 @@ export default function MotivationHome() {
                 style={{ ...styles.pill, ...(theme === t.key ? styles.pillActive : {}) }}>{t.label}</button>
             ))}
           </div>
-          <div style={styles.essayList}>
+          <div style={styles.shelfList}>
             {themed.length === 0 ? (
-              <p style={styles.essayEmpty}>Nothing tagged for that yet — try another, or “All”.</p>
-            ) : themed.map(a => (
-              <button key={a.id} onClick={() => navigate(`/app/motivation/article/${a.slug}`)} style={styles.essayCard}>
-                <p style={styles.essayTitle}>{a.title}</p>
-                <span style={styles.essayMeta}>{a.readMinutes} min</span>
-              </button>
-            ))}
+              <p style={styles.shelfEmpty}>Nothing tagged for that yet &mdash; try another, or &ldquo;All&rdquo;.</p>
+            ) : themed.map(a => {
+              const isRead = readSlugs.includes(a.slug)
+              return (
+                <button key={a.id} onClick={() => navigate(`/app/motivation/article/${a.slug}`)} style={styles.row}>
+                  <span style={styles.rowGlyph}>
+                    {isRead ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="#D9B57A"><path d="M12 3l2.2 5.3L20 9l-4.3 3.8L17 19l-5-3-5 3 1.3-6.2L4 9l5.8-.7z" /></svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D9B57A" strokeWidth="1.5"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z" /><path d="M5 4v13a3 3 0 003 3" /></svg>
+                    )}
+                  </span>
+                  <span style={styles.rowText}>
+                    <span style={styles.rowTitle}>{a.title}</span>
+                    {a.subtitle && <span style={styles.rowSub}>{a.subtitle}</span>}
+                  </span>
+                  <span style={styles.rowMeta}>
+                    <span style={isRead ? styles.litStar : styles.hollowStar}>{isRead ? '✦' : '✧'}</span>
+                    <span style={styles.rowMetaText}>{isRead ? 'read' : `${a.readMinutes} min`}</span>
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -288,41 +318,41 @@ export default function MotivationHome() {
 }
 
 const styles = {
-  frame: { minHeight: '100vh', background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)', padding: '2rem 1rem', display: 'flex', justifyContent: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  phone: { background: '#FAF7F1', maxWidth: '440px', width: '100%', borderRadius: '28px', padding: '1.5rem 1.5rem 2.5rem', boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)', display: 'flex', flexDirection: 'column', gap: '18px' },
+  frame: { minHeight: '100vh', background: 'linear-gradient(180deg, #FDFBF6 0%, #F6EFDD 100%)', padding: '1.25rem 1rem 2rem', display: 'flex', justifyContent: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  phone: { maxWidth: '440px', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' },
 
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  headerTitle: { fontSize: '17px', fontWeight: 500, color: '#2A1F15', margin: 0, fontFamily: 'Georgia, serif', textAlign: 'center', flex: 1 },
+  headerTitle: { fontSize: '17px', fontWeight: 500, color: '#3A2A1C', margin: 0, fontFamily: 'Georgia, serif', fontStyle: 'italic', letterSpacing: '0.04em', textAlign: 'center', flex: 1 },
   profileBtn: { background: 'transparent', border: 'none', color: '#854F0B', cursor: 'pointer', padding: '4px 8px', minWidth: '40px', display: 'flex', justifyContent: 'flex-end' },
 
-  // The Primary Artifact
-  artifact: { padding: '1.5rem 0.5rem 1.75rem', textAlign: 'center' },
-  artifactVow: { fontSize: '26px', lineHeight: 1.4, color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 500, margin: '0 0 1.25rem', letterSpacing: '-0.01em' },
-  artifactEmpty: { fontSize: '20px', lineHeight: 1.5, color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 1.25rem' },
-  artifactMeta: { fontSize: '9.5px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.6 },
+  sectionLabel: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.16em', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '4px 2px 9px' },
 
-  // The Override button
-  overrideBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '18px', borderRadius: '16px', border: '1px solid rgba(217,181,122,0.4)', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', boxShadow: '0 10px 26px -10px rgba(40,25,10,0.5)', cursor: 'pointer', fontFamily: 'Georgia, serif' },
-  overrideBolt: { fontSize: '17px' },
-  overrideLabel: { fontSize: '16px', color: '#D9B57A', letterSpacing: '0.04em', fontWeight: 500 },
+  vowCard: { position: 'relative', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', padding: '20px 18px 14px', boxShadow: '0 3px 14px rgba(120,90,40,0.07)' },
+  vowQuoteMark: { position: 'absolute', top: '4px', left: '11px', fontFamily: 'Georgia, serif', fontSize: '34px', color: '#D9B57A', opacity: 0.55, lineHeight: 1 },
+  vowText: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '16px', color: '#2A1F15', lineHeight: 1.6, margin: '4px 0 0', textAlign: 'center' },
+  vowEmpty: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '15px', color: '#9C8C78', lineHeight: 1.6, margin: '4px 0 0', textAlign: 'center' },
+  vowMeta: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '10.5px', color: '#9C8C78', textAlign: 'right', margin: '10px 0 0' },
 
-  // From the Architects
-  architectsCard: { background: 'linear-gradient(180deg, #2E2114 0%, #1F1410 100%)', borderRadius: '18px', padding: '20px 22px', boxShadow: '0 8px 22px -12px rgba(40,25,10,0.4)' },
-  architectsLabel: { fontSize: '9.5px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 12px' },
-  architectsQuote: { fontSize: '17px', color: '#F4ECDD', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, margin: 0 },
-  architectsAttr: { fontSize: '12px', color: '#B89456', fontFamily: 'Georgia, serif', margin: '12px 0 0' },
+  override: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '13px', border: 'none', borderRadius: '999px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', boxShadow: '0 5px 16px -5px rgba(30,18,8,0.45)', cursor: 'pointer', fontFamily: 'Georgia, serif' },
+  overrideDot: { width: '7px', height: '7px', borderRadius: '50%', background: '#C5572C', boxShadow: '0 0 8px rgba(197,87,44,0.8)' },
+  overrideLabel: { fontSize: '13.5px', color: '#FAF7F1', fontWeight: 500 },
 
-  // The Apothecary
-  apothecary: { paddingTop: '0.25rem' },
-  weatherTitle: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 14px' },
-  pillRow: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' },
-  pill: { padding: '7px 14px', borderRadius: '999px', border: '0.5px solid #DDCFB6', background: '#FFFFFF', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontSize: '12.5px', cursor: 'pointer', transition: 'all 0.15s' },
+  weatherTitle: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 11px' },
+  pillRow: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' },
+  pill: { padding: '7px 14px', borderRadius: '999px', border: '0.5px solid #DDCFB6', background: '#FDFBF6', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontSize: '12.5px', cursor: 'pointer', transition: 'all 0.15s' },
   pillActive: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A', border: '0.5px solid #3A2A1C' },
-  essayList: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  essayCard: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '16px', background: 'white', border: '0.5px solid #E8DFD0', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', gap: '12px', boxShadow: '0 2px 6px rgba(80,50,20,0.04)' },
-  essayTitle: { fontSize: '15px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.35, flex: 1 },
-  essayMeta: { fontSize: '11px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontVariantNumeric: 'tabular-nums', flexShrink: 0 },
-  essayEmpty: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', padding: '1rem 0', margin: 0 },
+
+  shelfList: { display: 'flex', flexDirection: 'column', gap: '9px' },
+  shelfEmpty: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', padding: '1rem 0', margin: 0 },
+  row: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '13px', background: '#FDFBF6', border: '0.5px solid #E8DFD0', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' },
+  rowGlyph: { width: '40px', height: '40px', flexShrink: 0, borderRadius: '12px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid rgba(217,181,122,0.35)' },
+  rowText: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' },
+  rowTitle: { fontSize: '14px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
+  rowSub: { fontSize: '11.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
+  rowMeta: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px', flexShrink: 0 },
+  litStar: { color: '#C9A85C', fontSize: '15px', lineHeight: 1 },
+  hollowStar: { color: '#C9B894', fontSize: '15px', lineHeight: 1, opacity: 0.6 },
+  rowMetaText: { fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontVariantNumeric: 'tabular-nums' },
 }
 
 const oStyles = {

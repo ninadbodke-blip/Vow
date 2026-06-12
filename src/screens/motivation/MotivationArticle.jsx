@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { supabase } from '../../supabaseClient'
 import { getArticleBySlug } from './data/articles'
 
 export default function MotivationArticle() {
@@ -26,6 +28,7 @@ export default function MotivationArticle() {
     <div style={styles.frame}>
       <div style={styles.phone}>
         <Header navigate={navigate} />
+        <ReadTracker article={article} />
 
         {/* HERO */}
         <div style={styles.hero}>
@@ -75,6 +78,103 @@ export default function MotivationArticle() {
   )
 }
 
+// ===================================================================
+// READ TRACKER — the honest read detector.
+// ===================================================================
+// A star is earned only when BOTH are true: the article has been
+// visibly open for at least 45% of its estimated read time (minimum
+// 25 seconds — the clock pauses whenever the tab loses focus), AND
+// the reader has actually reached ~88% of the way down. Open-and-
+// close earns nothing; a real read earns the beat and one signal:
+// free_stage_signals · signal_type 'motivation_read' ·
+// payload { slug, date, seconds, depth } — once per article, ever.
+// Renders the gold reading hairline at the top and, on earning,
+// the floating "A star lit in your sky" beat.
+// ===================================================================
+function ReadTracker({ article }) {
+  const [progress, setProgress] = useState(0)
+  const [earned, setEarned] = useState(false)
+  const alreadyRef = useRef(true)   // assume read until proven otherwise
+  const secsRef = useRef(0)
+  const depthRef = useRef(0)
+  const doneRef = useRef(false)
+
+  const needSecs = Math.max(25, Math.round((article.readMinutes || 4) * 60 * 0.45))
+
+  useEffect(() => {
+    let cancelled = false
+    async function check() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+      const { data } = await supabase
+        .from('free_stage_signals')
+        .select('payload')
+        .eq('user_id', user.id)
+        .eq('signal_type', 'motivation_read')
+      if (cancelled) return
+      const slugs = (data || []).map(r => r.payload?.slug)
+      alreadyRef.current = slugs.includes(article.slug)
+    }
+    check()
+    return () => { cancelled = true }
+  }, [article.slug])
+
+  useEffect(() => {
+    const onScroll = () => {
+      const doc = document.documentElement
+      const depth = Math.min(1, (window.scrollY + window.innerHeight) / Math.max(1, doc.scrollHeight))
+      if (depth > depthRef.current) depthRef.current = depth
+      setProgress(depth)
+      maybeEarn()
+    }
+    const tick = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        secsRef.current += 1
+        maybeEarn()
+      }
+    }, 1000)
+    async function maybeEarn() {
+      if (doneRef.current || alreadyRef.current) return
+      if (secsRef.current < needSecs || depthRef.current < 0.88) return
+      doneRef.current = true
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { doneRef.current = false; return }
+      const d = new Date()
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const { error } = await supabase.from('free_stage_signals').insert({
+        user_id: user.id, stage: 'notice', signal_type: 'motivation_read',
+        payload: { slug: article.slug, date, seconds: secsRef.current, depth: Math.round(depthRef.current * 100) },
+      })
+      if (error) { doneRef.current = false; return }
+      setEarned(true)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => { window.removeEventListener('scroll', onScroll); clearInterval(tick) }
+  }, [article.slug, needSecs])
+
+  return (
+    <>
+      <div style={trk.track}>
+        <div style={{ ...trk.fill, width: `${Math.round(progress * 100)}%` }} />
+      </div>
+      {earned && (
+        <div style={trk.beat}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="#EFDCAF"><path d="M12 3l2.2 5.3L20 9l-4.3 3.8L17 19l-5-3-5 3 1.3-6.2L4 9l5.8-.7z" /></svg>
+          <span style={trk.beatText}>A star lit in your sky.</span>
+        </div>
+      )}
+    </>
+  )
+}
+
+const trk = {
+  track: { position: 'sticky', top: 0, zIndex: 5, height: '3px', background: '#EFE7D7', margin: '-1.5rem -2rem 1.25rem', borderRadius: '2px' },
+  fill: { height: '3px', background: 'linear-gradient(90deg, #D9B57A, #C9A85C)', transition: 'width 0.15s ease-out', borderRadius: '2px' },
+  beat: { position: 'fixed', left: '50%', bottom: '26px', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: '8px', padding: '11px 18px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '999px', boxShadow: '0 10px 28px -8px rgba(30,18,8,0.55)', border: '0.5px solid rgba(217,181,122,0.4)' },
+  beatText: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '12.5px', color: '#EFDCAF' },
+}
+
 function Header({ navigate }) {
   return (
     <div style={styles.topBar}>
@@ -88,7 +188,7 @@ function Header({ navigate }) {
 const styles = {
   frame: {
     minHeight: '100vh',
-    background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',
+    background: 'linear-gradient(180deg, #FDFBF6 0%, #F6EFDD 100%)',
     padding: '2rem 1rem',
     display: 'flex',
     justifyContent: 'center',
