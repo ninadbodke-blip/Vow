@@ -82,9 +82,9 @@ export default function MotivationArticle() {
 // READ TRACKER — the honest read detector.
 // ===================================================================
 // A star is earned only when BOTH are true: the article has been
-// visibly open for at least 45% of its estimated read time (minimum
-// 25 seconds — the clock pauses whenever the tab loses focus), AND
-// the reader has actually reached ~88% of the way down. Open-and-
+// visibly open for at least 25% of its estimated read time (minimum
+// 15 seconds — the clock pauses whenever the tab loses focus), AND
+// the reader has actually reached ~85% of the way down. Open-and-
 // close earns nothing; a real read earns the beat and one signal:
 // free_stage_signals · signal_type 'motivation_read' ·
 // payload { slug, date, seconds, depth } — once per article, ever.
@@ -99,7 +99,7 @@ function ReadTracker({ article }) {
   const depthRef = useRef(0)
   const doneRef = useRef(false)
 
-  const needSecs = Math.max(25, Math.round((article.readMinutes || 4) * 60 * 0.45))
+  const needSecs = Math.max(15, Math.round((article.readMinutes || 4) * 60 * 0.25))
 
   useEffect(() => {
     let cancelled = false
@@ -135,7 +135,7 @@ function ReadTracker({ article }) {
     }, 1000)
     async function maybeEarn() {
       if (doneRef.current || alreadyRef.current) return
-      if (secsRef.current < needSecs || depthRef.current < 0.88) return
+      if (secsRef.current < needSecs || depthRef.current < 0.85) return
       doneRef.current = true
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { doneRef.current = false; return }
