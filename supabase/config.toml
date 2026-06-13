@@ -1,0 +1,17 @@
+# Supabase project configuration.
+project_id = "wawvqiahdywadnlwzlrh"
+
+# ---- Edge Functions ----
+# create-order does NOT need a signed-in user — it only asks Razorpay to create
+# an order with a server-fixed amount. Disabling JWT verification lets it run for
+# anyone who has reached the paywall (the gateway otherwise 401s without a real
+# user token). No sensitive data is exposed: the amount is fixed server-side and
+# the secret never leaves the function.
+[functions.create-order]
+verify_jwt = false
+
+# verify-payment MUST identify the user (it writes the entitlement to them), so
+# it keeps JWT verification ON. Our code also re-derives the user from the token
+# inside the function as defense in depth.
+[functions.verify-payment]
+verify_jwt = true
