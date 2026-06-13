@@ -48,8 +48,11 @@ export default function TriggerChecklist({
 
   const handleSave = () => {
     if (!canSave) return
+    const trigById = Object.fromEntries((triggers || []).map(t => [t.id, t.label]))
     onSave({
       selected_triggers: selectedIds,
+      // {id,label} objects so the portrait can group + render without the dictionary.
+      selected_trigger_objects: selectedIds.map(id => ({ id, label: trigById[id] || id })),
       custom_triggers: validCustoms.map(c => c.trim()),
     })
   }

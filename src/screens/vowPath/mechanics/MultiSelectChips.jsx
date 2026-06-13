@@ -51,6 +51,9 @@ export default function MultiSelectChips({
   const save = (core) => {
     onSave({
       selected_chips: selectedIds,
+      // Resolved {id,label} objects so downstream views (the portrait) don't
+      // have to know the chip dictionary. Back-compat: selected_chips (ids) kept.
+      selected_chip_objects: selectedIds.map(id => ({ id, label: byId[id] || id })),
       custom_additions: customs.map(c => c.label),
       custom_chips: customs.map(c => c.label),
       custom_addition: customs[0]?.label || null,

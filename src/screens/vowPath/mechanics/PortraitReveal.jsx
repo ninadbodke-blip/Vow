@@ -88,7 +88,9 @@ export default function PortraitReveal({ substance, onSave, saving }) {
   }
 
   // ---- Extract specific artifacts ----
-  const day1 = artifacts['reflect_day_1_arrival']
+  const TRIGGER_LABEL = { stress: 'Stress', boredom: 'Boredom', loneliness: 'Loneliness', anger: 'Anger', anxiety: 'Anxiety', sadness: 'Sadness', avoidance: 'Avoidance', sleep: 'Sleep', time_of_day: 'A time of day', habit: 'Habit / routine', people: 'Certain people', places: 'Certain places', celebration: 'Celebration', sex: 'Sex / intimacy' }
+  const DURATION_BAND_LABEL = { less_than_6_months: 'Under 6 months', '6_to_12_months': '6–12 months', '1_to_3_years': '1–3 years', '3_to_5_years': '3–5 years', '5_to_10_years': '5–10 years', more_than_10_years: '10+ years' }
+    const day1 = artifacts['reflect_day_1_arrival']
   const day2 = artifacts['reflect_day_2_landscape']
   const day3 = artifacts['reflect_day_3_triggers']
   const day4 = artifacts['reflect_day_4_truth_sort']
@@ -125,10 +127,12 @@ export default function PortraitReveal({ substance, onSave, saving }) {
       </div>
 
       {/* Day 1 — What brought you here (quoted reasons) */}
-      {(day1?.selected_chips?.length > 0 || day1?.custom_chips?.length > 0) && (
+      {(day1?.selected_chip_objects?.length > 0 || day1?.selected_chips?.length > 0 || day1?.custom_chips?.length > 0) && (
         <PortraitSection label="Day 1" title="What brought you here">
           <div style={styles.quotedReasonsBlock}>
-            {day1?.selected_chips?.map((chip, i) => (
+            {(day1?.selected_chip_objects
+              || (day1?.selected_chips || []).map(c => (typeof c === 'string' ? { label: c } : c))
+            )?.map((chip, i) => (
               <div key={`sel-${i}`} style={styles.quotedReason}>
                 <span style={styles.quoteMark}>"</span>
                 <p style={styles.quotedReasonText}>{chip.label}</p>
@@ -154,7 +158,7 @@ export default function PortraitReveal({ substance, onSave, saving }) {
             <div style={styles.landscapeRow}>
               <div style={styles.landscapeStat}>
                 <div style={styles.landscapeNumber}>
-                  {day2.frequency_per_week || day2.frequency || '—'}
+                  {day2.frequency_per_week || day2.days_per_week || day2.frequency || '—'}
                 </div>
                 <div style={styles.landscapeStatLabel}>
                   times a week
@@ -175,16 +179,21 @@ export default function PortraitReveal({ substance, onSave, saving }) {
                 </>
               )}
 
-              {day2.years_pattern && (
+              {(day2.years_pattern || day2.duration_band) && (
                 <>
                   <div style={styles.landscapeDivider}></div>
                   <div style={styles.landscapeStat}>
-                    <div style={styles.landscapeNumber}>
-                      {day2.years_pattern}
-                    </div>
-                    <div style={styles.landscapeStatLabel}>
-                      {day2.years_pattern === 1 ? 'year' : 'years'}
-                    </div>
+                    {day2.years_pattern ? (
+                      <>
+                        <div style={styles.landscapeNumber}>{day2.years_pattern}</div>
+                        <div style={styles.landscapeStatLabel}>{day2.years_pattern === 1 ? 'year' : 'years'}</div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={styles.landscapeNumberSmall}>{DURATION_BAND_LABEL[day2.duration_band] || day2.duration_band}</div>
+                        <div style={styles.landscapeStatLabel}>how long</div>
+                      </>
+                    )}
                   </div>
                 </>
               )}
@@ -197,10 +206,11 @@ export default function PortraitReveal({ substance, onSave, saving }) {
       )}
 
       {/* Day 3 — Triggers (grouped by category) */}
-      {(day3?.selected_triggers?.length > 0 || day3?.custom_triggers?.length > 0) && (
+      {(day3?.selected_trigger_objects?.length > 0 || day3?.selected_triggers?.length > 0 || day3?.custom_triggers?.length > 0) && (
         <PortraitSection label="Day 3" title="Your trigger map">
           <TriggerGrouped
-            triggers={day3?.selected_triggers || []}
+            triggers={day3?.selected_trigger_objects
+              || (day3?.selected_triggers || []).map(t => (typeof t === 'string' ? { id: t, label: TRIGGER_LABEL[t] || t.replace(/_/g, ' ') } : t))}
             customs={day3?.custom_triggers || []}
           />
         </PortraitSection>

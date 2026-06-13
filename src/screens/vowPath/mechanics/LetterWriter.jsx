@@ -7,6 +7,7 @@ export default function LetterWriter({
   starterPrompts,
   unsealOnKey,
   minWords = 20,
+  suggestedWords = 0,
   helperText,
   dayNumber,
   substance,
@@ -50,7 +51,9 @@ export default function LetterWriter({
 
   const wordCount = letterText.trim().split(/\s+/).filter(Boolean).length
   const canSeal = wordCount >= minWords
-  const progressPct = Math.min(100, Math.round((wordCount / minWords) * 100))
+  const progressGoal = suggestedWords > minWords ? suggestedWords : minWords
+  const progressPct = Math.min(100, Math.round((wordCount / progressGoal) * 100))
+  const reachedSuggested = suggestedWords > 0 && wordCount >= suggestedWords
 
   // Compute the unseal-on day text for the seal warning
   const unsealOnLabel = (() => {
@@ -90,7 +93,7 @@ export default function LetterWriter({
           <span style={styles.wordCount}>
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
             {minWords > 0 && (
-              <span style={styles.wordCountTarget}>{` / ${minWords} minimum`}</span>
+              <span style={styles.wordCountTarget}>{suggestedWords > 0 ? ` / ${suggestedWords} suggested` : ` / ${minWords} minimum`}</span>
             )}
           </span>
           {existingLetter && !existingLetter.is_sealed && (
@@ -101,6 +104,9 @@ export default function LetterWriter({
         {minWords > 0 && (
           <div style={styles.progressTrack}>
             <div style={{ ...styles.progressFill, width: `${progressPct}%` }} />
+            {suggestedWords > minWords && (
+              <div style={{ ...styles.progressSuggestMark, left: `${Math.min(100, (minWords / suggestedWords) * 100)}%` }} title="minimum" />
+            )}
           </div>
         )}
 
@@ -140,7 +146,12 @@ export default function LetterWriter({
 
         {!canSeal && (
           <p style={styles.helpText}>
-            {`Write at least ${minWords} words before sealing. You're at ${wordCount}.`}
+            {`A few more — aim for at least ${minWords} words before sealing. You're at ${wordCount}.`}
+          </p>
+        )}
+        {canSeal && suggestedWords > 0 && !reachedSuggested && (
+          <p style={styles.suggestText}>
+            {`You can seal this now. If it helps, ${suggestedWords - wordCount} more words would let it breathe — most people find ${suggestedWords} feels right.`}
           </p>
         )}
       </div>
@@ -329,6 +340,8 @@ const styles = {
     fontStyle: 'italic',
     fontVariantNumeric: 'tabular-nums',
   },
+  suggestText: { fontSize: '12.5px', color: '#7C6A52', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: '10px 0 0', textAlign: 'center' },
+  progressSuggestMark: { position: 'absolute', top: '-2px', width: '1.5px', height: 'calc(100% + 4px)', background: '#C9A85C', opacity: 0.8 },
   wordCountTarget: {
     color: '#9C8C78',
     opacity: 0.7,
@@ -351,7 +364,7 @@ const styles = {
     border: '0.5px solid #EFE7D7',
     borderRadius: '10px',
   },
-  progressTrack: {
+  progressTrack: { position: 'relative',
     height: '3px',
     background: '#EFE7D7',
     borderRadius: '999px',

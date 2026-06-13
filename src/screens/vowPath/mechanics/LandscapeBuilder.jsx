@@ -44,8 +44,13 @@ export default function LandscapeBuilder({ substance, existingData, onSave, savi
     const lifetimeEstimate = Math.round(
       (daysPerWeek / 7) * lifetimeDays * amountPerSession
     )
+    const DURATION_YEARS = { less_than_6_months: 0.5, '6_to_12_months': 1, '1_to_3_years': 2, '3_to_5_years': 4, '5_to_10_years': 7, more_than_10_years: 10 }
     onSave({
       days_per_week: daysPerWeek,
+      // Aliases the portrait reads (frequency_per_week / years_pattern) so the
+      // landscape card fills instead of showing dashes. Originals kept.
+      frequency_per_week: daysPerWeek,
+      years_pattern: DURATION_YEARS[duration] ?? null,
       amount_per_session: amountPerSession,
       amount_unit: substanceMeta.unit,
       duration_band: duration,

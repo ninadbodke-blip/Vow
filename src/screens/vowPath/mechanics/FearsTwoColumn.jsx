@@ -97,16 +97,25 @@ export default function FearsTwoColumn({
   }
 
   // ---------- shared bits ----------
+  const WEIGHT_WORD = ['', 'light', 'some', 'real', 'heavy', 'crushing']
   const Heft = ({ id, color }) => {
     const w = weights[id] || DEFAULT_W
+    const pct = ((w - 1) / 4) * 100
     return (
       <div style={S.heftWrap}>
-        <div style={S.heftBars}>
-          {[1, 2, 3, 4, 5].map(n => (
-            <button key={n} onClick={() => setWeights(p => ({ ...p, [id]: n }))}
-              style={{ ...S.heftBar, height: `${7 + n * 4}px`, background: n <= w ? color : '#E6DAC6' }} />
-          ))}
+        <div style={S.sliderRow}>
+          <span style={S.sliderTrack}>
+            <span style={{ ...S.sliderFill, width: `${pct}%`, background: color, opacity: 0.45 + (w / 5) * 0.55 }} />
+          </span>
+          <input
+            type="range" min="1" max="5" step="1" value={w}
+            onChange={(e) => setWeights(p => ({ ...p, [id]: Number(e.target.value) }))}
+            className="vowFearSlider"
+            aria-label="How heavy this fear sits"
+            style={{ ...S.slider, '--vow-thumb': color }}
+          />
         </div>
+        <span style={{ ...S.weightWord, color }}>{WEIGHT_WORD[w]}</span>
       </div>
     )
   }
@@ -175,7 +184,7 @@ export default function FearsTwoColumn({
             <p style={{ ...S.colSub, color: c.color, fontStyle: 'normal', fontWeight: 600, letterSpacing: '0.04em' }}>{title}</p>
           </div>
           {items.map(it => (
-            <div key={it.id} style={S.weighRow}>
+            <div key={it.id} style={S.weighRowCol}>
               <span style={S.weighLabel}>{it.label}</span>
               <Heft id={it.id} color={c.color} />
             </div>
@@ -185,7 +194,13 @@ export default function FearsTwoColumn({
     }
     return (
       <div>
-        <p style={S.lead}>Now give each one a weight — not how likely it is, but how <em>heavy</em> it sits. Some fears are loud but light; some are quiet but enormous.</p>
+        <style>{`
+          .vowFearSlider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--vow-thumb, #C5572C); border: 2px solid #FBF6EA; box-shadow: 0 2px 6px rgba(60,30,10,0.35); cursor: pointer; }
+          .vowFearSlider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--vow-thumb, #C5572C); border: 2px solid #FBF6EA; box-shadow: 0 2px 6px rgba(60,30,10,0.35); cursor: pointer; }
+          .vowFearSlider::-webkit-slider-runnable-track { background: transparent; }
+          .vowFearSlider::-moz-range-track { background: transparent; }
+        `}</style>
+        <p style={S.lead}>Now give each one a weight — not how likely it is, but how <em>heavy</em> it sits. Slide each fear from light to crushing. Some are loud but light; some are quiet but enormous.</p>
         <div style={S.scaleHint}><span>barely there</span><span>crushing</span></div>
         {leftItems.length > 0 && <Block side="left" items={leftItems} title={leftColumn.subtitle || 'If I stop'} />}
         {rightItems.length > 0 && <Block side="right" items={rightItems} title={rightColumn.subtitle || "If I don't stop"} />}
@@ -271,9 +286,13 @@ const S = {
   addBtn: { background: 'transparent', border: '0.5px solid #C5572C', borderRadius: '10px', padding: '0 16px', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' },
   weighRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '10px 0', borderBottom: '0.5px solid #EEE6D7' },
   weighLabel: { fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.45, flex: 1 },
-  heftWrap: { flexShrink: 0 },
-  heftBars: { display: 'flex', alignItems: 'flex-end', gap: '4px', height: '28px' },
-  heftBar: { width: '11px', border: 'none', borderRadius: '3px', cursor: 'pointer', padding: 0, transition: 'background 0.12s' },
+  weighRowCol: { display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 0', borderBottom: '0.5px solid #EEE6D7' },
+  sliderRow: { position: 'relative', flex: 1, height: '26px', display: 'flex', alignItems: 'center' },
+  sliderTrack: { position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)', height: '10px', borderRadius: '6px', background: '#EFE7D7', overflow: 'hidden', pointerEvents: 'none' },
+  sliderFill: { display: 'block', height: '100%', borderRadius: '6px' },
+  slider: { position: 'relative', zIndex: 1, width: '100%', margin: 0, background: 'transparent', WebkitAppearance: 'none', appearance: 'none', height: '26px', cursor: 'pointer' },
+  weightWord: { fontSize: '12px', fontFamily: 'Georgia, serif', fontStyle: 'italic', minWidth: '56px', textAlign: 'right', flexShrink: 0 },
+  heftWrap: { width: '100%', display: 'flex', alignItems: 'center', gap: '10px' },
   scaleHint: { display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '-0.6rem 0 1rem', padding: '0 2px' },
   scaleCard: { background: 'linear-gradient(180deg, #FFFFFF 0%, #FBF7EF 100%)', border: '0.5px solid #E8DFD0', borderRadius: '18px', padding: '1.4rem 1rem 1.1rem', boxShadow: '0 3px 14px rgba(80,50,20,0.06)' },
   panLabels: { display: 'flex', gap: '10px', marginTop: '0.4rem' },

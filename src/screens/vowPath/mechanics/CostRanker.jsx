@@ -48,17 +48,6 @@ export default function CostRanker({ costs = [], existingData, onSave, saving })
     })
   }
 
-  const Heft = ({ id }) => {
-    const w = wOf(id)
-    return (
-      <div style={S.heftBars}>
-        {[1, 2, 3, 4, 5].map(n => (
-          <button key={n} onClick={() => setWeights(p => ({ ...p, [id]: n }))}
-            style={{ ...S.heftBar, height: `${7 + n * 4}px`, background: n <= w ? '#C5572C' : '#E6DAC6' }} />
-        ))}
-      </div>
-    )
-  }
 
   // ---------------- STEP 0 · RANK ----------------
   if (step === 0) {
@@ -95,18 +84,39 @@ export default function CostRanker({ costs = [], existingData, onSave, saving })
     : `You ranked ${labelOf(order[0])} first, but weighed ${labelOf(heaviest)} heaviest. That gap is worth sitting with — the cost that matters most in principle isn't always the one that actually presses on you day to day, and the one that presses is often the one that moves you.`
   return (
     <div>
-      <p style={S.lead}>Ranking tells you the order. Now the weight — how heavily does each of these actually sit on you? Drag each up. Order and weight aren't always the same thing.</p>
+      <style>{`
+        .vowCostSlider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(180deg,#C5572C,#9E3F1C); border: 2px solid #FBF6EA; box-shadow: 0 2px 6px rgba(60,30,10,0.35); cursor: pointer; }
+        .vowCostSlider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(180deg,#C5572C,#9E3F1C); border: 2px solid #FBF6EA; box-shadow: 0 2px 6px rgba(60,30,10,0.35); cursor: pointer; }
+        .vowCostSlider::-webkit-slider-runnable-track { background: transparent; }
+        .vowCostSlider::-moz-range-track { background: transparent; }
+      `}</style>
+      <p style={S.lead}>Ranking tells you the order. Now the weight — how heavily does each of these actually sit on you? Slide each one. Order and weight aren't always the same thing.</p>
       <div style={S.weighList}>
-        {order.map((id, i) => (
-          <div key={id} style={S.weighRow}>
-            <div style={S.weighHead}>
-              <span style={S.badgeSm}>{i + 1}</span>
-              <span style={S.weighLabel}>{labelOf(id)}</span>
-              <Heft id={id} />
+        {order.map((id, i) => {
+          const w = wOf(id)
+          const pct = ((w - 1) / 4) * 100
+          return (
+            <div key={id} style={S.weighRow}>
+              <div style={S.weighHead}>
+                <span style={S.badgeSm}>{i + 1}</span>
+                <span style={S.weighLabel}>{labelOf(id)}</span>
+                <span style={S.weighVal}>{['—', 'light', 'some', 'real', 'heavy', 'crushing'][w]}</span>
+              </div>
+              <div style={S.sliderWrap}>
+                <span style={S.barTrack}>
+                  <span style={{ ...S.barFill, width: `${pct}%`, opacity: 0.45 + (w / 5) * 0.55 }} />
+                </span>
+                <input
+                  type="range" min="1" max="5" step="1" value={w}
+                  onChange={(e) => setWeights(p => ({ ...p, [id]: Number(e.target.value) }))}
+                  className="vowCostSlider"
+                  aria-label={`How heavily ${labelOf(id)} sits on you`}
+                  style={S.slider}
+                />
+              </div>
             </div>
-            <span style={S.barTrack}><span style={{ ...S.barFill, width: `${(wOf(id) / 5) * 100}%`, opacity: 0.4 + (wOf(id) / 5) * 0.6 }} /></span>
-          </div>
-        ))}
+          )
+        })}
       </div>
       <p style={S.reading}>{reflection}</p>
       <div style={S.row2}>
@@ -134,10 +144,11 @@ const S = {
   weighHead: { display: 'flex', alignItems: 'center', gap: '10px' },
   badgeSm: { width: '20px', height: '20px', borderRadius: '50%', background: '#EFE7D7', color: '#854F0B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, fontFamily: 'Georgia, serif', flexShrink: 0 },
   weighLabel: { flex: 1, fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500 },
-  barTrack: { height: '9px', borderRadius: '5px', background: '#EFE7D7', overflow: 'hidden' },
+  weighVal: { fontSize: '12px', color: '#A05A28', fontFamily: 'Georgia, serif', fontStyle: 'italic', flexShrink: 0, minWidth: '56px', textAlign: 'right' },
+  sliderWrap: { position: 'relative', height: '26px', display: 'flex', alignItems: 'center' },
+  slider: { position: 'relative', zIndex: 1, width: '100%', margin: 0, background: 'transparent', WebkitAppearance: 'none', appearance: 'none', height: '26px', cursor: 'pointer' },
+  barTrack: { position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)', height: '10px', borderRadius: '6px', background: '#EFE7D7', overflow: 'hidden', pointerEvents: 'none' },
   barFill: { display: 'block', height: '100%', background: 'linear-gradient(90deg, #C9A86F 0%, #C5572C 100%)', borderRadius: '5px', transition: 'width 0.18s' },
-  heftBars: { display: 'flex', alignItems: 'flex-end', gap: '4px', height: '28px', flexShrink: 0 },
-  heftBar: { width: '11px', border: 'none', borderRadius: '3px', cursor: 'pointer', padding: 0, transition: 'background 0.12s' },
   reading: { fontSize: '15px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.65, margin: '1.3rem 0 1.3rem' },
   cta: { width: '100%', padding: '16px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(40,25,10,0.25)', marginTop: '1.2rem' },
   ctaOff: { background: '#C9B894', boxShadow: 'none', cursor: 'not-allowed' },

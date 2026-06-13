@@ -76,13 +76,24 @@ export default function OutcomeSorter({ outcomes = [], existingData, onSave, sav
     <div>
       <p style={S.lead}>Every outcome, placed by how you feel about it.</p>
       <div style={S.mapCard}>
-        <div style={S.mapField}>
+        <div style={{ ...S.mapField, height: `${outcomes.length * 26 + 16}px` }}>
           {outcomes.map((o, i) => {
             const v = valOf(o.id)
+            const xPct = 6 + ((v - 1) / 4) * 88           // clamp into [6,94] so nothing clips
+            const labelLeft = v >= 4                       // right-side dots → label sits to the LEFT
             return (
-              <div key={o.id} style={{ ...S.dotWrap, left: `${((v - 1) / 4) * 100}%`, top: `${8 + (i % 4) * 34}px` }}>
+              <div
+                key={o.id}
+                style={{
+                  ...S.dotWrap,
+                  left: `${xPct}%`,
+                  top: `${10 + i * 26}px`,
+                  flexDirection: labelLeft ? 'row-reverse' : 'row',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
                 <span style={{ ...S.dot, background: ZONE[bucketOf(v)] }} />
-                <span style={S.dotLabel}>{short(o)}</span>
+                <span style={{ ...S.dotLabel, [labelLeft ? 'marginRight' : 'marginLeft']: '5px' }}>{short(o)}</span>
               </div>
             )
           })}
@@ -114,10 +125,10 @@ const S = {
   sliderEnds: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '6px 0 0' },
   feelNow: { fontSize: '12px', fontStyle: 'normal', fontWeight: 600, fontFamily: 'Georgia, serif' },
   mapCard: { background: 'linear-gradient(180deg, #FFFFFF 0%, #FBF7EF 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', padding: '1rem 1rem 0.75rem', boxShadow: '0 3px 14px rgba(80,50,20,0.06)' },
-  mapField: { position: 'relative', height: '150px', borderLeft: '1px dashed #E0D5C2', borderRight: '1px dashed #E0D5C2', background: 'linear-gradient(90deg, rgba(197,87,44,0.05) 0%, rgba(255,255,255,0) 50%, rgba(122,140,90,0.06) 100%)' },
-  dotWrap: { position: 'absolute', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' },
+  mapField: { position: 'relative', borderLeft: '1px dashed #E0D5C2', borderRight: '1px dashed #E0D5C2', background: 'linear-gradient(90deg, rgba(197,87,44,0.05) 0%, rgba(255,255,255,0) 50%, rgba(122,140,90,0.06) 100%)' },
+  dotWrap: { position: 'absolute', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', zIndex: 1 },
   dot: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, boxShadow: '0 1px 3px rgba(60,40,20,0.2)' },
-  dotLabel: { fontSize: '11.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif' },
+  dotLabel: { fontSize: '11.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' },
   axis: { display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', marginTop: '8px', padding: '0 2px' },
   tally: { display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '12px', fontFamily: 'Georgia, serif', fontWeight: 600, margin: '0.9rem 0 0' },
   reading: { fontSize: '15px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.65, margin: '1rem 0 1.3rem' },
