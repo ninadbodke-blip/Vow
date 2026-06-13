@@ -76,7 +76,11 @@ export default function SignUp() {
         // WEB / PWA: existing full-page redirect flow (works fine in a browser).
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: window.location.origin },
+          // Return into the app, not the marketing root. /app is a pure gate:
+          // it routes a returning user to /app/home and a new user into
+          // onboarding. Sending the callback to window.location.origin landed
+          // people on the marketing page with a silent session.
+          options: { redirectTo: `${window.location.origin}/app` },
         })
         if (error) throw error
         // A successful call redirects the whole page to Google.
