@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { getIfThenScenarios, ifThenSocialHeader, ifThenSocialSubtext } from './ifThenScenarios'
 
 // =====================================================================
 // If-then library (Commit · Day 5) — implementation intentions, visual.
@@ -8,11 +9,15 @@ import { useState, useMemo } from 'react'
 // total_urge_breakers (shape preserved).
 // =====================================================================
 
-export default function IfThenLibraryBuilder({ data, onSave, saving, existingData }) {
+export default function IfThenLibraryBuilder({ data, substance, onSave, saving, existingData }) {
   const {
-    socialHeader = 'Social scripts.', socialSubtext = '', socialSituations = [],
     urgeBreakersHeader = 'Urge breakers.', urgeBreakersSubtext = '', urgeBreakerCategories = [],
   } = data || {}
+  // Social scenarios are chosen by what the person is actually quitting, not
+  // hardcoded to drinking. Urge breakers (above) are universal and stay in data.
+  const socialSituations = getIfThenScenarios(substance)
+  const socialHeader = ifThenSocialHeader(substance)
+  const socialSubtext = ifThenSocialSubtext(substance)
 
   const [phase, setPhase] = useState('social') // 'social' | 'urges'
   const [socialSel, setSocialSel] = useState(existingData?.social_scripts || {})
