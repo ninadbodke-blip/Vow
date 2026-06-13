@@ -262,6 +262,16 @@ export default function CommitDay() {
   // ---- COMMIT COMPLETION ----
   const handleCommitComplete = async () => {
     setCompleting(true)
+    // If the quit date is still ahead, do NOT flip the user into Endure yet —
+    // Endure begins on the quit date. We still send them to the transition
+    // screen, which shows the hold (and a "start now anyway" path that performs
+    // the real transition). Only transition-on-complete when the date is here.
+    const isFuture = await commitStopDateIsFuture()
+    if (isFuture) {
+      setCompleting(false)
+      navigate('/app/vow-path/transition/commit/to/endure')
+      return
+    }
     const result = await transitionFromCommit()
     if (result.error) {
       alert('Could not transition to Endure: ' + result.error)
@@ -269,6 +279,25 @@ export default function CommitDay() {
       return
     }
     navigate('/app/vow-path/transition/commit/to/endure')
+  }
+
+  // Reads the Day-1 stop date; true when it is still in the future.
+  const commitStopDateIsFuture = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return false
+      const { data: a } = await supabase
+        .from('vow_artifacts')
+        .select('content')
+        .eq('user_id', user.id)
+        .eq('artifact_type', 'commit_day_1')
+        .maybeSingle()
+      const ds = a?.content?.stop_date
+      if (!ds) return false
+      const d = new Date(ds); d.setHours(0, 0, 0, 0)
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      return d > today
+    } catch { return false }
   }
 
   const getBackLabel = () => {

@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { supabase } from '../../supabaseClient'
+import { transitionFromCommit } from './utils/stageTransitions'
 
 const TRANSITION_CONTENT = {
   'notice-to-reflect': {
@@ -72,6 +74,40 @@ export default function StageTransition() {
   const content = TRANSITION_CONTENT[key]
 
   const [phase, setPhase] = useState('arrival')
+  // For commit→endure: Endure should begin on the quit date, not the moment
+  // Commit's 10 days end. If the chosen date is still ahead, we hold the path.
+  const [stopInfo, setStopInfo] = useState(null) // { dateStr, daysAway } | null
+  const [stopLoaded, setStopLoaded] = useState(false)
+  const [startingEarly, setStartingEarly] = useState(false)
+  useEffect(() => {
+    if (key !== 'commit-to-endure') { setStopLoaded(true); return }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { if (!cancelled) setStopLoaded(true); return }
+        const { data: a } = await supabase
+          .from('vow_artifacts')
+          .select('content')
+          .eq('user_id', user.id)
+          .eq('artifact_type', 'commit_day_1')
+          .maybeSingle()
+        const ds = a?.content?.stop_date
+        if (ds) {
+          const d = new Date(ds); d.setHours(0, 0, 0, 0)
+          const today = new Date(); today.setHours(0, 0, 0, 0)
+          const daysAway = Math.round((d - today) / 86400000)
+          if (!cancelled && daysAway > 0) setStopInfo({ dateStr: ds, daysAway })
+        }
+      } catch { /* fall through to normal flow */ }
+      if (!cancelled) setStopLoaded(true)
+    })()
+    return () => { cancelled = true }
+  }, [key])
+
+  const prettyStop = stopInfo
+    ? new Date(stopInfo.dateStr).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+    : ''
 
   if (!content) {
     return (
@@ -149,6 +185,70 @@ export default function StageTransition() {
     )
   }
 
+  // While we're still checking the quit date, hold render (avoid flashing the
+  // plain "Enter Endure" button before the hold screen resolves).
+  if (key === 'commit-to-endure' && !stopLoaded && phase === 'continue') {
+    return (
+      <div style={styles.frame}>
+        <div style={{ ...styles.phone, ...styles.centeredPhone }}>
+          <div style={styles.continueOrnament}>· · ·</div>
+          <p style={styles.continueText}>One moment…</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Commit→Endure with a future quit date: hold the path until the date.
+  if (key === 'commit-to-endure' && stopLoaded && stopInfo) {
+    return (
+      <div style={styles.frame}>
+        <div style={{ ...styles.phone, ...styles.centeredPhone }}>
+          <div style={styles.continueOrnament}>· · ·</div>
+          <p style={styles.holdEyebrow}>Your quit date</p>
+          <h1 style={styles.holdDate}>{prettyStop}</h1>
+          <p style={styles.holdAway}>
+            {stopInfo.daysAway === 1 ? 'Tomorrow.' : `${stopInfo.daysAway} days from today.`}
+          </p>
+          <div style={styles.holdDivider} />
+          <p style={styles.holdBody}>
+            Endure is the structured path through the first days after you stop —
+            so it begins on your quit date, not before. Until then, the vow is
+            sealed and the date is set. Come back on {prettyStop} and Day Zero
+            will be waiting.
+          </p>
+          <p style={styles.holdBody}>
+            Keep using your home in the meantime — the countdown, your anchors,
+            and the daily check-ins are all there.
+          </p>
+          <button
+            onClick={() => navigate('/app/home')}
+            style={{ ...styles.primaryBtn, marginTop: '2.25rem' }}
+          >
+            Back to my home
+          </button>
+          <button
+            onClick={async () => {
+              if (startingEarly) return
+              setStartingEarly(true)
+              // Starting early means Day Zero is today: stamp endure_starts_at to now.
+              const r = await transitionFromCommit({ startNow: true })
+              if (r.error) { alert('Could not start Endure: ' + r.error); setStartingEarly(false); return }
+              navigate('/app/vow-path/endure')
+            }}
+            disabled={startingEarly}
+            style={styles.holdStartNow}
+          >
+            {startingEarly ? 'Starting…' : 'Start Endure now anyway'}
+          </button>
+          <p style={styles.holdAdvice}>
+            Endure works best begun on the day you actually stop. Starting it
+            early means Day Zero is today — only do this if your stop is really now.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={styles.frame}>
       <div style={{ ...styles.phone, ...styles.centeredPhone }}>
@@ -175,6 +275,13 @@ export default function StageTransition() {
 }
 
 const styles = {
+  holdEyebrow: { fontSize: '12px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#854F0B', fontFamily: 'Georgia, serif', margin: '0 0 12px', textAlign: 'center' },
+  holdDate: { fontSize: '26px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 6px', textAlign: 'center', lineHeight: 1.2 },
+  holdAway: { fontSize: '14px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, textAlign: 'center' },
+  holdDivider: { width: '54px', height: '1px', background: 'linear-gradient(90deg, transparent, #C9A85C, transparent)', margin: '20px auto' },
+  holdBody: { fontSize: '15px', color: '#4A3A28', fontFamily: 'Georgia, serif', lineHeight: 1.65, margin: '0 0 0.9rem', textAlign: 'center' },
+  holdStartNow: { width: '100%', marginTop: '14px', padding: '13px', background: 'transparent', color: '#854F0B', border: '0.5px solid #DDCFB6', borderRadius: '12px', fontSize: '13.5px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
+  holdAdvice: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: '12px 0 0', textAlign: 'center' },
   frame: {
     minHeight: '100vh',
     background: 'linear-gradient(180deg, #EFEAE0 0%, #F2EDE3 100%)',

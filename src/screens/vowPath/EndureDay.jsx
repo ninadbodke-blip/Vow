@@ -111,6 +111,17 @@ export default function EndureDay() {
         return
       }
 
+      // Endure begins on the quit date. If endure_starts_at is still ahead,
+      // the path hasn't opened yet — send them to the hold screen.
+      if (progressRow?.endure_starts_at) {
+        const startMs = new Date(progressRow.endure_starts_at).getTime()
+        const todayMid = new Date(); todayMid.setHours(0, 0, 0, 0)
+        if (startMs > todayMid.getTime()) {
+          navigate('/app/vow-path/transition/commit/to/endure')
+          return
+        }
+      }
+
       setProgress(progressRow)
       setSubstance({
         primary: progressRow.primary_substance,

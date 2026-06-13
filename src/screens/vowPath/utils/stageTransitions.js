@@ -160,7 +160,7 @@ export async function transitionFromReflect({ doorChoice }) {
 // COMMIT -> ENDURE
 // Reads stop_date from commit_day_1 artifact.
 // =====================================================================
-export async function transitionFromCommit() {
+export async function transitionFromCommit({ startNow = false } = {}) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No authenticated user' }
 
@@ -188,13 +188,13 @@ export async function transitionFromCommit() {
   const result = await performStageTransition({
     fromStage: 'commit',
     toStage: 'endure',
-    extraFields: { endure_starts_at: stopDate.toISOString() },
+    extraFields: { endure_starts_at: (startNow ? new Date() : stopDate).toISOString() },
   })
 
   return {
     ...result,
     nextStage: 'endure',
-    stopDateInFuture: isFuture,
+    stopDateInFuture: isFuture && !startNow,
     stopDate: stopDateStr,
   }
 }
