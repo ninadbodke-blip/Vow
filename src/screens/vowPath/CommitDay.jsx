@@ -610,6 +610,7 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   phone: {
+    boxSizing: 'border-box', overflowX: 'hidden',
     background: '#FAF7F1',
     maxWidth: '440px',
     width: '100%',
@@ -680,6 +681,7 @@ const styles = {
     fontWeight: 500, marginBottom: '1rem',
   },
   arrivalTitle: {
+    overflowWrap: 'break-word', wordBreak: 'break-word', hyphens: 'auto', maxWidth: '100%',
     fontSize: '34px', color: '#2A1F15',
     margin: '0 0 1rem',
     fontFamily: 'Georgia, serif',

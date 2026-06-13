@@ -323,6 +323,7 @@ const styles = {
     margin: '0 0 1.25rem',
   },
   arrivalTitle: {
+    overflowWrap: 'break-word', wordBreak: 'break-word', hyphens: 'auto', maxWidth: '100%',
     fontSize: '32px',
     color: '#2A1F15',
     fontFamily: 'Georgia, serif',
