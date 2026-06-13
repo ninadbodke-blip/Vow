@@ -9,6 +9,7 @@ import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
 import StageWayfinder from './StageWayfinder'
+import { createStageMove } from './stageMove'
 
 // ===================================================================
 // ENDURE-FREE HOME
@@ -108,6 +109,8 @@ export default function EndureFreeHome({ progress }) {
   const [vowOpen, setVowOpen] = useState(false)
   const [vitalsOpen, setVitalsOpen] = useState(false)
   const [milestonesOpen, setMilestonesOpen] = useState(false)
+  const [stageSheet, setStageSheet] = useState(null)
+  const [stageMoving, setStageMoving] = useState(false)
   const [vowLatest, setVowLatest] = useState(null)
   const [recommitToday, setRecommitToday] = useState(null)
   const [recommitHistory, setRecommitHistory] = useState([])
@@ -207,29 +210,29 @@ export default function EndureFreeHome({ progress }) {
     setTracker(prev => ({ ...prev, start_date: newISO }))
   }
 
-  const handleMoveToReclaim = async () => {
-    if (!window.confirm("Move to Reclaim? It's a gentler space to regroup — your streak and progress stay saved.")) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { error } = await supabase
-      .from('vow_path_progress')
-      .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-    if (error) { console.error('Move to reclaim failed:', error); alert('Could not move. Please try again.'); return }
-    window.location.assign('/app/home')
-  }
-
-  const handleMoveToBuild = async () => {
-    if (!window.confirm("Move to Build? The work shifts from holding the line to building the life around it — your counter and progress stay.")) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { error } = await supabase
-      .from('vow_path_progress')
-      .update({ free_state: 'build', updated_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-    if (error) { console.error('Move to build failed:', error); alert('Could not move. Please try again.'); return }
-    window.location.assign('/app/home')
-  }
+  // Stage moves route through the shared engine (one source of truth + styled
+  // sheets). In Endure the streak is live and begun: Build is a gated forward
+  // continuation, Reclaim resets the counter (a slip). daysOnTracker drives the
+  // Build gate; it's computed inline here since render-time daysFree is defined
+  // later. handleUpdateStartDate (below) is a date edit, not a stage move.
+  const emDaysOnTracker = tracker?.start_date
+    ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 86400000)
+    : 0
+  const goToStage = createStageMove({
+    stage: 'endure',
+    tracker,
+    hasBegunEndure: true,
+    stopDateISO: null,
+    primarySubstance: progress?.primary_substance || null,
+    daysOnTracker: emDaysOnTracker,
+    buildUnlocked: emDaysOnTracker >= 30,
+    moving: stageMoving,
+    setMoving: setStageMoving,
+    setSheet: setStageSheet,
+    navigate: () => window.location.assign('/app/home'),
+  })
+  const handleMoveToReclaim = () => goToStage('reclaim')
+  const handleMoveToBuild = () => goToStage('build')
 
   // Urge velocity — log the spike/creep signal (feeds the Mirror), then hand
   // off to the real urge-breaking flow. Captured even if they bail mid-flow.
@@ -481,6 +484,39 @@ export default function EndureFreeHome({ progress }) {
         </div>
 
         <BottomNav />
+
+        {stageSheet && (
+          <SheetPortal>
+            <div style={styles.sheetBackdrop} onClick={() => { if (!stageMoving) setStageSheet(null) }}>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{ width: '100%', maxWidth: '430px', background: '#FCFAF5', borderRadius: '22px', padding: '22px 20px 20px', boxShadow: '0 24px 70px rgba(40,25,15,0.4)' }}
+              >
+                <h2 style={{ fontSize: '19px', fontWeight: 600, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.25 }}>{stageSheet.title}</h2>
+                <p style={{ fontSize: '13.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', lineHeight: 1.55, margin: '10px 0 16px' }}>{stageSheet.body}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                  {stageSheet.actions.map((a, i) => (
+                    <button
+                      key={i}
+                      disabled={stageMoving}
+                      onClick={() => { const fn = a.run; if (fn) fn() }}
+                      style={{
+                        width: '100%', padding: '14px', borderRadius: '13px', fontSize: '14px', fontWeight: 500, fontFamily: 'Georgia, serif', cursor: 'pointer',
+                        ...(a.primary
+                          ? { background: 'linear-gradient(180deg,#3A2A1C,#241710)', color: '#FBF6EE', border: 'none' }
+                          : a.danger
+                            ? { background: 'linear-gradient(180deg,#7A2E1C,#5A2014)', color: '#FBF6EE', border: 'none' }
+                            : { background: 'transparent', color: '#854F0B', border: '0.5px solid #DDCFB6' }),
+                      }}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SheetPortal>
+        )}
 
         {/* MILESTONE TOAST */}
         {toastMilestones.length > 0 && (

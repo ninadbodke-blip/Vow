@@ -8,6 +8,7 @@ import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
 import StageWayfinder from './StageWayfinder'
+import { createStageMove } from './stageMove'
 
 // ===================================================================
 // BUILD-FREE HOME  (Maintenance stage)
@@ -95,6 +96,8 @@ export default function BuildFreeHome({ progress: initialProgress }) {
   const [crucibleOpen, setCrucibleOpen] = useState(false)
   const [capitalOpen, setCapitalOpen] = useState(false)
   const [actionOpen, setActionOpen] = useState(false)
+  const [stageSheet, setStageSheet] = useState(null)
+  const [stageMoving, setStageMoving] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -233,17 +236,26 @@ export default function BuildFreeHome({ progress: initialProgress }) {
 
   const handleCheckinSaved = (row) => setTodayCheckin(row)
 
-  const handleMoveToReclaim = async () => {
-    if (!window.confirm("Move to Reclaim? It's a gentler space to regroup — your streak and progress stay saved.")) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { error } = await supabase
-      .from('vow_path_progress')
-      .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-    if (error) { console.error('Move to reclaim failed:', error); alert('Could not move: ' + error.message); return }
-    window.location.assign('/app/home')
-  }
+  // All stage moves route through the shared engine (one source of truth for
+  // counter behavior + styled confirmation sheets). In Build the user is past
+  // the 30-day gate, so buildUnlocked is true and Endure is a genuine resume.
+  const daysOnTracker = tracker?.start_date
+    ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 86400000)
+    : 0
+  const goToStage = createStageMove({
+    stage: 'build',
+    tracker,
+    hasBegunEndure: true,
+    stopDateISO: null,
+    primarySubstance: progress?.primary_substance || null,
+    daysOnTracker,
+    buildUnlocked: true,
+    moving: stageMoving,
+    setMoving: setStageMoving,
+    setSheet: setStageSheet,
+    navigate: () => window.location.assign('/app/home'),
+    onClose: () => setActionOpen(false),
+  })
 
   if (loading) {
     return (
@@ -393,6 +405,33 @@ export default function BuildFreeHome({ progress: initialProgress }) {
         </div>
 
         <BottomNav />
+
+        {stageSheet && (
+          <SheetPortal>
+            <div style={styles.sheetBackdrop} onClick={() => { if (!stageMoving) setStageSheet(null) }}>
+              <div style={styles.sheetCard} onClick={(e) => e.stopPropagation()}>
+                <h2 style={styles.sheetTitle}>{stageSheet.title}</h2>
+                <p style={{ ...styles.sheetLead, marginTop: '10px' }}>{stageSheet.body}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginTop: '4px' }}>
+                  {stageSheet.actions.map((a, i) => (
+                    <button
+                      key={i}
+                      disabled={stageMoving}
+                      onClick={() => { const fn = a.run; if (fn) fn() }}
+                      style={
+                        a.primary ? styles.sheetSaveBtn
+                          : a.danger ? { ...styles.sheetSaveBtn, background: 'linear-gradient(180deg,#7A2E1C,#5A2014)' }
+                            : { ...styles.sheetSaveBtn, background: 'transparent', color: '#854F0B', border: '0.5px solid #DDCFB6' }
+                      }
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SheetPortal>
+        )}
       </div>
 
       {/* HERO CTA: the crucible (controlled) */}
@@ -410,7 +449,7 @@ export default function BuildFreeHome({ progress: initialProgress }) {
               tracker={tracker}
               navigate={navigate}
               slipCount={progress.endure_slip_count || 0}
-              onMoveToReclaim={handleMoveToReclaim}
+              onMoveToReclaim={() => goToStage('reclaim')}
               onLogUrge={handleLogUrge}
             />
           </div>
@@ -983,7 +1022,7 @@ function ActionTile({ tracker, navigate, slipCount = 0, onMoveToReclaim, onLogUr
       {slipCount >= 3 && (
         <div style={styles.reclaimNudge}>
           <p style={styles.reclaimNudgeText}>
-            Three slips this stretch. That's not a failure — it's a sign the ground shifted under you. Reclaim is a gentler place to regroup, and everything you've built stays exactly where it is. If you're honest with yourself, it might be time to step back.
+            Three slips this stretch. That's not a failure — it's a sign the ground shifted under you. Reclaim is a gentler place to regroup; the day counter starts fresh there, but every milestone you've earned stays yours. If you're honest with yourself, it might be time to step back.
           </p>
           <button onClick={onMoveToReclaim} style={styles.reclaimNudgeBtn}>
             Move to Reclaim

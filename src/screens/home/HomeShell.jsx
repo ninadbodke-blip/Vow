@@ -11,6 +11,7 @@ import TreeHero from './TreeHero'
 import { modeFor, JOURNAL } from './modes'
 import SetYourDay from './practices/SetYourDay'
 import StageWayfinder from '../freeHome/StageWayfinder'
+import { createStageMove } from '../freeHome/stageMove'
 import { UrgeWavesGlyph, SlipRiseGlyph, AnchorGlyph, MilestoneGlyph } from './glyphs'
 
 // ===================================================================
@@ -114,6 +115,7 @@ export default function HomeShell({ progress }) {
   const [openPractice, setOpenPractice] = useState(null)   // a practice object
   const [flowOpen, setFlowOpen] = useState(null)           // 'urge' | 'slip' | null
   const [movingToReclaim, setMovingToReclaim] = useState(false)
+  const [stageSheet, setStageSheet] = useState(null)
 
   async function loadAll(silent = false) {
     if (!silent) setLoading(true)
@@ -175,38 +177,26 @@ export default function HomeShell({ progress }) {
     loadAll(true)   // tracker, slip count, free_state may all have changed
   }
 
-  const handleMoveToReclaim = async () => {
-    if (!window.confirm(
-      "Step back and regroup?\n\n" +
-      "Reclaim is the space for slips, so your day counter restarts here. " +
-      "Everything you've earned — your milestones and your history — stays exactly where it is."
-    )) return
-    setMovingToReclaim(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setMovingToReclaim(false); return }
-    // Reclaim is for slips: restart the day counter (same as logging a slip),
-    // preserving the longest streak and bumping the reset count.
-    if (tracker?.id) {
-      const nowISO = new Date().toISOString()
-      const prevSeconds = tracker.start_date
-        ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 1000)
-        : 0
-      const newLongest = Math.max(tracker.longest_streak_seconds || 0, prevSeconds)
-      const { error: tErr } = await supabase.from('trackers').update({
-        start_date: nowISO,
-        total_resets: (tracker.total_resets || 0) + 1,
-        longest_streak_seconds: newLongest,
-      }).eq('id', tracker.id)
-      if (tErr) { console.error('Counter reset failed:', tErr); alert('Could not move. Please try again.'); setMovingToReclaim(false); return }
-    }
-    const { error } = await supabase
-      .from('vow_path_progress')
-      .update({ free_state: 'reclaim', endure_slip_count: 0, endure_starts_at: null, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-    if (error) { console.error('Move failed:', error); alert('Could not move. Please try again.'); setMovingToReclaim(false); return }
-    window.location.assign('/app/home')
-  }
-
+  // Reclaim move routes through the shared engine (one source of truth for the
+  // counter reset + the styled confirm sheet). This button is the slip-driven
+  // path (3 slips), which the engine's "Getting back up" sheet frames correctly.
+  const emDaysOnTracker = tracker?.start_date
+    ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 86400000)
+    : 0
+  const goToStage = createStageMove({
+    stage: freeState,
+    tracker,
+    hasBegunEndure: freeState === 'endure' || freeState === 'build',
+    stopDateISO: null,
+    primarySubstance: progress?.primary_substance || null,
+    daysOnTracker: emDaysOnTracker,
+    buildUnlocked: freeState === 'build' || emDaysOnTracker >= 30,
+    moving: movingToReclaim,
+    setMoving: setMovingToReclaim,
+    setSheet: setStageSheet,
+    navigate: () => window.location.assign('/app/home'),
+  })
+  const handleMoveToReclaim = () => goToStage('reclaim')
   if (loading) {
     return <div style={styles.frame}><div style={styles.loadingCard}>Loading...</div></div>
   }
@@ -373,6 +363,37 @@ export default function HomeShell({ progress }) {
         )}
 
         <BottomNav />
+
+        {stageSheet && (
+          <SheetPortal>
+            <div style={styles.sheetOverlay} onClick={() => { if (!movingToReclaim) setStageSheet(null) }}>
+              <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
+                <div style={styles.sheetHandle} />
+                <h2 style={styles.sheetTitle}>{stageSheet.title}</h2>
+                <p style={{ fontSize: '14px', color: '#6B5C4A', fontFamily: 'Georgia, serif', lineHeight: 1.55, margin: '0 0 16px', textAlign: 'center' }}>{stageSheet.body}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                  {stageSheet.actions.map((a, i) => (
+                    <button
+                      key={i}
+                      disabled={movingToReclaim}
+                      onClick={() => { const fn = a.run; if (fn) fn() }}
+                      style={{
+                        width: '100%', padding: '13px', borderRadius: '11px', fontSize: '13.5px', fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
+                        ...(a.primary
+                          ? { background: 'linear-gradient(180deg,#3A2A1C,#241710)', color: '#FAF7F1', border: 'none' }
+                          : a.danger
+                            ? { background: 'linear-gradient(180deg,#7A2E1C,#5A2014)', color: '#FAF7F1', border: 'none' }
+                            : { background: 'transparent', color: '#854F0B', border: '0.5px solid #DDCFB6' }),
+                      }}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SheetPortal>
+        )}
       </div>
 
       <DailyCheckin

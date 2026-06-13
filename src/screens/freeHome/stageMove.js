@@ -43,6 +43,15 @@ export function createStageMove({
     }
     const patch = { free_state: target, updated_at: new Date().toISOString() }
     if (reset) { patch.endure_starts_at = null; patch.endure_slip_count = 0 }
+    if (target === 'commit') {
+      // Commit owns no live counter — pause the tracker (longest streak stays on
+      // the row; nothing is reset). The countdown to the stop date is its clock.
+      patch.endure_starts_at = null
+      if (tracker?.id) {
+        try { await supabase.from('trackers').update({ is_active: false }).eq('id', tracker.id) }
+        catch (e) { console.error('Commit tracker pause failed:', e) }
+      }
+    }
     if (target === 'reclaim') {
       // Reclaim is the slip space: the day-counter restarts. Reset the active
       // tracker's start_date (same effect as logging a slip), preserving the

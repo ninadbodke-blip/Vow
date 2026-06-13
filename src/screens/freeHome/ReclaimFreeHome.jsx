@@ -7,7 +7,7 @@ import VowBrandMark from '../../components/VowBrandMark'
 import DailyCheckin, { moodByScore, moodByValue } from './DailyCheckin'
 import JournalTile from './JournalTile'
 import BottomNav from '../../components/BottomNav'
-import { resolveAddictionTypeId } from '../vowPath/utils/addictionTypes'
+import { createStageMove } from './stageMove'
 
 // ===================================================================
 // RECLAIM-FREE HOME
@@ -184,99 +184,26 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
   const handleCheckinSaved = (row) => setTodayCheckin(row)
 
   // === Re-entry handlers ===
-  const handleMoveToCommit = async () => {
-    if (transitioning) return
-    setTransitioning(true)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setTransitioning(false); return }
-
-      // Commit owns no live counter — pause the tracker (longest streak preserved
-      // on the row). A tracker hiccup must NOT block the move.
-      if (tracker?.id) {
-        const { error: tErr } = await supabase.from('trackers')
-          .update({ is_active: false }).eq('id', tracker.id)
-        if (tErr) console.error('tracker pause failed (continuing):', tErr)
-      }
-
-      const { error } = await supabase
-        .from('vow_path_progress')
-        .update({
-          free_state: 'commit',
-          endure_starts_at: null,
-          endure_slip_count: 0,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id)
-
-      if (error) {
-        console.error('Failed to move to commit:', error)
-        alert('Could not move to Commit: ' + (error.message || 'please try again.'))
-        setTransitioning(false)
-        return
-      }
-      window.location.assign('/app/home')
-    } catch (err) {
-      console.error(err)
-      alert('Something went wrong: ' + (err?.message || 'please try again.'))
-      setTransitioning(false)
-    }
-  }
-
-  const handleRestartEndure = async () => {
-    if (transitioning) return
-    setTransitioning(true)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setTransitioning(false); return }
-      const now = new Date().toISOString()
-      const addictionTypeId = await resolveAddictionTypeId(progress.primary_substance)
-
-      // (Re)start a tracker so the counter runs. Prefer this substance, else the
-      // most recent. Never let a tracker hiccup block the re-entry.
-      let trackerId = null
-      if (addictionTypeId != null) {
-        const { data: byType } = await supabase.from('trackers').select('id')
-          .eq('user_id', user.id).eq('addiction_type_id', addictionTypeId).order('created_at')
-        if (byType && byType.length > 0) trackerId = byType[0].id
-      }
-      if (!trackerId) {
-        const { data: anyTrk } = await supabase.from('trackers').select('id')
-          .eq('user_id', user.id).order('created_at')
-        if (anyTrk && anyTrk.length > 0) trackerId = anyTrk[0].id
-      }
-      if (trackerId) {
-        const { error: tErr } = await supabase.from('trackers')
-          .update({ start_date: now, is_active: true, tracker_status: 'active' }).eq('id', trackerId)
-        if (tErr) console.error('tracker reactivate failed (continuing):', tErr)
-      } else if (addictionTypeId != null) {
-        const { error: iErr } = await supabase.from('trackers')
-          .insert({ user_id: user.id, addiction_type_id: addictionTypeId, start_date: now, is_active: true, tracker_status: 'active' })
-        if (iErr) console.error('tracker insert failed (continuing):', iErr)
-      }
-
-      const { error: progressError } = await supabase
-        .from('vow_path_progress')
-        .update({
-          free_state: 'endure',
-          endure_slip_count: 0,
-          updated_at: now,
-        })
-        .eq('user_id', user.id)
-
-      if (progressError) {
-        console.error('Failed to update free_state:', progressError)
-        alert('Could not restart Endure: ' + (progressError.message || 'please try again.'))
-        setTransitioning(false)
-        return
-      }
-      window.location.assign('/app/home')
-    } catch (err) {
-      console.error(err)
-      alert('Something went wrong: ' + (err?.message || 'please try again.'))
-      setTransitioning(false)
-    }
-  }
+  // Every re-entry routes through the shared engine (one source of truth).
+  // From Reclaim the engine moves frictionlessly (no confirm sheet): Endure is a
+  // genuine restart (beginEndureFromCommit), Commit pauses the tracker. We pass
+  // setMoving=setTransitioning so the existing button spinners keep working.
+  const goToStage = createStageMove({
+    stage: 'reclaim',
+    tracker,
+    hasBegunEndure: false,
+    stopDateISO: null,
+    primarySubstance: progress?.primary_substance || null,
+    daysOnTracker: 0,
+    buildUnlocked: false,
+    moving: transitioning,
+    setMoving: setTransitioning,
+    setSheet: () => {},
+    navigate: () => window.location.assign('/app/home'),
+    onClose: () => { setReentryOpen(false); setForkOpen(false) },
+  })
+  const handleMoveToCommit = () => goToStage('commit')
+  const handleRestartEndure = () => goToStage('endure')
 
   if (loading) {
     return (
