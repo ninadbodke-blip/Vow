@@ -560,17 +560,18 @@ const styles = {
 
   // Per-day glyph chips (new daily model)
   dailyWrap: {
-    width: 'calc(100% - 48px)', marginLeft: '42px', boxSizing: 'border-box', marginTop: '-2px', marginBottom: '12px',
+    width: 'calc(100% - 34px)', marginLeft: '30px', boxSizing: 'border-box', marginTop: '-2px', marginBottom: '12px',
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', border: '0.5px solid #EADFCB',
-    borderRadius: '14px', padding: '11px 12px 13px',
+    borderRadius: '14px', padding: '11px 9px 13px',
   },
   dailyHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '9px', padding: '0 2px' },
-  dailyChips: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '4px' },
-  dayChip: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 0', fontFamily: 'inherit', flex: 1 },
+  dailyChips: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '3px', width: '100%', boxSizing: 'border-box' },
+  dayChip: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 0', fontFamily: 'inherit', flex: '1 1 0', minWidth: 0, maxWidth: '13.5%' },
   dayChipLocked: { opacity: 0.32, cursor: 'not-allowed' },
   dayChipRing: {
-    width: '32px', height: '32px', borderRadius: '50%', border: '1.5px solid #C9A86A',
+    width: '100%', maxWidth: '32px', aspectRatio: '1 / 1', borderRadius: '50%', border: '1.5px solid #C9A86A',
     display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#854F0B', background: '#FFFDF8', lineHeight: 1,
+    boxSizing: 'border-box', flexShrink: 0, overflow: 'hidden',
   },
   dayChipRingDone: { background: '#D9B57A', border: '1.5px solid #D9B57A', color: '#3A2A1C' },
   dayChipRingMissed: { background: '#F3EAD9', border: '1.5px dashed #C2A878', color: '#A1814E' },
