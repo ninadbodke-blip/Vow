@@ -32,13 +32,24 @@ function loadRazorpayScript() {
   return scriptPromise
 }
 
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_QkML7XK9TV0uSg6PwULI8Q_IWGquee9'
+
+// Supabase Edge Functions reject any request whose Authorization bearer isn't a
+// valid token. create-order doesn't need a logged-in user, so we fall back to
+// the anon key as the bearer when there's no session — that satisfies the
+// gateway and lets the order be created. verify-payment needs a REAL user
+// token (it writes the entitlement for that user); callers there must ensure a
+// session exists first. Returns { headers, hasUserToken } so callers can tell.
 async function authedHeaders() {
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token
   return {
-    'Content-Type': 'application/json',
-    apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_QkML7XK9TV0uSg6PwULI8Q_IWGquee9',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${token || ANON_KEY}`,
+    },
+    hasUserToken: !!token,
   }
 }
 
@@ -62,7 +73,7 @@ export async function startVowPathPurchase({ user = {}, onSuccess, onError, onDi
     // 1. Create the order server-side.
     const orderRes = await fetch(`${FUNCTIONS_BASE}/create-order`, {
       method: 'POST',
-      headers: await authedHeaders(),
+      headers: (await authedHeaders()).headers,
       body: JSON.stringify({ receipt: `vowpath_${Date.now()}` }),
     })
     const order = await orderRes.json()
@@ -91,9 +102,14 @@ export async function startVowPathPurchase({ user = {}, onSuccess, onError, onDi
       handler: async (response) => {
         // 3. Verify server-side; entitlement is granted there.
         try {
+          const { headers: vHeaders, hasUserToken } = await authedHeaders()
+          if (!hasUserToken) {
+            onError?.('Your session expired. Please sign in again, then retry — if you were charged, it will be honored once you do.')
+            return
+          }
           const verifyRes = await fetch(`${FUNCTIONS_BASE}/verify-payment`, {
             method: 'POST',
-            headers: await authedHeaders(),
+            headers: vHeaders,
             body: JSON.stringify({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,

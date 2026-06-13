@@ -47,8 +47,13 @@ export default function VowPathIntro() {
     load()
   }, [navigate])
 
-  const hasAssessment = !!progress?.current_stage
   const currentStage = progress?.current_stage
+  // 'pre_stage_check' is a placeholder written when the substance step is done
+  // but the assessment/entry isn't finished. Only treat the user as "assessed"
+  // when current_stage is a REAL stage — otherwise they should resume the check,
+  // not see a broken "Continue your chapter" that routes nowhere.
+  const hasAssessment = STAGE_ORDER.includes(currentStage)
+  const assessmentInProgress = !!currentStage && !hasAssessment
 
   const getStageStatus = (stageKey) => {
     if (!hasAssessment) return 'pre_assessment'
@@ -204,8 +209,8 @@ export default function VowPathIntro() {
           <div className="vpi-cta">
             {!hasAssessment ? (
               <>
-                <button onClick={() => navigate('/app/vow-path/substance')} className="vpi-btn">
-                  Take the Stage Check <span>→</span>
+                <button onClick={() => navigate(assessmentInProgress ? '/app/vow-path/check' : '/app/vow-path/substance')} className="vpi-btn">
+                  {assessmentInProgress ? 'Finish the Stage Check' : 'Take the Stage Check'} <span>→</span>
                 </button>
                 <p className="vpi-cta-sub">15 questions. About two minutes. Honest answers, in private.</p>
               </>
