@@ -225,7 +225,7 @@ export default function NoticeFreeHome({ progress }) {
 
         {/* HERO — today (dark vault, stateful) */}
         <div style={styles.hero}>
-          <p style={styles.heroEyebrow}>Notice · Today</p>
+          <p style={styles.heroEyebrow}>A closer look · Today</p>
           <p style={styles.heroGreeting}>{greet}{firstName ? `, ${firstName}` : ''}.</p>
           <p style={styles.heroReflection}>{reflection}</p>
           {todayCheckin ? (

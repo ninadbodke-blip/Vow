@@ -312,7 +312,7 @@ export default function ReflectFreeHome({ progress }) {
 
         {/* HERO — today (dark vault, stateful) */}
         <div style={styles.hero}>
-          <p style={styles.heroEyebrow}>Reflect · Today</p>
+          <p style={styles.heroEyebrow}>Weighing it up · Today</p>
           <p style={styles.heroGreeting}>{greet}{firstName ? `, ${firstName}` : ''}.</p>
           <p style={styles.heroReflection}>{reflection}</p>
           {todayCheckin ? (

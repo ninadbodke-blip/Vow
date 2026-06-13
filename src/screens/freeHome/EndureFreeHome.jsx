@@ -330,7 +330,7 @@ export default function EndureFreeHome({ progress }) {
 
         {/* HERO — the count-up clock (dark vault) */}
         <div style={styles.hero}>
-          <p style={styles.heroEyebrow}>Endure · {tracker ? `Day ${daysFree + 1}` : 'Holding'}</p>
+          <p style={styles.heroEyebrow}>Early days · {tracker ? `Day ${daysFree + 1}` : 'Holding'}</p>
           <p style={styles.heroGreeting}>{greet}{firstName ? `, ${firstName}` : ''}.</p>
 
           {tracker ? (
@@ -854,7 +854,7 @@ function BuildGateTile({ tracker, onMoveToBuild }) {
         <p style={styles.tileBody}>
           Thirty days is the turn. The work shifts now &mdash; from stopping to building the life that makes staying easier.
         </p>
-        <button onClick={onMoveToBuild} style={styles.buildMoveBtn}>Move to Build  &rarr;</button>
+        <button onClick={onMoveToBuild} style={styles.buildMoveBtn}>Move to Staying steady  &rarr;</button>
       </div>
     )
   }
@@ -862,7 +862,7 @@ function BuildGateTile({ tracker, onMoveToBuild }) {
   return (
     <div style={styles.tile}>
       <p style={styles.tileEyebrow}>Next chapter &middot; locked</p>
-      <h2 style={styles.tileTitle}>Build unlocks at 30 days.</h2>
+      <h2 style={styles.tileTitle}>Staying steady unlocks at 30 days.</h2>
       <p style={styles.tileBody}>
         Hold the line a little longer. When the counter reaches 30 days, the work shifts from stopping to building.
       </p>

@@ -282,7 +282,7 @@ export default function BuildFreeHome({ progress: initialProgress }) {
 
         {/* HERO — weekly identity work (dark vault) */}
         <div style={styles.hero}>
-          <p style={styles.heroEyebrow}>Build · This week</p>
+          <p style={styles.heroEyebrow}>Staying steady · This week</p>
           <p style={styles.heroGreeting}>{greet}{firstName ? `, ${firstName}` : ''}.</p>
 
           {tracker && (

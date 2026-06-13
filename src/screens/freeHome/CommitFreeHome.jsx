@@ -379,7 +379,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
         {/* HERO — the stop-date spine (dark vault, stateful) */}
         <div style={styles.hero}>
           <p style={styles.heroEyebrow}>
-            Commit · {stopDateState === 'future' ? 'Counting down' : stopDateState === 'past' ? 'The day is here' : 'Name the day'}
+            Getting ready · {stopDateState === 'future' ? 'Counting down' : stopDateState === 'past' ? 'The day is here' : 'Name the day'}
           </p>
           <p style={styles.heroGreeting}>{greet}{firstName ? `, ${firstName}` : ''}.</p>
 
@@ -416,7 +416,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
                 {arrivedToday ? 'Your stop date has arrived.' : 'Your stop date has passed.'}
               </p>
               <button onClick={handleBeginEndure} disabled={transitioning} style={styles.heroCta}>
-                {transitioning ? 'Starting Endure…' : 'Begin Endure now'}
+                {transitioning ? 'Starting…' : 'Begin Early days now'}
               </button>
               <button onClick={() => setEditingStopDate(true)} style={styles.heroChangeLink}>Pick a new date</button>
             </>
@@ -963,7 +963,7 @@ function StopDateArrivedTile({ stopDate, onBeginEndure, onPickNewDate, transitio
           ...(transitioning ? styles.beginEndureBtnDisabled : {}),
         }}
       >
-        {transitioning ? 'Starting Endure...' : 'Begin Endure now'}
+        {transitioning ? 'Starting...' : 'Begin Early days now'}
       </button>
 
       <button

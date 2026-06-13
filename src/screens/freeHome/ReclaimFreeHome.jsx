@@ -344,7 +344,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
             </button>
             <button onClick={() => setReentryOpen(true)} style={styles.toolBtn}>
               <span style={styles.toolIcon}><ReclaimGlyph /></span>
-              <span style={styles.toolLabel}>Reclaim</span>
+              <span style={styles.toolLabel}>Getting back up</span>
             </button>
           </div>
         </div>
@@ -627,11 +627,11 @@ function ReentrySheet({ open, onClose, onMoveToCommit, onRestartEndure, transiti
       </p>
       {hasSubstance && (
         <button onClick={onRestartEndure} disabled={transitioning} style={styles.readyPrimaryBtn}>
-          {transitioning ? 'Starting…' : 'Restart Endure now'}
+          {transitioning ? 'Starting…' : 'Restart Early days now'}
         </button>
       )}
       <button onClick={onMoveToCommit} disabled={transitioning} style={styles.readySecondaryBtn}>
-        {transitioning ? 'Moving…' : 'Move to Commit'}
+        {transitioning ? 'Moving…' : 'Move to Getting ready'}
       </button>
     </ActivitySheet>
   )
@@ -959,11 +959,11 @@ function WhenYoureReadyTile({ onMoveToCommit, onRestartEndure, transitioning, ha
       </p>
       {hasSubstance && (
         <button onClick={onRestartEndure} disabled={transitioning} style={styles.readyPrimaryBtn}>
-          {transitioning ? 'Starting…' : 'Restart Endure now'}
+          {transitioning ? 'Starting…' : 'Restart Early days now'}
         </button>
       )}
       <button onClick={onMoveToCommit} disabled={transitioning} style={styles.readySecondaryBtn}>
-        {transitioning ? 'Moving…' : 'Move to Commit'}
+        {transitioning ? 'Moving…' : 'Move to Getting ready'}
       </button>
     </div>
   )
