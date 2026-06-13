@@ -38,9 +38,6 @@ const ORACLE_CSS = `
   .vowPoolSh, .vowPoolReed, .vowPoolFly, .vowPoolStar, .vowPoolRStar, .vowPoolHintT { animation: none !important; }
 }`
 
-const clarityWord = (c) =>
-  c >= 95 ? 'mirror-still' : c >= 70 ? 'clear' : c >= 40 ? 'settling' : c >= 18 ? 'stirred' : 'murky'
-
 export default function OraclePool({ clarity = 0, daysTended = 0, pebbleCount = 0, pebbleToday = false, insight = null, onPebble }) {
   const wrapRef = useRef(null)
   const dispRef = useRef(null)
@@ -109,7 +106,6 @@ export default function OraclePool({ clarity = 0, daysTended = 0, pebbleCount = 
     )
   }
 
-  const pebbleWords = ['None rest', 'One rests', 'Two rest', 'Three rest', 'Four rest', 'Five rest', 'Six rest']
 
   return (
     <div style={S.pool} ref={wrapRef} onClick={handleTap}>
@@ -192,8 +188,8 @@ export default function OraclePool({ clarity = 0, daysTended = 0, pebbleCount = 
         {/* tap hint — only until today's pebble is dropped */}
         {!pebbleToday && (
           <text className="vowPoolHintT" x="150" y="178" textAnchor="middle"
-            fontFamily="Georgia, serif" fontStyle="italic" fontSize="9.5" fill="#D9C49A" letterSpacing="0.18em">
-            DROP A PEBBLE
+            fontFamily="Georgia, serif" fontStyle="italic" fontSize="10.5" fill="#F3E2B8">
+            Tap the water
           </text>
         )}
 
@@ -215,15 +211,15 @@ export default function OraclePool({ clarity = 0, daysTended = 0, pebbleCount = 
       <div style={S.under}>
         <p style={S.clarityLine}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#D9B57A" strokeWidth="2" style={{ marginRight: 7, verticalAlign: '-1px' }}><circle cx="12" cy="12" r="8" /></svg>
-          Water: {clarityWord(clarity)} &middot; {daysTended} of 7 days tended
+          Checked in {daysTended} of the last 7 days
         </p>
         <div style={S.hairline} />
-        <p style={S.eyebrow}>Today&rsquo;s pebble</p>
+        <p style={S.eyebrow}>Today&rsquo;s reflection</p>
         <p style={S.insight}>
-          {insight || 'Tap the water \u2014 one true thing from your week will surface.'}
+          {insight || 'Tap the water above to see one honest thing about your week.'}
         </p>
         <p style={S.pebNote}>
-          A pebble a day. {pebbleCount >= 7 ? 'The shore is full this week.' : `${pebbleWords[pebbleCount]} on the shore this week.`}
+          One reflection a day &middot; {pebbleCount} of 7 collected this week
         </p>
       </div>
     </div>
