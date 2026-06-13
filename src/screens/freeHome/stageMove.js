@@ -43,7 +43,28 @@ export function createStageMove({
     }
     const patch = { free_state: target, updated_at: new Date().toISOString() }
     if (reset) { patch.endure_starts_at = null; patch.endure_slip_count = 0 }
-    if (target === 'reclaim') patch.endure_slip_count = 0
+    if (target === 'reclaim') {
+      // Reclaim is the slip space: the day-counter restarts. Reset the active
+      // tracker's start_date (same effect as logging a slip), preserving the
+      // longest streak and bumping the reset count. Earned milestones/history
+      // live in their own tables and are untouched.
+      patch.endure_slip_count = 0
+      patch.endure_starts_at = null
+      try {
+        const nowISO = new Date().toISOString()
+        if (tracker?.id) {
+          const prevSeconds = tracker.start_date
+            ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 1000)
+            : 0
+          const newLongest = Math.max(tracker.longest_streak_seconds || 0, prevSeconds)
+          await supabase.from('trackers').update({
+            start_date: nowISO,
+            total_resets: (tracker.total_resets || 0) + 1,
+            longest_streak_seconds: newLongest,
+          }).eq('id', tracker.id)
+        }
+      } catch (e) { console.error('Reclaim counter reset failed:', e) }
+    }
     await supabase.from('vow_path_progress').update(patch).eq('user_id', u.id)
     navigate('/app/home', { replace: true })
   }

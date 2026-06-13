@@ -83,7 +83,10 @@ export default function StageWayfinder({ progress }) {
   const daysOnTracker = tracker?.start_date
     ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 86400000)
     : 0
-  const buildUnlocked = stage === 'build' || stage === 'reclaim' || daysOnTracker >= 30
+  // Build unlocks only on genuinely-held days. (Being in Reclaim no longer
+  // grants it — that was a side-door past the 30-day gate. Entering Reclaim
+  // resets the counter, so a returner re-earns the days.)
+  const buildUnlocked = stage === 'build' || daysOnTracker >= 30
 
   // Same logic Profile uses — moving to a stage here carries the identical
   // streak / Endure-clock / slip guards. We hard-navigate home afterward so

@@ -176,13 +176,32 @@ export default function HomeShell({ progress }) {
   }
 
   const handleMoveToReclaim = async () => {
-    if (!window.confirm("Step back and regroup? It's a gentler space — your streak and everything you've built stay saved.")) return
+    if (!window.confirm(
+      "Step back and regroup?\n\n" +
+      "Reclaim is the space for slips, so your day counter restarts here. " +
+      "Everything you've earned — your milestones and your history — stays exactly where it is."
+    )) return
     setMovingToReclaim(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setMovingToReclaim(false); return }
+    // Reclaim is for slips: restart the day counter (same as logging a slip),
+    // preserving the longest streak and bumping the reset count.
+    if (tracker?.id) {
+      const nowISO = new Date().toISOString()
+      const prevSeconds = tracker.start_date
+        ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 1000)
+        : 0
+      const newLongest = Math.max(tracker.longest_streak_seconds || 0, prevSeconds)
+      const { error: tErr } = await supabase.from('trackers').update({
+        start_date: nowISO,
+        total_resets: (tracker.total_resets || 0) + 1,
+        longest_streak_seconds: newLongest,
+      }).eq('id', tracker.id)
+      if (tErr) { console.error('Counter reset failed:', tErr); alert('Could not move. Please try again.'); setMovingToReclaim(false); return }
+    }
     const { error } = await supabase
       .from('vow_path_progress')
-      .update({ free_state: 'reclaim', endure_slip_count: 0, updated_at: new Date().toISOString() })
+      .update({ free_state: 'reclaim', endure_slip_count: 0, endure_starts_at: null, updated_at: new Date().toISOString() })
       .eq('user_id', user.id)
     if (error) { console.error('Move failed:', error); alert('Could not move. Please try again.'); setMovingToReclaim(false); return }
     window.location.assign('/app/home')
@@ -321,7 +340,7 @@ export default function HomeShell({ progress }) {
             {slipCount >= 3 && (
               <div style={styles.reclaimInvite}>
                 <p style={styles.reclaimText}>
-                  Three slips this stretch. That's not failure — it's a sign the ground shifted under you. There's a gentler place to regroup, and everything you've built stays exactly where it is.
+                  Three slips this stretch. That's not failure — it's a sign the ground shifted under you. There's a gentler place to regroup. The counter starts fresh there, but every milestone you've earned stays yours.
                 </p>
                 <button onClick={handleMoveToReclaim} disabled={movingToReclaim} style={styles.reclaimBtn}>
                   {movingToReclaim ? 'One moment…' : 'Step back and regroup'}
