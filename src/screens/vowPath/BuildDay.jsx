@@ -78,7 +78,24 @@ export default function BuildDay() {
         verb: progressRow.substance_verb,
       })
 
-      const unlocked = isDayUnlocked(progressRow, dayNumber, week)
+      // For an EXPLORED Build (a Reclaim user revisiting), gate by Build's own
+      // completed entries instead of the time-based week (their original
+      // build_starts_at has long elapsed and would unlock everything). Exclude
+      // offline-mark artifacts; count only real entry completions.
+      let buildCompletedEntries = new Set()
+      if (isExploringPastStage(progressRow, 'build')) {
+        const { data: bArtifacts } = await supabase
+          .from('vow_artifacts')
+          .select('artifact_type, day_number')
+          .eq('user_id', user.id)
+          .eq('stage', 'build')
+        ;(bArtifacts || []).forEach(a => {
+          if (a.artifact_type && a.artifact_type.startsWith('build_offline_week_')) return
+          if (a.day_number !== null && a.day_number !== undefined) buildCompletedEntries.add(a.day_number)
+        })
+      }
+
+      const unlocked = isDayUnlocked(progressRow, dayNumber, week, buildCompletedEntries)
       if (!unlocked.allowed) {
         setAccessDenied(true)
         setAccessReason(unlocked.reason)
@@ -128,9 +145,26 @@ export default function BuildDay() {
     checkAccess()
   }, [dayNumber, dayContent, navigate])
 
-  function isDayUnlocked(progressRow, requestedDay, week) {
+  function isDayUnlocked(progressRow, requestedDay, week, exploredCompleted) {
     if (isCadenceBypassed(progressRow)) return { allowed: true }
-    if (isExploringPastStage(progressRow, 'build')) return { allowed: true }
+
+    // Exploring Build as a PAST stage (only reachable when current_stage is
+    // Reclaim). Gate by sequence using Build's own completed entries — revisit
+    // anything done, progress in order through anything not yet done, lock the
+    // rest. No fresh time gate: the original Build run's clock has elapsed.
+    if (isExploringPastStage(progressRow, 'build')) {
+      const completed = exploredCompleted instanceof Set ? exploredCompleted : new Set(exploredCompleted || [])
+      if (completed.has(requestedDay)) return { allowed: true }
+      let nextEntry = 1
+      while (completed.has(nextEntry)) nextEntry++
+      if (requestedDay === nextEntry) return { allowed: true }
+      return {
+        allowed: false,
+        reason: `Entry ${nextEntry} is your next entry. Entry ${requestedDay} unlocks after that.`,
+      }
+    }
+
+    // Normal assigned-Build cadence: week-gated by elapsed time.
     if (requestedDay <= week) return { allowed: true }
     return {
       allowed: false,

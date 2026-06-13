@@ -10,6 +10,7 @@ import {
 import { useStageBackground } from './utils/silhouettes'
 import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
 import { isCadenceBypassed } from './utils/vowPathGating'
+import { isExploringPastStage } from './utils/stageAccess'
 
 const STATUS = {
   COMPLETED: 'completed',
@@ -101,8 +102,23 @@ export default function BuildOverview() {
 
   // Build is week-gated: the current week opens by elapsed time, completed
   // weeks come from artifacts, future weeks stay locked.
+  // For an EXPLORED Build (Reclaim user revisiting), the time-based currentWeek
+  // is stale (their original run elapsed long ago), so gate cards by sequence
+  // using completed entries — matching BuildDay's explored-stage rule exactly,
+  // so a card's appearance never disagrees with whether the day will open.
+  const exploringBuild = isExploringPastStage(progress, 'build')
+  const nextExploredEntry = (() => {
+    if (!exploringBuild) return null
+    let n = 1
+    while (completedDays.has(n)) n++
+    return n
+  })()
   const getDayStatus = (weekNum) => {
     if (completedDays.has(weekNum)) return STATUS.COMPLETED
+    if (exploringBuild) {
+      if (weekNum === nextExploredEntry) return STATUS.CURRENT
+      return STATUS.LOCKED
+    }
     if (weekNum === currentWeek) return STATUS.CURRENT
     if (weekNum < currentWeek) return STATUS.OPEN
     return STATUS.LOCKED
