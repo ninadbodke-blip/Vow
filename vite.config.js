@@ -41,7 +41,7 @@ export default defineConfig({
   ],
   server: {
     headers: {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; media-src 'self' https://*.supabase.co; img-src 'self' data: https:; font-src 'self' data:;"
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.razorpay.com https://lumberjack.razorpay.com; frame-src 'self' https://*.razorpay.com https://api.razorpay.com; media-src 'self' https://*.supabase.co; img-src 'self' data: https:; font-src 'self' data:;"
     }
   }
 })
