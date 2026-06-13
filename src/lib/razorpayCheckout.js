@@ -12,7 +12,7 @@
 // appears here — it lives only in Supabase function secrets.
 // =====================================================================
 
-import { supabase } from './supabaseClient'
+import { supabase } from '../supabaseClient'
 
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID
 const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL || 'https://wawvqiahdywadnlwzlrh.supabase.co'}/functions/v1`
