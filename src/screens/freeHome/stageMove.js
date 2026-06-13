@@ -3,12 +3,12 @@ import { resolveAddictionTypeId } from '../vowPath/utils/addictionTypes'
 
 // One source of truth for stage labels used in confirmation copy.
 export const STAGE_LABELS = {
-  notice: 'Notice',
-  reflect: 'Reflect',
-  commit: 'Commit',
-  endure: 'Endure',
-  build: 'Build',
-  reclaim: 'Reclaim',
+  notice: 'A closer look',
+  reflect: 'Weighing it up',
+  commit: 'Getting ready',
+  endure: 'Early days',
+  build: 'Staying steady',
+  reclaim: 'Getting back up',
 }
 
 // Faithful extraction of Profile's stage-move logic so the profile screen AND
@@ -89,7 +89,7 @@ export function createStageMove({
         .eq('user_id', u.id)
       if (pErr) {
         console.error('free_state update failed:', pErr)
-        alert('Could not start Endure: ' + (pErr.message || 'please try again.'))
+        alert('Could not begin Early days: ' + (pErr.message || 'please try again.'))
         setMoving(false)
         return
       }
@@ -101,7 +101,7 @@ export function createStageMove({
       navigate('/app/home', { replace: true })
     } catch (err) {
       console.error(err)
-      alert('Could not start Endure. Please try again.')
+      alert('Could not begin Early days. Please try again.')
       setMoving(false)
     }
   }
@@ -129,9 +129,21 @@ export function createStageMove({
   const goToStage = (target) => {
     if (moving || target === stage) { onClose(); return }
 
-    // From Reclaim, every move is frictionless (re-entry after a slip). Endure
+    // From Reclaim, most moves are frictionless (re-entry after a slip). Endure
     // still (re)starts the clock for real; everything else just switches.
+    // EXCEPTION: Build is gated everywhere — re-entering from Reclaim does not
+    // unlock "Staying steady" unless 30 days were genuinely held (buildUnlocked
+    // stays true only if a live streak survived the slip). Without this, Reclaim
+    // was a side-door into Build with no 30-day requirement.
     if (stage === 'reclaim') {
+      if (target === 'build' && !buildUnlocked) {
+        setSheet({
+          title: '"Staying steady" is still locked',
+          body: `It opens once you've held 30 days in Early days. You're at ${daysOnTracker} of 30 — keep going.`,
+          actions: [{ label: 'Got it', run: () => setSheet(null) }],
+        })
+        return
+      }
       if (target === 'endure') { beginEndureFromCommit(); return }
       applyStage(target, { reset: false })
       return
@@ -140,8 +152,8 @@ export function createStageMove({
     // Build gate — same rule as the Endure home
     if (target === 'build' && !buildUnlocked) {
       setSheet({
-        title: 'Build is still locked',
-        body: `Build opens once you've held 30 days in Endure. You're at ${daysOnTracker} of 30 — keep going.`,
+        title: '"Staying steady" is still locked',
+        body: `It opens once you've held 30 days in Early days. You're at ${daysOnTracker} of 30 — keep going.`,
         actions: [{ label: 'Got it', run: () => setSheet(null) }],
       })
       return
@@ -150,10 +162,10 @@ export function createStageMove({
     // Reclaim — nudge that slips track better via the slip button
     if (target === 'reclaim') {
       setSheet({
-        title: 'Moving to Reclaim',
-        body: `Slips get tracked best when you log them with the "I slipped" button on your Endure or Build page — that keeps your history accurate. Move to Reclaim anyway?`,
+        title: 'Moving to "Getting back up"',
+        body: `Slips get tracked best when you log them with the "I slipped" card on your home — that keeps your history accurate. Move there anyway?`,
         actions: [
-          { label: 'Move to Reclaim', primary: true, run: () => applyStage('reclaim') },
+          { label: 'Move to Getting back up', primary: true, run: () => applyStage('reclaim') },
           { label: 'Not now', run: () => setSheet(null) },
         ],
       })
@@ -173,12 +185,12 @@ export function createStageMove({
         ? new Date(stopDateISO + 'T00:00:00').getTime() : null
       const beforeStop = stopMs != null && stopMs > Date.now()
       setSheet({
-        title: beforeStop ? 'Going early? Then go.' : 'Ready to begin Endure?',
+        title: beforeStop ? 'Going early? Then go.' : 'Ready to begin Early days?',
         body: beforeStop
-          ? `You're stepping into Endure ahead of your stop date — and honestly, that's a bold, brilliant move. The second you confirm, your day-one clock starts for real. This isn't a look-around; it's your line in the sand. Claim it.`
+          ? `You're stepping into Early days ahead of your stop date — and honestly, that's a bold, brilliant move. The second you confirm, your day-one clock starts for real. This isn't a look-around; it's your line in the sand. Claim it.`
           : `The moment you confirm, your day-one clock starts ticking. This is the real beginning — not a place to peek at. Ready to step in?`,
         actions: [
-          { label: beforeStop ? 'Yes — start my clock now' : 'Begin Endure', primary: true, run: () => beginEndureFromCommit() },
+          { label: beforeStop ? 'Yes — start my clock now' : 'Begin Early days', primary: true, run: () => beginEndureFromCommit() },
           { label: 'Not yet', run: () => setSheet(null) },
         ],
       })
@@ -190,11 +202,11 @@ export function createStageMove({
       && (target === 'commit' || target === 'reflect' || target === 'notice')
     if (backward) {
       setSheet({
-        title: `Heading to ${STAGE_LABELS[target]}?`,
-        body: `If you're just curious about this stage, look around — your Endure progress stays exactly where it is. If you slipped, Reclaim is the gentler place to land, and it keeps your streak too.`,
+        title: `Heading to "${STAGE_LABELS[target]}"?`,
+        body: `If you're just curious, look around — your day count stays exactly where it is. If you slipped, "Getting back up" is the gentler place to land, and it keeps your days too.`,
         actions: [
           { label: 'Just exploring — keep my progress', primary: true, run: () => applyStage(target, { reset: false }) },
-          { label: 'I slipped → go to Reclaim', run: () => applyStage('reclaim') },
+          { label: 'I slipped → Getting back up', run: () => applyStage('reclaim') },
           { label: `I slipped → reset & go to ${STAGE_LABELS[target]}`, danger: true, run: () => applyStage(target, { reset: true }) },
           { label: 'Cancel', run: () => setSheet(null) },
         ],
