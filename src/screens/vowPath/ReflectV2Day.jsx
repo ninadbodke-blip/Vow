@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient'
 import { audioUrl } from './utils/audioUrl'
 import { isCadenceBypassed } from './utils/vowPathGating'
 import { canEnterStage, isExploringPastStage } from './utils/stageAccess'
+import { evaluateDayCadence, deriveStageProgress } from './utils/dayCadence'
 import { getReflectV2Day, REFLECT_V2_TOTAL_DAYS } from './data/reflectV2Content'
 import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
 
@@ -119,7 +120,19 @@ export default function ReflectV2Day() {
         verb: progressRow.substance_verb,
       })
 
-      const unlocked = isDayUnlocked(progressRow, dayNumber)
+      const { data: stageArtifacts } = await supabase
+        .from('vow_artifacts')
+        .select('day_number, updated_at')
+        .eq('user_id', user.id)
+        .eq('stage', 'reflect')
+      const { stageCompletedDays, stageLastCompletedAt } = deriveStageProgress(stageArtifacts)
+
+      const unlocked = evaluateDayCadence({
+        requestedDay: dayNumber,
+        progressRow,
+        stageCompletedDays,
+        stageLastCompletedAt,
+      })
       if (!unlocked.allowed) {
         setAccessDenied(true)
         setAccessReason(unlocked.reason)
@@ -151,36 +164,6 @@ export default function ReflectV2Day() {
     checkAccess()
   }, [dayNumber, dayContent, navigate])
 
-  function isDayUnlocked(progressRow, requestedDay) {
-    if (isCadenceBypassed(progressRow)) return { allowed: true }
-    if (isExploringPastStage(progressRow, 'reflect')) return { allowed: true }
-
-    const lastCompleted = progressRow.last_completed_day || 0
-    if (requestedDay === 1) return { allowed: true }
-    if (requestedDay <= lastCompleted) return { allowed: true }
-
-    if (requestedDay !== lastCompleted + 1) {
-      return {
-        allowed: false,
-        reason: `Day ${lastCompleted + 1} is your next day. Day ${requestedDay} unlocks after that.`,
-      }
-    }
-
-    if (progressRow.last_completed_at) {
-      const lastTime = new Date(progressRow.last_completed_at).getTime()
-      const now = Date.now()
-      const hoursSince = (now - lastTime) / (1000 * 60 * 60)
-      if (hoursSince < 24) {
-        const hoursLeft = Math.ceil(24 - hoursSince)
-        return {
-          allowed: false,
-          reason: `Day ${requestedDay} unlocks in about ${hoursLeft} ${hoursLeft === 1 ? 'hour' : 'hours'}. The work is meant to be done one day at a time.`,
-        }
-      }
-    }
-
-    return { allowed: true }
-  }
 
   const buildStepSequence = () => {
     const seq = [STEP.ARRIVAL]
