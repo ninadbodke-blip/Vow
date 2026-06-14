@@ -155,6 +155,7 @@ export default function MarketingLayout({ children }) {
           <div style={styles.footerCol}>
             <h4 style={styles.footerHeading}>Guides</h4>
             <Link to="/quit-nicotine" style={styles.footerLink}>Quitting nicotine</Link>
+            <Link to="/quit-drinking" style={styles.footerLink}>Quitting drinking</Link>
           </div>
           <div style={styles.footerCol}>
             <h4 style={styles.footerHeading}>Company</h4>

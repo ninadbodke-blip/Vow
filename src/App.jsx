@@ -33,6 +33,10 @@ import QuitNicotineHub from './marketing/QuitNicotineHub'
 import QuitVapingDay3 from './marketing/QuitVapingDay3'
 import HandsQuitSmoking from './marketing/HandsQuitSmoking'
 import FirstMorning from './marketing/FirstMorning'
+import QuitDrinkingHub from './marketing/QuitDrinkingHub'
+import FirstWeekAlcohol from './marketing/FirstWeekAlcohol'
+import Hangxiety from './marketing/Hangxiety'
+import DayOneAgain from './marketing/DayOneAgain'
 
 // ===== Home (free tier router) =====
 import HomeRouter from './screens/freeHome/HomeRouter'
@@ -169,6 +173,10 @@ function AppRoutes() {
       <Route path="/quit-vaping-day-3" element={<QuitVapingDay3 />} />
       <Route path="/what-to-do-with-your-hands-quit-smoking" element={<HandsQuitSmoking />} />
       <Route path="/first-cigarette-free-morning" element={<FirstMorning />} />
+      <Route path="/quit-drinking" element={<QuitDrinkingHub />} />
+      <Route path="/first-week-without-alcohol" element={<FirstWeekAlcohol />} />
+      <Route path="/hangxiety" element={<Hangxiety />} />
+      <Route path="/day-one-again" element={<DayOneAgain />} />
 
       {/* ===== APP ENTRY (auth-aware redirect) ===== */}
       <Route
