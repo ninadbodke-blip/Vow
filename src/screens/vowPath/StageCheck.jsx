@@ -143,17 +143,8 @@ export default function StageCheck() {
           <div style={{ width: '40px' }}></div>
         </div>
 
-        <div style={styles.dotsRow}>
-          {[...Array(TOTAL_SCREENS)].map((_, i) => (
-            <div
-              key={i}
-              style={{
-                ...styles.dot,
-                ...(i < currentScreen ? styles.dotComplete : {}),
-                ...(i === currentScreen ? styles.dotActive : {}),
-              }}
-            ></div>
-          ))}
+        <div style={styles.progTrack}>
+          <div style={{ ...styles.progFill, width: `${((currentScreen + 1) / TOTAL_SCREENS) * 100}%` }} />
         </div>
 
         <p style={styles.progressLabel}>
@@ -161,7 +152,7 @@ export default function StageCheck() {
         </p>
 
         <p style={styles.scaleHint}>
-          For each statement, mark how true it is for you right now.
+          There are no right answers here. Read each line and mark how true it feels for you right now.
         </p>
 
         <div style={styles.questionsList}>
@@ -182,12 +173,7 @@ export default function StageCheck() {
                 </p>
                 <p style={styles.questionText}>{resolvedText}</p>
 
-                <div style={styles.anchorRow}>
-                  <span style={styles.anchorLabel}>Not true at all</span>
-                  <span style={styles.anchorLabel}>Completely true</span>
-                </div>
-
-                <div style={styles.likertRow}>
+                <div style={styles.scaleRow}>
                   {LIKERT_OPTIONS.map((opt) => {
                     const isSelected = answer === opt.value
                     return (
@@ -196,19 +182,21 @@ export default function StageCheck() {
                         onClick={() => selectAnswer(q.id, opt.value)}
                         title={opt.label}
                         aria-label={opt.label}
-                        style={{
-                          ...styles.likertBtn,
-                        }}
+                        style={styles.scaleSeg}
                       >
                         <span style={{
-                          ...styles.likertBtnInner,
-                          ...(isSelected ? styles.likertBtnInnerSelected : {}),
+                          ...styles.scaleBar,
+                          ...(isSelected ? styles.scaleBarSelected : {}),
                         }}>
                           {opt.value}
                         </span>
                       </button>
                     )
                   })}
+                </div>
+                <div style={styles.scaleEnds}>
+                  <span style={styles.endCap}>Not true at all</span>
+                  <span style={styles.endCap}>Completely true</span>
                 </div>
               </div>
             )
@@ -269,28 +257,18 @@ const styles = {
     fontSize: '17px', fontWeight: 500, color: '#2A1F15',
     margin: 0, fontFamily: 'Georgia, serif',
   },
-  dotsRow: {
-    display: 'flex', justifyContent: 'center',
-    gap: '8px', marginBottom: '0.5rem',
+  progTrack: {
+    height: '3px', background: '#EAE0CE', borderRadius: '2px',
+    overflow: 'hidden', marginBottom: '9px',
   },
-  dot: {
-    width: '8px', height: '8px',
-    borderRadius: '50%',
-    background: '#E8DFD0',
-    transition: 'background 0.3s',
-  },
-  dotActive: {
-    background: '#C5572C',
-    width: '24px',
-    borderRadius: '4px',
-  },
-  dotComplete: {
-    background: '#854F0B',
+  progFill: {
+    height: '100%', background: 'linear-gradient(90deg,#D9B57A,#C9A85C)',
+    borderRadius: '2px', transition: 'width 0.35s ease',
   },
   progressLabel: {
-    fontSize: '11px', color: '#9C8C78',
-    textTransform: 'uppercase', letterSpacing: '0.08em',
-    margin: '0 0 1rem', textAlign: 'center', fontWeight: 500,
+    fontSize: '11px', color: '#B0A18C',
+    textTransform: 'uppercase', letterSpacing: '0.12em',
+    margin: '0 0 1.5rem', textAlign: 'center', fontWeight: 500,
   },
   scaleHint: {
     fontSize: '13px', color: '#6B5C4A',
@@ -300,13 +278,15 @@ const styles = {
   },
   questionsList: {
     display: 'flex', flexDirection: 'column',
-    gap: '14px', marginBottom: '1.25rem',
+    gap: '16px', marginBottom: '1.5rem',
   },
   questionBlock: {
-    background: '#FDFBF6',
-    border: '0.5px solid #EFE7D7',
-    borderRadius: '16px',
-    padding: '1rem 1rem 0.85rem',
+    background: '#FFFFFF',
+    border: '0.5px solid #EDE4D2',
+    borderRadius: '20px',
+    padding: '22px 20px 18px',
+    margin: 0,
+    boxShadow: '0 4px 16px rgba(80,50,20,0.04)',
     transition: 'border-color 0.2s, background 0.2s',
   },
   questionBlockError: {
@@ -314,66 +294,43 @@ const styles = {
     border: '0.5px solid #E8B59B',
   },
   questionNumber: {
-    fontSize: '10px', color: '#9C8C78',
-    textTransform: 'uppercase', letterSpacing: '0.08em',
-    margin: '0 0 6px', fontWeight: 500,
+    fontSize: '10px', color: '#C2B49A',
+    textTransform: 'uppercase', letterSpacing: '0.16em',
+    margin: '0 0 9px', fontWeight: 500,
   },
   questionText: {
-    fontSize: '15px',
+    fontSize: '17px',
     color: '#2A1F15',
     fontFamily: 'Georgia, serif',
     fontStyle: 'italic',
-    lineHeight: 1.55,
-    margin: '0 0 0.85rem',
+    lineHeight: 1.5,
+    margin: '0 0 20px',
   },
-  anchorRow: {
+  scaleRow: {
+    display: 'flex', gap: '7px',
+  },
+  scaleSeg: {
+    flex: 1, cursor: 'pointer', border: 'none', background: 'transparent',
+    padding: 0, fontFamily: 'inherit',
+  },
+  scaleBar: {
+    width: '100%', height: '40px', borderRadius: '11px', boxSizing: 'border-box',
+    background: '#F6F0E4', border: '1px solid #ECE2CF',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '14px', fontWeight: 500, fontFamily: 'Georgia, serif', color: '#B0A18C',
+    transition: 'all 0.16s ease',
+  },
+  scaleBarSelected: {
+    background: 'linear-gradient(180deg,#D9B57A,#C9A85C)',
+    border: '1px solid #BE9B54', color: '#3A2A1C', fontWeight: 600,
+    boxShadow: '0 5px 14px rgba(201,168,92,0.32)', transform: 'translateY(-1px)',
+  },
+  scaleEnds: {
     display: 'flex', justifyContent: 'space-between',
-    padding: '0 4px', marginBottom: '6px',
+    marginTop: '8px', padding: '0 2px',
   },
-  anchorLabel: {
-    fontSize: '10px',
-    color: '#9C8C78',
-    fontWeight: 500,
-    textTransform: 'uppercase',
-    letterSpacing: '0.04em',
-  },
-  likertRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  likertBtn: {
-    flex: 1,
-    background: 'transparent',
-    border: 'none',
-    padding: '6px 0',
-    cursor: 'pointer',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontFamily: 'inherit',
-  },
-  likertBtnInner: {
-    width: '36px', height: '36px',
-    borderRadius: '50%',
-    background: 'white',
-    border: '1px solid #DDCFB6',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '13px',
-    fontWeight: 500,
-    color: '#9C8C78',
-    transition: 'all 0.15s',
-    boxShadow: '0 2px 4px rgba(80,50,20,0.04)',
-  },
-  likertBtnInnerSelected: {
-    background: 'linear-gradient(180deg, #C5572C 0%, #A14222 100%)',
-    border: '1px solid #A14222',
-    color: '#FAF7F1',
-    boxShadow: '0 4px 10px rgba(197,87,44,0.25)',
-    transform: 'scale(1.08)',
+  endCap: {
+    fontSize: '11px', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#A89A82',
   },
   validationMsg: {
     fontSize: '12px',
