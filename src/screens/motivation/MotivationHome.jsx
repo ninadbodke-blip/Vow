@@ -4,6 +4,7 @@ import { getTodayQuote } from './data/quotes'
 import { ARTICLES } from './data/articles'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
+import VowPathInvite from '../freeHome/VowPathInvite'
 import NightSky from './NightSky'
 import VowBrandMark from '../../components/VowBrandMark'
 import { THEMES, THEME_MAP } from './data/themes'
@@ -270,6 +271,8 @@ export default function MotivationHome() {
             <span style={styles.allMeta}>{visibleArticles.length} on the shelf &middot; {readCount} read &rarr;</span>
           </button>
         </div>
+
+        <VowPathInvite variant="calm" />
 
         <BottomNav />
       </div>
