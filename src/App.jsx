@@ -37,6 +37,10 @@ import QuitDrinkingHub from './marketing/QuitDrinkingHub'
 import FirstWeekAlcohol from './marketing/FirstWeekAlcohol'
 import Hangxiety from './marketing/Hangxiety'
 import DayOneAgain from './marketing/DayOneAgain'
+import QuitWeedHub from './marketing/QuitWeedHub'
+import VividDreamsWeed from './marketing/VividDreamsWeed'
+import WeedInsomnia from './marketing/WeedInsomnia'
+import WeedFlat from './marketing/WeedFlat'
 
 // ===== Home (free tier router) =====
 import HomeRouter from './screens/freeHome/HomeRouter'
@@ -177,6 +181,10 @@ function AppRoutes() {
       <Route path="/first-week-without-alcohol" element={<FirstWeekAlcohol />} />
       <Route path="/hangxiety" element={<Hangxiety />} />
       <Route path="/day-one-again" element={<DayOneAgain />} />
+      <Route path="/quit-weed" element={<QuitWeedHub />} />
+      <Route path="/vivid-dreams-after-quitting-weed" element={<VividDreamsWeed />} />
+      <Route path="/quitting-weed-cant-sleep" element={<WeedInsomnia />} />
+      <Route path="/everything-feels-flat-after-weed" element={<WeedFlat />} />
 
       {/* ===== APP ENTRY (auth-aware redirect) ===== */}
       <Route
