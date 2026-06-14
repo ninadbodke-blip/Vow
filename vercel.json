@@ -93,7 +93,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/).*)",
+      "source": "/((?!assets/|sitemap|robots).*)",
       "destination": "/index.html"
     }
   ],
