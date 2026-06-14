@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import VowPathInvite from '../freeHome/VowPathInvite'
 import OraclePool from './OraclePool'
+import VowBrandMark from '../../components/VowBrandMark'
 import { moodByScore, moodByValue } from '../freeHome/DailyCheckin'
 
 // =====================================================================
@@ -376,6 +377,7 @@ export default function MirrorScreen() {
 
         <div style={styles.topRow}>
           <div style={{ width: '40px' }} />
+          <span style={styles.brandCenter}><VowBrandMark size={17} /></span>
           <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
         </div>
 
@@ -535,8 +537,9 @@ const styles = {
   phone: { background: '#FAF7F1', maxWidth: '440px', width: '100%', borderRadius: '28px', padding: '1.5rem 1.5rem 2rem', boxShadow: '0 14px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' },
   loading: { textAlign: 'center', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', padding: '4rem 0' },
 
-  topRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  topRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' },
   profileBtn: { background: 'transparent', border: 'none', color: '#854F0B', cursor: 'pointer', padding: '4px 8px', minWidth: '40px', display: 'flex', justifyContent: 'flex-end' },
+  brandCenter: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', pointerEvents: 'none' },
 
   lead: { padding: '0.25rem 0 0.25rem' },
   leadEyebrow: { fontSize: '10.5px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 10px' },
