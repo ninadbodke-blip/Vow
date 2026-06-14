@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import VowPathInvite from './VowPathInvite'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import AnchorReactionBadge from './AnchorReactionBadge'
@@ -506,6 +507,7 @@ export default function CommitFreeHome({ progress: initialProgress }) {
               </button>
             </div>
           )}
+          <VowPathInvite stage="commit" variant="calm" />
         </div>
 
         <BottomNav />

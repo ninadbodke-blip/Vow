@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import VowPathInvite from './VowPathInvite'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import AnchorReactionBadge from './AnchorReactionBadge'
@@ -274,6 +275,7 @@ export default function ReclaimFreeHome({ progress: initialProgress }) {
               <span style={styles.toolLabel}>Getting back up</span>
             </button>
           </div>
+          <VowPathInvite stage="reclaim" variant="calm" />
         </div>
 
         <BottomNav />

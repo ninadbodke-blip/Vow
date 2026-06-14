@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import VowPathInvite from './VowPathInvite'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import SheetPortal from '../../components/SheetPortal'
@@ -391,6 +392,7 @@ export default function ReflectFreeHome({ progress }) {
               </button>
             </div>
           )}
+          <VowPathInvite stage="reflect" variant="calm" />
         </div>
 
         <BottomNav />

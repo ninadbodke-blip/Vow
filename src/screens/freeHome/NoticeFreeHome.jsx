@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import VowPathInvite from './VowPathInvite'
 import StageWayfinder from './StageWayfinder'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
@@ -296,6 +297,7 @@ export default function NoticeFreeHome({ progress }) {
               </button>
             </div>
           )}
+          <VowPathInvite stage="notice" variant="calm" />
         </div>
 
         <BottomNav />

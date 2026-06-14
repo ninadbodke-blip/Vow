@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import VowPathInvite from './VowPathInvite'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import AnchorReactionBadge from './AnchorReactionBadge'
@@ -481,6 +482,7 @@ export default function EndureFreeHome({ progress }) {
               </button>
             </div>
           )}
+          <VowPathInvite stage="endure" variant="moment" momentLabel="You're holding the line" />
         </div>
 
         <BottomNav />
