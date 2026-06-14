@@ -70,7 +70,6 @@ export default function AddictionPicker({ onboardingDone }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
-  const [showFounderMessage, setShowFounderMessage] = useState(false)
   const [showAddictionList, setShowAddictionList] = useState(false)
 
   useEffect(() => {
@@ -90,8 +89,6 @@ export default function AddictionPicker({ onboardingDone }) {
         }
 
         setAddictions(addictionData || [])
-
-        if (!onboardingDone) setShowFounderMessage(true)
       } catch (err) {
         setError(err.message)
       } finally {
@@ -247,28 +244,6 @@ export default function AddictionPicker({ onboardingDone }) {
             </div>
             <button onClick={() => setShowAddictionList(false)} style={styles.closeSheet}>
               Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* FOUNDER MESSAGE */}
-      {showFounderMessage && (
-        <div style={founderStyles.modal}>
-          <div style={founderStyles.modalCard}>
-            <div style={founderStyles.flame} aria-hidden="true">
-              <svg viewBox="0 0 24 32" width="26" height="34">
-                <path d="M12 1 C 13 8, 20 10, 18 19 C 17.5 26, 12 31, 12 31 C 12 31, 6.5 26, 6 19 C 4 10, 11 8, 12 1 Z" fill="#D9B57A" />
-                <path d="M12 12 C 13 16, 15 18, 14 23 C 13.5 27, 12 30, 12 30 C 12 30, 10.5 27, 10 23 C 9 18, 11 16, 12 12 Z" fill="#FBE3B8" />
-              </svg>
-            </div>
-            <p style={founderStyles.body}>
-              It took me 15 years to put this down, and I couldn't have done it alone. This app is the hand I wish I'd had sooner.
-            </p>
-            <p style={founderStyles.welcome}>Welcome.</p>
-            <div style={founderStyles.signature}>— Ninad</div>
-            <button onClick={() => setShowFounderMessage(false)} style={founderStyles.btn}>
-              Begin
             </button>
           </div>
         </div>
@@ -464,53 +439,5 @@ const styles = {
     cursor: 'pointer',
     fontFamily: 'inherit',
     marginTop: '0.5rem',
-  },
-}
-
-const founderStyles = {
-  modal: {
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(40,25,15,0.55)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '1rem', zIndex: 250,
-    backdropFilter: 'blur(4px)',
-  },
-  modalCard: {
-    background: '#FAF7F1',
-    maxWidth: '380px',
-    width: '100%',
-    borderRadius: '24px',
-    padding: '2rem 1.75rem',
-    boxShadow: '0 20px 60px rgba(40,25,15,0.4)',
-    textAlign: 'center',
-  },
-  waveIcon: { fontSize: '40px', marginBottom: '1rem' },
-  flame: { display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' },
-  welcome: { fontSize: '16px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 1.25rem' },
-  title: {
-    fontSize: '22px', fontWeight: 600, color: '#2A1F15',
-    margin: '0 0 1rem', fontFamily: 'Georgia, serif',
-  },
-  body: {
-    fontSize: '14px', color: '#6B5C4A',
-    margin: '0 0 1rem', lineHeight: 1.6, fontFamily: 'Georgia, serif',
-  },
-  bodyEmphasis: {
-    fontSize: '14px', color: '#2A1F15',
-    margin: '0 0 1.25rem', lineHeight: 1.6,
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-  },
-  signature: {
-    fontSize: '12px', color: '#9C8C78',
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    marginBottom: '1.75rem',
-  },
-  btn: {
-    width: '100%', padding: '14px',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    color: '#FAF7F1', border: 'none', borderRadius: '14px',
-    fontSize: '14px', fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxShadow: '0 4px 14px rgba(40,25,10,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
   },
 }
