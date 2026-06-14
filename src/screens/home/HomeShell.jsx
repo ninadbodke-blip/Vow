@@ -11,6 +11,7 @@ import TreeHero from './TreeHero'
 import { modeFor, JOURNAL } from './modes'
 import SetYourDay from './practices/SetYourDay'
 import StageWayfinder from '../freeHome/StageWayfinder'
+import VowPathInvite from '../freeHome/VowPathInvite'
 import { createStageMove } from '../freeHome/stageMove'
 import { UrgeWavesGlyph, SlipRiseGlyph, AnchorGlyph, MilestoneGlyph } from './glyphs'
 
@@ -361,6 +362,12 @@ export default function HomeShell({ progress }) {
             {surfacing} →
           </button>
         )}
+
+        <VowPathInvite
+          stage={freeState}
+          variant={freeState === 'endure' ? 'moment' : 'calm'}
+          momentLabel={freeState === 'endure' ? "You're holding the line" : undefined}
+        />
 
         <BottomNav />
 
