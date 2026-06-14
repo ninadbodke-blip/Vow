@@ -340,6 +340,22 @@ export default function Profile() {
           )}
         </div>
 
+        {/* LOOKING BACK — slip & urge history */}
+        <div>
+          <p style={styles.sectionLabel}>Looking back</p>
+          <div style={styles.accountCard}>
+            <button onClick={() => navigate('/app/slips')} style={{ ...styles.accountRow, width: '100%', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+              <span style={styles.accountLabel}>Slip history</span>
+              <span style={styles.accountArrow}>›</span>
+            </button>
+            <div style={styles.accountDivider} />
+            <button onClick={() => navigate('/app/urges')} style={{ ...styles.accountRow, width: '100%', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+              <span style={styles.accountLabel}>Urge log</span>
+              <span style={styles.accountArrow}>›</span>
+            </button>
+          </div>
+        </div>
+
         {/* ACCOUNT */}
         <div>
           <p style={styles.sectionLabel}>Account</p>
