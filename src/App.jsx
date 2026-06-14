@@ -41,6 +41,10 @@ import QuitWeedHub from './marketing/QuitWeedHub'
 import VividDreamsWeed from './marketing/VividDreamsWeed'
 import WeedInsomnia from './marketing/WeedInsomnia'
 import WeedFlat from './marketing/WeedFlat'
+import QuitMdmaHub from './marketing/QuitMdmaHub'
+import MdmaMidweekBlues from './marketing/MdmaMidweekBlues'
+import MdmaComedown from './marketing/MdmaComedown'
+import MdmaBrainRecovery from './marketing/MdmaBrainRecovery'
 
 // ===== Home (free tier router) =====
 import HomeRouter from './screens/freeHome/HomeRouter'
@@ -185,6 +189,10 @@ function AppRoutes() {
       <Route path="/vivid-dreams-after-quitting-weed" element={<VividDreamsWeed />} />
       <Route path="/quitting-weed-cant-sleep" element={<WeedInsomnia />} />
       <Route path="/everything-feels-flat-after-weed" element={<WeedFlat />} />
+      <Route path="/quit-mdma" element={<QuitMdmaHub />} />
+      <Route path="/mdma-midweek-blues" element={<MdmaMidweekBlues />} />
+      <Route path="/how-to-get-through-mdma-comedown" element={<MdmaComedown />} />
+      <Route path="/does-brain-recover-after-mdma" element={<MdmaBrainRecovery />} />
 
       {/* ===== APP ENTRY (auth-aware redirect) ===== */}
       <Route
