@@ -45,6 +45,7 @@ import QuitMdmaHub from './marketing/QuitMdmaHub'
 import MdmaMidweekBlues from './marketing/MdmaMidweekBlues'
 import MdmaComedown from './marketing/MdmaComedown'
 import MdmaBrainRecovery from './marketing/MdmaBrainRecovery'
+import GuidesIndex from './marketing/GuidesIndex'
 
 // ===== Home (free tier router) =====
 import HomeRouter from './screens/freeHome/HomeRouter'
@@ -172,9 +173,11 @@ function AppRoutes() {
       />
       <Route path="/about" element={<MarketingAbout />} />
       <Route path="/how-it-works" element={<MarketingHowItWorks />} />
-      <Route path="/pricing" element={<MarketingPricing />} />
+      <Route path="/why-one-payment" element={<MarketingPricing />} />
+      <Route path="/pricing" element={<Navigate to="/why-one-payment" replace />} />
       <Route path="/faq" element={<MarketingFaq />} />
       <Route path="/contact" element={<MarketingContact />} />
+      <Route path="/guides" element={<GuidesIndex />} />
 
       {/* ===== BLOG / SEO CONTENT (public, indexed) ===== */}
       <Route path="/quit-nicotine" element={<QuitNicotineHub />} />
