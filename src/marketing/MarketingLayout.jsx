@@ -149,9 +149,12 @@ export default function MarketingLayout({ children }) {
             <h4 style={styles.footerHeading}>Product</h4>
             <Link to="/" style={styles.footerLink}>Home</Link>
             <Link to="/how-it-works" style={styles.footerLink}>How it works</Link>
-            <Link to="/quit-nicotine" style={styles.footerLink}>Guides</Link>
             <Link to="/pricing" style={styles.footerLink}>Pricing</Link>
             <Link to="/faq" style={styles.footerLink}>FAQ</Link>
+          </div>
+          <div style={styles.footerCol}>
+            <h4 style={styles.footerHeading}>Guides</h4>
+            <Link to="/quit-nicotine" style={styles.footerLink}>Quitting nicotine</Link>
           </div>
           <div style={styles.footerCol}>
             <h4 style={styles.footerHeading}>Company</h4>
@@ -166,12 +169,31 @@ export default function MarketingLayout({ children }) {
         </div>
 
         <div style={styles.footerBottom}>
-          <p style={styles.crisis}>
-            <span style={styles.crisisLabel}>In crisis?</span>{' '}
-            <a href="tel:+919820466726" style={styles.crisisLink}>AASRA · +91 98204 66726</a>
-            <span style={styles.crisisSep}> · </span>
-            <a href="tel:+919152987821" style={styles.crisisLink}>iCall · +91 91529 87821</a>
-          </p>
+          <div style={styles.crisis}>
+            <p style={styles.crisisHead}>
+              <span style={styles.crisisLabel}>In crisis or struggling?</span> You're not alone — reach someone now.
+            </p>
+            <p style={styles.crisisLines}>
+              <span style={styles.crisisRegion}>India</span>{' '}
+              <a href="tel:+919820466726" style={styles.crisisLink}>AASRA +91 98204 66726</a>
+              <span style={styles.crisisSep}> · </span>
+              <a href="tel:+919152987821" style={styles.crisisLink}>iCall +91 91529 87821</a>
+            </p>
+            <p style={styles.crisisLines}>
+              <span style={styles.crisisRegion}>US</span>{' '}
+              <a href="tel:988" style={styles.crisisLink}>988</a>
+              <span style={styles.crisisSep}> · </span>
+              <span style={styles.crisisRegion}>UK & ROI</span>{' '}
+              <a href="tel:116123" style={styles.crisisLink}>Samaritans 116 123</a>
+              <span style={styles.crisisSep}> · </span>
+              <span style={styles.crisisRegion}>Australia</span>{' '}
+              <a href="tel:131114" style={styles.crisisLink}>Lifeline 13 11 14</a>
+            </p>
+            <p style={styles.crisisLines}>
+              <span style={styles.crisisRegion}>Anywhere else</span>{' '}
+              <a href="https://findahelpline.com" target="_blank" rel="noopener noreferrer" style={styles.crisisLink}>Find a helpline in your country →</a>
+            </p>
+          </div>
           <p style={styles.copyright}>
             © 2026 Vow<sup style={styles.tm}>™</sup> Labs · Made in India · Udyam-registered MSME
           </p>
@@ -352,8 +374,14 @@ const styles = {
     color: '#9C8F7C',
     margin: 0,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
   },
+  crisisHead: { margin: '0 0 4px', color: '#9C8F7C' },
+  crisisLines: { margin: 0, lineHeight: 1.6 },
   crisisLabel: { color: '#C9A86A' },
+  crisisRegion: { color: '#7E6F5A', fontWeight: 600 },
   crisisLink: { color: '#CFC4B4', textDecoration: 'none' },
   crisisSep: { color: '#6B5C4A' },
   copyright: {

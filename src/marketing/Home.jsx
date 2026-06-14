@@ -7,7 +7,7 @@ import MarketingLayout from './MarketingLayout'
 // =====================================================================
 // Premium editorial landing page. Top to bottom: ember-flame hero with the
 // positioning line, a short "what Vow is" beat, the six stages as an
-// interactive vertical "thread" (accordion), a Field Notes (SEO) showcase,
+// interactive vertical "thread" (accordion),
 // and a closing CTA. Nav + footer live in the shared MarketingLayout.
 //
 // Responsiveness: most of this page is fluid already (clamp() type +
@@ -24,41 +24,9 @@ const STAGES = [
   { name: 'Reclaim', desc: 'When a slip comes, return with kindness, not shame.' },
 ]
 
-// Field Notes previews. Each maps loosely to a moment in the journey, so the
+// Each stage maps loosely to a moment in the journey, so the
 // section doubles as a teaser of the writing inside the app. (Full, indexable
 // pages can hang off these cards later; for now they read as a standing index.)
-const NOTES = [
-  {
-    kicker: 'Before you are ready',
-    title: 'The quiet work of noticing',
-    excerpt: "You don't have to decide to quit to start paying attention. Noticing comes first, and it asks nothing of you yet.",
-  },
-  {
-    kicker: 'On the hard hours',
-    title: 'The person you are at 3 a.m.',
-    excerpt: 'The version of you that wants it most tends to arrive in the dark. Here is how to sit with him without making it a fight.',
-  },
-  {
-    kicker: 'On honesty',
-    title: 'What it was doing for you',
-    excerpt: 'Nothing holds on this long for no reason. Naming the job it quietly did is how you begin to do that job some other way.',
-  },
-  {
-    kicker: 'On the third day',
-    title: 'The wall most people hit at day three',
-    excerpt: 'Why the craving spikes hardest just before it fades — and what it costs to outlast a wave instead of arguing with it.',
-  },
-  {
-    kicker: 'On slips',
-    title: 'A slip is not a collapse',
-    excerpt: 'What to do in the first hour after, when the shame is loudest and the story is trying to end right here.',
-  },
-  {
-    kicker: 'On the long middle',
-    title: 'When it stops being dramatic and starts being boring',
-    excerpt: 'The early days carry a kind of adrenaline. The months that follow ask for something quieter, and steadier, and harder.',
-  },
-]
 
 // ---------------------------------------------------------------------
 // HERO FLAME
@@ -186,28 +154,6 @@ export default function Home() {
             three than on day three hundred.
           </p>
           <StageThread />
-        </div>
-      </section>
-
-      {/* FIELD NOTES — SEO showcase */}
-      <section className="vow-pad" style={styles.section}>
-        <div style={styles.inner}>
-          <p style={styles.eyebrow}>Field Notes on recovery</p>
-          <h2 style={styles.sectionTitle}>Honest writing for the hard parts.</h2>
-          <p style={styles.body}>
-            Practical, unsentimental notes on the moments recovery actually turns
-            on — a few to begin with, more as the work continues.
-          </p>
-          <div style={styles.notesGrid}>
-            {NOTES.map((n) => (
-              <article key={n.title} style={styles.noteCard}>
-                <p style={styles.noteKicker}>{n.kicker}</p>
-                <h3 style={styles.noteTitle}>{n.title}</h3>
-                <p style={styles.noteExcerpt}>{n.excerpt}</p>
-                <span style={styles.noteRead}>Read more ›</span>
-              </article>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -408,46 +354,6 @@ const styles = {
     fontFamily: 'Georgia, serif',
   },
 
-  // ---- Field Notes ----
-  notesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-    gap: '36px',
-    marginTop: '44px',
-  },
-  noteCard: {
-    borderTop: '1px solid #D9B57A',
-    paddingTop: '20px',
-  },
-  noteKicker: {
-    fontSize: '12px',
-    color: '#A07A3C',
-    textTransform: 'uppercase',
-    letterSpacing: '0.14em',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    margin: '0 0 12px',
-  },
-  noteTitle: {
-    fontSize: '23px',
-    fontWeight: 400,
-    color: '#2A1F15',
-    lineHeight: 1.25,
-    margin: '0 0 12px',
-    fontFamily: 'Georgia, serif',
-  },
-  noteExcerpt: {
-    fontSize: '16px',
-    color: '#6B5C4A',
-    lineHeight: 1.55,
-    fontStyle: 'italic',
-    margin: '0 0 16px',
-    fontFamily: 'Georgia, serif',
-  },
-  noteRead: {
-    fontSize: '14px',
-    color: '#C5572C',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  },
 
   ctaSection: {
     padding: '80px 32px 100px',
