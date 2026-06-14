@@ -17,6 +17,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 const NAV_LINKS = [
   { to: '/how-it-works', label: 'How it works' },
+  { to: '/quit-nicotine', label: 'Guides' },
   { to: '/pricing', label: 'Pricing' },
   { to: '/about', label: 'About' },
   { to: '/faq', label: 'FAQ' },
@@ -148,6 +149,7 @@ export default function MarketingLayout({ children }) {
             <h4 style={styles.footerHeading}>Product</h4>
             <Link to="/" style={styles.footerLink}>Home</Link>
             <Link to="/how-it-works" style={styles.footerLink}>How it works</Link>
+            <Link to="/quit-nicotine" style={styles.footerLink}>Guides</Link>
             <Link to="/pricing" style={styles.footerLink}>Pricing</Link>
             <Link to="/faq" style={styles.footerLink}>FAQ</Link>
           </div>
