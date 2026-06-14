@@ -4,7 +4,6 @@ import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import VowPathInvite from '../freeHome/VowPathInvite'
 import { moodByScore, moodByValue } from '../freeHome/DailyCheckin'
-import OraclePool from './OraclePool'
 
 // =====================================================================
 // THE MIRROR — a patient, literary reflection of the longer view.
@@ -345,16 +344,6 @@ export default function MirrorScreen() {
           <div style={{ width: '40px' }} />
           <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
         </div>
-
-        {/* THE ORACLE POOL — the tree, reflected in still water at dusk */}
-        <OraclePool
-          clarity={poolClarity}
-          daysTended={ciWeek.length}
-          pebbleCount={pebbleCount}
-          pebbleToday={pebbleToday}
-          insight={pebbleInsight}
-          onPebble={dropPebble}
-        />
 
         {isEmpty ? (
           <div style={styles.emptyBlock}>
