@@ -29,6 +29,10 @@ import MarketingHowItWorks from './marketing/HowItWorks'
 import MarketingPricing from './marketing/Pricing'
 import MarketingFaq from './marketing/Faq'
 import MarketingContact from './marketing/Contact'
+import QuitNicotineHub from './marketing/QuitNicotineHub'
+import QuitVapingDay3 from './marketing/QuitVapingDay3'
+import HandsQuitSmoking from './marketing/HandsQuitSmoking'
+import FirstMorning from './marketing/FirstMorning'
 
 // ===== Home (free tier router) =====
 import HomeRouter from './screens/freeHome/HomeRouter'
@@ -159,6 +163,12 @@ function AppRoutes() {
       <Route path="/pricing" element={<MarketingPricing />} />
       <Route path="/faq" element={<MarketingFaq />} />
       <Route path="/contact" element={<MarketingContact />} />
+
+      {/* ===== BLOG / SEO CONTENT (public, indexed) ===== */}
+      <Route path="/quit-nicotine" element={<QuitNicotineHub />} />
+      <Route path="/quit-vaping-day-3" element={<QuitVapingDay3 />} />
+      <Route path="/what-to-do-with-your-hands-quit-smoking" element={<HandsQuitSmoking />} />
+      <Route path="/first-cigarette-free-morning" element={<FirstMorning />} />
 
       {/* ===== APP ENTRY (auth-aware redirect) ===== */}
       <Route
