@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import VowPathInvite from '../freeHome/VowPathInvite'
+import OraclePool from './OraclePool'
 import { moodByScore, moodByValue } from '../freeHome/DailyCheckin'
 
 // =====================================================================
@@ -181,6 +182,7 @@ export default function MirrorScreen() {
   const [checkins, setCheckins] = useState([])
   const [byType, setByType] = useState({})
   const [aiReflection, setAiReflection] = useState(null)
+  const [pebbleDays, setPebbleDays] = useState([])  // ISO dates (yyyy-mm-dd) a pebble was dropped
   const nowTs = Date.now()
 
   useEffect(() => {
@@ -211,6 +213,12 @@ export default function MirrorScreen() {
       ;(sig || []).forEach(r => { if (!grouped[r.signal_type]) grouped[r.signal_type] = []; grouped[r.signal_type].push(r) })
       setByType(grouped)
 
+      // Oracle pebbles: stored as free_stage_signals rows of type 'oracle_pebble',
+      // one per day. We keep the set of distinct dates a pebble was dropped.
+      const pebbleRows = (grouped['oracle_pebble'] || [])
+      const days = Array.from(new Set(pebbleRows.map(r => new Date(r.created_at).toISOString().slice(0, 10))))
+      setPebbleDays(days)
+
       if (AI_REFLECTION_ENABLED) {
         const r = await fetchWeeklyAIReflection({ grouped, checkins: ci || [], tracker: trk, stage: vp?.free_state })
         setAiReflection(r)
@@ -236,6 +244,32 @@ export default function MirrorScreen() {
   const resets = tracker?.total_resets ?? null
 
   const ciWeek = checkins.filter(c => c.checkin_date >= weekAgoStr)
+
+  // ---- Oracle pool: clarity earned by tending; pebbles dropped per day ----
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const daysTended = Math.min(7, ciWeek.length)
+  const poolClarity = Math.round((daysTended / 7) * 100)
+  const pebbleDaysThisWeek = pebbleDays.filter(d => d >= weekAgoStr)
+  const pebbleCount = Math.min(7, pebbleDaysThisWeek.length)
+  const pebbleToday = pebbleDays.includes(todayStr)
+
+  const dropPebble = async () => {
+    if (pebbleToday) return
+    // optimistic: mark today immediately so the shore fills and insight surfaces
+    setPebbleDays(prev => prev.includes(todayStr) ? prev : [todayStr, ...prev])
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('free_stage_signals').insert({
+        user_id: user.id,
+        signal_type: 'oracle_pebble',
+        payload: { date: todayStr },
+      })
+    } catch {
+      // if the write fails, the optimistic mark still gives a calm in-session experience;
+      // it will reconcile on next load.
+    }
+  }
   const strip = checkins.slice(0, 7).reverse()
   const energyAvg = avg(ciWeek.map(c => c.energy).filter(v => v != null))
   const pullDays = ciWeek.filter(c => c.felt_pull).length
@@ -344,6 +378,16 @@ export default function MirrorScreen() {
           <div style={{ width: '40px' }} />
           <button onClick={() => navigate('/app/profile')} style={styles.profileBtn} aria-label="Profile"><ProfileIcon /></button>
         </div>
+
+        {/* THE ORACLE POOL — the tree reflected in still water; clarity grows with tending */}
+        <OraclePool
+          clarity={poolClarity}
+          daysTended={daysTended}
+          pebbleCount={pebbleCount}
+          pebbleToday={pebbleToday}
+          insight={pebbleToday ? summary : null}
+          onPebble={dropPebble}
+        />
 
         {isEmpty ? (
           <div style={styles.emptyBlock}>
