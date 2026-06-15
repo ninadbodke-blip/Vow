@@ -22,7 +22,9 @@
 /anchors           /app/anchors              302
 /mirror            /app/mirror               302
 
-# --- SPA fallback: everything else serves index.html with 200 ---
-# Cloudflare serves real static files (assets, sitemap.xml, robots.txt) BEFORE
-# applying this rule, so they are NOT swallowed. This must be LAST.
-/*                 /index.html               200
+# --- SPA fallback ---
+# NOTE: On Cloudflare Workers static assets, SPA routing is handled by the
+# "not_found_handling": "single-page-application" setting (auto-configured),
+# NOT by a /* -> /index.html rule. An explicit catch-all here is rejected as an
+# infinite-loop risk, so it is intentionally omitted.
+
