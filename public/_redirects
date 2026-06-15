@@ -1,0 +1,28 @@
+# Vercel-style redirects translated to Cloudflare Pages format.
+# Format: <source>  <destination>  <status>
+# 302 = temporary (matches Vercel "permanent": false). Splats: /* captures, :splat replays.
+
+# --- bare-path -> /app/* redirects (temporary, 302) ---
+/onboarding/*      /app/onboarding/:splat    302
+/vow-path/*        /app/vow-path/:splat      302
+/vow-path          /app/vow-path             302
+/library/*         /app/library/:splat       302
+/library           /app/library              302
+/motivation/*      /app/motivation/:splat    302
+/motivation        /app/motivation           302
+/slip/*            /app/slip/:splat          302
+/urge/*            /app/urge/:splat          302
+/milestones/*      /app/milestones/:splat    302
+/welcome           /app/welcome              302
+/signup            /app/signup               302
+/home              /app/home                 302
+/profile           /app/profile              302
+/slips             /app/slips                302
+/urges             /app/urges                302
+/anchors           /app/anchors              302
+/mirror            /app/mirror               302
+
+# --- SPA fallback: everything else serves index.html with 200 ---
+# Cloudflare serves real static files (assets, sitemap.xml, robots.txt) BEFORE
+# applying this rule, so they are NOT swallowed. This must be LAST.
+/*                 /index.html               200
