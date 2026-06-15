@@ -211,7 +211,9 @@ const sendHeartbeatTo = (anchor) => {
           </button>
         </div>
 
-        <OrbitHero berths={anchors.slice(0, 3).map(a => ({ id: a.id, name: a.name, reached: reachedIds.has(a.id) }))} />
+        <div style={styles.heroWrap}>
+          <OrbitHero berths={anchors.slice(0, 3).map(a => ({ id: a.id, name: a.name, reached: reachedIds.has(a.id) }))} />
+        </div>
 
         {/* RECENT REACTIONS */}
         {reactions.length > 0 && (
@@ -593,6 +595,7 @@ function formatRelative(dateStr) {
 
 const styles = {
   brandCenter: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', pointerEvents: 'none' },
+  heroWrap: { marginBottom: '1.5rem' },
   reachRow: { display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' },
   reachBtn: { border: '0.5px solid #DDCFB6', background: '#FBF7EE', color: '#854F0B', borderRadius: '999px', padding: '6px 11px', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '11px', textDecoration: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' },
   reachDone: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#EFDCAF', borderColor: '#241710', cursor: 'default' },
@@ -612,7 +615,7 @@ const styles = {
   },
   topBar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: '1.25rem',
+    marginBottom: '1.5rem',
   },
   topTitle: {
     fontSize: '17px', fontWeight: 500, color: '#2A1F15', margin: 0,
@@ -649,7 +652,7 @@ const styles = {
   },
 
   // RECENT REACTIONS
-  reactionsSection: { marginBottom: '1.25rem' },
+  reactionsSection: { marginBottom: '1.5rem' },
   sectionLabel: {
     fontSize: '10px', textTransform: 'uppercase',
     letterSpacing: '0.1em', color: '#9C8C78',
@@ -692,7 +695,7 @@ const styles = {
     color: '#854F0B',
     fontSize: '13px', fontWeight: 500,
     cursor: 'pointer', fontFamily: 'inherit',
-    marginBottom: '1.25rem',
+    marginBottom: '1.5rem',
     boxShadow: '0 2px 8px rgba(133,79,11,0.1)',
   },
 
@@ -710,8 +713,8 @@ const styles = {
     lineHeight: 1.6, margin: '0 0 1.5rem',
   },
   anchorsList: {
-    display: 'flex', flexDirection: 'column', gap: '8px',
-    marginBottom: '1rem',
+    display: 'flex', flexDirection: 'column', gap: '10px',
+    marginBottom: '1.5rem',
   },
 
   // ANCHOR CARD
@@ -807,7 +810,7 @@ const styles = {
     color: '#854F0B',
     fontSize: '13px', fontWeight: 500,
     cursor: 'pointer', fontFamily: 'inherit',
-    marginBottom: '1.25rem',
+    marginBottom: '1.5rem',
   },
   maxedNote: {
     fontSize: '12px', color: '#9C8C78',
@@ -820,7 +823,7 @@ const styles = {
     border: '0.5px solid #E8DCC2',
     borderRadius: '12px',
     padding: '12px 14px',
-    marginBottom: '1rem',
+    marginBottom: '1.5rem',
   },
   privacyTitle: {
     fontSize: '11px', textTransform: 'uppercase',
