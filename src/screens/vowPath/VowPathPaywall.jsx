@@ -27,7 +27,7 @@ function RazorpayLogo() {
   return <img src="/logos/razorpay.svg" alt="Razorpay" style={{ height: '22px', width: 'auto', display: 'block' }} />
 }
 function PayPalLogo() {
-  return <img src="/logos/paypal.svg" alt="PayPal" style={{ height: '34px', width: 'auto', display: 'block' }} />
+  return <img src="/logos/paypal.svg" alt="PayPal" style={{ height: '20px', width: 'auto', display: 'block' }} />
 }
 
 export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked, onClose }) {
