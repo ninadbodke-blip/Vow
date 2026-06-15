@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { startVowPathPurchase } from '../../lib/razorpayCheckout'
+import { renderPayPalButtons } from '../../lib/paypalCheckout'
 
 // =====================================================================
 // VowPathPaywall — the soft paywall shown when a non-paying user tries to
@@ -26,6 +27,21 @@ const WHAT_YOU_GET = [
 export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked, onClose }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const paypalRef = useRef(null)
+
+  // Render PayPal buttons (international option) into their container once.
+  useEffect(() => {
+    let cancelled = false
+    if (paypalRef.current) {
+      renderPayPalButtons({
+        container: paypalRef.current,
+        onSuccess: () => { if (!cancelled) onUnlocked?.() },
+        onError: (msg) => { if (!cancelled) setError(msg) },
+        onCancel: () => {},
+      })
+    }
+    return () => { cancelled = true }
+  }, [])
 
   const handlePurchase = async () => {
     setError(null)
@@ -71,7 +87,16 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
           {busy ? 'Opening payment…' : `Unlock for ${PRICE_LABEL} — begin ${stageName}`}
         </button>
 
-        <p style={S.fineprint}>One-time payment · lifetime access · secure checkout by Razorpay</p>
+        <p style={S.fineprint}>One-time payment · lifetime access · secure checkout by Razorpay (India)</p>
+
+        <div style={S.divider}>
+          <span style={S.dividerLine} />
+          <span style={S.dividerText}>or pay internationally</span>
+          <span style={S.dividerLine} />
+        </div>
+
+        <div ref={paypalRef} style={S.paypalWrap} />
+        <p style={S.fineprint}>International cards &amp; PayPal · billed in USD</p>
 
         <button onClick={() => { if (!busy) onClose?.() }} style={S.laterBtn} disabled={busy}>
           Maybe later
@@ -112,4 +137,8 @@ const S = {
   payBtnBusy: { opacity: 0.7, cursor: 'default' },
   fineprint: { fontSize: '11.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '12px 0 0' },
   laterBtn: { width: '100%', padding: '13px', marginTop: '10px', background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '13.5px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
+  divider: { display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 0 16px' },
+  dividerLine: { flex: 1, height: '1px', background: '#E5D9C2' },
+  dividerText: { fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', whiteSpace: 'nowrap' },
+  paypalWrap: { minHeight: '52px' },
 }
