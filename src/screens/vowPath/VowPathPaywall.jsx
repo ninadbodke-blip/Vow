@@ -4,11 +4,11 @@ import { renderPayPalButtons } from '../../lib/paypalCheckout'
 
 // =====================================================================
 // VowPathPaywall — the soft paywall shown when a non-paying user tries to
-// enter their allotted stage. It previews what the Vow Path is (so it's an
-// invitation, not a wall), then offers the one-time lifetime purchase via
-// Razorpay. On success, onUnlocked() fires and the caller proceeds into the
-// stage. On web this is the only way to buy; Android will buy via Play later,
-// but both write the same 'vow_path' entitlement, so this gate is universal.
+// enter their allotted stage. Previews what the Vow Path is, then offers the
+// one-time lifetime purchase. A single "Unlock" button opens a method picker
+// (Razorpay for India / PayPal for international) so we never show a rupee
+// price to an international buyer or vice-versa — each provider shows its own
+// currency in its own checkout. Both write the same 'vow_path' entitlement.
 //
 // Props:
 //   stageName   - the stage they're about to enter (for the CTA copy)
@@ -16,23 +16,34 @@ import { renderPayPalButtons } from '../../lib/paypalCheckout'
 //   onClose     - called if they dismiss without buying
 // =====================================================================
 
-const PRICE_LABEL = '₹999'
-
 const WHAT_YOU_GET = [
   ['The full six-stage path', 'Notice, Reflect, Commit, Early days, Staying steady, and Getting back up — the whole journey, not a taste of it.'],
   ['Daily guided work', 'Each day opens a short, tactile practice built for where you actually are — not a generic checklist.'],
   ['Yours for good', 'A one-time payment. No subscription, no renewals. The path stays open whenever you need it.'],
 ]
 
+// --- Provider logos (official SVGs served from public/logos/) ---
+function RazorpayLogo() {
+  return <img src="/logos/razorpay.svg" alt="Razorpay" style={{ height: '22px', width: 'auto', display: 'block' }} />
+}
+function PayPalLogo() {
+  return <img src="/logos/paypal.svg" alt="PayPal" style={{ height: '34px', width: 'auto', display: 'block' }} />
+}
+
 export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked, onClose }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [showPicker, setShowPicker] = useState(false)
+  const [paypalChosen, setPaypalChosen] = useState(false)
   const paypalRef = useRef(null)
 
-  // Render PayPal buttons (international option) into their container once.
+  // Render PayPal's SDK buttons only once the user has chosen PayPal in the
+  // picker (PayPal buttons must be rendered by the SDK, not triggered by a
+  // custom click). Rendering on-demand also avoids loading PayPal for users
+  // who pay with Razorpay.
   useEffect(() => {
     let cancelled = false
-    if (paypalRef.current) {
+    if (paypalChosen && paypalRef.current) {
       renderPayPalButtons({
         container: paypalRef.current,
         onSuccess: () => { if (!cancelled) onUnlocked?.() },
@@ -41,20 +52,27 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
       })
     }
     return () => { cancelled = true }
-  }, [])
+  }, [paypalChosen])
 
-  const handlePurchase = async () => {
+  const handleRazorpay = async () => {
     setError(null)
     setBusy(true)
     await startVowPathPurchase({
       onSuccess: () => { setBusy(false); onUnlocked?.() },
       onError: (msg) => { setBusy(false); setError(msg) },
-      onDismiss: () => { setBusy(false) }, // they closed the Razorpay modal; stay on the paywall
+      onDismiss: () => { setBusy(false) },
     })
   }
 
+  const closePicker = () => {
+    if (busy) return
+    setShowPicker(false)
+    setPaypalChosen(false)
+    setError(null)
+  }
+
   return (
-    <div style={S.backdrop} onClick={() => { if (!busy) onClose?.() }}>
+    <div style={S.backdrop} onClick={() => { if (!busy && !showPicker) onClose?.() }}>
       <div style={S.card} onClick={(e) => e.stopPropagation()}>
         <div style={S.handle} />
 
@@ -77,31 +95,66 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
           ))}
         </div>
 
-        {error && <p style={S.error}>{error}</p>}
-
         <button
-          onClick={handlePurchase}
-          disabled={busy}
-          style={{ ...S.payBtn, ...(busy ? S.payBtnBusy : {}) }}
+          onClick={() => setShowPicker(true)}
+          style={S.payBtn}
         >
-          {busy ? 'Opening payment…' : `Unlock for ${PRICE_LABEL} — begin ${stageName}`}
+          {`Unlock the Vow Path — begin ${stageName}`}
         </button>
 
-        <p style={S.fineprint}>One-time payment · lifetime access · secure checkout by Razorpay (India)</p>
+        <p style={S.fineprint}>One-time payment · lifetime access · secure checkout</p>
 
-        <div style={S.divider}>
-          <span style={S.dividerLine} />
-          <span style={S.dividerText}>or pay internationally</span>
-          <span style={S.dividerLine} />
-        </div>
-
-        <div ref={paypalRef} style={S.paypalWrap} />
-        <p style={S.fineprint}>International cards &amp; PayPal · billed in USD</p>
-
-        <button onClick={() => { if (!busy) onClose?.() }} style={S.laterBtn} disabled={busy}>
+        <button onClick={() => onClose?.()} style={S.laterBtn}>
           Maybe later
         </button>
       </div>
+
+      {/* METHOD PICKER — floating tile */}
+      {showPicker && (
+        <div style={S.pickerBackdrop} onClick={closePicker}>
+          <div style={S.pickerCard} onClick={(e) => e.stopPropagation()}>
+            <div style={S.handle} />
+            <p style={S.pickerTitle}>Choose how to pay</p>
+            <p style={S.pickerSub}>One-time payment · lifetime access</p>
+
+            {error && <p style={S.error}>{error}</p>}
+
+            {/* Razorpay option */}
+            <button
+              onClick={handleRazorpay}
+              disabled={busy}
+              style={{ ...S.method, ...(busy ? S.methodBusy : {}) }}
+            >
+              <span style={S.methodLogo}><RazorpayLogo /></span>
+              <span style={S.methodLine}>If you're in India</span>
+            </button>
+
+            {/* PayPal option — choosing it reveals PayPal's SDK buttons */}
+            {!paypalChosen ? (
+              <button
+                onClick={() => { setError(null); setPaypalChosen(true) }}
+                disabled={busy}
+                style={{ ...S.method, ...(busy ? S.methodBusy : {}) }}
+              >
+                <span style={S.methodLogo}><PayPalLogo /></span>
+                <span style={S.methodLine}>If you're outside India</span>
+              </button>
+            ) : (
+              <div style={S.paypalChosenWrap}>
+                <div style={S.methodLogoRow}>
+                  <PayPalLogo />
+                  <span style={S.methodLine}>Billed in USD</span>
+                </div>
+                <div ref={paypalRef} style={S.paypalWrap} />
+              </div>
+            )}
+
+            <button onClick={closePicker} style={S.laterBtn} disabled={busy}>
+              Back
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -134,11 +187,41 @@ const S = {
     fontSize: '15px', fontFamily: 'Georgia, serif', fontWeight: 500, cursor: 'pointer',
     boxShadow: '0 8px 22px -8px rgba(30,18,8,0.5)',
   },
-  payBtnBusy: { opacity: 0.7, cursor: 'default' },
   fineprint: { fontSize: '11.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '12px 0 0' },
   laterBtn: { width: '100%', padding: '13px', marginTop: '10px', background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '13.5px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
-  divider: { display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 0 16px' },
-  dividerLine: { flex: 1, height: '1px', background: '#E5D9C2' },
-  dividerText: { fontSize: '11px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', whiteSpace: 'nowrap' },
+
+  // METHOD PICKER
+  pickerBackdrop: {
+    position: 'fixed', inset: 0, background: 'rgba(40,25,15,0.45)',
+    backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+    zIndex: 320, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+  },
+  pickerCard: {
+    width: '100%', maxWidth: '440px', boxSizing: 'border-box',
+    background: '#FCFAF5', borderTopLeftRadius: '26px', borderTopRightRadius: '26px',
+    padding: '14px 22px 26px', boxShadow: '0 -20px 60px rgba(40,25,15,0.4)',
+    maxHeight: '92vh', overflowY: 'auto',
+  },
+  pickerTitle: { fontSize: '19px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 4px', textAlign: 'center' },
+  pickerSub: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '0 0 20px' },
+  method: {
+    width: '100%', boxSizing: 'border-box',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px',
+    padding: '18px 16px', marginBottom: '12px',
+    background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',
+    border: '0.5px solid #E5D9C2', borderRadius: '16px',
+    cursor: 'pointer',
+    boxShadow: '0 2px 10px rgba(80,50,20,0.05)',
+  },
+  methodBusy: { opacity: 0.6, cursor: 'default' },
+  methodLogo: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '36px' },
+  methodLine: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  paypalChosenWrap: {
+    width: '100%', boxSizing: 'border-box',
+    padding: '16px', marginBottom: '12px',
+    background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)',
+    border: '0.5px solid #C9A85C', borderRadius: '16px',
+  },
+  methodLogoRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '14px' },
   paypalWrap: { minHeight: '52px' },
 }
