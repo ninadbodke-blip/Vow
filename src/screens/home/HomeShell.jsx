@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import SheetPortal from '../../components/SheetPortal'
 import VowBrandMark from '../../components/VowBrandMark'
+import CoachMark from '../../components/CoachMark'
 import DailyCheckin from '../freeHome/DailyCheckin'
 import UrgeFlow from '../UrgeFlow'
 import SlipFlow from '../SlipFlow'
@@ -118,6 +119,49 @@ export default function HomeShell({ progress }) {
   const [movingToReclaim, setMovingToReclaim] = useState(false)
   const [stageSheet, setStageSheet] = useState(null)
 
+  // ---- Guided tour (coach marks) ----
+  const treeRef = useRef(null)
+  const wayfinderRef = useRef(null)
+  const todayRef = useRef(null)
+  const journalRef = useRef(null)
+  const toolsRef = useRef(null)
+  const yoursRef = useRef(null)
+  const vowPathRef = useRef(null)
+  const [tourOpen, setTourOpen] = useState(false)
+
+  // Show the tour once, on first arrival, gated by a DB flag (home_oriented).
+  useEffect(() => {
+    let cancelled = false
+    async function maybeStartTour() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+      const { data } = await supabase
+        .from('vow_path_progress')
+        .select('home_oriented')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (!cancelled && data && !data.home_oriented) {
+        // small delay so the home has painted before we measure targets
+        setTimeout(() => { if (!cancelled) setTourOpen(true) }, 600)
+      }
+    }
+    maybeStartTour()
+    return () => { cancelled = true }
+  }, [])
+
+  const finishTour = useCallback(async () => {
+    setTourOpen(false)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase
+        .from('vow_path_progress')
+        .update({ home_oriented: true })
+        .eq('user_id', user.id)
+    }
+  }, [])
+
+  // Steps are built after render values exist (see `tourSteps` below return guard).
+
   async function loadAll(silent = false) {
     if (!silent) setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -227,13 +271,60 @@ export default function HomeShell({ progress }) {
     surfacing = `You’ve checked in ${checkinCount} times. Patterns are forming.`
   }
 
+  // ---- Guided tour steps (home screen). Only include steps whose target
+  // actually renders in this mode, so no arrow ever points at nothing. ----
+  const tourSteps = [
+    {
+      ref: treeRef,
+      title: 'This is your tree.',
+      body: 'It grows as you show up. Tap it each day to check in — just a quick note on how you’re doing. That’s the heart of it.',
+      placement: 'bottom',
+    },
+    {
+      ref: wayfinderRef,
+      title: 'Where you are right now.',
+      body: 'Recovery has stages. Tap here any time to see them all and move between them as things change for you.',
+      placement: 'bottom',
+    },
+    ...(mode.daily ? [{
+      ref: todayRef,
+      title: 'Today’s little thing.',
+      body: 'One short activity for today — a couple of minutes. Small, doable, and made for the stage you’re in.',
+      placement: 'top',
+    }] : []),
+    {
+      ref: journalRef,
+      title: 'Write it out.',
+      body: 'A private space to put down whatever’s on your mind. No rules — just your words, whenever you need them.',
+      placement: 'top',
+    },
+    ...(tools.length > 0 ? [{
+      ref: toolsRef,
+      title: 'Tools for right now.',
+      body: 'Quick things you can reach for when you need a hand. Come back to these whenever a moment gets hard.',
+      placement: 'top',
+    }] : []),
+    {
+      ref: yoursRef,
+      title: 'Yours to keep.',
+      body: 'The people you’re doing this for, and the milestones you earn along the way. They stay yours, no matter what.',
+      placement: 'top',
+    },
+    {
+      ref: vowPathRef,
+      title: 'Ready for more?',
+      body: 'The Vow Path is a deeper, day-by-day journey — hands-on tools and proven, science-backed techniques to guide your recovery. Open it whenever you’re ready.',
+      placement: 'top',
+    },
+  ]
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
 
         {/* TOP */}
         <div style={styles.topBar}>
-          <StageWayfinder progress={progress} />
+          <span ref={wayfinderRef}><StageWayfinder progress={progress} /></span>
           <span style={styles.brandCenter}><VowBrandMark size={17} /></span>
           <button onClick={() => navigate('/app/profile')} style={styles.iconBtn} aria-label="Profile">
             <ProfileIcon />
@@ -242,6 +333,7 @@ export default function HomeShell({ progress }) {
         <h1 style={styles.greeting}>{greet}{firstName ? `, ${firstName}` : ''}.</h1>
 
         {/* THE TREE */}
+        <div ref={treeRef}>
         <TreeHero
           seed={userId}
           mode={freeState}
@@ -256,6 +348,7 @@ export default function HomeShell({ progress }) {
           tendedToday={!!todayCheckin}
           onTend={() => setCheckinOpen(true)}
         />
+        </div>
 
         {/* no tracker yet, in a day-count mode */}
         {mode.counter === 'days' && !tracker && (
@@ -269,7 +362,7 @@ export default function HomeShell({ progress }) {
         {mode.daily && (
           <>
             <p style={styles.sectionLabel}>Today</p>
-            <button onClick={() => setOpenPractice({ ...mode.daily, eyebrow: 'Today' })} style={styles.practiceCard}>
+            <button ref={todayRef} onClick={() => setOpenPractice({ ...mode.daily, eyebrow: 'Today' })} style={styles.practiceCard}>
               <span style={styles.practiceGlyph}>{mode.daily.Glyph && <mode.daily.Glyph />}</span>
               <span style={styles.practiceText}>
                 <span style={styles.practiceTitle}>{mode.daily.title}</span>
@@ -281,7 +374,7 @@ export default function HomeShell({ progress }) {
         )}
 
         {/* IN YOUR WORDS — the journal, its own long bar */}
-        <button onClick={() => setOpenPractice({ ...JOURNAL, eyebrow: 'In your words' })} style={styles.journalBar}>
+        <button ref={journalRef} onClick={() => setOpenPractice({ ...JOURNAL, eyebrow: 'In your words' })} style={styles.journalBar}>
           <span style={styles.journalGlyph}><JOURNAL.Glyph /></span>
           <span style={styles.practiceText}>
             <span style={styles.journalTitle}>{JOURNAL.title}</span>
@@ -294,7 +387,7 @@ export default function HomeShell({ progress }) {
         {tools.length > 0 && (
           <>
             <p style={styles.sectionLabel}>Tools</p>
-            <div style={styles.practiceGrid}>
+            <div ref={toolsRef} style={styles.practiceGrid}>
               {tools.map(p => (
                 <button key={p.id} onClick={() => setOpenPractice({ ...p, eyebrow: 'Tools' })} style={styles.miniTile}>
                   <span style={styles.miniGlyph}>{p.Glyph && <p.Glyph />}</span>
@@ -343,7 +436,7 @@ export default function HomeShell({ progress }) {
 
         {/* YOURS — anchors & milestones */}
         <p style={{ ...styles.sectionLabel, marginTop: '22px' }}>Yours</p>
-        <div style={{ ...styles.yoursGrid, gridTemplateColumns: tracker ? '1fr 1fr' : '1fr' }}>
+        <div ref={yoursRef} style={{ ...styles.yoursGrid, gridTemplateColumns: tracker ? '1fr 1fr' : '1fr' }}>
           <button onClick={() => navigate('/app/anchors')} style={styles.yoursCard}>
             <span style={styles.yoursGlyph}><AnchorGlyph /></span>
             <span style={styles.yoursTitle}>Your anchors</span>
@@ -363,13 +456,28 @@ export default function HomeShell({ progress }) {
           </button>
         )}
 
+        <div ref={vowPathRef}>
         <VowPathInvite
           stage={freeState}
           variant={freeState === 'endure' ? 'moment' : 'calm'}
           momentLabel={freeState === 'endure' ? "You're holding the line" : undefined}
         />
+        </div>
 
         <BottomNav />
+
+        {/* Gentle guided tour — first visit, replayable via the "?" */}
+        <CoachMark steps={tourSteps} open={tourOpen} onClose={finishTour} />
+        {!tourOpen && (
+          <button
+            onClick={() => setTourOpen(true)}
+            style={styles.tourReplay}
+            aria-label="Show me around"
+            title="Show me around"
+          >
+            ?
+          </button>
+        )}
 
         {stageSheet && (
           <SheetPortal>
@@ -452,6 +560,7 @@ const styles = {
   brandCenter: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', pointerEvents: 'none' },
   eyebrow: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: 0 },
   iconBtn: { width: '38px', height: '38px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'rgba(255,255,255,0.7)', color: '#6B5C4A', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
+  tourReplay: { position: 'fixed', right: '16px', bottom: '88px', width: '34px', height: '34px', borderRadius: '50%', border: '0.5px solid #DDCFB6', background: '#FCFAF5', color: '#854F0B', fontSize: '16px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer', boxShadow: '0 4px 14px rgba(60,40,20,0.18)', zIndex: 1500 },
   greeting: { fontSize: '22px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 14px', lineHeight: 1.25 },
 
   setupCard: { display: 'block', width: '100%', textAlign: 'left', marginTop: '12px', padding: '14px 16px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.05)' },
