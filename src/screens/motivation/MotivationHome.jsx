@@ -372,11 +372,11 @@ const styles = {
   sectionLabel: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.16em', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '4px 2px 9px' },
   tourReplay: { position: 'fixed', right: '16px', bottom: '88px', width: '34px', height: '34px', borderRadius: '50%', border: '0.5px solid #DDCFB6', background: '#FCFAF5', color: '#854F0B', fontSize: '16px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer', boxShadow: '0 4px 14px rgba(60,40,20,0.18)', zIndex: 1500 },
 
-  vowCard: { position: 'relative', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', padding: '20px 18px 14px', boxShadow: '0 3px 14px rgba(120,90,40,0.07)' },
-  vowQuoteMark: { position: 'absolute', top: '4px', left: '11px', fontFamily: 'Georgia, serif', fontSize: '34px', color: '#D9B57A', opacity: 0.55, lineHeight: 1 },
-  vowText: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '16px', color: '#2A1F15', lineHeight: 1.6, margin: '4px 0 0', textAlign: 'center' },
-  vowEmpty: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '15px', color: '#9C8C78', lineHeight: 1.6, margin: '4px 0 0', textAlign: 'center' },
-  vowMeta: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '10.5px', color: '#9C8C78', textAlign: 'right', margin: '10px 0 0' },
+  vowCard: { position: 'relative', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', padding: '26px 20px 18px', boxShadow: '0 3px 14px rgba(120,90,40,0.07)', textAlign: 'center' },
+  vowQuoteMark: { display: 'block', fontFamily: 'Georgia, serif', fontSize: '32px', color: '#D9B57A', opacity: 0.55, lineHeight: 0.6, margin: '0 0 6px' },
+  vowText: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '16px', color: '#2A1F15', lineHeight: 1.6, margin: '0 auto', textAlign: 'center', maxWidth: '92%' },
+  vowEmpty: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '15px', color: '#9C8C78', lineHeight: 1.6, margin: '0 auto', textAlign: 'center', maxWidth: '92%' },
+  vowMeta: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '10.5px', color: '#9C8C78', textAlign: 'center', margin: '12px 0 0' },
 
   override: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '13px', border: 'none', borderRadius: '999px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', boxShadow: '0 5px 16px -5px rgba(30,18,8,0.45)', cursor: 'pointer', fontFamily: 'Georgia, serif' },
   overrideDot: { width: '7px', height: '7px', borderRadius: '50%', background: '#C5572C', boxShadow: '0 0 8px rgba(197,87,44,0.8)' },
