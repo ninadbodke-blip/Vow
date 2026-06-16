@@ -574,7 +574,7 @@ const styles = {
   setupTitle: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0 },
   setupSub: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '4px 0 0', lineHeight: 1.45 },
 
-  sectionLabel: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '20px 0 8px', paddingLeft: '2px' },
+  sectionLabel: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '26px 0 11px', paddingLeft: '2px' },
 
   practiceCard: { display: 'flex', alignItems: 'center', gap: '14px', width: '100%', textAlign: 'left', padding: '16px', background: 'linear-gradient(180deg, #FBF7EE 0%, #F6EFE0 100%)', border: '0.5px solid #E5D9C2', borderRadius: '18px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 18px rgba(80,50,20,0.07)' },
   practiceGlyph: { width: '48px', height: '48px', flexShrink: 0, borderRadius: '14px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px -4px rgba(30,18,8,0.45)' },
@@ -582,11 +582,11 @@ const styles = {
   practiceTitle: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2 },
   practiceLine: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
   practiceArrow: { marginLeft: 'auto', fontSize: '22px', color: '#B9A07E', fontFamily: 'Georgia, serif', lineHeight: 1, paddingLeft: '6px' },
-  journalBar: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', marginTop: '10px', padding: '13px 16px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(80,50,20,0.05)' },
+  journalBar: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', marginTop: '12px', padding: '14px 16px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(80,50,20,0.05)' },
   journalGlyph: { width: '40px', height: '40px', flexShrink: 0, borderRadius: '12px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   journalTitle: { fontSize: '15.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2 },
 
-  practiceGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '9px', marginTop: '9px', alignItems: 'stretch' },
+  practiceGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '11px', alignItems: 'stretch' },
   miniTile: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '8px', minHeight: '98px', padding: '13px 6px 11px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.04)' },
   miniGlyph: { width: '38px', height: '38px', flexShrink: 0, borderRadius: '12px', background: 'rgba(58,42,28,0.07)', color: '#6B4F23', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   miniTitle: { fontSize: '11.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', textAlign: 'center', lineHeight: 1.25 },
@@ -609,7 +609,7 @@ const styles = {
   rowText: { flex: 1, fontSize: '13.5px', color: '#3A2D1E', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
   rowArrow: { fontSize: '13px', color: '#B9A07E' },
   surfacingRow: { background: 'transparent', border: 'none', textAlign: 'left', padding: '10px 2px 0', fontSize: '13px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer' },
-  yoursGrid: { display: 'grid', gap: '10px', marginTop: '10px' },
+  yoursGrid: { display: 'grid', gap: '10px', marginTop: '11px' },
   yoursCard: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '7px', textAlign: 'left', padding: '14px 13px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 10px rgba(120,90,40,0.05)' },
   yoursGlyph: { width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#D9B57A', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid rgba(217,181,122,0.35)' },
   yoursTitle: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500 },
