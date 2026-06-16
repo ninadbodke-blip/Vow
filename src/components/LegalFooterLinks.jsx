@@ -34,6 +34,10 @@ export default function LegalFooterLinks() {
       <Link to="/terms" style={styles.link}>
         Terms
       </Link>
+      <span style={styles.dot}>·</span>
+      <Link to="/refund" style={styles.link}>
+        Refunds
+      </Link>
     </nav>
   );
 }

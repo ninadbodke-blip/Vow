@@ -169,6 +169,7 @@ export default function MarketingLayout({ children }) {
             <h4 style={styles.footerHeading}>Legal</h4>
             <Link to="/privacy" style={styles.footerLink}>Privacy Policy</Link>
             <Link to="/terms" style={styles.footerLink}>Terms of Service</Link>
+            <Link to="/refund" style={styles.footerLink}>Refund &amp; Cancellation</Link>
           </div>
         </div>
 

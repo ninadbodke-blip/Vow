@@ -21,6 +21,7 @@ import Anchors from './screens/Anchors'
 import AnchorPublic from './screens/AnchorPublic'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms from './pages/Terms'
+import RefundPolicy from './pages/RefundPolicy'
 
 // ===== Marketing (public, indexed by Google) =====
 import MarketingHome from './marketing/Home'
@@ -164,6 +165,7 @@ function AppRoutes() {
       <Route path="/a/:token" element={<AnchorPublic />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/refund" element={<RefundPolicy />} />
 
       {/* ===== MARKETING (root, public, indexed) ===== */}
       {/* Native Capacitor APK skips marketing and goes straight to the app entry. */}
