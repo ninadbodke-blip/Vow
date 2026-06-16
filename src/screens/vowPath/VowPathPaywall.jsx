@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { startVowPathPurchase } from '../../lib/razorpayCheckout'
 import { renderPayPalButtons } from '../../lib/paypalCheckout'
+import { purchaseVowPath } from '../../lib/revenueCatCheckout'
 
 // =====================================================================
 // VowPathPaywall — the soft paywall shown when a non-paying user tries to
@@ -54,6 +56,16 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
     return () => { cancelled = true }
   }, [paypalChosen])
 
+  const isNative = Capacitor.isNativePlatform()
+
+  // Android billing readiness gate.
+  // While false, the Android app does NOT offer the purchase (no approved Play
+  // payments profile / RevenueCat not live yet) — it shows a "coming soon" note
+  // instead of a broken buy. Flip to true once RevenueCat + Play Billing are
+  // live and tested. Web (Razorpay/PayPal) is unaffected by this flag.
+  const ANDROID_BILLING_LIVE = false
+  const nativePurchaseReady = isNative && ANDROID_BILLING_LIVE
+
   const handleRazorpay = async () => {
     setError(null)
     setBusy(true)
@@ -62,6 +74,28 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
       onError: (msg) => { setBusy(false); setError(msg) },
       onDismiss: () => { setBusy(false) },
     })
+  }
+
+  // Android: Google requires Play Billing for in-app digital goods (no
+  // Razorpay/PayPal). The main button triggers the Play purchase sheet directly.
+  const handleNativePurchase = async () => {
+    setError(null)
+    setBusy(true)
+    await purchaseVowPath({
+      onSuccess: () => { setBusy(false); onUnlocked?.() },
+      onCancel: () => { setBusy(false) },
+      onError: (msg) => { setBusy(false); setError(msg) },
+    })
+  }
+
+  const handleMainButton = () => {
+    if (busy) return
+    if (isNative) {
+      if (nativePurchaseReady) handleNativePurchase()
+      // if not ready, button is replaced by the coming-soon note (see render)
+    } else {
+      setShowPicker(true)
+    }
   }
 
   const closePicker = () => {
@@ -95,18 +129,40 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
           ))}
         </div>
 
-        <button
-          onClick={() => setShowPicker(true)}
-          style={S.payBtn}
-        >
-          {`Unlock the Vow Path — begin ${stageName}`}
-        </button>
+        {isNative && !nativePurchaseReady ? (
+          <>
+            <div style={S.comingSoon}>
+              <p style={S.comingSoonTitle}>The Vow Path is coming to Android soon.</p>
+              <p style={S.comingSoonBody}>
+                For now, the full free experience is yours — every day, every tool,
+                no charge. We'll open the deeper path here before long.
+              </p>
+            </div>
+            <button onClick={() => onClose?.()} style={S.payBtn}>
+              Continue with the free path
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={handleMainButton}
+              style={S.payBtn}
+              disabled={busy}
+            >
+              {busy && isNative ? 'Opening…' : `Unlock the Vow Path — begin ${stageName}`}
+            </button>
 
-        <p style={S.fineprint}>One-time payment · lifetime access · secure checkout</p>
+            {isNative && error && <p style={{ ...S.error, marginTop: '12px', marginBottom: 0 }}>{error}</p>}
 
-        <button onClick={() => onClose?.()} style={S.laterBtn}>
-          Maybe later
-        </button>
+            <p style={S.fineprint}>One-time payment · lifetime access · secure checkout</p>
+          </>
+        )}
+
+        {!(isNative && !nativePurchaseReady) && (
+          <button onClick={() => onClose?.()} style={S.laterBtn}>
+            Maybe later
+          </button>
+        )}
       </div>
 
       {/* METHOD PICKER — floating tile */}
@@ -224,4 +280,19 @@ const S = {
   },
   methodLogoRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '14px' },
   paypalWrap: { minHeight: '52px' },
+  comingSoon: {
+    background: 'linear-gradient(180deg, #FBF1DD 0%, #F6E8C4 100%)',
+    border: '0.5px solid #E3D2AE',
+    borderRadius: '16px',
+    padding: '18px 18px',
+    marginBottom: '14px',
+  },
+  comingSoonTitle: {
+    fontSize: '15.5px', color: '#854F0B', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', fontWeight: 500, margin: '0 0 6px', textAlign: 'center',
+  },
+  comingSoonBody: {
+    fontSize: '13.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif',
+    lineHeight: 1.55, margin: 0, textAlign: 'center',
+  },
 }
