@@ -85,7 +85,7 @@ export default function Terms() {
       <div style={styles.wrap}>
         <div style={styles.kicker}>Vow</div>
         <h1 style={styles.h1}>Terms of Service</h1>
-        <p style={styles.meta}>Last updated: 3 June 2026</p>
+        <p style={styles.meta}>Last updated: 15 June 2026</p>
 
         <p style={styles.lede}>
           These Terms of Service (“Terms”) govern your access to and use of Vow™ — our
@@ -175,8 +175,10 @@ export default function Terms() {
           </li>
           <li style={styles.li}>
             <span style={styles.strong}>How purchases are processed.</span> Android-app
-            purchases are handled by Google Play and subject to its terms; web purchases are
-            processed by Razorpay. We do not receive or store your full payment details.
+            purchases are handled by Google Play and subject to its terms. Web purchases are
+            processed by our payment partners: <span style={styles.strong}>Razorpay</span>{" "}
+            for customers in India, and <span style={styles.strong}>PayPal</span> for
+            customers outside India. We do not receive or store your full payment details.
           </li>
           <li style={styles.li}>
             <span style={styles.strong}>Refunds.</span> Because the Service provides digital
