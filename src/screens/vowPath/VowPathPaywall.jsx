@@ -2,7 +2,11 @@ import { useState, useRef, useEffect } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { startVowPathPurchase } from '../../lib/razorpayCheckout'
 import { renderPayPalButtons } from '../../lib/paypalCheckout'
-import { purchaseVowPath } from '../../lib/revenueCatCheckout'
+// NOTE: RevenueCat purchase import is deferred until Play Billing goes live.
+// The Android purchase is gated off (ANDROID_BILLING_LIVE=false) and shows a
+// "coming soon" note, so no RevenueCat code is referenced in this build.
+// When billing is live: install @revenuecat/purchases-capacitor, then add:
+//   import { purchaseVowPath } from '../../lib/revenueCatCheckout'
 
 // =====================================================================
 // VowPathPaywall — the soft paywall shown when a non-paying user tries to
@@ -76,16 +80,12 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
     })
   }
 
-  // Android: Google requires Play Billing for in-app digital goods (no
-  // Razorpay/PayPal). The main button triggers the Play purchase sheet directly.
+  // Android purchase handler — inert until Play Billing is live.
+  // When ANDROID_BILLING_LIVE flips true (and RevenueCat is installed + imported),
+  // restore the body to:
+  //   await purchaseVowPath({ onSuccess: ..., onCancel: ..., onError: ... })
   const handleNativePurchase = async () => {
-    setError(null)
-    setBusy(true)
-    await purchaseVowPath({
-      onSuccess: () => { setBusy(false); onUnlocked?.() },
-      onCancel: () => { setBusy(false) },
-      onError: (msg) => { setBusy(false); setError(msg) },
-    })
+    setError('The Vow Path is not yet available on Android.')
   }
 
   const handleMainButton = () => {
