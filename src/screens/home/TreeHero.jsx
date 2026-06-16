@@ -353,5 +353,5 @@ const styles = {
   tendedRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
   tendedTick: { color: '#5F8A4E', fontSize: '15px' },
   tendedText: { fontSize: '13.5px', color: '#2A1F15', fontFamily: 'Georgia, serif' },
-  tendedUpdate: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '12px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', textDecoration: 'underline', padding: 0 },
+  tendedUpdate: { background: 'transparent', border: '0.5px solid #DDCFB6', color: '#854F0B', fontSize: '11px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', padding: '4px 12px', borderRadius: '9px', marginLeft: '4px' },
 }

@@ -121,6 +121,7 @@ export default function HomeShell({ progress }) {
 
   // ---- Guided tour (coach marks) ----
   const treeRef = useRef(null)
+  const setupRef = useRef(null)
   const wayfinderRef = useRef(null)
   const todayRef = useRef(null)
   const journalRef = useRef(null)
@@ -278,9 +279,20 @@ export default function HomeShell({ progress }) {
     {
       ref: treeRef,
       title: 'This is your tree.',
-      body: 'It grows as you show up. Tap it each day to check in — just a quick note on how you’re doing. That’s the heart of it.',
+      body:
+        freeState === 'commit'
+          ? 'It holds your countdown to day one — watch it tick down to the day you chose. Tap the tree to check in each day; it grows as you show up.'
+          : (freeState === 'endure' || freeState === 'build') && tracker
+            ? 'It holds your day counter — every day, hour, and minute you’ve stayed free, ticking on its own. Tap the tree to check in each day; it grows as you show up.'
+            : 'It grows as you show up. Tap it each day to check in — just a quick note on how you’re doing. That’s the heart of it.',
       placement: 'bottom',
     },
+    ...(mode.counter === 'days' && !tracker ? [{
+      ref: setupRef,
+      title: 'Start your counter.',
+      body: 'Tap here to mark the day you stopped. Your live counter begins from that moment and counts every day you stay free — no pressure, it just keeps time with you.',
+      placement: 'bottom',
+    }] : []),
     {
       ref: wayfinderRef,
       title: 'Where you are right now.',
@@ -359,7 +371,7 @@ export default function HomeShell({ progress }) {
 
         {/* no tracker yet, in a day-count mode */}
         {mode.counter === 'days' && !tracker && (
-          <button onClick={() => navigate('/app/onboarding/setup')} style={styles.setupCard}>
+          <button ref={setupRef} onClick={() => navigate('/app/onboarding/setup')} style={styles.setupCard}>
             <p style={styles.setupTitle}>Start your day count</p>
             <p style={styles.setupSub}>A quiet counter from the day you stopped. Two minutes to set up →</p>
           </button>

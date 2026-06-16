@@ -12,28 +12,19 @@ import { supabase } from '../../supabaseClient'
 // correct the start date — it updates the tracker and tells the home.
 // ===================================================================
 
-function Jar({ n, u, fill, accent, hideIfZero }) {
-  const hidden = hideIfZero && (!n || n === 0 || n === '00')
+function Jar({ n, u, fill, accent }) {
   return (
     <div style={S.jar}>
-      {!hidden && (
-        <div style={{
-          ...S.fill,
-          height: `${Math.min(fill || 0, 100)}%`,
-          background: accent
-            ? 'linear-gradient(180deg, rgba(232,196,138,0.30) 0%, rgba(217,151,80,0.62) 100%)'
-            : 'linear-gradient(180deg, rgba(217,181,122,0.16) 0%, rgba(201,168,92,0.50) 100%)',
-        }} />
-      )}
+      <div style={{
+        ...S.fill,
+        height: `${Math.min(fill || 0, 100)}%`,
+        background: accent
+          ? 'linear-gradient(180deg, rgba(232,196,138,0.30) 0%, rgba(217,151,80,0.62) 100%)'
+          : 'linear-gradient(180deg, rgba(217,181,122,0.16) 0%, rgba(201,168,92,0.50) 100%)',
+      }} />
       <div style={S.content}>
-        {hidden ? (
-          <p style={{ ...S.u, marginTop: 10 }}>—</p>
-        ) : (
-          <>
-            <p style={{ ...S.n, ...(accent ? S.nAccent : {}) }}>{n}</p>
-            <p style={S.u}>{u}</p>
-          </>
-        )}
+        <p style={{ ...S.n, ...(accent ? S.nAccent : {}) }}>{n}</p>
+        <p style={S.u}>{u}</p>
       </div>
     </div>
   )
@@ -104,24 +95,21 @@ export default function JarCounter({ startISO, trackerId = null, onStartChanged 
   return (
     <div style={S.wrap}>
       <div style={S.grid}>
-        <Jar n={years} u={years === 1 ? 'year' : 'years'} fill={yFill} hideIfZero />
-        <Jar n={months} u="months" fill={moFill} />
-        <Jar n={days} u="days" fill={dFill} />
+        {years > 0 && <Jar n={years} u={years === 1 ? 'year' : 'years'} fill={yFill} />}
+        {(years > 0 || months > 0) && <Jar n={months} u={months === 1 ? 'month' : 'months'} fill={moFill} />}
+        <Jar n={days} u={days === 1 ? 'day' : 'days'} fill={dFill} />
         <Jar n={pad(hours)} u="hours" fill={hFill} />
         <Jar n={pad(mins)} u="mins" fill={miFill} />
         <Jar n={pad(secs)} u="secs" fill={sFill} accent />
       </div>
 
       {!editing ? (
-        <p style={S.since}>
-          Since {sinceStr}
+        <div style={S.sinceRow}>
+          <span style={S.since}>Since {sinceStr}</span>
           {trackerId && (
-            <>
-              {' · '}
-              <button style={S.changeLink} onClick={openEdit}>change</button>
-            </>
+            <button style={S.changeBtn} onClick={openEdit}>Change</button>
           )}
-        </p>
+        </div>
       ) : (
         <div style={S.editPanel}>
           <p style={S.editLabel}>When did this start?</p>
@@ -144,27 +132,29 @@ export default function JarCounter({ startISO, trackerId = null, onStartChanged 
 }
 
 const S = {
-  wrap: { margin: '10px auto 0', maxWidth: 320 },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 },
+  wrap: { margin: '16px auto 20px', maxWidth: 330 },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 },
   jar: {
     position: 'relative', overflow: 'hidden',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    border: '0.5px solid rgba(217,181,122,0.38)', borderRadius: 12,
-    padding: '9px 3px 8px', textAlign: 'center', minHeight: 46,
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 10px -4px rgba(20,10,4,0.45)',
+    background: 'linear-gradient(165deg, #3D2C1D 0%, #241710 100%)',
+    border: '0.5px solid rgba(217,181,122,0.22)', borderRadius: 15,
+    padding: '14px 4px 12px', textAlign: 'center', minHeight: 58,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 16px -8px rgba(20,10,4,0.5)',
   },
   fill: { position: 'absolute', bottom: 0, left: 0, right: 0, transition: 'height 0.25s cubic-bezier(0.4, 0, 0.2, 1)', pointerEvents: 'none', zIndex: 0 },
   content: { position: 'relative', zIndex: 1 },
-  n: { fontSize: 18, fontWeight: 500, color: '#F5EBDA', lineHeight: 1, margin: 0, fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums' },
+  n: { fontSize: 23, fontWeight: 400, color: '#F5EBDA', lineHeight: 1, margin: 0, fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums' },
   nAccent: { color: '#E8C48A' },
-  u: { fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(245,235,218,0.5)', margin: '4px 0 0' },
-  since: { fontSize: 11, color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '7px 0 0' },
-  changeLink: { background: 'transparent', border: 'none', padding: 0, color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11, textDecoration: 'underline', cursor: 'pointer', pointerEvents: 'auto' },
-  editPanel: { marginTop: 8, background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: 12, padding: '10px 12px', pointerEvents: 'auto' },
-  editLabel: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12, color: '#6B5C4A', margin: '0 0 6px', textAlign: 'center' },
-  editInput: { width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 9, border: '0.5px solid #E2D7C3', background: '#FDFBF6', color: '#2A1F15', fontSize: 13, fontFamily: 'inherit' },
-  editErr: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11.5, color: '#A8431F', margin: '6px 0 0', textAlign: 'center' },
-  editRow: { display: 'flex', gap: 8, marginTop: 8 },
-  editCancel: { flex: 1, padding: '8px', background: 'transparent', border: '0.5px solid #E2D7C3', borderRadius: 9, color: '#6B5C4A', fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' },
-  editSave: { flex: 1, padding: '8px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: 'none', borderRadius: 9, color: '#FAF7F1', fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' },
+  u: { fontSize: 8.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(201,168,92,0.7)', margin: '7px 0 0' },
+  sinceRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, margin: '14px 0 0', flexWrap: 'wrap' },
+  since: { fontSize: 11.5, color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  changeBtn: { background: 'transparent', border: '0.5px solid #DDCFB6', padding: '5px 13px', borderRadius: 9, color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11, cursor: 'pointer', pointerEvents: 'auto' },
+  editPanel: { marginTop: 12, background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: 14, padding: '14px 14px', pointerEvents: 'auto' },
+  editLabel: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, color: '#6B5C4A', margin: '0 0 8px', textAlign: 'center' },
+  editInput: { width: '100%', boxSizing: 'border-box', padding: '9px 11px', borderRadius: 10, border: '0.5px solid #E2D7C3', background: '#FDFBF6', color: '#2A1F15', fontSize: 13, fontFamily: 'inherit' },
+  editErr: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11.5, color: '#A8431F', margin: '7px 0 0', textAlign: 'center' },
+  editRow: { display: 'flex', gap: 9, marginTop: 10 },
+  editCancel: { flex: 1, padding: '9px', background: 'transparent', border: '0.5px solid #E2D7C3', borderRadius: 10, color: '#6B5C4A', fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' },
+  editSave: { flex: 1, padding: '9px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: 'none', borderRadius: 10, color: '#FAF7F1', fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' },
 }
