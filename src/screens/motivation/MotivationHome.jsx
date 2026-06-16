@@ -6,6 +6,7 @@ import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import VowPathInvite from '../freeHome/VowPathInvite'
 import NightSky from './NightSky'
+import CoachMark from '../../components/CoachMark'
 import VowBrandMark from '../../components/VowBrandMark'
 import { THEMES, THEME_MAP } from './data/themes'
 
@@ -133,6 +134,39 @@ export default function MotivationHome() {
   const [why, setWhy] = useState(null)
   const [costLine, setCostLine] = useState(null)
   const [anchors, setAnchors] = useState([])
+
+  // ---- Guided tour (coach marks) for the Motivation tab ----
+  const skyRef = useRef(null)
+  const vowRef = useRef(null)
+  const overrideRef = useRef(null)
+  const shelfRef = useRef(null)
+  const [tourOpen, setTourOpen] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    async function maybeStartTour() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+      const { data } = await supabase
+        .from('vow_path_progress')
+        .select('motivation_oriented')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (!cancelled && data && !data.motivation_oriented) {
+        setTimeout(() => { if (!cancelled) setTourOpen(true) }, 700)
+      }
+    }
+    maybeStartTour()
+    return () => { cancelled = true }
+  }, [])
+
+  const finishTour = async () => {
+    setTourOpen(false)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('vow_path_progress').update({ motivation_oriented: true }).eq('user_id', user.id)
+    }
+  }
   const [daysFree, setDaysFree] = useState(null)
   const [trackerId, setTrackerId] = useState(null)
   const [override, setOverride] = useState(false)
@@ -202,6 +236,34 @@ export default function MotivationHome() {
 
   const readCount = visibleArticles.filter(a => readSlugs.includes(a.slug)).length
 
+  // ---- Motivation tour steps (all targets are always present) ----
+  const tourSteps = [
+    {
+      ref: skyRef,
+      title: 'A new line each day.',
+      body: 'A fresh piece of wisdom every day, and a sky that lights up as you read. Something steady to return to.',
+      placement: 'bottom',
+    },
+    {
+      ref: vowRef,
+      title: 'Your vow, front and centre.',
+      body: 'The promise you made yourself, kept where you can see it. On a hard night, this is the thing to come back to.',
+      placement: 'bottom',
+    },
+    {
+      ref: overrideRef,
+      title: 'When the urge hits.',
+      body: 'Tap here any time a craving feels strong — it opens a calm, guided moment to help you ride it out.',
+      placement: 'bottom',
+    },
+    {
+      ref: shelfRef,
+      title: 'A shelf for every mood.',
+      body: 'Short, honest essays sorted by how you’re feeling tonight. Read one when you need a hand, or browse them all.',
+      placement: 'top',
+    },
+  ]
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
@@ -213,15 +275,17 @@ export default function MotivationHome() {
         </div>
 
         {/* THE NIGHT SKY — the tree, drawn in stars */}
+        <div ref={skyRef}>
         <NightSky
           lit={readCount}
           total={visibleArticles.length}
           quote={todayQuote.text}
           attribution={todayQuote.attribution}
         />
+        </div>
 
         {/* YOUR VOW — the illuminated artifact */}
-        <div>
+        <div ref={vowRef}>
           <p style={styles.sectionLabel}>Your vow</p>
           <div style={styles.vowCard}>
             <span style={styles.vowQuoteMark}>&ldquo;</span>
@@ -245,13 +309,13 @@ export default function MotivationHome() {
         </div>
 
         {/* THE OVERRIDE — break glass */}
-        <button style={styles.override} onClick={() => setOverride(true)}>
+        <button ref={overrideRef} style={styles.override} onClick={() => setOverride(true)}>
           <span style={styles.overrideDot} />
           <span style={styles.overrideLabel}>The urge is here</span>
         </button>
 
         {/* THE SHELF — four weathers, then the whole library */}
-        <div>
+        <div ref={shelfRef}>
           <p style={styles.sectionLabel}>The shelf</p>
           <p style={styles.weatherTitle}>What&rsquo;s the weather tonight?</p>
           <div style={styles.catGrid}>
@@ -275,6 +339,12 @@ export default function MotivationHome() {
         <VowPathInvite variant="calm" />
 
         <BottomNav />
+
+        {/* Gentle guided tour — first visit to Motivation, replayable via "?" */}
+        <CoachMark steps={tourSteps} open={tourOpen} onClose={finishTour} />
+        {!tourOpen && (
+          <button onClick={() => setTourOpen(true)} style={styles.tourReplay} aria-label="Show me around" title="Show me around">?</button>
+        )}
       </div>
 
       {override && (
@@ -300,6 +370,7 @@ const styles = {
   profileBtn: { background: 'transparent', border: 'none', color: '#854F0B', cursor: 'pointer', padding: '4px 8px', minWidth: '40px', display: 'flex', justifyContent: 'flex-end' },
 
   sectionLabel: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.16em', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '4px 2px 9px' },
+  tourReplay: { position: 'fixed', right: '16px', bottom: '88px', width: '34px', height: '34px', borderRadius: '50%', border: '0.5px solid #DDCFB6', background: '#FCFAF5', color: '#854F0B', fontSize: '16px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer', boxShadow: '0 4px 14px rgba(60,40,20,0.18)', zIndex: 1500 },
 
   vowCard: { position: 'relative', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', padding: '20px 18px 14px', boxShadow: '0 3px 14px rgba(120,90,40,0.07)' },
   vowQuoteMark: { position: 'absolute', top: '4px', left: '11px', fontFamily: 'Georgia, serif', fontSize: '34px', color: '#D9B57A', opacity: 0.55, lineHeight: 1 },

@@ -5,6 +5,7 @@ import BottomNav from '../../components/BottomNav'
 import VowPathInvite from '../freeHome/VowPathInvite'
 import OraclePool from './OraclePool'
 import JournalArchive from './JournalArchive'
+import CoachMark from '../../components/CoachMark'
 import VowBrandMark from '../../components/VowBrandMark'
 import { moodByScore, moodByValue } from '../freeHome/DailyCheckin'
 
@@ -185,6 +186,41 @@ export default function MirrorScreen() {
   const [byType, setByType] = useState({})
   const [aiReflection, setAiReflection] = useState(null)
   const [pebbleDays, setPebbleDays] = useState([])  // ISO dates (yyyy-mm-dd) a pebble was dropped
+
+  // ---- Guided tour (coach marks) for the Oracle tab ----
+  const poolRef = useRef(null)
+  const sealRef = useRef(null)
+  const weatherRef = useRef(null)
+  const pullRef = useRef(null)
+  const builtRef = useRef(null)
+  const archiveRef = useRef(null)
+  const [tourOpen, setTourOpen] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    async function maybeStartTour() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+      const { data } = await supabase
+        .from('vow_path_progress')
+        .select('oracle_oriented')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (!cancelled && data && !data.oracle_oriented) {
+        setTimeout(() => { if (!cancelled) setTourOpen(true) }, 700)
+      }
+    }
+    maybeStartTour()
+    return () => { cancelled = true }
+  }, [])
+
+  const finishTour = async () => {
+    setTourOpen(false)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('vow_path_progress').update({ oracle_oriented: true }).eq('user_id', user.id)
+    }
+  }
   const nowTs = Date.now()
 
   useEffect(() => {
@@ -372,6 +408,47 @@ export default function MirrorScreen() {
     </div>
   )
 
+  // ---- Oracle tour steps. Each step uses the SAME condition that gates its
+  // section's render, so an arrow never points at a section that isn't there. ----
+  const tourSteps = [
+    {
+      ref: poolRef,
+      title: 'This is your Oracle.',
+      body: 'A still pool that reflects your journey. The more you check in and log, the clearer it grows. Tap it to drop a pebble and see today’s reflection.',
+      placement: 'bottom',
+    },
+    ...(!isEmpty && !isReclaim ? [{
+      ref: sealRef,
+      title: 'Your week, reflected.',
+      body: 'Each week, Vow gathers what you’ve logged into a quiet reflection on how you’re really doing — revealed when you’re ready to look.',
+      placement: 'bottom',
+    }] : []),
+    ...(!isEmpty && !isReclaim && strip.length > 0 ? [{
+      ref: weatherRef,
+      title: 'The week’s weather.',
+      body: 'A glance at your recent mood and energy, and how often the pull showed up. Texture, not judgement.',
+      placement: 'top',
+    }] : []),
+    ...(!isEmpty && !isReclaim && hasPull ? [{
+      ref: pullRef,
+      title: 'The shape of the pull.',
+      body: 'What you’re learning about your urges over time — when they come, and what tends to be around them.',
+      placement: 'top',
+    }] : []),
+    ...(!isEmpty && !isReclaim && hasBuilt ? [{
+      ref: builtRef,
+      title: 'What you’re building.',
+      body: 'The reasons and defenses you’ve been putting in place — proof of who you’re becoming, in your own words.',
+      placement: 'top',
+    }] : []),
+    {
+      ref: archiveRef,
+      title: 'Every word, kept.',
+      body: 'All your journal entries gather here. Tap any one to read it back — or change it. Nothing you write is lost.',
+      placement: 'top',
+    },
+  ]
+
   return (
     <div style={styles.frame}>
       <div style={styles.phone}>
@@ -383,6 +460,7 @@ export default function MirrorScreen() {
         </div>
 
         {/* THE ORACLE POOL — the tree reflected in still water; clarity grows with tending */}
+        <div ref={poolRef}>
         <OraclePool
           clarity={poolClarity}
           daysTended={daysTended}
@@ -391,6 +469,7 @@ export default function MirrorScreen() {
           insight={pebbleToday ? summary : null}
           onPebble={dropPebble}
         />
+        </div>
 
         {isEmpty ? (
           <div style={styles.emptyBlock}>
@@ -422,15 +501,15 @@ export default function MirrorScreen() {
                 </p>
               </div>
             ) : (
-              <>
+              <div ref={sealRef}>
                 <OracleOfVow reflection={aiReflection} />
                 <SundaySeal summary={summary} />
-              </>
+              </div>
             )}
 
             {/* THE WEEK'S WEATHER — recent texture (hidden in reclaim) */}
             {!isReclaim && strip.length > 0 && (
-              <div style={styles.softCard}>
+              <div ref={weatherRef} style={styles.softCard}>
                 <p style={styles.eyebrow}>The week's weather</p>
                 <div style={styles.moodStrip}>
                   {strip.map((c, i) => {
@@ -447,7 +526,7 @@ export default function MirrorScreen() {
 
             {/* PORTRAIT A — the shape of the pull */}
             {!isReclaim && hasPull && (
-              <div style={styles.softCard}>
+              <div ref={pullRef} style={styles.softCard}>
                 <p style={styles.eyebrow}>The shape of the pull</p>
                 <p style={styles.portraitHelper}>What you've learned about it, gathered over time.</p>
                 {pullLines.map((t, i) => <p key={i} style={styles.portraitLine}>{t}</p>)}
@@ -457,7 +536,7 @@ export default function MirrorScreen() {
 
             {/* PORTRAIT B — what you're building in its place */}
             {!isReclaim && hasBuilt && (
-              <div style={styles.builtCard}>
+              <div ref={builtRef} style={styles.builtCard}>
                 <p style={styles.groundEyebrow}>What you're building in its place</p>
                 {builtLines.map((l, i) => (
                   l.kind === 'vow'
@@ -526,11 +605,17 @@ export default function MirrorScreen() {
         )}
 
         <div style={styles.archiveDivider} />
-        <JournalArchive />
+        <div ref={archiveRef}><JournalArchive /></div>
 
         <VowPathInvite variant="calm" />
 
         <BottomNav />
+
+        {/* Gentle guided tour — first visit to Oracle, replayable via "?" */}
+        <CoachMark steps={tourSteps} open={tourOpen} onClose={finishTour} />
+        {!tourOpen && (
+          <button onClick={() => setTourOpen(true)} style={styles.tourReplay} aria-label="Show me around" title="Show me around">?</button>
+        )}
       </div>
     </div>
   )
@@ -553,6 +638,7 @@ const styles = {
   // Vault (dark) cards — Seal & Alchemy
   vaultCard: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '18px', padding: '22px', boxShadow: '0 12px 28px -12px rgba(40,25,10,0.45)' },
   archiveDivider: { height: 1, background: 'linear-gradient(90deg, transparent, rgba(133,79,11,0.18), transparent)', margin: '26px 0 20px' },
+  tourReplay: { position: 'fixed', right: '16px', bottom: '88px', width: '34px', height: '34px', borderRadius: '50%', border: '0.5px solid #DDCFB6', background: '#FCFAF5', color: '#854F0B', fontSize: '16px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer', boxShadow: '0 4px 14px rgba(60,40,20,0.18)', zIndex: 1500 },
   sealGlyph: { textAlign: 'center', fontSize: '20px', margin: '0 0 12px' },
   vaultEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 10px' },
   vaultTextRegular: { fontFamily: 'Georgia, serif', fontSize: '16px', color: '#FAF7F1', margin: 0, lineHeight: 1.6, fontStyle: 'italic' },
