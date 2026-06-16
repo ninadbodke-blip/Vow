@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient'
 import BottomNav from '../../components/BottomNav'
 import VowPathInvite from '../freeHome/VowPathInvite'
 import OraclePool from './OraclePool'
+import JournalArchive from './JournalArchive'
 import VowBrandMark from '../../components/VowBrandMark'
 import { moodByScore, moodByValue } from '../freeHome/DailyCheckin'
 
@@ -524,6 +525,9 @@ export default function MirrorScreen() {
           </>
         )}
 
+        <div style={styles.archiveDivider} />
+        <JournalArchive />
+
         <VowPathInvite variant="calm" />
 
         <BottomNav />
@@ -548,6 +552,7 @@ const styles = {
 
   // Vault (dark) cards — Seal & Alchemy
   vaultCard: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '18px', padding: '22px', boxShadow: '0 12px 28px -12px rgba(40,25,10,0.45)' },
+  archiveDivider: { height: 1, background: 'linear-gradient(90deg, transparent, rgba(133,79,11,0.18), transparent)', margin: '26px 0 20px' },
   sealGlyph: { textAlign: 'center', fontSize: '20px', margin: '0 0 12px' },
   vaultEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 10px' },
   vaultTextRegular: { fontFamily: 'Georgia, serif', fontSize: '16px', color: '#FAF7F1', margin: 0, lineHeight: 1.6, fontStyle: 'italic' },
