@@ -11,8 +11,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 // surface stirs, settles, and one true thing from the week surfaces.
 //
 // Props: { clarity 0-100, daysTended 0-7, pebbleCount 0-7,
-//          pebbleToday bool, insight string|null, onPebble() }
+//          pebbleToday bool, aiReflection string|null, onPebble() }
 // onPebble fires only on the first tap of the day; every tap ripples.
+// When a pebble is dropped, the pool reveals the Oracle's reflection —
+// the real AI letter (aiReflection) when live, else a warm placeholder.
 // ===================================================================
 
 const ORACLE_CSS = `
@@ -38,7 +40,7 @@ const ORACLE_CSS = `
   .vowPoolSh, .vowPoolReed, .vowPoolFly, .vowPoolStar, .vowPoolRStar, .vowPoolHintT { animation: none !important; }
 }`
 
-export default function OraclePool({ clarity = 0, daysTended = 0, pebbleCount = 0, pebbleToday = false, insight = null, onPebble }) {
+export default function OraclePool({ clarity = 0, daysTended = 0, pebbleCount = 0, pebbleToday = false, aiReflection = null, onPebble }) {
   const wrapRef = useRef(null)
   const dispRef = useRef(null)
   const settleRaf = useRef(null)
@@ -214,10 +216,25 @@ export default function OraclePool({ clarity = 0, daysTended = 0, pebbleCount = 
           Checked in {daysTended} of the last 7 days
         </p>
         <div style={S.hairline} />
-        <p style={S.eyebrow}>Today&rsquo;s reflection</p>
-        <p style={S.insight}>
-          {insight || 'Tap the water above to see one honest thing about your week.'}
-        </p>
+        {!pebbleToday ? (
+          <>
+            <p style={S.eyebrow}>The Oracle&rsquo;s reading</p>
+            <p style={S.insightMuted}>Drop a pebble in the water to receive this week&rsquo;s reflection.</p>
+          </>
+        ) : aiReflection ? (
+          <>
+            <p style={S.eyebrow}>This week, read closely</p>
+            <p style={S.insight}>{aiReflection}</p>
+          </>
+        ) : (
+          <>
+            <p style={S.eyebrow}>This week&rsquo;s reading</p>
+            <p style={S.insight}>
+              Soon, the Oracle will read everything you&rsquo;ve trusted it with — your check-ins, the pull and how it passed, who you&rsquo;re becoming — and write you a single, honest reflection. Not a chart. A letter, in your own story&rsquo;s language.
+            </p>
+            <p style={S.pendingNote}>&#10022; The first reading arrives once the Oracle is awakened — shortly after launch.</p>
+          </>
+        )}
         <p style={S.pebNote}>
           One reflection a day &middot; {pebbleCount} of 7 collected this week
         </p>
@@ -233,6 +250,8 @@ const S = {
   clarityLine: { fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#D9B57A', fontFamily: 'Georgia, serif', margin: '0 0 8px' },
   hairline: { width: 54, height: 1, background: 'linear-gradient(90deg, transparent, #C9A85C, transparent)', margin: '0 auto 9px' },
   eyebrow: { fontSize: 9.5, letterSpacing: '0.28em', textTransform: 'uppercase', color: 'rgba(217,181,122,0.65)', fontFamily: 'Georgia, serif', margin: '0 0 7px' },
-  insight: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 14.5, color: '#FAF7F1', lineHeight: 1.58, margin: 0, minHeight: 42, transition: 'opacity 0.4s' },
-  pebNote: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 10.5, color: '#CBBA98', margin: '9px 0 0' },
+  insight: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 14.5, color: '#FAF7F1', lineHeight: 1.58, margin: 0, transition: 'opacity 0.4s' },
+  insightMuted: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 14, color: 'rgba(245,235,218,0.7)', lineHeight: 1.55, margin: 0, minHeight: 42 },
+  pendingNote: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11, color: 'rgba(217,181,122,0.85)', lineHeight: 1.5, margin: '11px 0 0' },
+  pebNote: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 10.5, color: '#CBBA98', margin: '14px 0 0' },
 }

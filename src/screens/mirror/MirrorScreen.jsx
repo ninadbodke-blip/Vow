@@ -140,41 +140,10 @@ function SundaySeal({ summary }) {
 }
 
 // --- ORACLE OF VOW (weekly AI reflection — placeholder until APIs are wired) --
-function OracleOfVow({ reflection }) {
-  const [open, setOpen] = useState(false)
-  const live = !!reflection
-  return (
-    <div style={styles.oracleCard}>
-      <div style={styles.oracleHead}>
-        <span style={styles.oracleGlyph}>✦</span>
-        <div>
-          <p style={styles.oracleEyebrow}>This week’s reading</p>
-          <p style={styles.oracleTitle}>{live ? 'This week, read closely.' : 'A weekly reflection, written for you.'}</p>
-        </div>
-      </div>
-
-      {open ? (
-        <div style={styles.oracleBody}>
-          {live ? (
-            <p style={styles.oracleReflection}>{reflection}</p>
-          ) : (
-            <>
-              <p style={styles.oracleReflection}>
-                Soon, every week, the Oracle will read everything you've trusted it with — your check-ins, the pull and how it passed, the cost you mapped, the evidence of who you're becoming — and write you a single, honest reflection. Not a chart. A letter, in your story's own language.
-              </p>
-              <p style={styles.oraclePending}>✦ The first reading arrives once the Oracle is awakened — shortly after launch.</p>
-            </>
-          )}
-          <button onClick={() => setOpen(false)} style={styles.oracleClose}>Close</button>
-        </div>
-      ) : (
-        <button onClick={() => setOpen(true)} style={styles.oracleCta}>
-          {live ? "Read this week's reflection →" : "See what's coming →"}
-        </button>
-      )}
-    </div>
-  )
-}
+// NOTE: The former OracleOfVow card has been retired — its weekly-AI-reflection
+// essence now surfaces inside the Oracle pool when the user drops a pebble
+// (see OraclePool's reflection area). The oracle* styles below are kept unused
+// for now in case the card pattern is revived.
 
 export default function MirrorScreen() {
   const navigate = useNavigate()
@@ -466,7 +435,7 @@ export default function MirrorScreen() {
           daysTended={daysTended}
           pebbleCount={pebbleCount}
           pebbleToday={pebbleToday}
-          insight={pebbleToday ? summary : null}
+          aiReflection={aiReflection}
           onPebble={dropPebble}
         />
         </div>
@@ -502,7 +471,6 @@ export default function MirrorScreen() {
               </div>
             ) : (
               <div ref={sealRef}>
-                <OracleOfVow reflection={aiReflection} />
                 <SundaySeal summary={summary} />
               </div>
             )}
