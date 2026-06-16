@@ -76,6 +76,19 @@ export default function CoachMark({ steps = [], open, onClose, onStepChange }) {
   // Reset to first step whenever reopened.
   useEffect(() => { if (open) setI(0) }, [open])
 
+  // Block USER scrolling while the tour is open (so the spotlight can't drift),
+  // but keep programmatic scrollIntoView working (it doesn't fire these events).
+  useEffect(() => {
+    if (!open) return
+    const prevent = (e) => { e.preventDefault() }
+    window.addEventListener('wheel', prevent, { passive: false })
+    window.addEventListener('touchmove', prevent, { passive: false })
+    return () => {
+      window.removeEventListener('wheel', prevent, { passive: false })
+      window.removeEventListener('touchmove', prevent, { passive: false })
+    }
+  }, [open])
+
   if (!open || !step) return null
 
   const vh = window.innerHeight
@@ -113,16 +126,25 @@ export default function CoachMark({ steps = [], open, onClose, onStepChange }) {
 
   return createPortal(
     <div style={S.root} aria-modal="true" role="dialog">
-      {/* Dim overlay via four panels around the spotlight (so the target stays bright + tappable-looking) */}
+      {/* Single SVG dim+spotlight (mask cutout) — no panel seams */}
       {spot ? (
-        <>
-          <div style={{ ...S.dim, top: 0, left: 0, width: '100%', height: spot.top }} />
-          <div style={{ ...S.dim, top: spot.top, left: 0, width: spot.left, height: spot.height }} />
-          <div style={{ ...S.dim, top: spot.top, left: spot.left + spot.width, width: `calc(100% - ${spot.left + spot.width}px)`, height: spot.height }} />
-          <div style={{ ...S.dim, top: spot.top + spot.height, left: 0, width: '100%', height: `calc(100% - ${spot.top + spot.height}px)` }} />
-          {/* spotlight ring */}
-          <div style={{ ...S.ring, top: spot.top, left: spot.left, width: spot.width, height: spot.height }} />
-        </>
+        <svg width={vw} height={vh} style={S.svgOverlay} aria-hidden="true">
+          <defs>
+            <mask id="cm-spot-mask">
+              <rect x="0" y="0" width={vw} height={vh} fill="white" />
+              <rect
+                x={spot.left} y={spot.top} width={spot.width} height={spot.height}
+                rx="16" ry="16" fill="black"
+              />
+            </mask>
+          </defs>
+          <rect x="0" y="0" width={vw} height={vh} fill="rgba(34,23,16,0.74)" mask="url(#cm-spot-mask)" />
+          <rect
+            x={spot.left} y={spot.top} width={spot.width} height={spot.height}
+            rx="16" ry="16" fill="none" stroke="#D9B57A" strokeWidth="2"
+            style={{ filter: 'drop-shadow(0 0 14px rgba(217,181,122,0.4))' }}
+          />
+        </svg>
       ) : (
         <div style={{ ...S.dim, inset: 0, width: '100%', height: '100%' }} />
       )}
@@ -173,14 +195,8 @@ export default function CoachMark({ steps = [], open, onClose, onStepChange }) {
 
 const S = {
   root: { position: 'fixed', inset: 0, zIndex: 4000, fontFamily: 'Georgia, "Times New Roman", serif' },
+  svgOverlay: { position: 'fixed', top: 0, left: 0, pointerEvents: 'auto' },
   dim: { position: 'fixed', background: 'rgba(34,23,16,0.74)', transition: 'all 0.25s ease' },
-  ring: {
-    position: 'fixed',
-    borderRadius: '16px',
-    boxShadow: '0 0 0 2px rgba(217,181,122,0.9), 0 0 22px rgba(217,181,122,0.35)',
-    transition: 'all 0.25s ease',
-    pointerEvents: 'none',
-  },
   arrow: { position: 'fixed', zIndex: 4001, transition: 'all 0.2s ease' },
   card: {
     position: 'fixed',

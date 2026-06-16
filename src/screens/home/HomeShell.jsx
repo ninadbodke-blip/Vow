@@ -125,6 +125,7 @@ export default function HomeShell({ progress }) {
   const todayRef = useRef(null)
   const journalRef = useRef(null)
   const toolsRef = useRef(null)
+  const momentRef = useRef(null)
   const yoursRef = useRef(null)
   const vowPathRef = useRef(null)
   const [tourOpen, setTourOpen] = useState(false)
@@ -304,6 +305,12 @@ export default function HomeShell({ progress }) {
       body: 'Quick things you can reach for when you need a hand. Come back to these whenever a moment gets hard.',
       placement: 'top',
     }] : []),
+    ...(mode.inTheMoment && tracker ? [{
+      ref: momentRef,
+      title: 'When it hits hard.',
+      body: 'Feeling an urge? Tap “Ride the urge” for quick steps that help in minutes. And if you slip, “I slipped” lets you log it gently — nothing is lost, you just keep going.',
+      placement: 'top',
+    }] : []),
     {
       ref: yoursRef,
       title: 'Yours to keep.',
@@ -402,7 +409,7 @@ export default function HomeShell({ progress }) {
         {mode.inTheMoment && tracker && (
           <>
             <p style={styles.sectionLabel}>In the moment</p>
-            <div style={styles.hitRow}>
+            <div ref={momentRef} style={styles.hitRow}>
               <button onClick={() => setFlowOpen('urge')} style={styles.hitCard}>
                 <span style={styles.hitGlyph}><UrgeWavesGlyph /></span>
                 <span style={styles.hitText}>
