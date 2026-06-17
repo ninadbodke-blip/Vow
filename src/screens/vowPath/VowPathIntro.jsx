@@ -283,19 +283,15 @@ const CSS = `
 .vpi-stop.vpi-interactive:hover .vpi-caption{transform:translateX(4px);}
 .vpi-stop.right.vpi-interactive:hover .vpi-caption{transform:translateX(-4px);}
 
-.vpi-medallion{position:relative; width:86px; height:86px; flex-shrink:0;}
-.vpi-medallion-sm{width:64px; height:64px;}
-.vpi-ink{position:absolute; inset:6px; border-radius:50%; overflow:hidden; background:#F1E8D8;
-  -webkit-mask-image:radial-gradient(circle at 50% 42%, #000 60%, transparent 100%);
-  mask-image:radial-gradient(circle at 50% 42%, #000 60%, transparent 100%);}
+.vpi-medallion{position:relative; width:104px; height:104px; flex-shrink:0;}
+.vpi-medallion-sm{width:80px; height:80px;}
+.vpi-medallion-sm .vpi-ink{border-radius:14px;}
+.vpi-medallion-sm .vpi-ink::after{border-radius:14px;}
+.vpi-medallion-sm .vpi-ring{border-radius:17px;}
+.vpi-ink{position:absolute; inset:6px; border-radius:18px; overflow:hidden; background:#F1E8D8;}
 .vpi-ink img{width:100%; height:100%; object-fit:cover; display:block;}
-.vpi-ink::before{content:""; position:absolute; inset:-20%;
-  background:
-    radial-gradient(38% 30% at 38% 30%, rgba(42,31,21,0.7), transparent 70%),
-    radial-gradient(30% 44% at 64% 40%, rgba(58,42,28,0.6), transparent 72%),
-    radial-gradient(50% 34% at 50% 74%, rgba(42,31,21,0.45), transparent 75%);}
-.vpi-ink::after{content:""; position:absolute; inset:0; background:radial-gradient(circle at 50% 38%, var(--accent), transparent 70%); opacity:0.16; mix-blend-mode:multiply;}
-.vpi-ring{position:absolute; inset:0; border-radius:50%; border:2px solid var(--accent); box-shadow:0 4px 13px rgba(60,40,20,0.12);}
+.vpi-ink::after{content:""; position:absolute; inset:0; border-radius:18px; background:radial-gradient(circle at 50% 38%, var(--accent), transparent 70%); opacity:0.06; mix-blend-mode:multiply; pointer-events:none;}
+.vpi-ring{position:absolute; inset:0; border-radius:22px; border:2px solid var(--accent); box-shadow:0 4px 13px rgba(60,40,20,0.12);}
 .vpi-numeral{position:absolute; left:50%; bottom:-11px; transform:translateX(-50%); font-family:${SERIF}; font-style:italic; font-size:12px; color:#854F0B; background:#FAF7F1; padding:0 6px;}
 .vpi-seal{position:absolute; bottom:4px; left:50%; transform:translateX(-50%); width:7px; height:7px; border-radius:50%; background:#D9B57A; box-shadow:0 0 0 3px #FAF7F1;}
 .vpi-flamepip{position:absolute; top:-9px; right:-7px; width:28px; height:28px; border-radius:50%; background:#FAF7F1; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(120,68,8,0.3);}
