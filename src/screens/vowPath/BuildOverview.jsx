@@ -508,13 +508,13 @@ const styles = {
   heroWrap: { position: 'relative', height: 'clamp(250px, 44vh, 400px)', margin: '-1.75rem -1.25rem 0' },
   heroNav: { position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2.25rem 1.5rem 0' },
   pillBtn: {
-    background: 'rgba(250, 247, 241, 0.22)', WebkitBackdropFilter: 'blur(12px)', backdropFilter: 'blur(12px)',
-    border: '0.5px solid rgba(255, 255, 255, 0.4)', color: '#3A2A1C', fontSize: '13px', fontWeight: 500,
+    background: 'rgba(38, 26, 16, 0.42)', WebkitBackdropFilter: 'blur(12px)', backdropFilter: 'blur(12px)',
+    border: '0.5px solid rgba(255, 255, 255, 0.55)', color: '#FBF7EE', fontSize: '13px', fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit', padding: '7px 16px', borderRadius: '999px',
   },
 
   // 2 — Title
-  frontispiece: { position: 'relative', zIndex: 1, textAlign: 'center', marginTop: '-52px', padding: '0 0.5rem' },
+  frontispiece: { position: 'relative', zIndex: 1, textAlign: 'center', marginTop: '24px', padding: '0 0.5rem' },
   stageTitle: {
     fontSize: 'clamp(28px, 8vw, 34px)', fontWeight: 400, color: '#2A1F15', fontFamily: 'Georgia, serif',
     fontStyle: 'italic', margin: '0 0 0.6rem', letterSpacing: '0.01em', lineHeight: 1.1,

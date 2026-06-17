@@ -75,11 +75,9 @@ export function useStageBackground(stage) {
   return {
     position: 'absolute',
     inset: 0,
-    WebkitMaskImage: FADE,
-    maskImage: FADE,
     backgroundImage: `url('${url}')`,
-    backgroundSize: 'cover',
-    backgroundPosition: IMAGE_FOCUS,
+    backgroundSize: 'contain',
+    backgroundPosition: 'center top',
     backgroundRepeat: 'no-repeat',
   }
 }

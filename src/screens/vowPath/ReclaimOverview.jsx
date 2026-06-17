@@ -288,18 +288,18 @@ const styles = {
     padding: '2.25rem 1.5rem 0',
   },
   pillBtn: {
-    background: 'rgba(250, 247, 241, 0.22)',
+    background: 'rgba(38, 26, 16, 0.42)',
     WebkitBackdropFilter: 'blur(12px)',
     backdropFilter: 'blur(12px)',
-    border: '0.5px solid rgba(255, 255, 255, 0.4)',
-    color: '#3A2A1C', fontSize: '13px', fontWeight: 500,
+    border: '0.5px solid rgba(255, 255, 255, 0.55)',
+    color: '#FBF7EE', fontSize: '13px', fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit',
     padding: '7px 16px', borderRadius: '999px',
   },
 
   frontispiece: {
     position: 'relative', zIndex: 1, textAlign: 'center',
-    marginTop: '-52px', padding: '0 0.5rem',
+    marginTop: '24px', padding: '0 0.5rem',
   },
   eyebrow: {
     fontSize: '11px', fontWeight: 600, color: '#854F0B',
