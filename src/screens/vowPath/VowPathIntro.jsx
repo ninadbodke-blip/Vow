@@ -131,12 +131,22 @@ export default function VowPathIntro() {
             <button onClick={() => navigate('/app/home')} className="vpi-back">‹ Home</button>
           </div>
 
-          {/* ---- title cartouche (mark + wordmark) ---- */}
-          <div className="vpi-cartouche">
-            <div className="vpi-mark"><VowPathMark size={44} theme="light" /></div>
-            <p className="vpi-wordmark">Vow Path</p>
-            <span className="vpi-rule" />
-            <p className="vpi-subtitle">Six stages · one journey</p>
+          {/* ---- title banner (illustrated sky, mark in a cream disc) ---- */}
+          <div className="vpi-banner">
+            <div className="vpi-sky" aria-hidden="true">
+              <span className="vpi-sun" />
+              <span className="vpi-spark" style={{ top: '22px', left: '16%' }} />
+              <span className="vpi-spark" style={{ top: '40px', left: '78%' }} />
+              <span className="vpi-spark" style={{ top: '66px', left: '30%' }} />
+              <span className="vpi-spark" style={{ top: '30px', left: '62%' }} />
+              <span className="vpi-hill vpi-hill-far" />
+              <span className="vpi-hill vpi-hill-near" />
+            </div>
+            <div className="vpi-banner-content">
+              <div className="vpi-mark-disc"><VowPathMark size={46} theme="light" /></div>
+              <p className="vpi-wordmark">Vow Path</p>
+              <p className="vpi-subtitle">Six stages · one journey</p>
+            </div>
           </div>
 
           <p className="vpi-lede">A path walked at your pace — from the first noticing, to a year past the day you stopped.</p>
@@ -264,15 +274,20 @@ const CSS = `
 .vpi-topbar{position:relative; z-index:2; display:flex; margin-bottom:14px;}
 .vpi-back{background:none; border:none; color:#854F0B; font-family:${SANS}; font-size:13px; cursor:pointer; padding:2px 0;}
 
-.vpi-cartouche{position:relative; z-index:2; text-align:center; padding:16px 14px 14px; margin-bottom:6px;
-  border:1px solid rgba(133,79,11,0.28); border-radius:15px;
-  background:linear-gradient(180deg, rgba(251,246,234,0.6), rgba(244,236,221,0.3));
-  animation:vpiRise .7s ease both;}
-.vpi-cartouche::after{content:""; position:absolute; inset:5px; border:0.5px solid rgba(133,79,11,0.16); border-radius:11px; pointer-events:none;}
-.vpi-mark{display:flex; justify-content:center; margin-bottom:7px;}
-.vpi-wordmark{font-family:${SERIF}; font-weight:500; font-size:21px; letter-spacing:0.20em; color:#854F0B; margin:0; text-transform:uppercase;}
-.vpi-rule{display:block; width:50px; height:1px; margin:10px auto 8px; background:linear-gradient(90deg,transparent,#D9B57A,transparent);}
-.vpi-subtitle{font-family:${SANS}; font-size:9px; letter-spacing:0.28em; text-transform:uppercase; color:#9C8463; margin:0;}
+.vpi-banner{position:relative; z-index:2; border-radius:22px; overflow:hidden; margin-bottom:6px;
+  box-shadow:0 10px 30px -12px rgba(120,80,30,0.4); animation:vpiRise .7s ease both;}
+.vpi-sky{position:absolute; inset:0; background:linear-gradient(180deg,#E8C48A 0%,#E5B97E 36%,#CDAE7C 64%,#A6B47E 100%);}
+.vpi-sun{position:absolute; top:18px; left:50%; transform:translateX(-50%); width:62px; height:62px; border-radius:50%;
+  background:radial-gradient(circle,#FBEFD2 0%,#F3DBA6 70%,rgba(243,219,166,0) 100%);}
+.vpi-spark{position:absolute; width:4px; height:4px; border-radius:50%; background:#FFF; opacity:0.55;}
+.vpi-hill{position:absolute; left:-20%; right:-20%; bottom:0; border-radius:50% 50% 0 0 / 100% 100% 0 0;}
+.vpi-hill-far{height:48px; background:#86A05E; opacity:0.85;}
+.vpi-hill-near{height:30px; background:#5E8C4E;}
+.vpi-banner-content{position:relative; z-index:2; text-align:center; padding:24px 16px 22px;}
+.vpi-mark-disc{width:64px; height:64px; margin:0 auto 8px; border-radius:50%; background:#FBF7EE;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(90,55,15,0.3), 0 0 0 4px rgba(255,255,255,0.35);}
+.vpi-wordmark{font-family:${SERIF}; font-weight:500; font-size:25px; letter-spacing:0.15em; color:#FFFFFF; margin:0; text-transform:uppercase; text-shadow:0 2px 12px rgba(110,65,18,0.5);}
+.vpi-subtitle{font-family:${SANS}; font-size:9.5px; letter-spacing:0.26em; text-transform:uppercase; color:#FFFFFF; opacity:0.94; margin:7px 0 0; text-shadow:0 1px 7px rgba(110,65,18,0.45);}
 .vpi-lede{position:relative; z-index:2; font-family:${SERIF}; font-style:italic; font-size:14px; line-height:1.6; color:#6B5C4A; text-align:center; margin:16px auto 22px; max-width:290px; animation:vpiRise .7s ease .08s both;}
 
 .vpi-trail{position:relative; z-index:2;}
