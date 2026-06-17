@@ -223,7 +223,7 @@ export default function HomeShell({ progress }) {
     setRustleSignal(s => s + 1)
     if (reflection && reflection.line) {
       setReflection(reflection)
-      setTimeout(() => setReflection(null), 9000)  // auto-dismiss
+      setTimeout(() => setReflection(null), 5000)  // auto-dismiss
     }
   }
 
@@ -347,10 +347,6 @@ export default function HomeShell({ progress }) {
 
   return (
     <div style={styles.frame}>
-      <style>{`
-        @keyframes vowReflectIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes vowReflectUp { from { opacity: 0; transform: translateY(22px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-      `}</style>
       <div style={styles.phone}>
 
         {/* TOP */}
@@ -379,6 +375,7 @@ export default function HomeShell({ progress }) {
           tendedToday={!!todayCheckin}
           onTend={() => setCheckinOpen(true)}
           rustleSignal={rustleSignal}
+          reflection={reflection}
         />
         </div>
 
@@ -500,19 +497,6 @@ export default function HomeShell({ progress }) {
 
         {/* Gentle guided tour — first visit, replayable via the "?" */}
         <CoachMark steps={tourSteps} open={tourOpen} onClose={finishTour} />
-
-        {/* The reflection that floats up after tending the tree */}
-        {reflection && (
-          <div style={styles.reflectOverlay} onClick={() => setReflection(null)}>
-            <div style={styles.reflectCard} onClick={(e) => e.stopPropagation()}>
-              <span style={styles.reflectGlyph}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A85C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 19C5 9 12 4 20 4c0 8-5 15-15 15z" /><path d="M5 19c3-5 7-9 11-11" /></svg>
-              </span>
-              <p style={styles.reflectLine}>{reflection.line}</p>
-              <button onClick={() => setReflection(null)} style={styles.reflectClose}>Close</button>
-            </div>
-          </div>
-        )}
         {!tourOpen && (
           <button
             onClick={() => setTourOpen(true)}
@@ -606,11 +590,6 @@ const styles = {
   eyebrow: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: 0 },
   iconBtn: { width: '38px', height: '38px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'rgba(255,255,255,0.7)', color: '#6B5C4A', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   tourReplay: { position: 'fixed', right: '16px', bottom: '88px', width: '34px', height: '34px', borderRadius: '50%', border: '0.5px solid #DDCFB6', background: '#FCFAF5', color: '#854F0B', fontSize: '16px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer', boxShadow: '0 4px 14px rgba(60,40,20,0.18)', zIndex: 1500 },
-  reflectOverlay: { position: 'fixed', inset: 0, zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: 'rgba(34,23,16,0.32)', backdropFilter: 'blur(2px)', animation: 'vowReflectIn 0.5s ease' },
-  reflectCard: { maxWidth: 340, width: '100%', background: 'linear-gradient(180deg, #FCFAF5 0%, #F6EFE0 100%)', border: '0.5px solid rgba(217,181,122,0.4)', borderRadius: 20, padding: '26px 24px 20px', textAlign: 'center', boxShadow: '0 22px 60px -16px rgba(40,25,10,0.5)', animation: 'vowReflectUp 0.6s cubic-bezier(0.16,1,0.3,1)' },
-  reflectGlyph: { display: 'inline-flex', width: 40, height: 40, borderRadius: '50%', border: '0.5px solid rgba(201,168,92,0.5)', background: '#FDFBF6', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  reflectLine: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 17, lineHeight: 1.6, color: '#2A1F15', margin: '0 0 18px' },
-  reflectClose: { background: 'transparent', border: '0.5px solid #DDCFB6', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, cursor: 'pointer', padding: '7px 18px', borderRadius: 10 },
   greeting: { fontSize: '22px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 14px', lineHeight: 1.25 },
 
   setupCard: { display: 'block', width: '100%', textAlign: 'left', marginTop: '12px', padding: '14px 16px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '16px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(80,50,20,0.05)' },

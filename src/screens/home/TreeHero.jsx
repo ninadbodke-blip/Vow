@@ -34,6 +34,7 @@ const MOTION_CSS = `
 @keyframes vowBob { from { transform: translateY(-2.5px); } to { transform: translateY(2.5px); } }
 @keyframes vowWing { from { transform: scaleY(1); } to { transform: scaleY(0.45); } }
 @keyframes vowDrift { from { transform: translateX(-260px); } to { transform: translateX(260px); } }
+@keyframes vowReflectFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) {
   .vowFly, .vowBob, .vowWing, .vowCloud { animation: none !important; }
 }`
@@ -95,6 +96,7 @@ export default function TreeHero({
   tendedToday = false,
   onTend,
   rustleSignal = 0,
+  reflection = null,
   caption = null,
   trackerStartISO = null,
   commitTargetISO = null,
@@ -108,7 +110,6 @@ export default function TreeHero({
   const prevShownRef = useRef(shown)
   const freshGRef = useRef(null)
   const artRef = useRef(null)
-  const gustRef = useRef(null)
 
   // 1-second heartbeat for the live tickers (commit countdown / endure count-up)
   const [, setTickNow] = useState(0)
@@ -149,19 +150,34 @@ export default function TreeHero({
     return () => { tweens.forEach(tw => tw.kill()) }
   }, [built])
 
-  // a one-time gust through the whole canopy when a check-in is tended.
-  // Runs on the PARENT wrapper (gustRef) so it composes with the idle leaf
-  // sway on the children rather than fighting it.
+  // a one-time BOOM of leaves when a check-in is tended — the foliage
+  // swells and scatters and settles, while the trunk/branches stay put.
+  // The canopy is a handful of batched `.vow-canopy` paths; we scale-pop
+  // each from its own centre, staggered, so it ripples. Scale is used (not
+  // rotation) so it composes with the idle sway instead of fighting it.
   useEffect(() => {
     if (!rustleSignal) return
-    const el = gustRef.current
-    if (!el || reducedMotion()) return
-    const tl = gsap.timeline()
-    tl.to(el, { rotation: 2.4, transformOrigin: '50% 100%', duration: 0.22, ease: 'power2.out' })
-      .to(el, { rotation: -1.6, duration: 0.5, ease: 'sine.inOut' })
-      .to(el, { rotation: 0.8, duration: 0.55, ease: 'sine.inOut' })
-      .to(el, { rotation: 0, duration: 0.7, ease: 'sine.out' })
-    return () => { tl.kill(); gsap.set(el, { rotation: 0 }) }
+    const root = artRef.current
+    if (!root || reducedMotion()) return
+    const leaves = root.querySelectorAll('.vow-canopy')
+    if (!leaves.length) return
+    const tweens = []
+    leaves.forEach((el, i) => {
+      el.style.transformBox = 'fill-box'
+      el.style.transformOrigin = '50% 50%'
+      tweens.push(
+        gsap.fromTo(el,
+          { scale: 1 },
+          {
+            scale: 1.16, duration: 0.26, ease: 'back.out(3)',
+            delay: i * 0.06,
+            yoyo: true, repeat: 1,
+            onComplete: () => { gsap.set(el, { scale: 1 }) },
+          }
+        )
+      )
+    })
+    return () => { tweens.forEach(t => t.kill()) }
   }, [rustleSignal])
 
   // the day's new leaves pop out of their branch
@@ -296,7 +312,7 @@ export default function TreeHero({
           )}
 
           {/* the tree — settled art batched, the day's new leaves on top */}
-          <g ref={gustRef} style={{ transformBox: 'fill-box', transformOrigin: '50% 100%' }}>
+          <g>
             <g ref={artRef} dangerouslySetInnerHTML={{ __html: built.html }} />
             <g ref={freshGRef}>
               {built.fresh.map((l, i) => (
@@ -314,6 +330,11 @@ export default function TreeHero({
             </g>
           </g>
         </svg>
+        {reflection && reflection.line && (
+          <div key={reflection.line} style={styles.reflectOverlay}>
+            <p style={styles.reflectLine}>{reflection.line}</p>
+          </div>
+        )}
       </div>
 
       <div style={styles.below}>
@@ -352,7 +373,18 @@ const styles = {
     overflow: 'hidden',
     boxShadow: '0 4px 16px rgba(80,50,20,0.06)',
   },
-  skyWrap: { display: 'block' },
+  skyWrap: { display: 'block', position: 'relative' },
+  reflectOverlay: {
+    position: 'absolute', left: 0, right: 0, bottom: '7%',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: '0 9%', pointerEvents: 'none',
+    animation: 'vowReflectFade 0.7s ease',
+  },
+  reflectLine: {
+    fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    fontSize: '15px', lineHeight: 1.5, color: '#2A1F15', textAlign: 'center',
+    margin: 0, textShadow: '0 1px 10px rgba(250,247,241,0.95), 0 0 22px rgba(250,247,241,0.95)',
+  },
   below: { padding: '12px 16px 16px', textAlign: 'center' },
   countLine: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0 },
   tickBig: { fontSize: '21px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '10px 0 0', textAlign: 'center', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em' },
