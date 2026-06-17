@@ -514,7 +514,7 @@ const styles = {
   },
 
   // 2 — Title
-  frontispiece: { position: 'relative', zIndex: 1, textAlign: 'center', marginTop: '24px', padding: '0 0.5rem' },
+  frontispiece: { position: 'relative', zIndex: 1, textAlign: 'center', marginTop: '8px', padding: '0 0.5rem' },
   stageTitle: {
     fontSize: 'clamp(28px, 8vw, 34px)', fontWeight: 400, color: '#2A1F15', fontFamily: 'Georgia, serif',
     fontStyle: 'italic', margin: '0 0 0.6rem', letterSpacing: '0.01em', lineHeight: 1.1,
@@ -527,7 +527,7 @@ const styles = {
   pilotNote: { display: 'inline-block', fontSize: '11px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', background: '#F2ECE0', borderRadius: '999px', padding: '5px 14px' },
 
   // 4 — Continuous thread + list
-  listWrap: { position: 'relative', marginTop: '2.5rem', paddingTop: '0.25rem', paddingBottom: '48px' },
+  listWrap: { position: 'relative', marginTop: '1.25rem', paddingTop: '0.25rem', paddingBottom: '48px' },
   thread: {
     position: 'absolute', left: '19px', top: '88px', bottom: 0, width: '1.5px',
     background: 'linear-gradient(180deg, rgba(217,181,122,0.6) 0%, rgba(217,181,122,0.6) 80%, rgba(217,181,122,0) 100%)',

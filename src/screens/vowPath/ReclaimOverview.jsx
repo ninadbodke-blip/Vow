@@ -299,7 +299,7 @@ const styles = {
 
   frontispiece: {
     position: 'relative', zIndex: 1, textAlign: 'center',
-    marginTop: '24px', padding: '0 0.5rem',
+    marginTop: '8px', padding: '0 0.5rem',
   },
   eyebrow: {
     fontSize: '11px', fontWeight: 600, color: '#854F0B',
@@ -322,7 +322,7 @@ const styles = {
   },
   progressEmph: { color: '#854F0B' },
 
-  listWrap: { position: 'relative', marginTop: '2.5rem', paddingTop: '0.25rem', paddingBottom: '48px' },
+  listWrap: { position: 'relative', marginTop: '1.25rem', paddingTop: '0.25rem', paddingBottom: '48px' },
   thread: {
     position: 'absolute', left: '19px', top: '18px', bottom: 0, width: '1.5px',
     background: 'linear-gradient(180deg, rgba(217,181,122,0.6) 0%, rgba(217,181,122,0.6) 80%, rgba(217,181,122,0) 100%)',

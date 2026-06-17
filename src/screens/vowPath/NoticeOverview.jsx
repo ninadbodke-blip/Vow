@@ -437,7 +437,7 @@ const styles = {
   // 2 — Title pulled up into the hero's dissolve
   frontispiece: {
     position: 'relative', zIndex: 1, textAlign: 'center',
-    marginTop: '24px', padding: '0 0.5rem',
+    marginTop: '8px', padding: '0 0.5rem',
   },
   stageTitle: {
     fontSize: 'clamp(28px, 8vw, 34px)', fontWeight: 400, color: '#2A1F15',
@@ -470,7 +470,7 @@ const styles = {
   },
 
   // 4 — Continuous thread + list
-  listWrap: { position: 'relative', marginTop: '2.5rem', paddingTop: '0.25rem', paddingBottom: '48px' },
+  listWrap: { position: 'relative', marginTop: '1.25rem', paddingTop: '0.25rem', paddingBottom: '48px' },
   // thread `top` is tuned for Notice (single phase, no header → starts at the first day);
   // a multi-phase stage would raise this to clear its first phase header.
   thread: {

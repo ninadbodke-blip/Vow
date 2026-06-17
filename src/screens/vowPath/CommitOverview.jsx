@@ -436,7 +436,7 @@ const styles = {
   // 2 — Title pulled up into the hero's dissolve
   frontispiece: {
     position: 'relative', zIndex: 1, textAlign: 'center',
-    marginTop: '24px', padding: '0 0.5rem',
+    marginTop: '8px', padding: '0 0.5rem',
   },
   stageTitle: {
     fontSize: 'clamp(28px, 8vw, 34px)', fontWeight: 400, color: '#2A1F15',
@@ -450,7 +450,7 @@ const styles = {
   progressEmph: { color: '#854F0B' },
 
   // 4 — Continuous thread + list
-  listWrap: { position: 'relative', marginTop: '2.5rem', paddingTop: '0.25rem', paddingBottom: '48px' },
+  listWrap: { position: 'relative', marginTop: '1.25rem', paddingTop: '0.25rem', paddingBottom: '48px' },
   // Commit is multi-phase, so the thread starts BELOW the first centred phase header
   // (Notice, single-phase, used top:18). If the spine peeks above the first
   // "· PHASE ·" header or starts mid-first-day, nudge this value.
