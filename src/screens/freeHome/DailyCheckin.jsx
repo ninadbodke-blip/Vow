@@ -1,27 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../supabaseClient'
 import SheetPortal from '../../components/SheetPortal'
+import { reflectionFor } from './checkinReflections'
 
 // ===================================================================
-// DAILY CHECK-IN — the tending ritual  (shared across all free homes)
+// DAILY CHECK-IN — the tending ritual (shared across all free homes)
 // ===================================================================
-// This is the thirty seconds that grows the tree, so it should feel
-// like tending, not form-filling. One calm surface instead of paged
-// steps: the day's weather is set by DRAGGING a thumb along a band
-// that blends all six mood colours (the whole sheet washes in the
-// chosen colour as you move); the pull is one row of quiet capsules;
-// contexts (and the body row, where asked for) are light italic chips
-// that fade in as you go. The closing act is named for what it does:
-// "Tend the tree."
+// Three quick inputs, no typing:
+//   1. "How heavy was today?"   — slider  -> mood_score (1..6)
+//   2. "How was the craving?"   — slider  -> felt_pull + pull_intensity
+//   3. "Where are you tonight?" — tap one -> end-state (the quote anchor)
 //
-// Props (unchanged):
-//   isOpen, onClose, stage, includeBody, existing, onSaved
+// On Tend: saves to free_daily_checkins (same shape as before), computes
+// a reflection quote from the combination, and hands BOTH the row and the
+// reflection to onSaved(). The home then rustles the tree and floats the
+// quote up — so this sheet just closes.
 //
-// Data shape (unchanged, byte for byte): mood / mood_score / energy
-// (preserved from existing rows; no UI) / felt_pull / pull_intensity /
-// contexts / body_signals / note — upserted on user_id + checkin_date.
-// MOOD_META and the moodBy* helpers are exported exactly as before;
-// the Mirror and older homes read them.
+// Props: isOpen, onClose, stage, includeBody (ignored now), existing, onSaved
+//
+// MOOD_META + moodBy* are still exported unchanged (Mirror & other homes
+// read them); mood_score still spans 1..6 so nothing downstream shifts.
 // ===================================================================
 
 export const MOOD_META = [
@@ -36,53 +34,50 @@ export const MOOD_META = [
 export const moodByValue = (v) => MOOD_META.find(m => m.value === v) || null
 export const moodByScore = (s) => MOOD_META.find(m => m.score === s) || null
 
-const URGE_OPTIONS = [
-  { value: 'none',    label: 'Not at all', felt: false, intensity: null },
-  { value: 'mild',    label: 'A little',       felt: true,  intensity: 2 },
-  { value: 'strong',  label: 'Quite a lot',   felt: true,  intensity: 4 },
-  { value: 'intense', label: 'Very strongly',    felt: true,  intensity: 5 },
-]
-
-const urgeFromExisting = (row) => {
-  if (!row || row.felt_pull == null) return null
-  if (!row.felt_pull) return URGE_OPTIONS[0]
-  const i = row.pull_intensity || 3
-  if (i <= 2) return URGE_OPTIONS[1]
-  if (i <= 4) return URGE_OPTIONS[2]
-  return URGE_OPTIONS[3]
+// ---- input 1: heaviness. slider 0..100 -> mood_score 6..1 (heavy = low score)
+const HEAVY_STOPS = ['light', 'manageable', 'a lot', 'heavy', 'crushing']
+function heavyLabel(v) { return HEAVY_STOPS[Math.min(HEAVY_STOPS.length - 1, Math.floor(v / (100 / HEAVY_STOPS.length)))] }
+// map heaviness 0..1 -> mood_score 6..1, and to a MOOD_META entry for color/value
+function moodFromHeaviness(v01) {
+  const score = Math.max(1, Math.min(6, Math.round(6 - v01 * 5)))
+  return moodByScore(score)
 }
 
-const CONTEXT_OPTIONS = [
-  { value: 'stress',      label: 'Stress' },
-  { value: 'lonely',      label: 'Feeling alone' },
-  { value: 'bored',       label: 'Boredom' },
-  { value: 'social',      label: 'Out with people' },
-  { value: 'tired',       label: 'Tired' },
-  { value: 'conflict',    label: 'A fight or argument' },
+// ---- input 2: craving. slider 0..100 -> felt_pull + pull_intensity (0..5)
+const CRAVE_STOPS = ['never came', 'faint', 'medium', 'strong', 'intense']
+function craveLabel(v) { return CRAVE_STOPS[Math.min(CRAVE_STOPS.length - 1, Math.floor(v / (100 / CRAVE_STOPS.length)))] }
+function pullFromCraving(v01) {
+  // 0 => not felt; otherwise intensity 1..5
+  if (v01 <= 0.02) return { felt: false, intensity: null }
+  return { felt: true, intensity: Math.max(1, Math.min(5, Math.round(v01 * 5))) }
+}
+
+// ---- input 3: end-state taps (the quote's anchor) ----
+const END_STATES = [
+  { value: 'proud',       label: 'Proud' },
+  { value: 'calm',        label: 'Calm' },
+  { value: 'drained',     label: 'Drained' },
   { value: 'restless',    label: 'Restless' },
-  { value: 'celebration', label: 'Celebrating something' },
-  { value: 'nothing',     label: 'Nothing I can point to' },
+  { value: 'frustrated',  label: 'Frustrated' },
+  { value: 'heavyhearted',label: 'Heavy-hearted' },
+  { value: 'steady',      label: 'Steady' },
+  { value: 'hopeful',     label: 'Hopeful' },
 ]
 
-const BODY_OPTIONS = [
-  { value: 'head',      label: 'Head' },
-  { value: 'chest',     label: 'Chest' },
-  { value: 'stomach',   label: 'Stomach' },
-  { value: 'jaw',       label: 'Jaw / face' },
-  { value: 'shoulders', label: 'Shoulders' },
-  { value: 'hands',     label: 'Hands' },
-  { value: 'restless',  label: 'Restless all over' },
-  { value: 'none',      label: 'Nowhere — I felt calm' },
-]
+// recover slider positions from an existing row (so "Tend again" pre-fills)
+function heavyFromExisting(row) {
+  if (!row || row.mood_score == null) return 50
+  return Math.round((6 - row.mood_score) / 5 * 100)
+}
+function craveFromExisting(row) {
+  if (!row || row.felt_pull == null) return 0
+  if (!row.felt_pull) return 0
+  return Math.round((row.pull_intensity || 3) / 5 * 100)
+}
 
 function localDateStr(d = new Date()) {
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
-
-const hexToRgba = (hex, a) => {
-  const n = parseInt(hex.slice(1), 16)
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
 }
 
 const LeafGlyph = () => (
@@ -93,11 +88,11 @@ const LeafGlyph = () => (
 )
 
 const FADE_CSS = `
-@keyframes vowCkFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes vowCkFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .vowCkFade { animation: none !important; } }`
 
-// ---- the weather band: drag (or tap) along a blend of all six moods ----
-function MoodBand({ mood, onPick, disabled }) {
+// ---- a calm gradient slider (shared by both inputs) ----
+function FeelSlider({ value, onChange, gradient, stops, disabled }) {
   const trackRef = useRef(null)
   const draggingRef = useRef(false)
 
@@ -106,11 +101,8 @@ function MoodBand({ mood, onPick, disabled }) {
     if (!el) return
     const r = el.getBoundingClientRect()
     const t = Math.min(1, Math.max(0, (clientX - r.left) / r.width))
-    const idx = Math.round(t * (MOOD_META.length - 1))
-    const next = MOOD_META[idx]
-    if (!mood || next.value !== mood.value) onPick(next)
+    onChange(Math.round(t * 100))
   }
-
   const onDown = (e) => {
     if (disabled) return
     draggingRef.current = true
@@ -120,20 +112,8 @@ function MoodBand({ mood, onPick, disabled }) {
   const onMove = (e) => { if (draggingRef.current) pickFromX(e.clientX) }
   const onUp = () => { draggingRef.current = false }
 
-  const idx = mood ? MOOD_META.findIndex(m => m.value === mood.value) : null
-  const stops = MOOD_META.map((m, i) => `${m.color} ${(i / (MOOD_META.length - 1)) * 100}%`).join(', ')
-
   return (
-    <div style={S.bandWrap}>
-      <div style={S.bandWordRow}>
-        {mood ? (
-          <span key={mood.value} className="vowCkFade" style={{ ...S.bandWord, color: mood.color, animation: 'vowCkFade 0.3s ease' }}>
-            {mood.label}
-          </span>
-        ) : (
-          <span style={S.bandWordEmpty}>slide to where the day sits</span>
-        )}
-      </div>
+    <div style={S.sliderWrap}>
       <div
         ref={trackRef}
         onPointerDown={onDown}
@@ -141,96 +121,85 @@ function MoodBand({ mood, onPick, disabled }) {
         onPointerUp={onUp}
         onPointerCancel={onUp}
         role="slider"
-        aria-label="How the day feels, from heavy to good"
-        aria-valuemin={1}
-        aria-valuemax={6}
-        aria-valuenow={mood ? mood.score : undefined}
-        style={{ ...S.bandTrack, background: `linear-gradient(90deg, ${stops})`, touchAction: 'none' }}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={value}
+        style={{ ...S.sliderTrack, background: gradient, touchAction: 'none' }}
       >
-        {MOOD_META.map((m, i) => (
-          <span key={m.value} style={{ ...S.bandTick, left: `${(i / (MOOD_META.length - 1)) * 100}%` }} />
-        ))}
-        {idx != null && (
-          <span
-            style={{
-              ...S.bandThumb,
-              left: `${(idx / (MOOD_META.length - 1)) * 100}%`,
-              borderColor: mood.color,
-            }}
-          />
-        )}
+        <span style={{ ...S.sliderThumb, left: `${value}%` }} />
       </div>
-      <div style={S.bandEnds}>
-        <span style={S.bandEnd}>heavy</span>
-        <span style={S.bandEnd}>good</span>
+      <div style={S.sliderEnds}>
+        {stops.map((s, i) => (
+          <span key={i} style={{ ...S.sliderEnd, ...(craveOrHeavyActive(value, i, stops.length) ? S.sliderEndOn : {}) }}>{s}</span>
+        ))}
       </div>
     </div>
   )
+}
+// highlight the stop label closest to the current value
+function craveOrHeavyActive(value, i, n) {
+  const active = Math.min(n - 1, Math.floor(value / (100 / n)))
+  return active === i
 }
 
 export default function DailyCheckin({
   isOpen,
   onClose,
   stage = 'notice',
-  includeBody = false,
+  includeBody = false, // eslint-disable-line no-unused-vars
   existing = null,
   onSaved,
 }) {
-  const [mood, setMood] = useState(null)
-  const [energy, setEnergy] = useState(null)   // preserved from existing rows; no UI
-  const [urge, setUrge] = useState(null)
-  const [contexts, setContexts] = useState([])
-  const [bodySignals, setBodySignals] = useState([])
-  const [note, setNote] = useState('')
+  const [heavy, setHeavy] = useState(50)       // 0..100
+  const [crave, setCrave] = useState(0)        // 0..100
+  const [endState, setEndState] = useState(null)
+  const [energy, setEnergy] = useState(null)   // preserved from existing; no UI
+  const [touched, setTouched] = useState(false) // did they move/confirm the sliders
   const [saving, setSaving] = useState(false)
-  const [tended, setTended] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
     setSaving(false)
     if (existing) {
-      setMood(moodByValue(existing.mood))
+      setHeavy(heavyFromExisting(existing))
+      setCrave(craveFromExisting(existing))
+      setEndState(existing.end_state || null)
       setEnergy(existing.energy ?? null)
-      setUrge(urgeFromExisting(existing))
-      setContexts(existing.contexts || [])
-      setBodySignals(existing.body_signals || [])
-      setNote(existing.note || '')
+      setTouched(true)
     } else {
-      setMood(null); setEnergy(null); setUrge(null)
-      setContexts([]); setBodySignals([]); setNote('')
+      setHeavy(50); setCrave(0); setEndState(null); setEnergy(null); setTouched(false)
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null
 
-  const toggle = (arr, setArr, value) => {
-    if (value === 'nothing' || value === 'none') {
-      setArr(arr.includes(value) ? [] : [value])
-      return
-    }
-    const cleaned = arr.filter(v => v !== 'nothing' && v !== 'none')
-    setArr(cleaned.includes(value) ? cleaned.filter(v => v !== value) : [...cleaned, value])
-  }
+  const canTend = touched && !!endState
 
   const handleSave = async () => {
-    if (saving || !mood || !urge) return
+    if (saving || !canTend) return
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setSaving(false); return }
 
+      const h01 = heavy / 100
+      const c01 = crave / 100
+      const moodEntry = moodFromHeaviness(h01)
+      const pull = pullFromCraving(c01)
+
       const row = {
         user_id: user.id,
         stage,
         checkin_date: localDateStr(),
-        mood: mood?.value ?? null,
-        mood_score: mood?.score ?? null,
+        mood: moodEntry?.value ?? null,
+        mood_score: moodEntry?.score ?? null,
         energy: energy ?? null,
-        felt_pull: urge ? urge.felt : null,
-        pull_intensity: urge ? urge.intensity : null,
-        contexts,
-        body_signals: includeBody ? bodySignals : [],
-        note: note.trim() || null,
+        felt_pull: pull.felt,
+        pull_intensity: pull.intensity,
+        end_state: endState,
+        contexts: [],
+        body_signals: [],
+        note: null,
       }
 
       const { data, error } = await supabase
@@ -245,10 +214,14 @@ export default function DailyCheckin({
         setSaving(false)
         return
       }
-      if (onSaved) onSaved(data)
+
+      // compute the reflection from the combination
+      const reflection = reflectionFor({ heaviness: h01, craving: c01, endState, stage })
+
       setSaving(false)
-      setTended(true)
-      setTimeout(() => { setTended(false); onClose() }, 1300)
+      // hand the row + reflection up; the home rustles the tree + floats the quote
+      if (onSaved) onSaved(data, reflection)
+      onClose()
     } catch (err) {
       console.error(err)
       alert('Something went wrong. Please try again.')
@@ -257,30 +230,11 @@ export default function DailyCheckin({
   }
 
   const todayNice = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
-  const showPull = !!mood
-  const showRest = !!urge
-  const canTend = !!mood && !!urge
 
   return (
     <SheetPortal><div style={S.overlay} onClick={onClose}>
       <style>{FADE_CSS}</style>
       <div style={S.card} onClick={(e) => e.stopPropagation()}>
-        <div
-          style={{
-            ...S.moodWash,
-            background: mood ? hexToRgba(mood.color, 0.17) : 'transparent',
-            opacity: mood ? 1 : 0,
-          }}
-        />
-        {tended && (
-          <div className="vowCkFade" style={{ ...S.tendedLayer, animation: 'vowCkFade 0.3s ease' }}>
-            <span style={{ ...S.tendedRing, color: mood ? mood.color : '#854F0B', borderColor: mood ? hexToRgba(mood.color, 0.55) : '#C9A85C' }}>
-              <LeafGlyph />
-            </span>
-            <p style={S.tendedTitle}>Tended.</p>
-            <p style={S.tendedSub}>The tree drinks. Come back tomorrow.</p>
-          </div>
-        )}
         <div style={S.content}>
 
           <div style={S.header}>
@@ -292,72 +246,40 @@ export default function DailyCheckin({
             <button onClick={onClose} style={S.closeBtn} disabled={saving} aria-label="Close">×</button>
           </div>
 
-          <p style={S.q}>How was today, mostly?</p>
-          <MoodBand mood={mood} onPick={setMood} disabled={saving} />
+          {/* 1 — the day */}
+          <p style={S.q}>How heavy was today?</p>
+          <FeelSlider
+            value={heavy}
+            onChange={(v) => { setHeavy(v); setTouched(true) }}
+            gradient="linear-gradient(90deg, #7E9B5A 0%, #B9A07E 50%, #8A5A3C 100%)"
+            stops={HEAVY_STOPS}
+            disabled={saving}
+          />
 
-          {showPull && (
-            <div className="vowCkFade" style={{ animation: 'vowCkFade 0.35s ease' }}>
-              <p style={S.q}>Did you feel like doing it today?</p>
-              <div style={S.pullRow}>
-                {URGE_OPTIONS.map(p => (
-                  <button
-                    key={p.value}
-                    onClick={() => setUrge(p)}
-                    disabled={saving}
-                    style={{ ...S.pullChip, ...(urge?.value === p.value ? S.pullChipOn : {}) }}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* 2 — the craving */}
+          <p style={S.q}>How was the craving today?</p>
+          <FeelSlider
+            value={crave}
+            onChange={(v) => { setCrave(v); setTouched(true) }}
+            gradient="linear-gradient(90deg, #B9C89E 0%, #D9B57A 55%, #B0603F 100%)"
+            stops={CRAVE_STOPS}
+            disabled={saving}
+          />
 
-          {showRest && (
-            <div className="vowCkFade" style={{ animation: 'vowCkFade 0.35s ease' }}>
-              <p style={S.q}>{urge.felt ? 'What was going on around then?' : 'What was most of your day like?'}</p>
-              <div style={S.chipWrap}>
-                {CONTEXT_OPTIONS.map(c => (
-                  <button
-                    key={c.value}
-                    onClick={() => toggle(contexts, setContexts, c.value)}
-                    disabled={saving}
-                    style={{ ...S.chip, ...(contexts.includes(c.value) ? S.chipOn : {}) }}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-
-              {includeBody && (
-                <>
-                  <p style={S.q}>Where did you feel it in your body?</p>
-                  <div style={S.chipWrap}>
-                    {BODY_OPTIONS.map(b => (
-                      <button
-                        key={b.value}
-                        onClick={() => toggle(bodySignals, setBodySignals, b.value)}
-                        disabled={saving}
-                        style={{ ...S.chip, ...(bodySignals.includes(b.value) ? S.chipOn : {}) }}
-                      >
-                        {b.label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Anything you want to remember about today…"
-                style={S.noteInput}
+          {/* 3 — where you are tonight */}
+          <p style={S.q}>Where are you tonight?</p>
+          <div style={S.stateWrap}>
+            {END_STATES.map(s => (
+              <button
+                key={s.value}
+                onClick={() => setEndState(s.value)}
                 disabled={saving}
-                maxLength={140}
-              />
-            </div>
-          )}
+                style={{ ...S.stateChip, ...(endState === s.value ? S.stateChipOn : {}) }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
 
           <button
             onClick={handleSave}
@@ -367,7 +289,7 @@ export default function DailyCheckin({
             {saving ? 'Tending…' : existing ? 'Tend again' : 'Tend the tree'}
           </button>
 
-          <p style={S.helper}>There’s no wrong answer here. Just what’s true.</p>
+          <p style={S.helper}>There's no wrong answer here. Just what's true.</p>
         </div>
       </div>
     </div></SheetPortal>
@@ -375,10 +297,6 @@ export default function DailyCheckin({
 }
 
 const S = {
-  tendedLayer: { position: 'absolute', inset: 0, zIndex: 4, background: 'rgba(250,247,241,0.97)', borderRadius: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, textAlign: 'center', padding: 24 },
-  tendedRing: { width: 52, height: 52, borderRadius: '50%', border: '1px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6, background: '#FDFBF6' },
-  tendedTitle: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 21, color: '#2A1F15', margin: 0 },
-  tendedSub: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 13, color: '#9C8C78', margin: 0 },
   overlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
     background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(4px)',
@@ -391,11 +309,6 @@ const S = {
     maxHeight: '90vh', overflowY: 'auto',
     borderRadius: '22px',
     boxShadow: '0 20px 60px rgba(40,25,15,0.3)',
-  },
-  moodWash: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    pointerEvents: 'none',
-    transition: 'background 0.5s ease, opacity 0.5s ease',
   },
   content: { position: 'relative', padding: '1.25rem 1.4rem 1.25rem' },
 
@@ -410,53 +323,36 @@ const S = {
   dateLine: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '2px 0 0' },
   closeBtn: { background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '24px', cursor: 'pointer', padding: '0 2px', lineHeight: 1 },
 
-  q: { fontSize: '14.5px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '16px 0 8px' },
+  q: { fontSize: '15px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '20px 0 12px' },
 
-  // the weather band
-  bandWrap: { padding: '2px 4px 0' },
-  bandWordRow: { height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  bandWord: { fontSize: '24px', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 500, lineHeight: 1 },
-  bandWordEmpty: { fontSize: '12.5px', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#B9A88E' },
-  bandTrack: {
-    position: 'relative', height: '18px', borderRadius: '999px',
+  // sliders
+  sliderWrap: { padding: '2px 4px 0' },
+  sliderTrack: {
+    position: 'relative', height: '14px', borderRadius: '999px',
     border: '0.5px solid rgba(60,40,20,0.18)', cursor: 'pointer',
-    boxShadow: 'inset 0 1px 3px rgba(60,40,20,0.18)', marginTop: '6px',
+    boxShadow: 'inset 0 1px 3px rgba(60,40,20,0.18)',
   },
-  bandTick: { position: 'absolute', top: '50%', width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(250,247,241,0.75)', transform: 'translate(-50%, -50%)', pointerEvents: 'none' },
-  bandThumb: {
-    position: 'absolute', top: '50%', width: '28px', height: '28px', borderRadius: '50%',
-    background: '#FAF7F1', border: '2.5px solid', transform: 'translate(-50%, -50%)',
+  sliderThumb: {
+    position: 'absolute', top: '50%', width: '26px', height: '26px', borderRadius: '50%',
+    background: '#FAF7F1', border: '2.5px solid #3A2A1C', transform: 'translate(-50%, -50%)',
     boxShadow: '0 2px 8px rgba(60,40,20,0.35)', pointerEvents: 'none',
-    transition: 'left 0.16s ease, border-color 0.16s ease',
+    transition: 'left 0.12s ease',
   },
-  bandEnds: { display: 'flex', justifyContent: 'space-between', marginTop: '6px', padding: '0 2px' },
-  bandEnd: { fontSize: '10.5px', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#B9A88E' },
+  sliderEnds: { display: 'flex', justifyContent: 'space-between', marginTop: '9px', padding: '0 1px' },
+  sliderEnd: { fontSize: '10.5px', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#B9A88E', transition: 'color 0.2s ease' },
+  sliderEndOn: { color: '#854F0B', fontWeight: 500 },
 
-  // the pull
-  pullRow: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '7px' },
-  pullChip: {
-    padding: '11px 8px', background: '#FDFBF6', border: '0.5px solid #E2D7C3',
-    borderRadius: '12px', fontSize: '12.5px', color: '#3A2A1C',
-    fontFamily: 'Georgia, serif', cursor: 'pointer', lineHeight: 1.3,
-  },
-  pullChipOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: '0.5px solid #241710' },
-
-  // contexts / body
-  chipWrap: { display: 'flex', flexWrap: 'wrap', gap: '7px' },
-  chip: {
-    padding: '8px 12px', borderRadius: '999px', border: '0.5px solid #E2D7C3',
+  // end-state taps
+  stateWrap: { display: 'flex', flexWrap: 'wrap', gap: '8px' },
+  stateChip: {
+    padding: '9px 15px', borderRadius: '999px', border: '0.5px solid #E2D7C3',
     background: '#FDFBF6', color: '#3A2A1C', fontFamily: 'Georgia, serif',
-    fontSize: '12.5px', cursor: 'pointer',
+    fontStyle: 'italic', fontSize: '13.5px', cursor: 'pointer',
   },
-  chipOn: { background: '#F4ECDD', border: '1px solid #C9A85C' },
+  stateChipOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#F6E8C4', border: '0.5px solid #241710' },
 
-  noteInput: {
-    width: '100%', boxSizing: 'border-box', marginTop: '14px', padding: '11px 13px',
-    border: '0.5px solid #E2D7C3', borderRadius: '12px', background: '#FFFFFF',
-    fontSize: '13px', fontStyle: 'italic', color: '#2A1F15', fontFamily: 'Georgia, serif', outline: 'none',
-  },
   tendBtn: {
-    width: '100%', marginTop: '16px', padding: '14px',
+    width: '100%', marginTop: '22px', padding: '14px',
     background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
     border: '0.5px solid rgba(217,181,122,0.35)',
     borderRadius: '13px', color: '#FAF7F1', fontSize: '14.5px', fontWeight: 500,

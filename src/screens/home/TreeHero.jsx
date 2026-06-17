@@ -94,6 +94,7 @@ export default function TreeHero({
   daysFree = null,
   tendedToday = false,
   onTend,
+  rustleSignal = 0,
   caption = null,
   trackerStartISO = null,
   commitTargetISO = null,
@@ -107,6 +108,7 @@ export default function TreeHero({
   const prevShownRef = useRef(shown)
   const freshGRef = useRef(null)
   const artRef = useRef(null)
+  const gustRef = useRef(null)
 
   // 1-second heartbeat for the live tickers (commit countdown / endure count-up)
   const [, setTickNow] = useState(0)
@@ -146,6 +148,21 @@ export default function TreeHero({
     })
     return () => { tweens.forEach(tw => tw.kill()) }
   }, [built])
+
+  // a one-time gust through the whole canopy when a check-in is tended.
+  // Runs on the PARENT wrapper (gustRef) so it composes with the idle leaf
+  // sway on the children rather than fighting it.
+  useEffect(() => {
+    if (!rustleSignal) return
+    const el = gustRef.current
+    if (!el || reducedMotion()) return
+    const tl = gsap.timeline()
+    tl.to(el, { rotation: 2.4, transformOrigin: '50% 100%', duration: 0.22, ease: 'power2.out' })
+      .to(el, { rotation: -1.6, duration: 0.5, ease: 'sine.inOut' })
+      .to(el, { rotation: 0.8, duration: 0.55, ease: 'sine.inOut' })
+      .to(el, { rotation: 0, duration: 0.7, ease: 'sine.out' })
+    return () => { tl.kill(); gsap.set(el, { rotation: 0 }) }
+  }, [rustleSignal])
 
   // the day's new leaves pop out of their branch
   useLayoutEffect(() => {
@@ -279,7 +296,7 @@ export default function TreeHero({
           )}
 
           {/* the tree — settled art batched, the day's new leaves on top */}
-          <g>
+          <g ref={gustRef} style={{ transformBox: 'fill-box', transformOrigin: '50% 100%' }}>
             <g ref={artRef} dangerouslySetInnerHTML={{ __html: built.html }} />
             <g ref={freshGRef}>
               {built.fresh.map((l, i) => (
