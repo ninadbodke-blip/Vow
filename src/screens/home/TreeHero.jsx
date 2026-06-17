@@ -34,7 +34,6 @@ const MOTION_CSS = `
 @keyframes vowBob { from { transform: translateY(-2.5px); } to { transform: translateY(2.5px); } }
 @keyframes vowWing { from { transform: scaleY(1); } to { transform: scaleY(0.45); } }
 @keyframes vowDrift { from { transform: translateX(-260px); } to { transform: translateX(260px); } }
-@keyframes vowReflectFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) {
   .vowFly, .vowBob, .vowWing, .vowCloud { animation: none !important; }
 }`
@@ -96,7 +95,6 @@ export default function TreeHero({
   tendedToday = false,
   onTend,
   rustleSignal = 0,
-  reflection = null,
   caption = null,
   trackerStartISO = null,
   commitTargetISO = null,
@@ -151,33 +149,33 @@ export default function TreeHero({
   }, [built])
 
   // a one-time BOOM of leaves when a check-in is tended — the foliage
-  // swells and scatters and settles, while the trunk/branches stay put.
-  // The canopy is a handful of batched `.vow-canopy` paths; we scale-pop
-  // each from its own centre, staggered, so it ripples. Scale is used (not
-  // rotation) so it composes with the idle sway instead of fighting it.
+  // swells and settles, while the trunk/branches stay put. Targets the
+  // batched `.vow-canopy` paths and scale-pops them. Uses the SAME
+  // transformOrigin ('50% 45%') the idle sway uses (passed in GSAP vars,
+  // not inline CSS — GSAP resolves it against the SVG bbox, which works in
+  // WebView), so the boom and the idle sway share one origin and never
+  // fight. Deferred a frame so any tree rebuild has settled.
   useEffect(() => {
     if (!rustleSignal) return
     const root = artRef.current
     if (!root || reducedMotion()) return
-    const leaves = root.querySelectorAll('.vow-canopy')
-    if (!leaves.length) return
-    const tweens = []
-    leaves.forEach((el, i) => {
-      el.style.transformBox = 'fill-box'
-      el.style.transformOrigin = '50% 50%'
-      tweens.push(
+    const raf = requestAnimationFrame(() => {
+      const leaves = root.querySelectorAll('.vow-canopy')
+      if (!leaves.length) return
+      leaves.forEach((el, i) => {
         gsap.fromTo(el,
-          { scale: 1 },
+          { scale: 1, transformOrigin: '50% 45%' },
           {
-            scale: 1.16, duration: 0.26, ease: 'back.out(3)',
-            delay: i * 0.06,
+            scale: 1.18, duration: 0.28, ease: 'back.out(3)',
+            transformOrigin: '50% 45%',
+            delay: i * 0.07,
             yoyo: true, repeat: 1,
-            onComplete: () => { gsap.set(el, { scale: 1 }) },
+            overwrite: false,
           }
         )
-      )
+      })
     })
-    return () => { tweens.forEach(t => t.kill()) }
+    return () => cancelAnimationFrame(raf)
   }, [rustleSignal])
 
   // the day's new leaves pop out of their branch
@@ -330,11 +328,6 @@ export default function TreeHero({
             </g>
           </g>
         </svg>
-        {reflection && reflection.line && (
-          <div key={reflection.line} style={styles.reflectOverlay}>
-            <p style={styles.reflectLine}>{reflection.line}</p>
-          </div>
-        )}
       </div>
 
       <div style={styles.below}>
@@ -374,17 +367,6 @@ const styles = {
     boxShadow: '0 4px 16px rgba(80,50,20,0.06)',
   },
   skyWrap: { display: 'block', position: 'relative' },
-  reflectOverlay: {
-    position: 'absolute', left: 0, right: 0, bottom: '7%',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '0 9%', pointerEvents: 'none',
-    animation: 'vowReflectFade 0.7s ease',
-  },
-  reflectLine: {
-    fontFamily: 'Georgia, serif', fontStyle: 'italic',
-    fontSize: '15px', lineHeight: 1.5, color: '#2A1F15', textAlign: 'center',
-    margin: 0, textShadow: '0 1px 10px rgba(250,247,241,0.95), 0 0 22px rgba(250,247,241,0.95)',
-  },
   below: { padding: '12px 16px 16px', textAlign: 'center' },
   countLine: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: 0 },
   tickBig: { fontSize: '21px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '10px 0 0', textAlign: 'center', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em' },
