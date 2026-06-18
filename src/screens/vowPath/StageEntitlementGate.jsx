@@ -80,7 +80,7 @@ export default function StageEntitlementGate({ stage, children }) {
         <VowPathPaywall
           stageName={stageName}
           onUnlocked={() => check()}
-          onClose={() => navigate('/app/home')}
+          onClose={() => navigate(stageKey ? `/app/vow-path/${stageKey}` : '/app/home')}
         />
       </div>
     )

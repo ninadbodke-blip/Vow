@@ -2,14 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
 import { STAGE_REVEALS } from './data/stageReveals'
-import VowPathPaywall from './VowPathPaywall'
 
 export default function StageReveal() {
   const navigate = useNavigate()
   const { stageSlug } = useParams()
   const reveal = STAGE_REVEALS[stageSlug]
   const [starting, setStarting] = useState(false)
-  const [showPaywall, setShowPaywall] = useState(false)
   const [substanceLabel, setSubstanceLabel] = useState('')
 
   useEffect(() => {
@@ -37,31 +35,16 @@ export default function StageReveal() {
 
   const isAvailable = reveal.status === 'available'
 
-  // Tapping "Begin {stage}" first checks whether the user owns the Vow Path.
-  // Paid → proceed straight in. Not paid → show the paywall; on success it
-  // calls proceedIntoStage() and they continue without losing their place.
+  // Vow Path overviews are free to explore — the paywall now lives at the start
+  // of an individual chapter (the /day route), not here. So "Begin" simply
+  // assigns the stage, writes the progress row, and opens the overview; payment
+  // is asked for only when the user taps into a chapter.
   const handleBegin = async () => {
     if (!isAvailable || starting) return
     setStarting(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/app/welcome'); return }
-
-      const { data: ent } = await supabase
-        .from('entitlements')
-        .select('active')
-        .eq('user_id', user.id)
-        .eq('product', 'vow_path')
-        .eq('active', true)
-        .maybeSingle()
-
-      if (!ent) {
-        // Not paid yet — open the paywall and stop here.
-        setStarting(false)
-        setShowPaywall(true)
-        return
-      }
-
       await proceedIntoStage(user)
     } catch (err) {
       console.error('Unexpected error:', err)
@@ -70,8 +53,9 @@ export default function StageReveal() {
     }
   }
 
-  // The actual stage-entry (unchanged logic), now reusable so the paywall can
-  // call it after a successful purchase.
+  // The actual stage-entry: assign the stage, seed/refresh the progress row,
+  // then route to the overview (not Day 1) so the user sees the full stage
+  // shape first and starts a chapter themselves.
   const proceedIntoStage = async (user) => {
     setStarting(true)
     try {
@@ -210,18 +194,6 @@ export default function StageReveal() {
               Back to home
             </button>
           </>
-        )}
-
-        {showPaywall && (
-          <VowPathPaywall
-            stageName={reveal.name}
-            onUnlocked={async () => {
-              setShowPaywall(false)
-              const { data: { user } } = await supabase.auth.getUser()
-              if (user) await proceedIntoStage(user)
-            }}
-            onClose={() => setShowPaywall(false)}
-          />
         )}
 
       </div>
