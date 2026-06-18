@@ -155,6 +155,7 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
             {isNative && error && <p style={{ ...S.error, marginTop: '12px', marginBottom: 0 }}>{error}</p>}
 
             <p style={S.fineprint}>One-time payment · lifetime access · secure checkout</p>
+            <p style={S.entityLine}>Payment to Vow Labs · vowapp.in</p>
           </>
         )}
 
@@ -244,6 +245,7 @@ const S = {
     boxShadow: '0 8px 22px -8px rgba(30,18,8,0.5)',
   },
   fineprint: { fontSize: '11.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '12px 0 0' },
+  entityLine: { fontSize: '11px', color: '#854F0B', fontFamily: 'Georgia, serif', textAlign: 'center', margin: '5px 0 0', letterSpacing: '0.02em' },
   laterBtn: { width: '100%', padding: '13px', marginTop: '10px', background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '13.5px', fontFamily: 'Georgia, serif', cursor: 'pointer' },
 
   // METHOD PICKER
