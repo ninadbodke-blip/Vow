@@ -148,6 +148,8 @@ export default function Welcome() {
         ) : (
           <button onClick={next} style={styles.continueBtn}>Continue →</button>
         )}
+
+        <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(250,247,241,0.4)', fontFamily: 'Georgia, serif', margin: '1.4rem 0 0', letterSpacing: '0.02em' }}>© Vow™ Labs 2026</p>
       </div>
     </div>
   )

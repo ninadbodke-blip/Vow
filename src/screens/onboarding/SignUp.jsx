@@ -253,6 +253,7 @@ export default function SignUp() {
           {' '}and{' '}
           <Link to="/privacy" className="vow-footer-link" style={styles.footerLink}>Privacy Policy</Link>.
         </p>
+        <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(250,247,241,0.4)', fontFamily: 'Georgia, serif', margin: '0.8rem 0 0', letterSpacing: '0.02em' }}>© Vow™ Labs 2026</p>
       </div>
     </div>
   )

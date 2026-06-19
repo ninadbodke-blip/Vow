@@ -499,6 +499,8 @@ export default function HomeShell({ progress }) {
         />
         </div>
 
+        <p style={{ textAlign: 'center', fontSize: '11px', color: '#B5A488', fontFamily: 'Georgia, serif', margin: '1.5rem 0 0.5rem', letterSpacing: '0.02em' }}>© Vow™ Labs 2026</p>
+
         <BottomNav />
 
         {/* Gentle guided tour — first visit, replayable via the "?" */}
