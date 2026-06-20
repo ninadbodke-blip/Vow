@@ -83,7 +83,6 @@ import MotivationLibrary from './screens/motivation/MotivationLibrary'
 
 // ===== Mirror =====
 import MirrorScreen from './screens/mirror/MirrorScreen'
-import CheckinPrototype from './screens/prototype/CheckinPrototype'
 
 // =====================================================================
 // VOW PATH ACCESS GATE
@@ -191,7 +190,6 @@ function AppRoutes() {
         <Routes location={location}>
       {/* ===== PUBLIC ROUTES (no auth, no /app prefix) ===== */}
       <Route path="/a/:token" element={<AnchorPublic />} />
-      <Route path="/proto-checkin" element={<CheckinPrototype />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/refund" element={<RefundPolicy />} />
