@@ -83,6 +83,7 @@ import MotivationLibrary from './screens/motivation/MotivationLibrary'
 
 // ===== Mirror =====
 import MirrorScreen from './screens/mirror/MirrorScreen'
+import CheckinPrototype from './screens/prototype/CheckinPrototype'
 
 // =====================================================================
 // VOW PATH ACCESS GATE
@@ -104,6 +105,26 @@ function AppRoutes() {
   const location = useLocation()
   const [session, setSession] = useState(undefined)
   const [hasOnboardingProgress, setHasOnboardingProgress] = useState(undefined)
+
+  // Android hardware back button: go to the previous screen instead of
+  // closing the app. Only exit when there's nowhere sensible to go back to
+  // (a root screen, or no history). Native-only; a no-op on web.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    let handle
+    import('@capacitor/app').then(({ App: CapacitorApp }) => {
+      CapacitorApp.addListener('backButton', () => {
+        const path = window.location.pathname
+        const atRoot = path === '/app/home' || path === '/app/welcome' || path === '/'
+        if (!atRoot && window.history.length > 1) {
+          window.history.back()
+        } else {
+          CapacitorApp.exitApp()
+        }
+      }).then((h) => { handle = h })
+    })
+    return () => { if (handle) handle.remove() }
+  }, [])
 
   // 1. Session listener
   useEffect(() => {
@@ -170,6 +191,7 @@ function AppRoutes() {
         <Routes location={location}>
       {/* ===== PUBLIC ROUTES (no auth, no /app prefix) ===== */}
       <Route path="/a/:token" element={<AnchorPublic />} />
+      <Route path="/proto-checkin" element={<CheckinPrototype />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/refund" element={<RefundPolicy />} />
@@ -268,34 +290,30 @@ function AppRoutes() {
       <Route path="/app/vow-path/check" element={vowGate(session, <StageCheck />)} />
       <Route path="/app/vow-path/result/:stageSlug" element={vowGate(session, <StageReveal />)} />
 
-      {/* Stage OVERVIEWS are free to explore (so the curriculum's depth is
-          visible before paying). They stay progression-gated inside via
-          canEnterStage. The paywall (StageEntitlementGate) now wraps ONLY the
-          individual chapter /day routes — payment is asked for at chapter start. */}
-      <Route path="/app/vow-path/reflect" element={vowGate(session, <ReflectOverview />)} />
+      <Route path="/app/vow-path/reflect" element={vowGate(session, <StageEntitlementGate stage="reflect"><ReflectOverview /></StageEntitlementGate>)} />
       <Route path="/app/vow-path/reflect/day/:dayNumber" element={vowGate(session, <StageEntitlementGate stage="reflect"><ReflectV2Day /></StageEntitlementGate>)} />
 
-      <Route path="/app/vow-path/notice" element={vowGate(session, <NoticeOverview />)} />
+      <Route path="/app/vow-path/notice" element={vowGate(session, <StageEntitlementGate stage="notice"><NoticeOverview /></StageEntitlementGate>)} />
       <Route path="/app/vow-path/notice/day/:dayNumber" element={vowGate(session, <StageEntitlementGate stage="notice"><NoticeDay /></StageEntitlementGate>)} />
 
-      <Route path="/app/vow-path/commit" element={vowGate(session, <CommitOverview />)} />
+      <Route path="/app/vow-path/commit" element={vowGate(session, <StageEntitlementGate stage="commit"><CommitOverview /></StageEntitlementGate>)} />
       <Route path="/app/vow-path/commit/day/:dayNumber" element={vowGate(session, <StageEntitlementGate stage="commit"><CommitDay /></StageEntitlementGate>)} />
 
-      <Route path="/app/vow-path/endure" element={vowGate(session, <EndureOverview />)} />
+      <Route path="/app/vow-path/endure" element={vowGate(session, <StageEntitlementGate stage="endure"><EndureOverview /></StageEntitlementGate>)} />
       <Route path="/app/vow-path/endure/day/:dayNumber" element={vowGate(session, <StageEntitlementGate stage="endure"><EndureDay /></StageEntitlementGate>)} />
 
-      <Route path="/app/vow-path/build" element={vowGate(session, <BuildOverview />)} />
+      <Route path="/app/vow-path/build" element={vowGate(session, <StageEntitlementGate stage="build"><BuildOverview /></StageEntitlementGate>)} />
       <Route path="/app/vow-path/build/day/:dayNumber" element={vowGate(session, <StageEntitlementGate stage="build"><BuildDay /></StageEntitlementGate>)} />
 
-      <Route path="/app/vow-path/reclaim" element={vowGate(session, <ReclaimOverview />)} />
+      <Route path="/app/vow-path/reclaim" element={vowGate(session, <StageEntitlementGate stage="reclaim"><ReclaimOverview /></StageEntitlementGate>)} />
       <Route path="/app/vow-path/reclaim/day/:dayNumber" element={vowGate(session, <StageEntitlementGate stage="reclaim"><ReclaimDay /></StageEntitlementGate>)} />
 
       <Route path="/app/vow-path/transition/:fromStage/to/:toStage" element={vowGate(session, <StageTransition />)} />
 
-      {/* ===== LIBRARY ===== */}
-      <Route path="/app/library" element={session ? <LibraryHome /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/library/:stage" element={session ? <LibraryStageHome /> : <Navigate to="/app/welcome" />} />
-      <Route path="/app/library/:stage/day/:dayNumber" element={session ? <LibraryDeepRead /> : <Navigate to="/app/welcome" />} />
+      {/* ===== LIBRARY (paid — behind the vow_path entitlement) ===== */}
+      <Route path="/app/library" element={session ? <StageEntitlementGate><LibraryHome /></StageEntitlementGate> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/library/:stage" element={session ? <StageEntitlementGate><LibraryStageHome /></StageEntitlementGate> : <Navigate to="/app/welcome" />} />
+      <Route path="/app/library/:stage/day/:dayNumber" element={session ? <StageEntitlementGate><LibraryDeepRead /></StageEntitlementGate> : <Navigate to="/app/welcome" />} />
 
       {/* ===== MOTIVATION ===== */}
       <Route path="/app/motivation" element={session ? <MotivationHome /> : <Navigate to="/app/welcome" />} />

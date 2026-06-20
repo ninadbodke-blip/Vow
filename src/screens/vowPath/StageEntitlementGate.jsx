@@ -32,7 +32,7 @@ export default function StageEntitlementGate({ stage, children }) {
 
   // Resolve the stage name for the paywall CTA. `stage` may be passed in, or
   // inferred from the route param for the result screen etc.
-  const stageKey = stage || params.stageSlug || params.toStage || ''
+  const stageKey = stage || params.stageSlug || params.toStage || params.stage || ''
   const stageName = STAGE_NAMES[stageKey] || 'the Vow Path'
 
   async function check() {
@@ -80,7 +80,7 @@ export default function StageEntitlementGate({ stage, children }) {
         <VowPathPaywall
           stageName={stageName}
           onUnlocked={() => check()}
-          onClose={() => navigate(stageKey ? `/app/vow-path/${stageKey}` : '/app/home')}
+          onClose={() => navigate('/app/home')}
         />
       </div>
     )
