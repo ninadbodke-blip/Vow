@@ -360,8 +360,13 @@ export default function Profile() {
         <div>
           <p style={styles.sectionLabel}>Account</p>
           <div style={styles.accountCard}>
-            <Link to="/privacy" style={styles.accountRow}>
-              <span style={styles.accountLabel}>Privacy</span>
+            <Link to="/about" style={styles.accountRow}>
+              <span style={styles.accountLabel}>About</span>
+              <span style={styles.accountArrow}>›</span>
+            </Link>
+            <div style={styles.accountDivider} />
+            <Link to="/contact" style={styles.accountRow}>
+              <span style={styles.accountLabel}>Contact</span>
               <span style={styles.accountArrow}>›</span>
             </Link>
             <div style={styles.accountDivider} />
@@ -370,9 +375,25 @@ export default function Profile() {
               <span style={styles.accountArrow}>›</span>
             </Link>
             <div style={styles.accountDivider} />
+            <Link to="/privacy" style={styles.accountRow}>
+              <span style={styles.accountLabel}>Privacy</span>
+              <span style={styles.accountArrow}>›</span>
+            </Link>
+            <div style={styles.accountDivider} />
+            <Link to="/refund" style={styles.accountRow}>
+              <span style={styles.accountLabel}>Refunds</span>
+              <span style={styles.accountArrow}>›</span>
+            </Link>
+            <div style={styles.accountDivider} />
             <button onClick={signOut} style={{ ...styles.accountRow, width: '100%', background: 'transparent', border: 'none', cursor: 'pointer' }}>
               <span style={styles.accountSignOut}>Sign out</span>
             </button>
+          </div>
+
+          <div style={styles.legalFootnote}>
+            <p style={styles.legalFootnoteName}>Vow Labs · Proprietor: Ninad Arun Bodke</p>
+            <p style={styles.legalFootnoteLine}>Udyam-registered MSME · Mumbai, India</p>
+            <p style={styles.legalFootnoteLine}>vowapp.in · hello@vowapp.in</p>
           </div>
         </div>
 
@@ -487,6 +508,9 @@ const styles = {
   accountArrow: { fontSize: '17px', color: '#9C8C78' },
   accountDivider: { height: '0.5px', background: '#EFE7D7', margin: '0 16px' },
   accountSignOut: { fontSize: '14px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontWeight: 500 },
+  legalFootnote: { textAlign: 'center', margin: '22px 2px 4px', padding: '0 8px' },
+  legalFootnoteName: { fontSize: '12px', color: '#6B5C4A', fontFamily: 'Georgia, serif', margin: '0 0 3px', lineHeight: 1.5 },
+  legalFootnoteLine: { fontSize: '11.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', margin: 0, lineHeight: 1.5 },
 
   sheetOverlay: { position: 'fixed', inset: 0, background: 'rgba(36,23,16,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 },
   sheetCard: { width: '100%', maxWidth: '440px', background: '#FAF7F1', borderRadius: '24px 24px 0 0', padding: '24px 22px 28px', boxShadow: '0 -8px 40px rgba(40,25,10,0.25)' },
