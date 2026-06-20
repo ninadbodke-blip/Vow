@@ -68,16 +68,10 @@ export function useStageBackground(stage) {
     const n = pickStageVariant(stage)
     if (n) setUrl(silhouetteSrc(stage, n))
   }, [stage])
-  if (!cfg) return { display: 'none' }
-  // No tint overlay — sumi-e images are monochrome black on cream, no colour wash needed.
-  // While the image is loading, return nothing (cream background shows through cleanly).
-  if (!url) return { display: 'none' }
-  return {
-    position: 'absolute',
-    inset: 0,
-    backgroundImage: `url('${url}')`,
-    backgroundSize: 'contain',
-    backgroundPosition: 'center top',
-    backgroundRepeat: 'no-repeat',
-  }
+  if (!cfg) return null
+  // Return the picked image URL (or null while loading). Rendered as an <img>
+  // that sizes to its own aspect ratio, so the hero never leaves a gap —
+  // the silhouette images vary between 3:2 and 16:9, so a fixed-height box
+  // would always letterbox or gap. An <img> hugs whatever ratio rotates in.
+  return url
 }

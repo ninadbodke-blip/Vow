@@ -28,7 +28,7 @@ export default function ReflectOverview() {
   const [checkins, setCheckins] = useState({})
   const [activeDay, setActiveDay] = useState(null)
   const [draft, setDraft] = useState({ didIt: null, felt: null, helpful: null, note: '' })
-  const heroPaint = useStageBackground('reflect')
+  const heroUrl = useStageBackground('reflect')
 
   useEffect(() => {
     async function load() {
@@ -191,7 +191,7 @@ export default function ReflectOverview() {
 
         {/* 1 — Hero bleed with nav pills overlaid */}
         <div style={styles.heroWrap}>
-          <div style={heroPaint} aria-hidden="true" />
+          {heroUrl && <img src={heroUrl} alt="" style={styles.heroImg} />}
           <div style={styles.heroNav}>
             <button onClick={() => navigate('/app/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
             <button onClick={() => navigate('/app/library/reflect')} style={styles.pillBtn}>Library</button>
@@ -412,11 +412,17 @@ const styles = {
   // 1 — Hero
   heroWrap: {
     position: 'relative',
-    height: 'clamp(250px, 44vh, 400px)',
     margin: '-1.75rem -1.25rem 0',
+    background: '#EFE7D7',
+    overflow: 'hidden',
   },
+  heroImg: { display: 'block', width: '100%', height: 'auto' },
   heroNav: {
-    position: 'relative',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',

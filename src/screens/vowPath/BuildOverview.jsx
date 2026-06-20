@@ -31,7 +31,7 @@ export default function BuildOverview() {
   const [currentWeek, setCurrentWeek] = useState(1)
   const [loaded, setLoaded] = useState(false)
   const [accessDenied, setAccessDenied] = useState(false)
-  const heroPaint = useStageBackground('build')
+  const heroUrl = useStageBackground('build')
 
   // Offline practice tracking: { [weekNum]: { [dayIdx 1-7]: 'done' | 'missed' } }
   const [offlineMarks, setOfflineMarks] = useState({})
@@ -239,7 +239,7 @@ export default function BuildOverview() {
 
         {/* 1 — Hero bleed with nav pills overlaid */}
         <div style={styles.heroWrap}>
-          <div style={heroPaint} aria-hidden="true" />
+          {heroUrl && <img src={heroUrl} alt="" style={styles.heroImg} />}
           <div style={styles.heroNav}>
             <button onClick={() => navigate('/app/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
             <button onClick={() => navigate('/app/library/build')} style={styles.pillBtn}>Library</button>
@@ -505,8 +505,19 @@ const styles = {
   },
 
   // 1 — Hero
-  heroWrap: { position: 'relative', height: 'clamp(250px, 44vh, 400px)', margin: '-1.75rem -1.25rem 0' },
-  heroNav: { position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2.25rem 1.5rem 0' },
+  heroWrap: {
+    position: 'relative',
+    margin: '-1.75rem -1.25rem 0',
+    background: '#EFE7D7',
+    overflow: 'hidden',
+  },
+  heroImg: { display: 'block', width: '100%', height: 'auto' },
+  heroNav: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2.25rem 1.5rem 0' },
   pillBtn: {
     background: 'rgba(38, 26, 16, 0.42)', WebkitBackdropFilter: 'blur(12px)', backdropFilter: 'blur(12px)',
     border: '0.5px solid rgba(255, 255, 255, 0.55)', color: '#FBF7EE', fontSize: '13px', fontWeight: 600,

@@ -27,7 +27,7 @@ export default function ReclaimOverview() {
   const [completedDays, setCompletedDays] = useState(new Set())
   const [loaded, setLoaded] = useState(false)
   const [accessDenied, setAccessDenied] = useState(false)
-  const heroPaint = useStageBackground('reclaim')
+  const heroUrl = useStageBackground('reclaim')
 
   useEffect(() => {
     async function load() {
@@ -172,7 +172,7 @@ export default function ReclaimOverview() {
 
         {/* 1 — Hero bleed with the back pill overlaid */}
         <div style={styles.heroWrap}>
-          <div style={heroPaint} aria-hidden="true" />
+          {heroUrl && <img src={heroUrl} alt="" style={styles.heroImg} />}
           <div style={styles.heroNav}>
             <button onClick={() => navigate('/app/vow-path')} style={styles.pillBtn}>‹ Vow Path</button>
           </div>
@@ -277,11 +277,17 @@ const styles = {
 
   heroWrap: {
     position: 'relative',
-    height: 'clamp(250px, 44vh, 400px)',
     margin: '-1.75rem -1.25rem 0',
+    background: '#EFE7D7',
+    overflow: 'hidden',
   },
+  heroImg: { display: 'block', width: '100%', height: 'auto' },
   heroNav: {
-    position: 'relative',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
