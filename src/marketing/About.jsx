@@ -70,30 +70,43 @@ export default function About() {
 
           <p style={styles.eyebrowSecond}>The founder</p>
           <p style={styles.body}>
-            Vow was built by Ninad Bodke — solo, deliberately, and from lived
-            understanding of how hard this work is and how badly the existing
-            tools serve it. Vow exists because the recovery software that should
-            have existed didn't: something serious about the science, honest
-            about the difficulty, and gentle with the person doing the work.
+            Vow was built by <strong>Ninad Arun Bodke</strong> — solo,
+            deliberately, and from a lived understanding of how hard this work is
+            and how poorly the existing tools serve it. Vow exists because the
+            recovery software that should have existed didn't: something serious
+            about the science, honest about the difficulty, and gentle with the
+            person doing the work.
           </p>
-          {/* PLACEHOLDER: Ninad — add your personal founder note here. Whatever
-              you're comfortable sharing publicly: why you built this, what it
-              came out of, what running has to do with quitting. Keep or cut the
-              line above as you prefer. This is your story to tell in your words. */}
-          <p style={styles.bodyMuted}>
-            A fuller founder note is on its way — the why behind Vow, in Ninad's
-            own words.
+          <p style={styles.body}>
+            Every part of Vow — the writing, the structure, the science it rests
+            on, the decision never to punish a slip — reflects that conviction.
+            It is built with care, and with respect for the person on the other
+            side of the screen.
           </p>
 
           <p style={styles.eyebrowSecond}>Vow Labs</p>
           <p style={styles.body}>
-            Vow is the first product of Vow Labs, a small independent studio
-            based in Mumbai, India, and Udyam-registered. We build software for
-            the hardest, most private work people do. We're not venture-funded,
-            not chasing scale for its own sake, and not interested in turning
-            recovery into a subscription. We're interested in building something
-            that genuinely helps — and in doing it carefully.
+            Vow is the first product of <strong>Vow Labs</strong>, an independent
+            software studio based in Mumbai, India — operated as a sole
+            proprietorship by Ninad Arun Bodke and registered under the Government
+            of India's Udyam (MSME) framework. We are not venture-funded, not
+            chasing scale for its own sake, and not interested in turning recovery
+            into a subscription. We build software for the hardest, most private
+            work people do — carefully, and for the long term.
           </p>
+
+          <div style={styles.legalCard}>
+            <p style={styles.legalHead}>Business information</p>
+            <dl style={styles.legalList}>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Business name</dt><dd style={styles.legalVal}>Vow Labs</dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Proprietor</dt><dd style={styles.legalVal}>Ninad Arun Bodke</dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Business type</dt><dd style={styles.legalVal}>Sole proprietorship · Udyam-registered MSME</dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Location</dt><dd style={styles.legalVal}>Mumbai, Maharashtra, India</dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Product</dt><dd style={styles.legalVal}>Vow — a recovery companion app (free tier, with the optional Vow Path program)</dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Contact</dt><dd style={styles.legalVal}><a href="mailto:hello@vowapp.in" style={styles.legalLink}>hello@vowapp.in</a> · <a href="mailto:support@vowapp.in" style={styles.legalLink}>support@vowapp.in</a></dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Website</dt><dd style={styles.legalVal}>vowapp.in</dd></div>
+            </dl>
+          </div>
         </div>
       </section>
     </MarketingLayout>
@@ -110,4 +123,11 @@ const styles = {
   lede: { fontSize: '20px', color: '#3A2A1C', lineHeight: 1.6, margin: 0, fontFamily: 'Georgia, serif', fontStyle: 'italic' },
   body: { fontSize: '18px', color: '#5B4F3F', lineHeight: 1.68, margin: '0 0 18px', fontFamily: 'Georgia, serif' },
   bodyMuted: { fontSize: '16px', color: '#9C8C78', lineHeight: 1.6, margin: '0 0 18px', fontFamily: 'Georgia, serif', fontStyle: 'italic' },
+  legalCard: { marginTop: '40px', padding: '28px 30px', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: '18px' },
+  legalHead: { fontSize: '12px', color: '#A07A3C', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 18px' },
+  legalList: { margin: 0, padding: 0 },
+  legalRow: { display: 'flex', flexWrap: 'wrap', gap: '6px 18px', padding: '10px 0', borderTop: '0.5px solid #EDE4D3' },
+  legalKey: { flex: '0 0 140px', fontSize: '13px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Georgia, serif', margin: 0 },
+  legalVal: { flex: '1 1 240px', fontSize: '16px', color: '#3A2A1C', lineHeight: 1.5, fontFamily: 'Georgia, serif', margin: 0 },
+  legalLink: { color: '#854F0B', textDecoration: 'underline', textUnderlineOffset: '3px' },
 }

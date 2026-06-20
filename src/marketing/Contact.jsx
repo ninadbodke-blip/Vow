@@ -88,10 +88,15 @@ export default function Contact() {
           </div>
 
           <div style={styles.officeBlock}>
-            <p style={styles.officeEyebrow}>Registered office</p>
-            <p style={styles.officeBody}>
-              Vow Labs · Mumbai, India · Udyam-registered MSME
-            </p>
+            <p style={styles.officeEyebrow}>Business information</p>
+            <dl style={styles.legalList}>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Business name</dt><dd style={styles.legalVal}>Vow Labs</dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Proprietor</dt><dd style={styles.legalVal}>Ninad Arun Bodke</dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Business type</dt><dd style={styles.legalVal}>Sole proprietorship · Udyam-registered MSME</dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Location</dt><dd style={styles.legalVal}>Mumbai, Maharashtra, India</dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Email</dt><dd style={styles.legalVal}><a href="mailto:support@vowapp.in" style={styles.legalLink}>support@vowapp.in</a> · <a href="mailto:hello@vowapp.in" style={styles.legalLink}>hello@vowapp.in</a></dd></div>
+              <div style={styles.legalRow}><dt style={styles.legalKey}>Website</dt><dd style={styles.legalVal}>vowapp.in</dd></div>
+            </dl>
           </div>
         </div>
       </section>
@@ -123,4 +128,9 @@ const styles = {
   officeBlock: { marginTop: '40px', paddingTop: '28px', borderTop: '0.5px solid #E5D9C2' },
   officeEyebrow: { fontSize: '12px', color: '#A07A3C', textTransform: 'uppercase', letterSpacing: '0.18em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 10px' },
   officeBody: { fontSize: '15px', color: '#9C8C78', lineHeight: 1.6, margin: 0, fontFamily: 'Georgia, serif' },
+  legalList: { margin: 0, padding: 0 },
+  legalRow: { display: 'flex', flexWrap: 'wrap', gap: '6px 18px', padding: '10px 0', borderTop: '0.5px solid #EDE4D3' },
+  legalKey: { flex: '0 0 130px', fontSize: '13px', color: '#9C8C78', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Georgia, serif', margin: 0 },
+  legalVal: { flex: '1 1 220px', fontSize: '16px', color: '#3A2A1C', lineHeight: 1.5, fontFamily: 'Georgia, serif', margin: 0 },
+  legalLink: { color: '#854F0B', textDecoration: 'underline', textUnderlineOffset: '3px' },
 }
