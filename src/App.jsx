@@ -7,7 +7,7 @@ import { supabase } from './supabaseClient'
 import { Capacitor } from '@capacitor/core'
 import { SocialLogin } from '@capgo/capacitor-social-login'
 // RevenueCat init is deferred until Play Billing goes live (package not installed yet):
-// import { configureRevenueCat, identifyRevenueCatUser } from './lib/revenueCatCheckout'
+import { configureRevenueCat, identifyRevenueCatUser, logoutRevenueCat } from './lib/revenueCatCheckout'
 import SignUp from './screens/onboarding/SignUp'
 import AddictionPicker from './screens/onboarding/AddictionPicker'
 import StatePicker from './screens/onboarding/StatePicker'
@@ -139,19 +139,25 @@ function AppRoutes() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // 2. Native Google sign-in init (runs once on mount, native platforms only)
+  // 2. Native init (runs once on mount, native platforms only):
+  //    Google sign-in + RevenueCat (Play Billing).
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       SocialLogin.initialize({
         google: { webClientId: '751166391094-ghsv1o97d9jj2pp6dc4g897auh414lli.apps.googleusercontent.com' },
       })
-      // NOTE: RevenueCat (Play Billing) init is intentionally NOT called yet.
-      // The @revenuecat/purchases-capacitor package is not installed and the
-      // Android purchase is gated off (ANDROID_BILLING_LIVE=false in the paywall).
-      // When billing goes live: install the package, then uncomment:
-      //   configureRevenueCat()
+      configureRevenueCat()
     }
   }, [])
+
+  // 2b. Tie RevenueCat's app user id to the signed-in Supabase user (native
+  //     only), so purchases attribute to the right account and the webhook
+  //     grants the correct user. Log out of RevenueCat when the session ends.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    if (session?.user?.id) identifyRevenueCatUser(session.user.id)
+    else if (session === null) logoutRevenueCat()
+  }, [session])
 
   // 3. Onboarding progress check
   useEffect(() => {

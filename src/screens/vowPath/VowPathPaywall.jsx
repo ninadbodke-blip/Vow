@@ -2,11 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { startVowPathPurchase } from '../../lib/razorpayCheckout'
 import { renderPayPalButtons } from '../../lib/paypalCheckout'
-// NOTE: RevenueCat purchase import is deferred until Play Billing goes live.
-// The Android purchase is gated off (ANDROID_BILLING_LIVE=false) and shows a
-// "coming soon" note, so no RevenueCat code is referenced in this build.
-// When billing is live: install @revenuecat/purchases-capacitor, then add:
-//   import { purchaseVowPath } from '../../lib/revenueCatCheckout'
+import { purchaseVowPath } from '../../lib/revenueCatCheckout'
 
 // =====================================================================
 // VowPathPaywall — the soft paywall shown when a non-paying user tries to
@@ -63,11 +59,10 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
   const isNative = Capacitor.isNativePlatform()
 
   // Android billing readiness gate.
-  // While false, the Android app does NOT offer the purchase (no approved Play
-  // payments profile / RevenueCat not live yet) — it shows a "coming soon" note
-  // instead of a broken buy. Flip to true once RevenueCat + Play Billing are
-  // live and tested. Web (Razorpay/PayPal) is unaffected by this flag.
-  const ANDROID_BILLING_LIVE = false
+  // True now that RevenueCat + Play Billing are live: the Android app runs the
+  // real Play Billing purchase via purchaseVowPath(). Web (Razorpay/PayPal) is
+  // unaffected by this flag.
+  const ANDROID_BILLING_LIVE = true
   const nativePurchaseReady = isNative && ANDROID_BILLING_LIVE
 
   const handleRazorpay = async () => {
@@ -80,12 +75,18 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
     })
   }
 
-  // Android purchase handler — inert until Play Billing is live.
-  // When ANDROID_BILLING_LIVE flips true (and RevenueCat is installed + imported),
-  // restore the body to:
-  //   await purchaseVowPath({ onSuccess: ..., onCancel: ..., onError: ... })
+  // Android purchase handler — runs the Play Billing purchase via RevenueCat.
+  // On success, onUnlocked re-checks entitlement; the gate trusts RevenueCat's
+  // own validated entitlement instantly, so the unlock never waits on the
+  // webhook that durably writes the entitlements table.
   const handleNativePurchase = async () => {
-    setError('The Vow Path is not yet available on Android.')
+    setError(null)
+    setBusy(true)
+    await purchaseVowPath({
+      onSuccess: () => { setBusy(false); onUnlocked?.() },
+      onCancel: () => { setBusy(false) },
+      onError: (msg) => { setBusy(false); setError(msg) },
+    })
   }
 
   const handleMainButton = () => {

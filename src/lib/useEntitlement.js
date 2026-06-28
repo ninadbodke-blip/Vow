@@ -9,7 +9,9 @@
 // =====================================================================
 
 import { useState, useEffect, useCallback } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../supabaseClient'
+import { nativeHasVowPath } from './revenueCatCheckout'
 
 export function useEntitlement(product = 'vow_path') {
   const [loading, setLoading] = useState(true)
@@ -27,8 +29,14 @@ export function useEntitlement(product = 'vow_path') {
         .eq('product', product)
         .eq('active', true)
         .maybeSingle()
-      if (error) { console.error('Entitlement read failed:', error); setHasEntitlement(false); return }
-      setHasEntitlement(!!data)
+      if (!error && data) { setHasEntitlement(true); return }
+      // On native, fall back to RevenueCat's own validated entitlement (instant,
+      // and resilient to webhook lag) for the Vow Path.
+      if (Capacitor.isNativePlatform() && product === 'vow_path' && (await nativeHasVowPath())) {
+        setHasEntitlement(true); return
+      }
+      if (error) console.error('Entitlement read failed:', error)
+      setHasEntitlement(false)
     } catch (e) {
       console.error('Entitlement read error:', e)
       setHasEntitlement(false)

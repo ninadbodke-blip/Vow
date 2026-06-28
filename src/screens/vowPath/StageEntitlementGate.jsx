@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../../supabaseClient'
 import VowPathPaywall from './VowPathPaywall'
+import { nativeHasVowPath } from '../../lib/revenueCatCheckout'
 
 // =====================================================================
 // StageEntitlementGate — wraps every Vow Path STAGE route so a stage's
@@ -47,14 +49,15 @@ export default function StageEntitlementGate({ stage, children }) {
         .eq('product', 'vow_path')
         .eq('active', true)
         .maybeSingle()
-      if (error) {
-        // On a read error, fail CLOSED (show paywall) — never hand out access
-        // because a check failed.
-        console.error('Entitlement check failed:', error)
-        setState('unpaid')
-        return
-      }
-      setState(ent ? 'paid' : 'unpaid')
+      if (!error && ent) { setState('paid'); return }
+      // On native, RevenueCat's own validated entitlement is authoritative and
+      // instant — this covers the brief gap before the webhook writes the table
+      // right after a purchase, plus a reinstall / new device on the same account.
+      if (Capacitor.isNativePlatform() && (await nativeHasVowPath())) { setState('paid'); return }
+      // No entitlement (or a read error): fail CLOSED — never hand out access
+      // because a check failed.
+      if (error) console.error('Entitlement check failed:', error)
+      setState('unpaid')
     } catch (e) {
       console.error('Entitlement check error:', e)
       setState('unpaid')
