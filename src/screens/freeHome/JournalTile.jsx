@@ -281,7 +281,7 @@ const styles = {
   // ---- modal ----
   overlay: {
     position: 'fixed', inset: 0, background: 'rgba(36,23,16,0.5)',
-    backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'flex-end',
+    display: 'flex', alignItems: 'flex-end',
     justifyContent: 'center', zIndex: 1000, padding: '0',
   },
   sheet: {

@@ -522,7 +522,7 @@ const styles = {
   sheetBtnDanger: { background: '#FBF1EC', color: '#B23B1E', border: '0.5px solid #E6C3B4' },
   sheetBtnGhost: { background: 'white', color: '#6B5C4A', border: '0.5px solid #DDCFB6' },
 
-  modal: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 100, backdropFilter: 'blur(4px)' },
+  modal: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 100, },
   modalCard: { background: '#FAF7F1', maxWidth: '360px', width: '100%', borderRadius: '20px', padding: '1.5rem', boxShadow: '0 20px 60px rgba(40,25,15,0.3)' },
   modalTitle: { fontSize: '17px', fontWeight: 500, color: '#2A1F15', margin: '0 0 1rem', fontFamily: 'Georgia, serif' },
   settingsRow: { display: 'flex', justifyContent: 'space-between', width: '100%', padding: '14px 4px', border: 'none', background: 'transparent', fontSize: '13px', color: '#2A1F15', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' },

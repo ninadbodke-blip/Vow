@@ -611,7 +611,7 @@ const styles = {
   eyebrow: { fontSize: '11px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: 0 },
   iconBtn: { width: '38px', height: '38px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'rgba(255,255,255,0.7)', color: '#6B5C4A', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   tourReplay: { position: 'fixed', right: '16px', bottom: '88px', width: '34px', height: '34px', borderRadius: '50%', border: '0.5px solid #DDCFB6', background: '#FCFAF5', color: '#854F0B', fontSize: '16px', fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer', boxShadow: '0 4px 14px rgba(60,40,20,0.18)', zIndex: 1500 },
-  reflectOverlay: { position: 'fixed', inset: 0, zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: 'rgba(34,23,16,0.42)', backdropFilter: 'blur(3px)', animation: 'vowReflectIn 0.4s ease' },
+  reflectOverlay: { position: 'fixed', inset: 0, zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: 'rgba(34,23,16,0.42)', animation: 'vowReflectIn 0.4s ease' },
   reflectCard: { maxWidth: 340, width: '100%', background: 'linear-gradient(180deg, #FCFAF5 0%, #F6EFE0 100%)', border: '0.5px solid rgba(217,181,122,0.4)', borderRadius: 20, padding: '28px 24px 20px', textAlign: 'center', boxShadow: '0 22px 60px -16px rgba(40,25,10,0.5)', animation: 'vowReflectUp 0.6s cubic-bezier(0.16,1,0.3,1)' },
   reflectGlyph: { display: 'inline-flex', width: 40, height: 40, borderRadius: '50%', border: '0.5px solid rgba(201,168,92,0.5)', background: '#FDFBF6', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   reflectLine: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 17, lineHeight: 1.6, color: '#2A1F15', margin: '0 0 20px' },
@@ -663,7 +663,7 @@ const styles = {
   yoursTitle: { fontSize: '14px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500 },
   yoursSub: { fontSize: '11.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.45 },
 
-  sheetOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '0 0.5rem' },
+  sheetOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '0 0.5rem' },
   sheet: { background: '#FAF7F1', width: '100%', maxWidth: '440px', maxHeight: '85vh', borderRadius: '24px 24px 0 0', padding: '0.75rem 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', boxShadow: '0 -10px 40px rgba(40,25,15,0.3)' },
   sheetHandle: { width: '40px', height: '4px', background: '#DDCFB6', borderRadius: '2px', margin: '0 auto 12px', flexShrink: 0 },
   sheetEyebrow: { fontSize: '10px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 4px', textAlign: 'center' },
@@ -671,7 +671,7 @@ const styles = {
   sheetBody: { overflowY: 'auto', flex: 1, paddingBottom: '6px' },
   sheetClose: { width: '100%', padding: '12px', background: 'white', color: '#2A1F15', border: '0.5px solid #DDCFB6', borderRadius: '12px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', marginTop: '10px', flexShrink: 0 },
 
-  flowOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(36,23,16,0.6)', backdropFilter: 'blur(4px)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem' },
+  flowOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(36,23,16,0.6)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem' },
   flowCard: { position: 'relative', width: '100%', maxWidth: '460px', maxHeight: 'min(92vh, 820px)', background: '#FAF7F1', borderRadius: '22px', overflow: 'hidden', boxShadow: '0 24px 70px rgba(30,18,8,0.45)', display: 'flex', flexDirection: 'column' },
   flowClose: { position: 'absolute', top: '10px', right: '10px', zIndex: 5, width: '34px', height: '34px', borderRadius: '50%', border: '0.5px solid #E0D5C2', background: 'rgba(250,247,241,0.92)', color: '#6B5C4A', fontSize: '17px', lineHeight: 1, cursor: 'pointer' },
   flowScroll: { overflowY: 'auto', WebkitOverflowScrolling: 'touch' },

@@ -299,7 +299,7 @@ export default function DailyCheckin({
 const S = {
   overlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(4px)',
+    background: 'rgba(40,25,15,0.55)', 
     zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '1rem', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },

@@ -178,7 +178,7 @@ const styles = {
   wayLabel: { fontSize: '12.5px', color: '#FAF7F1', fontFamily: 'Georgia, serif', fontWeight: 500, letterSpacing: '0.01em' },
   wayChevron: { display: 'flex', color: '#CBBA98' },
 
-  sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
+  sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
   sheetCard: { width: '100%', maxWidth: '430px', maxHeight: '88vh', overflowY: 'auto', background: '#FCFAF5', borderRadius: '22px', padding: '20px 20px 22px', boxShadow: '0 24px 70px rgba(40,25,15,0.4)' },
   sheetHead: { display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' },
   sheetEyebrow: { fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A07A3C', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
@@ -201,7 +201,7 @@ const styles = {
   mapLockTag: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 },
   mapFootnote: { fontSize: '12px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', margin: '12px 0 2px', lineHeight: 1.45 },
 
-  confirmOverlay: { position: 'fixed', inset: 0, background: 'rgba(36,23,16,0.5)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 320 },
+  confirmOverlay: { position: 'fixed', inset: 0, background: 'rgba(36,23,16,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 320 },
   confirmCard: { width: '100%', maxWidth: '440px', background: '#FAF7F1', borderRadius: '24px 24px 0 0', padding: '24px 22px 28px', boxShadow: '0 -8px 40px rgba(40,25,10,0.3)' },
   confirmTitle: { fontSize: '20px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, margin: '0 0 10px' },
   confirmBody: { fontSize: '14.5px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 20px' },

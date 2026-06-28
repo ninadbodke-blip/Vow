@@ -220,7 +220,6 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
 const S = {
   backdrop: {
     position: 'fixed', inset: 0, background: 'rgba(40,25,15,0.55)',
-    backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)',
     zIndex: 300, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
   },
   card: {
@@ -251,8 +250,7 @@ const S = {
 
   // METHOD PICKER
   pickerBackdrop: {
-    position: 'fixed', inset: 0, background: 'rgba(40,25,15,0.45)',
-    backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+    position: 'fixed', inset: 0, background: 'rgba(40,25,15,0.55)',
     zIndex: 320, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
   },
   pickerCard: {

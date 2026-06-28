@@ -429,9 +429,7 @@ const styles = {
     padding: '2.25rem 1.5rem 0',
   },
   pillBtn: {
-    background: 'rgba(38, 26, 16, 0.42)',
-    WebkitBackdropFilter: 'blur(12px)',
-    backdropFilter: 'blur(12px)',
+    background: 'rgba(38, 26, 16, 0.82)',
     border: '0.5px solid rgba(255, 255, 255, 0.55)',
     color: '#FBF7EE', fontSize: '13px', fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit',
@@ -520,9 +518,8 @@ const styles = {
 
   // Check-in bottom sheet
   sheetOverlay: {
-    position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(40,25,15,0.45)',
+    position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(40,25,15,0.55)',
     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-    WebkitBackdropFilter: 'blur(2px)', backdropFilter: 'blur(2px)',
   },
   sheet: {
     background: '#FAF7F1', width: '100%', maxWidth: '440px',

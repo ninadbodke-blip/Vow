@@ -1487,7 +1487,7 @@ const styles = {
   activityLauncherChip: { fontSize: '11px', fontWeight: 600, color: '#854F0B', background: '#F6EFDD', border: '0.5px solid #E8DCC4', borderRadius: '20px', padding: '4px 10px', fontFamily: 'Georgia, serif' },
   activityLauncherTitle: { fontSize: '16px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', margin: '0 0 4px' },
   activityLauncherSub: { fontSize: '12.5px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.45 },
-  sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
+  sheetBackdrop: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(40,25,15,0.55)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' },
   hero: { background: 'linear-gradient(170deg, #3A2A1C 0%, #241710 100%)', borderRadius: '22px', padding: '24px 22px 22px', margin: '6px 0 28px', boxShadow: '0 16px 36px -12px rgba(40,25,10,0.5)' },
   heroEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 500, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 0 14px' },
   heroGreeting: { fontSize: '15px', color: 'rgba(250,247,241,0.7)', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 0 16px' },
@@ -1956,7 +1956,6 @@ const styles = {
   modal: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
     background: 'rgba(40,25,15,0.55)',
-    backdropFilter: 'blur(4px)',
     zIndex: 200,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '1rem',

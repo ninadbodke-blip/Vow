@@ -883,7 +883,6 @@ const styles = {
     background: 'rgba(40,25,15,0.5)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '1rem', zIndex: 100,
-    backdropFilter: 'blur(4px)',
   },
   modalCard: {
     background: '#FAF7F1', maxWidth: '360px', width: '100%',

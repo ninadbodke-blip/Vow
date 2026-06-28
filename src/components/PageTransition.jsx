@@ -24,7 +24,7 @@ import { motion } from 'framer-motion'
 // =====================================================================
 
 // Flip to false if low-end Android devices stutter on the blur.
-const USE_BLUR = true
+const USE_BLUR = false
 
 export default function PageTransition({ children }) {
   const ref = useRef(null)
@@ -42,7 +42,7 @@ export default function PageTransition({ children }) {
       initial={initial}
       animate={animate}
       exit={exit}
-      transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
+      transition={{ duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
       onAnimationComplete={() => {
         if (ref.current) {
           ref.current.style.transform = 'none'

@@ -215,7 +215,7 @@ const styles = {
   lockedTag: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '10.5px', color: '#854F0B', background: 'rgba(253,251,246,0.92)', border: '0.5px solid #E5D9C2', borderRadius: '999px', padding: '3px 10px', pointerEvents: 'none', whiteSpace: 'nowrap' },
   empty: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', textAlign: 'center', padding: '2rem 0', margin: 0 },
 
-  overlay: { position: 'fixed', inset: 0, background: 'rgba(28,17,10,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '22px', zIndex: 1000 },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(28,17,10,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '22px', zIndex: 1000 },
   floater: { width: '100%', maxWidth: '360px', background: '#FDFBF6', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 24px 70px rgba(20,11,4,0.5)' },
   fBody: { padding: '16px 20px 20px', textAlign: 'center' },
   fDay: { fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#854F0B', fontFamily: 'Georgia, serif', margin: '0 0 6px' },
