@@ -131,7 +131,7 @@ export async function purchaseVowPath({ onSuccess, onCancel, onError } = {}) {
       return
     }
 
-    const { customerInfo } = await Purchases.purchasePackage({ packageToPurchase: pkg })
+    const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg })
 
     // The purchase completed (Play charged). Unlock regardless of whether the
     // entitlement object has propagated yet — never block a paying user.
