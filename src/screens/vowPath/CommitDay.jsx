@@ -245,6 +245,15 @@ export default function CommitDay() {
   // ---- COMMIT COMPLETION ----
   const handleCommitComplete = async () => {
     setCompleting(true)
+    // EXPLORATION GUARD: if Commit isn't the user's assigned stage (an Endure or
+    // Build user revisiting it), completing the final day must NOT transition
+    // them or rewrite endure_starts_at — that would wipe their real progress and
+    // reset their quit-date clock to the explored date. Just return to overview.
+    if (isExploringPastStage(progress, 'commit')) {
+      setCompleting(false)
+      navigate('/app/vow-path/commit')
+      return
+    }
     // If the quit date is still ahead, do NOT flip the user into Endure yet —
     // Endure begins on the quit date. We still send them to the transition
     // screen, which shows the hold (and a "start now anyway" path that performs

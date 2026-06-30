@@ -280,6 +280,14 @@ export default function EndureDay() {
   // ---- ENDURE COMPLETION (Day 21 -> Build transition) ----
   const handleEndureComplete = async () => {
     setCompleting(true)
+    // EXPLORATION GUARD: if Endure isn't the user's assigned stage (e.g. a Build
+    // user revisiting it), completing the final day must NOT transition them or
+    // reset their real progress. Just return them to the Endure overview.
+    if (isExploringPastStage(progress, 'endure')) {
+      setCompleting(false)
+      navigate('/app/vow-path/endure')
+      return
+    }
     const result = await transitionFromEndure()
     if (result.error) {
       alert('Could not transition to Build: ' + result.error)
