@@ -112,12 +112,25 @@ export default function EndureDay() {
         return
       }
 
-      // Endure begins on the quit date. If endure_starts_at is still ahead,
-      // the path hasn't opened yet — send them to the hold screen.
+      // Endure begins on the quit date. If that date is still in the FUTURE
+      // (a later calendar day than today), the path hasn't opened — hold it.
+      // endure_starts_at may be a 'YYYY-MM-DD' date string OR a full ISO
+      // timestamp, and it's often stamped to the moment Endure begins. Compare
+      // calendar days in LOCAL time (floor both to midnight) so that "today",
+      // however it was stored, reads as open — not as a future date.
       if (progressRow?.endure_starts_at) {
-        const startMs = new Date(progressRow.endure_starts_at).getTime()
+        const raw = progressRow.endure_starts_at
+        let startMid
+        if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+          // Date-only string: read as a LOCAL calendar day (avoid UTC shift).
+          const [y, mo, d] = raw.split('-').map(Number)
+          startMid = new Date(y, mo - 1, d).getTime()
+        } else {
+          const s = new Date(raw); s.setHours(0, 0, 0, 0)
+          startMid = s.getTime()
+        }
         const todayMid = new Date(); todayMid.setHours(0, 0, 0, 0)
-        if (startMs > todayMid.getTime()) {
+        if (startMid > todayMid.getTime()) {
           navigate('/app/vow-path/transition/commit/to/endure')
           return
         }
