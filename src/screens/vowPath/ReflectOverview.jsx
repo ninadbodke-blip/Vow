@@ -216,13 +216,8 @@ export default function ReflectOverview() {
               <div key={phase.key}>
                 {REFLECT_PHASES.length > 1 && (
                   <div style={styles.phaseHeader}>
-                    <span style={styles.phaseMedallionCol}>
-                      <span style={styles.phaseMedallion}>{phase.week || '✦'}</span>
-                    </span>
-                    <div style={styles.phaseHeaderText}>
-                      <p style={styles.phaseTitle}>{phase.title.toUpperCase()}</p>
-                      {phase.subtitle && <p style={styles.phaseSubtitle}>{phase.subtitle}</p>}
-                    </div>
+                    <p style={styles.phaseTitle}>{`· ${phase.title.toUpperCase()} ·`}</p>
+                    {phase.subtitle && <p style={styles.phaseSubtitle}>{phase.subtitle}</p>}
                   </div>
                 )}
 
@@ -263,12 +258,10 @@ export default function ReflectOverview() {
                           paddingRight: hasCheckin ? '84px' : '4px',
                         }}
                       >
-                        <span style={styles.dayNodeCol}>
-                          <span style={{
-                            ...styles.dayNodeCircle,
-                            ...(isDone ? styles.dayNodeCircleDone : styles.dayNodeCircleLocked),
-                          }}>{isDone ? '✦' : ''}</span>
-                        </span>
+                        <span style={{
+                          ...styles.dayNode,
+                          color: isDone ? '#D9B57A' : '#C9BBA3',
+                        }}>{isDone ? '✦' : '·'}</span>
                         <span style={styles.dayContent}>
                           <span style={{
                             ...styles.dayTitle,
@@ -465,22 +458,14 @@ const styles = {
   // (Notice, single-phase, used top:18). If the spine peeks above the first
   // "· PHASE ·" header or starts mid-first-day, nudge this value.
   thread: {
-    position: 'absolute', left: '20px', top: '52px', bottom: 0, width: '1.5px',
+    position: 'absolute', left: '19px', top: '88px', bottom: 0, width: '1.5px',
     background: 'linear-gradient(180deg, rgba(217,181,122,0.6) 0%, rgba(217,181,122,0.6) 80%, rgba(217,181,122,0) 100%)',
   },
-  phaseHeader: { display: 'flex', alignItems: 'center', gap: '12px', margin: '2rem 0 1.25rem' },
-  phaseMedallionCol: { width: '40px', flexShrink: 0, display: 'flex', justifyContent: 'center' },
-  phaseMedallion: {
-    width: '38px', height: '38px', borderRadius: '50%', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', background: '#FBF3E3',
-    border: '1.5px solid #E2C893', color: '#854F0B', fontFamily: 'Georgia, serif',
-    fontStyle: 'italic', fontSize: '16px', fontWeight: 500, lineHeight: 1,
-  },
-  phaseHeaderText: { display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' },
+  phaseHeader: { textAlign: 'center', margin: '2rem 0 1.25rem' },
   phaseTitle: {
     fontSize: '12px', fontWeight: 600, color: '#854F0B',
     fontFamily: '-apple-system, sans-serif', textTransform: 'uppercase',
-    letterSpacing: '0.18em', margin: 0,
+    letterSpacing: '0.2em', margin: '0 0 0.35rem',
   },
   phaseSubtitle: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.4 },
 
@@ -490,14 +475,10 @@ const styles = {
     textAlign: 'left', padding: '15px 4px', fontFamily: 'inherit',
   },
   dayRowLocked: { opacity: 0.3 },
-  dayNodeCol: { width: '40px', flexShrink: 0, display: 'flex', justifyContent: 'center', paddingTop: '2px' },
-  dayNodeCircle: {
-    width: '28px', height: '28px', borderRadius: '50%', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', background: '#FAF7F1',
-    fontSize: '13px', lineHeight: 1,
+  dayNode: {
+    width: '30px', flexShrink: 0, textAlign: 'center', fontSize: '15px',
+    lineHeight: '1.5', marginTop: '1px', background: '#FAF7F1',
   },
-  dayNodeCircleDone: { border: '1.5px solid #E2C893', background: '#FBF3E3', color: '#C49A4E' },
-  dayNodeCircleLocked: { border: '1.5px solid #E6DDCC', background: '#FAF7F1', color: 'transparent' },
   dayContent: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '1px' },
   dayTitle: { fontSize: '16px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
   dayTitleDone: { color: '#9C8C78', fontStyle: 'italic', fontWeight: 400 },
