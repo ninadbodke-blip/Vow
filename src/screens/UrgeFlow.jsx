@@ -3,14 +3,29 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useLang } from '../LanguageContext'
 import { supabase } from '../supabaseClient'
 
+// ===================================================================
+// THE URGE FLOW — Vow's crisis-moment tool.
+// ===================================================================
+// Visual register: the home tree's night counterpart. Every stage is
+// a small piece of the same world as TreeHero and NightSky — star
+// gold (#EFDCAF) on deep ink (#241710), moons with layered halos,
+// drifting clouds, serif cues. Nothing clinical, nothing gamified:
+// each technique is a real regulation tool wearing a quiet scene,
+// with the science named underneath it.
+//
+// Two tracks, chosen up front (or pre-tagged from home):
+//   spike — a trigger hit fast; body-first tools to ride it out
+//   creep — slow depletion; diagnostic tools that name and redirect
+// ===================================================================
+
 const SPIKE_TECHNIQUES = [
-  { id: 'breath', name: 'The arch', duration: 90 },
+  { id: 'breath', name: 'The tide', duration: 90 },
+  { id: 'wave', name: 'The wave', duration: 80 },
   { id: 'tap', name: 'The constellation', duration: 30 },
   { id: 'dissolve', name: 'The sand garden', duration: 0 },
-  { id: 'wipe', name: 'Reveal the canvas', duration: 0 },
-  { id: 'pulse', name: 'The pendulum', duration: 0 },
+  { id: 'wipe', name: 'Clear the mist', duration: 0 },
+  { id: 'pulse', name: 'The lantern', duration: 0 },
   { id: 'unclench', name: 'Unclench', duration: 0 },
-  { id: 'circles', name: 'Trace the path', duration: 0 },
   { id: 'senses', name: '5-4-3-2-1', duration: 0 },
   { id: 'why', name: 'The vault', duration: 0 },
   { id: 'reach', name: 'Reach out', duration: 0 },
@@ -22,6 +37,7 @@ const CREEP_TECHNIQUES = [
   { id: 'halt',           name: 'Name what is low', duration: 0 },
   { id: 'change_channel', name: 'Change the channel', duration: 0 },
   { id: 'deploy_defense', name: 'Deploy a defense', duration: 0 },
+  { id: 'tape',           name: 'Play the tape', duration: 0 },
   { id: 'why',            name: 'The vault', duration: 0 },
   { id: 'reach',          name: 'Reach out', duration: 0 },
 ]
@@ -39,9 +55,42 @@ const RELATIONSHIPS = [
 
 const URGE_MESSAGE = "Hey, I'm having a tough moment. Can you talk?"
 
-// Grounding rationale pinned under every technique — turns a toy into a tool.
+// The science pinned under every technique — turns a scene into a tool.
 function WhyFooter({ text }) {
-  return <p style={styles.whyFooter}>Why this works — {text}</p>
+  return <p style={styles.whyFooter}>The science — {text}</p>
+}
+
+// Shared night-sky dressing for the dark stages: faint stars, a small
+// moon with layered halo, one slow drifting cloud. Purely decorative,
+// drawn in the NightSky idiom so the whole app feels like one world.
+function NightDressing({ stars = [], moon = { cx: 162, cy: 36, r: 8 }, cloud = true }) {
+  return (
+    <>
+      {moon && (
+        <>
+          <circle cx={moon.cx} cy={moon.cy} r={moon.r * 2.1} fill="rgba(239,220,175,0.08)" />
+          <circle cx={moon.cx} cy={moon.cy} r={moon.r * 1.45} fill="rgba(239,220,175,0.12)" />
+          <circle cx={moon.cx} cy={moon.cy} r={moon.r} fill="url(#urgeMoonG)" />
+          <circle cx={moon.cx - 2.6} cy={moon.cy - 2} r={moon.r * 0.22} fill="#241710" opacity="0.12" />
+          <circle cx={moon.cx + 2.2} cy={moon.cy + 2.6} r={moon.r * 0.16} fill="#241710" opacity="0.10" />
+        </>
+      )}
+      <g fill="#EFDCAF">
+        {stars.map(([x, y, r, o], i) => <circle key={i} cx={x} cy={y} r={r} opacity={o} />)}
+      </g>
+      {cloud && (
+        <g opacity="0.08" fill="#EFDCAF">
+          <animateTransform attributeName="transform" type="translate" from="-70 0" to="220 0" dur="90s" repeatCount="indefinite" />
+          <ellipse cx="40" cy="26" rx="30" ry="5" /><ellipse cx="62" cy="29" rx="18" ry="3.6" />
+        </g>
+      )}
+      <defs>
+        <radialGradient id="urgeMoonG" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="#F6E8C4" /><stop offset="100%" stopColor="#E8D2A0" />
+        </radialGradient>
+      </defs>
+    </>
+  )
 }
 
 // Works two ways: as a routed screen (/app/urge/:trackerId) or embedded
@@ -332,7 +381,6 @@ function SemiCircleMeter({ percent }) {
   )
 }
 
-// ────────── TECHNIQUE ROUTER ──────────
 // ────────── VELOCITY PICKER (when not pre-tagged from the home) ──────────
 function VelocityPicker({ onChoose, onCancel }) {
   return (
@@ -417,7 +465,7 @@ function HALTTechnique({ stepNum, total, onDone, onSkip }) {
           {picked ? 'Next' : 'Pick one'}
         </button>
       </div>
-      <WhyFooter text="A slow creep is usually an unmet need, not a true craving. Name it and you can meet it directly." />
+      <WhyFooter text="A slow-building urge usually rides on a bodily deficit. The HALT check, borrowed from recovery practice, names the true need — hunger, anger, loneliness, tiredness — so you can meet it directly instead of medicating it." />
     </div>
   )
 }
@@ -457,7 +505,7 @@ function ChangeChannelTechnique({ stepNum, total, onDone, onSkip }) {
         <button onClick={onSkip} style={{ ...styles.btn, ...styles.btnSecondary }}>Skip</button>
         <button onClick={onDone} style={{ ...styles.btn, ...styles.btnPrimary }}>Done</button>
       </div>
-      <WhyFooter text="Breaking your physical setting disrupts the cue-conditioned loop that drives the creep." />
+      <WhyFooter text="Cravings are heavily cue-conditioned — trained to a particular room, chair, and hour. Changing your physical setting interrupts the cue mid-sentence, which is why the pull so often stays behind in the room you left." />
     </div>
   )
 }
@@ -492,31 +540,76 @@ function DeployDefenseTechnique({ stepNum, total, onDone, onSkip }) {
         <button onClick={onSkip} style={{ ...styles.btn, ...styles.btnSecondary }}>Skip</button>
         <button onClick={onDone} style={{ ...styles.btn, ...styles.btnPrimary }}>Done</button>
       </div>
-      <WhyFooter text="Pre-deciding the next hour removes the in-the-moment decision the urge is trying to win." />
+      <WhyFooter text="Deciding the next hour in advance moves the choice out of the moment of weakness. Behavioral science calls these implementation intentions — one of its most replicated findings: pre-made decisions hold when in-the-moment willpower does not." />
     </div>
   )
 }
 
+// ────────── CREEP: PLAY THE TAPE (episodic future thinking) ──────────
+const TAPE_SCENES = [
+  { k: 'SCENE ONE', t: 'The first ten minutes.', b: 'Play it honestly. The relief arrives — it always does. Watch it closely, and notice how quickly this scene is over.' },
+  { k: 'SCENE TWO', t: 'Two hours in.', b: 'The relief has left the room. What is sitting there instead? Play this part too — the part the urge never screens for you.' },
+  { k: 'SCENE THREE', t: 'Tomorrow morning.', b: 'The waking up. The first thought. You already know this scene by heart — you have watched it before.' },
+  { k: 'THE OTHER TAPE', t: 'You didn\u2019t.', b: 'The evening stays ordinary. Maybe even a little dull. And the morning is clean, quiet, and entirely yours.' },
+]
+
+function PlayTapeTechnique({ stepNum, total, onDone, onSkip }) {
+  const [scene, setScene] = useState(0)
+  const cur = TAPE_SCENES[scene]
+  const last = scene === TAPE_SCENES.length - 1
+  return (
+    <div style={styles.center}>
+      <p style={styles.techCount}>{stepNum} of {total} · Play the tape</p>
+      <h2 style={styles.bigTitle}>Run it all the way through.</h2>
+      <p style={styles.body}>The urge only ever shows you the opening scene. Watch the whole film — slowly, honestly.</p>
+      <div style={styles.tapeCard}>
+        <p style={styles.tapeEyebrow}>{cur.k}</p>
+        <p style={styles.tapeTitle}>{cur.t}</p>
+        <p style={styles.tapeBody}>{cur.b}</p>
+      </div>
+      <div style={styles.roundDots}>
+        {TAPE_SCENES.map((_, i) => (
+          <div key={i} style={{ ...styles.roundDot, ...(i < scene ? styles.roundDotDone : {}), ...(i === scene ? styles.roundDotActive : {}) }} />
+        ))}
+      </div>
+      <div style={styles.actions}>
+        <button onClick={onSkip} style={{ ...styles.btn, ...styles.btnSecondary }}>Skip</button>
+        {last ? (
+          <button onClick={onDone} style={{ ...styles.btn, ...styles.btnPrimary }}>Done</button>
+        ) : (
+          <button onClick={() => setScene(s => s + 1)} style={{ ...styles.btn, ...styles.btnPrimary }}>Next scene ›</button>
+        )}
+      </div>
+      <WhyFooter text="Vividly imagining the delayed consequences — not just the immediate reward — is called episodic future thinking. It measurably weakens delay discounting, the brain's habit of overpricing tonight and underpricing tomorrow." />
+    </div>
+  )
+}
+
+// ────────── TECHNIQUE ROUTER ──────────
 function Technique({ technique, techniqueIdx, total, profileBio, onDone, onSkip }) {
   const stepNum = techniqueIdx + 1
 
   if (technique.id === 'breath') return <BreathTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
+  if (technique.id === 'wave') return <WaveTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'tap') return <TapTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'dissolve') return <DissolveTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'wipe') return <WipeTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'pulse') return <PulseTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'unclench') return <UnclenchTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
-  if (technique.id === 'circles') return <CirclesTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'senses') return <SensesTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'why') return <WhyTechnique stepNum={stepNum} total={total} profileBio={profileBio} onDone={onDone} />
   if (technique.id === 'reach') return <ReachOutTechnique stepNum={stepNum} total={total} onDone={onDone} />
   if (technique.id === 'halt') return <HALTTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'change_channel') return <ChangeChannelTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   if (technique.id === 'deploy_defense') return <DeployDefenseTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
+  if (technique.id === 'tape') return <PlayTapeTechnique stepNum={stepNum} total={total} onDone={onDone} onSkip={onSkip} />
   return null
 }
 
-// ────────── 1. THE ARCH (structured breathing) ──────────
+// ────────── 1. THE TIDE (structured breathing — 4/4/4/4 box, 90s) ──────────
+// The old "arch" animation is gone. The breath is now the tide on a night
+// shore: water rises as you breathe in, holds at the full, falls as you
+// let go, rests at the ebb. Same timing engine as before.
 function BreathTechnique({ stepNum, total, onDone, onSkip }) {
   const [phase, setPhase] = useState('in')
   const [secondsLeft, setSecondsLeft] = useState(90)
@@ -532,79 +625,240 @@ function BreathTechnique({ stepNum, total, onDone, onSkip }) {
     }, 1000)
     return () => { clearInterval(phaseTimer); clearInterval(countdown) }
   }, [])
-  const phaseLabel = { in: 'Breathe in', hold1: 'Hold', out: 'Breathe out', hold2: 'Hold' }[phase]
-  const scaleY = (phase === 'in' || phase === 'hold1') ? 1 : 0.45
+  const phaseLabel = { in: 'Breathe in', hold1: 'Hold', out: 'Breathe out', hold2: 'Rest' }[phase]
+  const phaseCue = {
+    in: 'the tide is coming in',
+    hold1: 'full — hold it gently',
+    out: 'let it all go back',
+    hold2: 'still water — empty',
+  }[phase]
+  const high = phase === 'in' || phase === 'hold1'
   return (
     <div style={styles.center}>
-      <p style={styles.techCount}>{stepNum} of {total} · The arch</p>
+      <p style={styles.techCount}>{stepNum} of {total} · The tide</p>
+      <p style={styles.bodyTitle}>Breathe with the tide.</p>
+      <p style={styles.subtle}>In for four as it rises. Hold. Out for four as it falls. Rest. Stay until the shore is quiet.</p>
       <div style={styles.stageDark}>
         <svg viewBox="0 0 200 200" style={{ width: '100%', height: '100%', display: 'block' }}>
-          <g style={{ transform: `scaleY(${scaleY})`, transformOrigin: '100px 178px', transition: 'transform 4s cubic-bezier(0.4,0,0.2,1)' }}>
-            <path d="M 48 178 L 48 96 A 52 52 0 0 1 152 96 L 152 178" fill="none" stroke="#D9B57A" strokeWidth="10" strokeLinecap="round" opacity="0.12" />
-            <path d="M 48 178 L 48 96 A 52 52 0 0 1 152 96 L 152 178" fill="none" stroke="#D9B57A" strokeWidth="2.5" strokeLinecap="round" opacity="0.92" />
+          <NightDressing
+            moon={{ cx: 158, cy: 34, r: 8 }}
+            stars={[[26, 22, 1.1, 0.4], [58, 40, 0.9, 0.3], [104, 18, 1, 0.35], [186, 66, 0.9, 0.3], [38, 62, 0.8, 0.25]]}
+          />
+          <text x="100" y="66" textAnchor="middle" fontFamily="Georgia, serif" fontSize="16" fill="#F4ECDD" opacity="0.92">{phaseLabel}</text>
+          <text x="100" y="84" textAnchor="middle" fontFamily="Georgia, serif" fontSize="10" fontStyle="italic" fill="#CBBA98" opacity="0.8">{phaseCue}</text>
+          <defs>
+            <linearGradient id="urgeTideG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(217,181,122,0.34)" />
+              <stop offset="100%" stopColor="rgba(217,181,122,0.04)" />
+            </linearGradient>
+          </defs>
+          {/* the water — one group, translated by breath */}
+          <g style={{ transform: `translateY(${high ? -44 : 0}px)`, transition: 'transform 4s cubic-bezier(0.4,0,0.2,1)' }}>
+            <path d="M -20 150 Q 5 145 30 149 T 80 148 T 130 149 T 180 148 T 230 149 L 230 240 L -20 240 Z" fill="url(#urgeTideG)" />
+            <path d="M -20 150 Q 5 145 30 149 T 80 148 T 130 149 T 180 148 T 230 149" fill="none" stroke="#EFDCAF" strokeWidth="1.8" strokeLinecap="round" opacity="0.85" />
+            <path d="M -20 162 Q 10 158 40 161 T 100 160 T 160 161 T 230 160" fill="none" stroke="#EFDCAF" strokeWidth="0.9" opacity="0.28" />
+            <circle cx="52" cy="148" r="1.1" fill="#F6E8C4" opacity="0.7" />
+            <circle cx="122" cy="149" r="0.9" fill="#F6E8C4" opacity="0.6" />
+            <circle cx="176" cy="148" r="1" fill="#F6E8C4" opacity="0.65" />
           </g>
-          <text x="100" y="150" textAnchor="middle" fontFamily="Georgia, serif" fontSize="15" fill="#F4ECDD" opacity="0.9">{phaseLabel}</text>
         </svg>
       </div>
       <p style={styles.timerText}>{secondsLeft}s</p>
       <button onClick={onSkip} style={styles.skipText}>Skip this one</button>
-      <WhyFooter text="Deep, structured breathing pulls the nervous system out of fight-or-flight." />
+      <WhyFooter text="A slow four-count exhale is the most direct lever on the vagus nerve — it slows the heart, and the body reads a slowing heart as safety. Ninety seconds is roughly how long a surge of stress chemicals takes to wash out of the bloodstream." />
     </div>
   )
 }
 
-// ────────── 2. THE CONSTELLATION (spatial attention) ──────────
+// ────────── 2. THE WAVE (urge surfing — watch it crest and pass) ──────────
+// The signature move of relapse prevention, drawn literally: the urge as a
+// night swell that rises, crests, and falls over ~80 seconds while you do
+// nothing but watch it from the shore.
+const WAVE_DUR = 80000
+const WAVE_PTS = Array.from({ length: 101 }, (_, i) => ({
+  x: 10 + i * 1.8,
+  y: 148 - 96 * Math.exp(-Math.pow(i - 50, 2) / (2 * 17 * 17)),
+}))
+const WAVE_PHASES = [
+  [0.16, 'Find it', 'Where does it sit — chest, throat, hands? Give it a place and a size.'],
+  [0.42, 'It rises', 'Let it climb. You are not the wave. You are the one watching it.'],
+  [0.58, 'The crest', 'This is as high as it gets. It cannot climb past its own peak.'],
+  [0.85, 'It falls', 'You did nothing — and it is already falling. That is the whole secret.'],
+  [1.01, 'It passes', 'Nearly gone. They always pass. Every single one so far has.'],
+]
+
+function WaveTechnique({ stepNum, total, onDone, onSkip }) {
+  const [idx, setIdx] = useState(0)
+  const doneRef = useRef(false)
+  useEffect(() => {
+    let raf
+    const start = performance.now()
+    const loop = (now) => {
+      const p = Math.min(1, (now - start) / WAVE_DUR)
+      const next = Math.round(p * 100)
+      setIdx(prev => (next !== prev ? next : prev))
+      if (p >= 1) {
+        if (!doneRef.current) { doneRef.current = true; setTimeout(onDone, 700) }
+        return
+      }
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  const p = idx / 100
+  const phase = WAVE_PHASES.find(([limit]) => p < limit) || WAVE_PHASES[WAVE_PHASES.length - 1]
+  const marker = WAVE_PTS[idx]
+  const ridden = WAVE_PTS.slice(0, idx + 1).map(pt => `${pt.x},${pt.y}`).join(' ')
+  const full = WAVE_PTS.map(pt => `${pt.x},${pt.y}`).join(' ')
+  const secondsLeft = Math.ceil((1 - p) * (WAVE_DUR / 1000))
+  return (
+    <div style={styles.center}>
+      <p style={styles.techCount}>{stepNum} of {total} · The wave</p>
+      <p style={styles.bodyTitle}>{phase[1]}</p>
+      <p style={styles.subtle}>{phase[2]}</p>
+      <div style={styles.stageDark}>
+        <svg viewBox="0 0 200 170" style={{ width: '100%', height: '100%', display: 'block' }}>
+          <NightDressing
+            moon={{ cx: 168, cy: 28, r: 7 }}
+            stars={[[24, 20, 1, 0.4], [62, 34, 0.9, 0.3], [120, 16, 1, 0.3], [40, 52, 0.8, 0.25]]}
+          />
+          <defs>
+            <linearGradient id="urgeWaveFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(217,181,122,0.14)" />
+              <stop offset="100%" stopColor="rgba(217,181,122,0.02)" />
+            </linearGradient>
+          </defs>
+          <line x1="10" y1="148" x2="190" y2="148" stroke="#EFDCAF" strokeWidth="0.6" strokeDasharray="2 4" opacity="0.25" />
+          <polygon points={`${full} 190,148 10,148`} fill="url(#urgeWaveFill)" />
+          <polyline points={full} fill="none" stroke="#6B5C4A" strokeWidth="1.4" opacity="0.5" />
+          <polyline points={ridden} fill="none" stroke="#EFDCAF" strokeWidth="2" strokeLinecap="round" opacity="0.95" />
+          {marker && (
+            <>
+              <circle cx={marker.x} cy={marker.y} r="6.5" fill="rgba(246,232,196,0.18)" />
+              <circle cx={marker.x} cy={marker.y} r="2.8" fill="#F6E8C4" />
+            </>
+          )}
+        </svg>
+      </div>
+      <p style={styles.timerText}>{secondsLeft}s</p>
+      <button onClick={onSkip} style={styles.skipText}>Skip this one</button>
+      <WhyFooter text="Cravings behave like waves — left unfed, they crest and subside on their own, usually within minutes. This is urge surfing, from relapse-prevention research: observing the urge instead of wrestling it starves it of the struggle it feeds on." />
+    </div>
+  )
+}
+
+// ────────── 3. THE CONSTELLATION (spatial attention, night-sky idiom) ──────────
+// No more random dots: each session draws a real figure from Vow's sky,
+// star by star, edge by edge — the same language as the Motivation page.
+const CONSTELLATIONS = [
+  { name: 'The Anchor', line: 'Something that holds.', pts: [
+    { x: 50, y: 14, p: -1 }, { x: 36, y: 24, p: 0 }, { x: 64, y: 24, p: 0 },
+    { x: 50, y: 50, p: 0 }, { x: 50, y: 74, p: 3 }, { x: 28, y: 62, p: 4 }, { x: 72, y: 62, p: 4 },
+  ] },
+  { name: 'The Lantern', line: 'Carried through the dark.', pts: [
+    { x: 50, y: 12, p: -1 }, { x: 36, y: 26, p: 0 }, { x: 64, y: 26, p: 0 },
+    { x: 36, y: 62, p: 1 }, { x: 64, y: 62, p: 2 }, { x: 50, y: 74, p: 3 }, { x: 50, y: 44, p: 5 },
+  ] },
+  { name: 'The Bird', line: 'It lifts, when it is ready.', pts: [
+    { x: 30, y: 62, p: -1 }, { x: 44, y: 52, p: 0 }, { x: 58, y: 44, p: 1 },
+    { x: 70, y: 38, p: 2 }, { x: 78, y: 42, p: 3 }, { x: 48, y: 28, p: 1 }, { x: 56, y: 66, p: 1 },
+  ] },
+]
+
+const CONSTELLATION_CSS = `
+@keyframes urgeStarPulse { 0%,100% { transform: scale(0.8); opacity: 0.6 } 50% { transform: scale(1.15); opacity: 1 } }
+@keyframes urgeEdgeDraw { to { stroke-dashoffset: 0 } }
+.urgeNextStar { animation: urgeStarPulse 1.7s ease-in-out infinite; }
+.urgeEdge { stroke-dasharray: 90; stroke-dashoffset: 90; animation: urgeEdgeDraw 0.8s ease forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .urgeNextStar { animation: none !important; }
+  .urgeEdge { stroke-dashoffset: 0; animation: none !important; }
+}`
+
 function TapTechnique({ stepNum, total, onDone, onSkip }) {
-  const NEED = 5
-  const [placed, setPlaced] = useState([])
-  const [current, setCurrent] = useState({ x: 50, y: 34 })
+  const [figure] = useState(() => CONSTELLATIONS[Math.floor(Math.random() * CONSTELLATIONS.length)])
+  const NEED = figure.pts.length
+  const [placedCount, setPlacedCount] = useState(0)
   const [done, setDone] = useState(false)
-  const randPoint = (prev) => {
-    let pt, guard = 0
-    do { pt = { x: 16 + Math.random() * 68, y: 18 + Math.random() * 62 }; guard++ }
-    while (prev && Math.hypot(pt.x - prev.x, pt.y - prev.y) < 22 && guard < 20)
-    return pt
-  }
+  const current = figure.pts[placedCount]
   const tapStar = () => {
     if (done) return
-    const next = [...placed, current]
-    setPlaced(next)
-    if (next.length >= NEED) { setDone(true); setTimeout(onDone, 900) }
-    else setCurrent(randPoint(current))
+    const next = placedCount + 1
+    setPlacedCount(next)
+    if (next >= NEED) { setDone(true); setTimeout(onDone, 1400) }
   }
   return (
     <div style={styles.center}>
       <p style={styles.techCount}>{stepNum} of {total} · The constellation</p>
-      <p style={styles.bodyTitle}>{done ? 'There it is.' : 'Connect the stars.'}</p>
-      <p style={styles.subtle}>{done ? 'Drawn, one quiet point at a time.' : 'Tap each star as it appears. No rush.'}</p>
+      <p style={styles.bodyTitle}>{done ? `${figure.name}.` : 'Set the stars.'}</p>
+      <p style={styles.subtle}>
+        {done ? figure.line : 'One star at a time. Breathe in as you find it — tap it as you breathe out.'}
+      </p>
       <div style={styles.stageDark}>
+        <style>{CONSTELLATION_CSS}</style>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-          {placed.length > 1 && (
-            <polyline points={placed.map(pt => `${pt.x},${pt.y}`).join(' ')} fill="none" stroke="#D9B57A" strokeWidth="0.4" opacity="0.7" />
-          )}
-          {placed.map((pt, i) => <circle key={i} cx={pt.x} cy={pt.y} r="1.3" fill="#D9B57A" />)}
+          {/* far sky */}
+          <g fill="#EFDCAF">
+            <circle cx="12" cy="12" r="0.7" opacity="0.35" /><circle cx="88" cy="10" r="0.6" opacity="0.3" />
+            <circle cx="8" cy="80" r="0.6" opacity="0.25" /><circle cx="92" cy="86" r="0.7" opacity="0.3" />
+            <circle cx="22" cy="90" r="0.5" opacity="0.25" /><circle cx="80" cy="74" r="0.5" opacity="0.2" />
+            <circle cx="16" cy="44" r="0.5" opacity="0.2" /><circle cx="90" cy="46" r="0.5" opacity="0.22" />
+          </g>
+          {/* moon sliver */}
+          <circle cx="86" cy="16" r="6" fill="rgba(239,220,175,0.08)" />
+          <circle cx="86" cy="16" r="3.4" fill="#E8D2A0" opacity="0.8" />
+          <circle cx="84.6" cy="15" r="2.9" fill="#241710" opacity="0.88" />
+          {/* drawn edges */}
+          {figure.pts.slice(0, placedCount).map((pt, i) => (
+            pt.p >= 0 ? (
+              <line key={`e${i}`} className="urgeEdge"
+                x1={figure.pts[pt.p].x} y1={figure.pts[pt.p].y} x2={pt.x} y2={pt.y}
+                stroke="#D9B57A" strokeWidth={done ? 0.7 : 0.5} opacity={done ? 0.95 : 0.75} />
+            ) : null
+          ))}
+          {/* placed stars with sparkle crosses */}
+          {figure.pts.slice(0, placedCount).map((pt, i) => (
+            <g key={`s${i}`}>
+              <circle cx={pt.x} cy={pt.y} r={done ? 1.6 : 1.3} fill="#EFDCAF" />
+              {i % 2 === 0 && (
+                <g stroke="#EFDCAF" strokeWidth="0.3" opacity="0.75">
+                  <line x1={pt.x - 2.6} y1={pt.y} x2={pt.x + 2.6} y2={pt.y} />
+                  <line x1={pt.x} y1={pt.y - 2.6} x2={pt.x} y2={pt.y + 2.6} />
+                </g>
+              )}
+            </g>
+          ))}
         </svg>
-        {!done && (
-          <button onClick={tapStar} aria-label="Star" style={{
+        {!done && current && (
+          <button onClick={tapStar} aria-label="Star" className="urgeNextStar" style={{
             position: 'absolute', left: current.x + '%', top: current.y + '%',
-            width: '32px', height: '32px', marginLeft: '-16px', marginTop: '-16px',
+            width: '34px', height: '34px', marginLeft: '-17px', marginTop: '-17px',
             borderRadius: '50%', border: 'none', padding: 0, cursor: 'pointer',
-            background: 'radial-gradient(circle, rgba(217,181,122,0.95) 0%, rgba(217,181,122,0.35) 35%, rgba(217,181,122,0) 70%)',
+            background: 'radial-gradient(circle, rgba(246,232,196,0.95) 0%, rgba(217,181,122,0.35) 38%, rgba(217,181,122,0) 70%)',
           }} />
         )}
       </div>
       <div style={styles.roundDots}>
         {Array.from({ length: NEED }).map((_, i) => (
-          <div key={i} style={{ ...styles.roundDot, ...(i < placed.length ? styles.roundDotDone : {}) }} />
+          <div key={i} style={{ ...styles.roundDot, ...(i < placedCount ? styles.roundDotDone : {}) }} />
         ))}
       </div>
       {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
-      <WhyFooter text="Engaging spatial attention interrupts the obsessive thought loop of a craving." />
+      <WhyFooter text="Deliberate visual search and precise aiming recruit the brain's attention networks — the same limited bandwidth a craving needs to keep its loop running. Pair each tap with an out-breath and you occupy the loop and slow the body at once." />
     </div>
   )
 }
 
-// ────────── 3. THE SAND GARDEN (slow, deliberate movement) ──────────
+// ────────── 4. THE SAND GARDEN (slow, deliberate movement) ──────────
+// Same raking mechanic; the bed is now a proper karesansui — grain,
+// stones with shadow and light, faint old circles around them.
+const SAND_GRAINS = Array.from({ length: 42 }, (_, k) => ({
+  x: (k * 37 + 13) % 96 + 2,
+  y: (k * 53 + 29) % 92 + 4,
+  r: 0.28 + ((k * 7) % 3) * 0.1,
+}))
+
 function DissolveTechnique({ stepNum, total, onDone, onSkip }) {
   const areaRef = useRef(null)
   const [tines, setTines] = useState([[], [], []])
@@ -651,26 +905,47 @@ function DissolveTechnique({ stepNum, total, onDone, onSkip }) {
     <div style={styles.center}>
       <p style={styles.techCount}>{stepNum} of {total} · The sand garden</p>
       <p style={styles.bodyTitle}>{done ? 'The garden is calm.' : 'Rake the sand.'}</p>
-      <p style={styles.subtle}>{done ? 'Every groove drawn by your own hand.' : 'Drag slowly to comb the sand around the stone. Cover the whole bed.'}</p>
+      <p style={styles.subtle}>{done ? 'Every groove drawn by your own hand.' : 'Slow strokes — one for each out-breath. Curve around the stones. Comb the whole bed.'}</p>
       <div ref={areaRef} style={styles.stageClay} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp} onPointerCancel={onUp}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-          <ellipse cx="50" cy="50" rx="9" ry="7" fill="#B9A47C" opacity="0.6" />
-          <ellipse cx="50" cy="48.5" rx="6.5" ry="4.5" fill="#CDBB95" opacity="0.5" />
+          {/* wooden frame */}
+          <rect x="1.2" y="1.2" width="97.6" height="97.6" fill="none" stroke="#B99C6E" strokeWidth="1.6" opacity="0.55" rx="2.5" />
+          {/* sand grain */}
+          <g fill="#8F7A52" opacity="0.14">
+            {SAND_GRAINS.map((g, i) => <circle key={i} cx={g.x} cy={g.y} r={g.r} />)}
+          </g>
+          {/* old faint circles around the stones — the garden's memory */}
+          <g fill="none" stroke="#A8916A" opacity="0.16">
+            <ellipse cx="64" cy="58" rx="15" ry="11" strokeWidth="0.6" />
+            <ellipse cx="64" cy="58" rx="20" ry="15" strokeWidth="0.5" />
+            <ellipse cx="30" cy="30" rx="10" ry="7.5" strokeWidth="0.6" />
+            <ellipse cx="30" cy="30" rx="14" ry="10.5" strokeWidth="0.5" />
+          </g>
+          {/* the large stone */}
+          <ellipse cx="65.5" cy="61.5" rx="10" ry="4.5" fill="#7A6647" opacity="0.28" />
+          <ellipse cx="64" cy="58" rx="9.5" ry="7" fill="#A8946E" />
+          <ellipse cx="62.5" cy="56" rx="6.8" ry="4.6" fill="#C0AD87" opacity="0.85" />
+          <ellipse cx="61" cy="54.5" rx="3.4" ry="2.1" fill="#D3C3A0" opacity="0.8" />
+          {/* the small stone */}
+          <ellipse cx="31" cy="32.5" rx="6.4" ry="3" fill="#7A6647" opacity="0.25" />
+          <ellipse cx="30" cy="30" rx="6" ry="4.4" fill="#AF9C75" />
+          <ellipse cx="29" cy="28.6" rx="3.6" ry="2.4" fill="#CBB995" opacity="0.85" />
+          {/* the visitor's rake lines */}
           {tines.map((arr, k) => arr.length > 1 ? (
-            <polyline key={k} points={arr.map(pt => `${pt.x},${pt.y}`).join(' ')} fill="none" stroke="#C2923F" strokeWidth="0.7" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+            <polyline key={k} points={arr.map(pt => `${pt.x},${pt.y}`).join(' ')} fill="none" stroke="#B08A48" strokeWidth="0.7" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
           ) : null)}
         </svg>
       </div>
-      <div style={{ width: '180px', height: '4px', borderRadius: '2px', background: '#E8DFD0', margin: '0.25rem auto 0', overflow: 'hidden' }}>
+      <div style={{ width: '180px', height: '3px', borderRadius: '2px', background: '#E8DFD0', margin: '0.25rem auto 0', overflow: 'hidden' }}>
         <div style={{ height: '100%', width: Math.min(100, Math.round((coverage / NEED) * 100)) + '%', background: 'linear-gradient(90deg, #D9B57A, #B89456)', transition: 'width 0.15s' }} />
       </div>
       {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
-      <WhyFooter text="Slow, deliberate physical movement grounds the body in the present moment." />
+      <WhyFooter text="Slow, repetitive hand movement regulates the same way pacing or kneading dough does — rhythmic motor action lowers physical arousal and gives restlessness somewhere real to go. The rake is doing what the substance promised to." />
     </div>
   )
 }
 
-// ────────── 4. REVEAL THE CANVAS (tactile reveal) ──────────
+// ────────── 5. CLEAR THE MIST (tactile reveal — night behind fog) ──────────
 const REVEAL_LINES = [
   'This is already passing.',
   'The wave always breaks. So will this one.',
@@ -681,7 +956,7 @@ const REVEAL_LINES = [
   'Right now is the hardest part. It gets easier from here.',
   'You do not have to fight it. Just outlast it.',
   'Breathe. The intensity is already dropping.',
-  'This moment is temporary. Your streak is not.',
+  'This moment is temporary. What you are building is not.',
   'You have made it through worse than this.',
   'The craving wants you to believe it is forever. It is not.',
   'Stay here a moment longer. It is loosening.',
@@ -719,25 +994,45 @@ function WipeTechnique({ stepNum, total, onDone, onSkip }) {
   const onMove = (e) => { if (e.buttons || e.pressure > 0) clearAt(e.clientX, e.clientY) }
   return (
     <div style={styles.center}>
-      <p style={styles.techCount}>{stepNum} of {total} · Reveal the canvas</p>
-      <p style={styles.bodyTitle}>Clear the dark.</p>
-      <p style={styles.subtle}>Wipe slowly across. There is something underneath.</p>
-      <div ref={areaRef} style={{ ...styles.stageClay, cursor: 'pointer' }} onPointerDown={(e) => clearAt(e.clientX, e.clientY)} onPointerMove={onMove}>
+      <p style={styles.techCount}>{stepNum} of {total} · Clear the mist</p>
+      <p style={styles.bodyTitle}>Clear the mist.</p>
+      <p style={styles.subtle}>Wipe slowly, like breath off cold glass. The night is underneath, and something is written in it.</p>
+      <div ref={areaRef} style={{ ...styles.stageDark, cursor: 'pointer' }} onPointerDown={(e) => clearAt(e.clientX, e.clientY)} onPointerMove={onMove}>
+        {/* the night behind the fog */}
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+          <g fill="#EFDCAF">
+            <circle cx="12" cy="14" r="0.7" opacity="0.4" /><circle cx="88" cy="12" r="0.6" opacity="0.35" />
+            <circle cx="20" cy="84" r="0.6" opacity="0.3" /><circle cx="84" cy="80" r="0.7" opacity="0.3" />
+            <circle cx="50" cy="8" r="0.5" opacity="0.3" /><circle cx="8" cy="50" r="0.5" opacity="0.25" />
+            <circle cx="93" cy="46" r="0.5" opacity="0.25" />
+          </g>
+          <circle cx="85" cy="15" r="5.5" fill="rgba(239,220,175,0.09)" />
+          <circle cx="85" cy="15" r="3.2" fill="#E8D2A0" opacity="0.85" />
+        </svg>
         <div style={styles.revealText}>{line}</div>
+        {/* the fog bank — soft pale puffs that wipe away */}
         <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: 'repeat(5, 1fr)', pointerEvents: 'none' }}>
           {Array.from({ length: TOTAL }).map((_, i) => (
-            <div key={i} style={{ background: 'linear-gradient(135deg, #3A2A1C, #241710)', opacity: cleared.has(i) || done ? 0 : 1, transition: 'opacity 0.45s' }} />
+            <div key={i} style={{
+              background: `radial-gradient(circle at ${30 + (i % 3) * 20}% ${35 + ((i * 7) % 3) * 15}%, rgba(231,225,213,0.97) 0%, rgba(208,200,185,0.94) 55%, rgba(189,180,163,0.9) 100%)`,
+              borderRadius: '46%',
+              transform: `scale(1.35) rotate(${((i % 5) - 2) * 8}deg)`,
+              opacity: cleared.has(i) || done ? 0 : 1,
+              transition: 'opacity 0.5s',
+            }} />
           ))}
         </div>
       </div>
       <p style={styles.subtle}>{done ? 'Clear.' : 'Keep going.'}</p>
       {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
-      <WhyFooter text="Slow, repetitive touch quiets the brain alarm centers and restores focus." />
+      <WhyFooter text="Slow tactile motion toward a small reveal borrows the brain's anticipation circuitry — the same dopamine machinery the urge runs on — and points it somewhere harmless, while the wiping rhythm settles the hands the craving wants busy." />
     </div>
   )
 }
 
-// ────────── 5. THE PENDULUM (entrain a slowing rhythm) ──────────
+// ────────── 6. THE LANTERN (entrain a slowing rhythm) ──────────
+// The pendulum, made a lantern on its chain. Same mechanic: tap as it
+// crosses center; each true tap slows the swing until it comes to rest.
 function PulseTechnique({ stepNum, total, onDone, onSkip }) {
   const NEED = 4
   const [hits, setHits] = useState(0)
@@ -747,13 +1042,16 @@ function PulseTechnique({ stepNum, total, onDone, onSkip }) {
   const periodRef = useRef(1600)
   const tRef = useRef(0)
   const angleRef = useRef(0)
+  const doneRef = useRef(false)
   useEffect(() => {
     let raf, last = performance.now()
     const loop = (now) => {
       const dt = now - last; last = now
-      tRef.current += dt
-      const a = 38 * Math.sin((tRef.current / periodRef.current) * Math.PI)
-      angleRef.current = a; setAngle(a)
+      if (!doneRef.current) {
+        tRef.current += dt
+        const a = 38 * Math.sin((tRef.current / periodRef.current) * Math.PI)
+        angleRef.current = a; setAngle(a)
+      }
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
@@ -765,22 +1063,48 @@ function PulseTechnique({ stepNum, total, onDone, onSkip }) {
       const n = hits + 1
       setHits(n); setFlash(true); setTimeout(() => setFlash(false), 180)
       periodRef.current += 450
-      if (n >= NEED) { setDone(true); setTimeout(onDone, 900) }
+      if (n >= NEED) { doneRef.current = true; setDone(true); setTimeout(onDone, 1200) }
     }
   }
   return (
     <div style={styles.center}>
-      <p style={styles.techCount}>{stepNum} of {total} · The pendulum</p>
-      <p style={styles.bodyTitle}>{done ? 'Slower now.' : 'Tap as it crosses the center.'}</p>
-      <p style={styles.subtle}>{done ? 'You brought the rhythm down with you.' : 'Each tap slows the swing. Follow it down.'}</p>
+      <p style={styles.techCount}>{stepNum} of {total} · The lantern</p>
+      <p style={styles.bodyTitle}>{done ? 'At rest.' : 'Tap as the lantern crosses the center.'}</p>
+      <p style={styles.subtle}>{done ? 'You slowed it to stillness. The same works on you.' : 'Each true tap slows the swing. Breathe out with every pass, and bring it to rest.'}</p>
       <div style={styles.stageDark} onPointerDown={tap}>
         <svg viewBox="0 0 200 200" style={{ width: '100%', height: '100%', display: 'block' }}>
-          <line x1="100" y1="40" x2="100" y2="172" stroke="#6B5C4A" strokeWidth="0.75" opacity="0.3" />
-          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 40px' }}>
-            <line x1="100" y1="40" x2="100" y2="158" stroke="#D9B57A" strokeWidth="2.5" strokeLinecap="round" opacity="0.92" />
-            <circle cx="100" cy="158" r={flash ? 11 : 8} fill="#D9B57A" style={{ transition: 'r 0.15s' }} />
+          <NightDressing
+            moon={{ cx: 166, cy: 30, r: 6.5 }}
+            stars={[[24, 24, 1, 0.4], [58, 16, 0.8, 0.3], [140, 50, 0.8, 0.25], [34, 60, 0.7, 0.25]]}
+            cloud={false}
+          />
+          <defs>
+            <radialGradient id="urgeFlameG" cx="50%" cy="50%">
+              <stop offset="0%" stopColor="#F6E8C4" />
+              <stop offset="55%" stopColor="rgba(233,201,142,0.85)" />
+              <stop offset="100%" stopColor="rgba(217,181,122,0)" />
+            </radialGradient>
+          </defs>
+          {/* the beam it hangs from */}
+          <line x1="64" y1="30" x2="136" y2="30" stroke="#6B5C4A" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+          {/* swing guide + center mark */}
+          <path d="M 29 121 A 115 115 0 0 1 171 121" fill="none" stroke="#EFDCAF" strokeWidth="0.7" strokeDasharray="1.5 4" opacity="0.18" />
+          <line x1="100" y1="116" x2="100" y2="127" stroke="#EFDCAF" strokeWidth="1" opacity="0.35" />
+          {/* the lantern on its chain */}
+          <g style={{
+            transform: `rotate(${done ? 0 : angle}deg)`, transformOrigin: '100px 30px',
+            transition: done ? 'transform 1.1s cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
+          }}>
+            <line x1="100" y1="30" x2="100" y2="128" stroke="#D9B57A" strokeWidth="1.5" opacity="0.85" />
+            <circle cx="100" cy="56" r="1.5" fill="#D9B57A" opacity="0.55" />
+            <circle cx="100" cy="82" r="1.5" fill="#D9B57A" opacity="0.55" />
+            <circle cx="100" cy="108" r="1.5" fill="#D9B57A" opacity="0.55" />
+            <rect x="95" y="126" width="10" height="4.5" rx="2" fill="#B89456" />
+            <rect x="90.5" y="130" width="19" height="27" rx="4.5" fill="rgba(36,23,16,0.55)" stroke="#D9B57A" strokeWidth="1.6" />
+            <line x1="100" y1="131" x2="100" y2="156" stroke="#D9B57A" strokeWidth="0.6" opacity="0.4" />
+            <circle cx="100" cy="144" r={flash || done ? 8.5 : 5.5} fill="url(#urgeFlameG)" style={{ transition: 'r 0.2s' }} />
+            <rect x="96" y="157" width="8" height="3" rx="1.5" fill="#B89456" />
           </g>
-          <circle cx="100" cy="40" r="3" fill="#B89456" />
         </svg>
       </div>
       <div style={styles.roundDots}>
@@ -789,12 +1113,12 @@ function PulseTechnique({ stepNum, total, onDone, onSkip }) {
         ))}
       </div>
       {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
-      <WhyFooter text="Matching an external, slowing rhythm naturally decelerates a racing heart." />
+      <WhyFooter text="Your nervous system entrains to external rhythm. Following a beat that keeps slowing coaxes heart rate and attention down with it — the same principle behind rocking, metronomes, and lullabies." />
     </div>
   )
 }
 
-// ────────── 6. UNCLENCH (progressive muscle release) ──────────
+// ────────── 7. UNCLENCH (progressive muscle release) ──────────
 function UnclenchTechnique({ stepNum, total, onDone, onSkip }) {
   const ROUNDS = 3
   const CLENCH_S = 5
@@ -865,83 +1189,12 @@ function UnclenchTechnique({ stepNum, total, onDone, onSkip }) {
         ))}
       </div>
       {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
-      <WhyFooter text="Progressive muscle release burns off the adrenaline fueling the urge." />
+      <WhyFooter text="Tense-and-release — progressive muscle relaxation, in miniature — burns off the adrenaline the urge is riding, and teaches the body the felt difference between gripping and letting go." />
     </div>
   )
 }
 
-// ────────── 7. TRACE THE PATH (sustained guided focus) ──────────
-function CirclesTechnique({ stepNum, total, onDone, onSkip }) {
-  const areaRef = useRef(null)
-  const pathRef = useRef(null)
-  const samplesRef = useRef([])
-  const progressRef = useRef(0)
-  const [progress, setProgress] = useState(0)
-  const [dot, setDot] = useState(null)
-  const [stray, setStray] = useState(false)
-  const [done, setDone] = useState(false)
-  const PATH = 'M 50 98 C 90 93, 90 89, 50 85 C 10 81, 10 77, 50 73 C 90 69, 90 65, 50 61 C 10 57, 10 53, 50 49 C 90 45, 90 41, 50 37 C 10 33, 10 29, 50 25 C 90 21, 90 17, 50 13 C 30 9, 38 5, 50 3'
-  const N = 240
-  useEffect(() => {
-    const path = pathRef.current
-    if (!path || !path.getTotalLength) return
-    const tot = path.getTotalLength()
-    const arr = []
-    for (let i = 0; i <= N; i++) {
-      const pt = path.getPointAtLength((tot * i) / N)
-      arr.push({ x: pt.x, y: pt.y })
-    }
-    samplesRef.current = arr
-    setDot(arr[0])
-  }, [])
-  const move = (e) => {
-    if (done) return
-    const samples = samplesRef.current
-    if (!samples.length || !areaRef.current) return
-    const r = areaRef.current.getBoundingClientRect()
-    const fx = e.clientX - r.left, fy = e.clientY - r.top
-    const toPx = (sp) => ({ x: (sp.x / 100) * r.width, y: (sp.y / 100) * r.height })
-    const prog = progressRef.current
-    const WINDOW = 16, TOL = 30
-    let best = prog, near = false
-    for (let j = prog; j <= Math.min(samples.length - 1, prog + WINDOW); j++) {
-      const sp = toPx(samples[j])
-      if (Math.hypot(fx - sp.x, fy - sp.y) < TOL) { best = j; near = true }
-    }
-    setStray(!near)
-    if (best > prog) {
-      progressRef.current = best
-      setProgress(best / (samples.length - 1))
-      setDot(samples[best])
-      if (best >= samples.length - 2 && !done) { setDone(true); setTimeout(onDone, 800) }
-    }
-  }
-  const end = () => {}
-  return (
-    <div style={styles.center}>
-      <p style={styles.techCount}>{stepNum} of {total} · Trace the path</p>
-      <p style={styles.bodyTitle}>{done ? 'You reached the top.' : 'Follow the winding road.'}</p>
-      <p style={styles.subtle}>
-        {done ? 'Every curve, slow and steady.'
-          : stray ? 'Stay on the path — ease back onto the line.'
-          : 'Trace the whole path up, curve by curve. Keep your finger on the line.'}
-      </p>
-      <div ref={areaRef} style={{ ...styles.stageClay, height: '300px' }}
-        onPointerDown={move} onPointerMove={(e) => { if (e.buttons || e.pressure > 0) move(e) }}
-        onPointerUp={end} onPointerLeave={end} onPointerCancel={end}>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-          <path ref={pathRef} d={PATH} fill="none" stroke="#CBB893" strokeWidth="2.4" strokeLinecap="round" opacity="0.5" />
-          <path d={PATH} fill="none" stroke="#854F0B" strokeWidth="1.6" strokeLinecap="round" pathLength="1" strokeDasharray="1" strokeDashoffset={1 - progress} style={{ transition: 'stroke-dashoffset 0.1s linear' }} />
-          {dot ? <circle cx={dot.x} cy={dot.y} r="2.4" fill="#D9B57A" stroke="#FFFDF8" strokeWidth="0.5" /> : null}
-        </svg>
-      </div>
-      {!done && <button onClick={onSkip} style={styles.skipText}>Skip this one</button>}
-      <WhyFooter text="Continuous, guided motion demands focus, leaving less room for panic." />
-    </div>
-  )
-}
-
-// ────────── 4. 5-4-3-2-1 SENSES ──────────
+// ────────── 8. 5-4-3-2-1 SENSES ──────────
 function SensesTechnique({ stepNum, total, onDone, onSkip }) {
   const senses = [
     { count: 5, label: 'things you can see', icon: '👁️', skippable: false },
@@ -997,7 +1250,7 @@ function SensesTechnique({ stepNum, total, onDone, onSkip }) {
       {!current.skippable && (
         <button onClick={onSkip} style={styles.skipText}>Skip this technique</button>
       )}
-      <WhyFooter text="Engaging your physical senses pulls the brain out of the future and into the room." />
+      <WhyFooter text="Naming what your senses can actually find right now pulls processing out of imagination and into the room — grounding used across anxiety and trauma care, because a craving lives almost entirely in the imagined next hour." />
     </div>
   )
 }
@@ -1082,12 +1335,12 @@ function WhyTechnique({ stepNum, total, profileBio, onDone }) {
       }}>
         {unlocked ? "I'm ready →" : 'Align to open'}
       </button>
-      <WhyFooter text="Solving a simple spatial puzzle brings the thinking brain back online." />
+      <WhyFooter text="A small spatial puzzle re-engages the prefrontal cortex — the deliberate, planning brain a spike temporarily shouts down. What is inside the vault is your own reasoning, handed back to you at the exact moment it went quiet." />
     </div>
   )
 }
 
-// ────────── 6. REACH OUT — with anchors integration ──────────
+// ────────── 10. REACH OUT — with anchors integration ──────────
 function ReachOutTechnique({ stepNum, total, onDone }) {
   const [anchors, setAnchors] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1206,7 +1459,7 @@ function ReachOutTechnique({ stepNum, total, onDone }) {
       <button onClick={onDone} style={{...styles.btnPill, ...styles.btnPrimary, marginTop: '1.5rem'}}>
         Done →
       </button>
-      <WhyFooter text="Addiction thrives in isolation. Connection breaks the circuit." />
+      <WhyFooter text="Isolation is the urge's preferred room. Real connection — even a two-minute call — releases oxytocin, which directly dampens the stress response. It is the circuit-breaker addiction least wants you to find." />
     </div>
   )
 }
@@ -1297,11 +1550,11 @@ function FinalMessage({ onDone, saving }) {
 }
 
 const styles = {
-  // ---- revamped "Airlock" interactions: calm geometry, no fire/shatter ----
+  // ---- the science footer under every technique ----
   whyFooter: { fontSize: '11px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: '1.6rem auto 0', maxWidth: '300px', borderTop: '0.5px solid #EFE7D7', paddingTop: '0.9rem' },
   stageDark: { width: '100%', maxWidth: '300px', height: '230px', borderRadius: '20px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', margin: '0.5rem auto 0.75rem', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 26px -12px rgba(40,25,10,0.5)', touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' },
   stageClay: { width: '100%', maxWidth: '300px', height: '250px', borderRadius: '20px', background: 'linear-gradient(180deg, #EFE2CC 0%, #E3D2B4 100%)', margin: '0.5rem auto 0.75rem', position: 'relative', overflow: 'hidden', border: '0.5px solid #DDCBA8', boxShadow: 'inset 0 2px 10px rgba(120,90,40,0.12)', touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', cursor: 'crosshair' },
-  revealText: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 1.75rem', fontFamily: 'Georgia, serif', fontSize: '19px', fontStyle: 'italic', color: '#2A1F15' },
+  revealText: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 1.75rem', fontFamily: 'Georgia, serif', fontSize: '19px', fontStyle: 'italic', color: '#EFDCAF' },
   vaultReveal: { padding: '0.5rem 0.5rem 0', width: '100%', maxWidth: '320px', margin: '0 auto' },
   vaultWhy: { fontSize: '17px', color: '#EFDCAF', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.55, margin: '0 0 1rem', textAlign: 'center' },
   vaultQuote: { fontSize: '13px', color: '#CBBA98', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.5, margin: 0, textAlign: 'center' },
@@ -1323,9 +1576,12 @@ const styles = {
   suggestCard: { width: '100%', boxSizing: 'border-box', padding: '20px', background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF6 100%)', border: '0.5px solid #E8DFD0', borderRadius: '16px', margin: '1rem 0 0.5rem', boxShadow: '0 4px 14px rgba(80,50,20,0.06)' },
   suggestText: { fontSize: '17px', color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.5, margin: 0 },
   suggestAnother: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '13px', fontStyle: 'italic', fontFamily: 'Georgia, serif', cursor: 'pointer', marginBottom: '1.25rem' },
-  // ---- revamped interactive urge-breakers (dissolve / wipe / pulse) ----
 
-  // ---- new interactive urge-breakers (wave / unclench / circles) ----
+  // ---- Play the tape ----
+  tapeCard: { width: '100%', boxSizing: 'border-box', padding: '22px 22px 20px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '18px', margin: '1rem 0 1rem', boxShadow: '0 10px 26px -12px rgba(40,25,10,0.5)', textAlign: 'left' },
+  tapeEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.22em', fontWeight: 600, margin: '0 0 8px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  tapeTitle: { fontSize: '19px', color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3, margin: '0 0 8px' },
+  tapeBody: { fontSize: '14px', color: '#CBBA98', fontFamily: 'Georgia, serif', lineHeight: 1.6, margin: 0 },
 
   clenchArea: {
     width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -1600,7 +1856,7 @@ const styles = {
     lineHeight: 1.5, fontFamily: 'Georgia, serif',
   },
   tapRow: {
-    display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center',
+    display: 'flex', flexWrap: 'wrap', gap: '6px',
     justifyContent: 'center', marginTop: '0.5rem',
   },
   tapChip: {
