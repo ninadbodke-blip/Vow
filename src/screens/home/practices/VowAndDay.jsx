@@ -1,18 +1,21 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../../../supabaseClient'
-
 // ===================================================================
 // TOOL: "Your vow"  (Getting ready)
 // ===================================================================
-// The date lives under the tree now. This is just the words — written
-// to the person you'll be at 11 p.m. on a hard night, looking for
-// permission. Once sealed, the vow becomes an illuminated card,
-// signed and dated. Saying it differently appends; nothing is lost.
+// The date lives under the tree; this is just the words — written to
+// the person you'll be at 11 p.m. on a hard night, looking for
+// permission. Once sealed it becomes an illuminated card: a drop
+// capital in gold, double rules, signed and dated, a small seal
+// pressed at the foot. Saying it differently appends; nothing is lost.
+// One-time by design — a vow should be. The depth is in rereading.
 //
-// Data: free_stage_signals, stage 'commit',
-// signal_type 'commit_vow', payload { text } — appended, latest read.
-// (Renewals in Early days append to the same thread.)
+// Data: free_stage_signals, stage 'commit', signal_type 'commit_vow'
+// (unchanged), payload { text } — appended, latest read. Renewals
+// (from Early days) carry { renewed: true } and are excluded from
+// the "written N times" count, as before.
 // ===================================================================
+import { useState, useEffect } from 'react'
+import { supabase } from '../../../supabaseClient'
+import { getUser, Steps, ScienceFooter, K, P } from './practiceKit'
 
 const STARTERS = [
   'I\u2019m doing this because\u2026',
@@ -20,6 +23,33 @@ const STARTERS = [
   'The person I\u2019m doing this for\u2026',
   'This time is different because\u2026',
 ]
+
+function IlluminatedVow({ text, signed, count }) {
+  const trimmed = (text || '').trim()
+  const capital = trimmed.charAt(0).toUpperCase()
+  const rest = trimmed.slice(1)
+  return (
+    <div style={V.card}>
+      {/* double gold rule, illuminated-manuscript style */}
+      <div style={V.ruleOuter}>
+        <div style={V.ruleInner}>
+          <p style={V.vowText}>
+            <span style={V.capital}>{capital}</span>{rest}
+          </p>
+          <p style={V.signed}>— sealed {signed}{count > 1 ? ` \u00B7 said ${count} ways` : ''}</p>
+          {/* the seal */}
+          <svg viewBox="0 0 40 40" style={{ width: 34, height: 34, display: 'block', margin: '10px auto 0' }}>
+            <circle cx="20" cy="20" r="15" fill={P.deepGold} opacity="0.92" />
+            <circle cx="20" cy="20" r="15" fill="none" stroke="#6B3F08" strokeWidth="1" opacity="0.5" />
+            <circle cx="20" cy="20" r="11" fill="none" stroke="#F6E8C4" strokeWidth="0.7" opacity="0.55" />
+            <text x="20" y="25" textAnchor="middle" fontFamily="Georgia, serif" fontSize="13" fontStyle="italic" fill="#F6E8C4">V</text>
+            <path d="M 8 31 Q 12 34 16 32" fill="none" stroke={P.deepGold} strokeWidth="1.5" opacity="0.4" strokeLinecap="round" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function VowAndDay({ stage = 'commit' }) {
   const [loading, setLoading] = useState(true)
@@ -33,7 +63,7 @@ export default function VowAndDay({ stage = 'commit' }) {
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getUser()
       if (!user || cancelled) { setLoading(false); return }
       const { data } = await supabase
         .from('free_stage_signals')
@@ -62,7 +92,7 @@ export default function VowAndDay({ stage = 'commit' }) {
     const text = draft.trim()
     if (saving || !text) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getUser()
     if (!user) { setSaving(false); return }
     const { error } = await supabase.from('free_stage_signals')
       .insert({ user_id: user.id, stage, signal_type: 'commit_vow', payload: { text } })
@@ -76,73 +106,84 @@ export default function VowAndDay({ stage = 'commit' }) {
     }
   }
 
-  if (loading) return <p style={S.muted}>One moment…</p>
+  if (loading) return <p style={K.muted}>One moment…</p>
 
   if (!writing && savedVow) {
     const signed = savedAt
       ? new Date(savedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })
       : ''
     return (
-      <div style={S.wrap}>
-        <div style={S.vowCard}>
-          <span style={S.bigQuote}>“</span>
-          <p style={S.vowText}>{savedVow}</p>
-          <p style={S.signed}>— sealed {signed}{count > 1 ? ` \u00B7 written ${count} times` : ''}</p>
-        </div>
-        <p style={S.aloud}>Read it once, out loud. It lands different in the air.</p>
-        <button style={S.rewriteLink} onClick={() => { setDraft(savedVow); setWriting(true) }}>
-          Say it differently
-        </button>
+      <div style={K.wrap}>
+        <IlluminatedVow text={savedVow} signed={signed} count={count} />
+        <p style={V.readNote}>Read it slowly. Out loud, if you can — the 11 p.m. version of you will need to recognise the voice.</p>
+        <button style={K.editLink} onClick={() => { setDraft(savedVow); setWriting(true) }}>Say it differently</button>
+        <ScienceFooter text="A commitment written in your own words works differently from one merely intended: writing recruits deeper encoding, and values-affirmation studies show a self-authored line measurably steadies behaviour at depleted moments. This card exists to be reread, not rewritten." />
       </div>
     )
   }
 
   return (
-    <div style={S.wrap}>
-      <p style={S.intro}>
-        Every attempt before this one had a reason. This one gets words. Write it to the person you’ll be at 11 p.m. on a hard night — tired, bargaining, looking for permission. Give them something to hold instead.
+    <div style={K.wrap}>
+      <p style={K.intro}>
+        Not a slogan — one honest line, addressed to the person you'll be at 11 p.m. on a hard night, looking for permission.
       </p>
-      <div style={S.starters}>
+      <Steps items={[
+        'Picture that exact moment — the room, the hour, the mood.',
+        'Write the one line that person needs to read.',
+        'Read it back once, slowly. Then seal it.',
+      ]} />
+      <div style={K.chips}>
         {STARTERS.map((s) => (
-          <button key={s} style={S.starter} onClick={() => setDraft((d) => (d ? d : s.replace('\u2026', ' ')))}>
-            {s}
-          </button>
+          <button key={s} onClick={() => setDraft(d => (d.trim() ? d : s.replace('\u2026', ' ')))} style={K.chip}>{s}</button>
         ))}
       </div>
       <textarea
+        style={V.textarea}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        placeholder="One honest line is enough…"
+        placeholder="In your own words…"
+        rows={4}
         maxLength={280}
-        style={S.textarea}
-        disabled={saving}
       />
-      <p style={S.charCount}>{draft.length}/280</p>
-      <button style={{ ...S.sealBtn, opacity: draft.trim() ? 1 : 0.45 }} disabled={!draft.trim() || saving} onClick={seal}>
-        {saving ? 'Sealing\u2026' : 'Seal the vow'}
+      <button style={{ ...K.saveBtn, ...(!draft.trim() ? K.saveBtnDim : {}) }} disabled={!draft.trim() || saving} onClick={seal}>
+        {saving ? 'One moment…' : 'Seal it'}
       </button>
-      {savedVow && (
-        <button style={S.rewriteLink} onClick={() => { setWriting(false); setDraft('') }}>
-          Keep the one I have
-        </button>
-      )}
+      <ScienceFooter text="A commitment written in your own words works differently from one merely intended: writing recruits deeper encoding, and values-affirmation studies show a self-authored line measurably steadies behaviour at depleted moments. This card exists to be reread, not rewritten." />
     </div>
   )
 }
 
-const S = {
-  wrap: { padding: '2px 2px 6px' },
-  muted: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#9C8C78', fontSize: 13.5, textAlign: 'center', padding: '18px 0' },
-  intro: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#6B5C4A', fontSize: 13.5, lineHeight: 1.6, margin: '0 0 13px' },
-  starters: { display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 11 },
-  starter: { padding: '7px 12px', borderRadius: 999, border: '0.5px solid #E2D7C3', background: '#FBF7EE', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12, cursor: 'pointer' },
-  textarea: { width: '100%', boxSizing: 'border-box', minHeight: 96, padding: '13px 14px', borderRadius: 14, border: '0.5px solid #E2D7C3', background: '#FDFBF6', color: '#2A1F15', fontSize: 15, fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6, resize: 'vertical', outline: 'none' },
-  charCount: { fontFamily: 'Georgia, serif', fontSize: 10.5, color: '#9C8C78', textAlign: 'right', margin: '4px 0 0' },
-  sealBtn: { width: '100%', marginTop: 12, padding: '13px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: 13, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  vowCard: { position: 'relative', background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: 16, padding: '22px 20px 16px', boxShadow: '0 3px 14px rgba(120,90,40,0.07)' },
-  bigQuote: { position: 'absolute', top: 6, left: 12, fontFamily: 'Georgia, serif', fontSize: 38, color: '#D9B57A', opacity: 0.55, lineHeight: 1 },
-  vowText: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 17, color: '#2A1F15', lineHeight: 1.6, margin: '6px 0 0', textAlign: 'center' },
-  signed: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11.5, color: '#9C8C78', textAlign: 'right', margin: '12px 0 0' },
-  aloud: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12, color: '#854F0B', textAlign: 'center', margin: '13px 0 0', lineHeight: 1.5 },
-  rewriteLink: { display: 'block', margin: '10px auto 0', background: 'transparent', border: 'none', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer' },
+const V = {
+  card: { margin: '2px 0 4px' },
+  ruleOuter: {
+    background: 'linear-gradient(180deg, #FCF7EA 0%, #F6EEDA 100%)',
+    border: '1px solid #C9A85C', borderRadius: 14, padding: 5,
+    boxShadow: '0 8px 22px -10px rgba(133,79,11,0.28)',
+  },
+  ruleInner: {
+    border: '0.5px solid rgba(201,168,92,0.55)', borderRadius: 10,
+    padding: '18px 18px 16px', textAlign: 'center',
+  },
+  capital: {
+    fontFamily: 'Georgia, serif', fontSize: 34, color: '#854F0B',
+    lineHeight: 0.9, paddingRight: 2, fontStyle: 'normal', fontWeight: 500,
+  },
+  vowText: {
+    fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 16.5,
+    color: '#2A1F15', lineHeight: 1.65, margin: 0, textAlign: 'left',
+  },
+  signed: {
+    fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11.5,
+    color: '#854F0B', margin: '12px 0 0', textAlign: 'right',
+  },
+  readNote: {
+    fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12,
+    color: '#6B5C4A', textAlign: 'center', margin: '12px 0 0', lineHeight: 1.55,
+  },
+  textarea: {
+    width: '100%', boxSizing: 'border-box', marginTop: 10, padding: '13px 14px',
+    borderRadius: 13, border: '0.5px solid #E2D7C3', background: '#FDFBF6',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 14.5,
+    color: '#2A1F15', outline: 'none', resize: 'vertical', lineHeight: 1.6,
+  },
 }

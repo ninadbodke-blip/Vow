@@ -109,7 +109,7 @@ export const MODES = {
     daily: {
       id: 'gap',
       title: 'What matters vs what I did',
-      line: 'One thing you care about, what you did today, and the gap.',
+      line: 'One thing you care about, what you did today — and the gap, drawn.',
       minutes: 2,
       Component: BothTrueToday,
       Glyph: GapGlyph,
@@ -118,7 +118,7 @@ export const MODES = {
       {
         id: 'lean',
         title: 'The scales',
-        line: 'Which way do you lean today — keep things the same, or change?',
+        line: 'Which way do you lean today? The beam tips as you do.',
         minutes: 1,
         Component: TheScales,
         Glyph: ScalesGlyph,
@@ -126,7 +126,7 @@ export const MODES = {
       {
         id: 'cost',
         title: 'What it costs',
-        line: 'The money and the hours, added up for a year.',
+        line: 'Two small numbers — and the meter runs from the day you measure.',
         minutes: 2,
         Component: WhatItCosts,
         Glyph: CostGlyph,
@@ -134,7 +134,7 @@ export const MODES = {
       {
         id: 'excuses',
         title: 'The excuses',
-        line: 'The things it says to talk you into it. Pick the loudest.',
+        line: 'The lines it uses on you, tallied. Its favorites rise.',
         minutes: 2,
         Component: TheExcuses,
         Glyph: ExcuseGlyph,
@@ -149,7 +149,7 @@ export const MODES = {
     daily: {
       id: 'worry',
       title: 'The worry, answered',
-      line: 'Today\u2019s likeliest threat, its first sign, your counter-move.',
+      line: 'Today\u2019s likeliest threat, tethered to a plan while calm.',
       minutes: 2,
       Component: TheWorryAnswered,
       Glyph: WorryGlyph,
@@ -174,7 +174,7 @@ export const MODES = {
       {
         id: 'ready',
         title: 'How ready, honestly',
-        line: 'A number, and the one thing in the way.',
+        line: 'A number that moves — the vessel fills, the line remembers.',
         minutes: 1,
         Component: HowReady,
         Glyph: ReadyGlyph,

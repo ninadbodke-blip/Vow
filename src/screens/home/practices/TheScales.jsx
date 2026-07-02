@@ -1,23 +1,93 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../../../supabaseClient'
-
 // ===================================================================
-// PRACTICE: "The scales"  (Weighing it up)
+// TOOL: "The scales"  (Weighing it up)
 // ===================================================================
-// One slider, both ends honest: "staying as I am" ↔ "changing this".
-// The user weighs in, adds one word for why, and over time sees the
-// lean of their own last few weigh-ins — their data, not our opinion.
+// The scales are real now: a beam on a pillar that tips as the
+// slider moves, pans hanging plumb, pebbles gathering on the heavier
+// side. One weigh-in a day; the last five stay visible as a quiet
+// trace, so the lean of a week belongs to the user's own eyes.
 //
-// Data: free_stage_signals, stage 'reflect',
-// signal_type 'reflect_lean', payload { lean (0–100), word, date }.
-// One row per day (today's row updates in place); trend reads last 5.
+// Data: free_stage_signals, stage 'reflect', signal_type
+// 'reflect_lean' (unchanged), payload { lean 0–100, word|null, date }
+// — one row per day, updated in place; trend reads the recent rows.
 // ===================================================================
+import { useState, useEffect } from 'react'
+import {
+  localDateStr, loadSignals, appendSignal, updateSignal,
+  ScienceFooter, K, P,
+} from './practiceKit'
 
 const WORDS = ['Tired', 'Curious', 'Scared', 'Ready', 'Stuck', 'Hopeful', 'Torn']
 
-const localDateStr = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+// beam geometry
+const PIVOT = { x: 150, y: 54 }
+const ARM = 92
+const MAX_DEG = 11
+
+function BeamScales({ lean }) {
+  const deg = ((lean - 50) / 50) * MAX_DEG
+  const rad = (deg * Math.PI) / 180
+  const leftEnd = { x: PIVOT.x - ARM * Math.cos(rad), y: PIVOT.y - ARM * Math.sin(rad) }
+  const rightEnd = { x: PIVOT.x + ARM * Math.cos(rad), y: PIVOT.y + ARM * Math.sin(rad) }
+  const CHAIN = 30
+  const leftPebbles = Math.round((100 - lean) / 22)
+  const rightPebbles = Math.round(lean / 22)
+  const Pan = ({ end, pebbles, label }) => (
+    <g style={{ transition: 'transform 0.55s cubic-bezier(0.4,0,0.2,1)', transform: `translate(${end.x}px, ${end.y}px)` }}>
+      <line x1="-9" y1="0" x2="0" y2={CHAIN - 4} stroke={P.bark} strokeWidth="0.9" opacity="0.75" />
+      <line x1="9" y1="0" x2="0" y2={CHAIN - 4} stroke={P.bark} strokeWidth="0.9" opacity="0.75" />
+      <path d={`M -17 ${CHAIN - 3} Q 0 ${CHAIN + 9} 17 ${CHAIN - 3} Z`} fill={P.gold} opacity="0.9" stroke={P.stoneEdge} strokeWidth="0.5" />
+      {Array.from({ length: pebbles }).map((_, i) => (
+        <circle key={i} cx={-8 + (i % 5) * 4} cy={CHAIN - 1 - Math.floor(i / 5) * 3} r="1.9" fill={P.barkDark} opacity="0.75" />
+      ))}
+      <text x="0" y={CHAIN + 20} textAnchor="middle" fontFamily="Georgia, serif" fontSize="8.5" fontStyle="italic" fill={P.body}>{label}</text>
+    </g>
+  )
+  return (
+    <div style={{ ...K.stage, height: 168 }}>
+      <svg viewBox="0 0 300 168" style={{ display: 'block', width: '100%', height: '100%' }}>
+        <defs>
+          <linearGradient id="vowScaleSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#EDE8DB" /><stop offset="100%" stopColor="#F8F3E6" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="300" height="168" fill="url(#vowScaleSky)" />
+        <circle cx="44" cy="28" r="10" fill="#E9C98E" opacity="0.45" />
+        {/* floor */}
+        <rect x="0" y="146" width="300" height="22" fill="#EFE6D2" />
+        <line x1="0" y1="146" x2="300" y2="146" stroke={P.wash} strokeWidth="1" opacity="0.7" />
+        {/* pillar */}
+        <path d="M 138 146 L 143 68 L 157 68 L 162 146 Z" fill={P.bark} />
+        <path d="M 128 146 L 172 146 L 168 152 L 132 152 Z" fill={P.barkDark} />
+        {/* the beam */}
+        <g style={{ transition: 'transform 0.55s cubic-bezier(0.4,0,0.2,1)', transform: `rotate(${deg}deg)`, transformOrigin: `${PIVOT.x}px ${PIVOT.y}px` }}>
+          <rect x={PIVOT.x - ARM - 4} y={PIVOT.y - 2.4} width={(ARM + 4) * 2} height="4.8" rx="2.4" fill={P.barkDark} />
+        </g>
+        <circle cx={PIVOT.x} cy={PIVOT.y} r="5" fill={P.ink} />
+        <circle cx={PIVOT.x} cy={PIVOT.y} r="2" fill={P.goldSoft} />
+        {/* the pans hang plumb from the beam's ends */}
+        <Pan end={leftEnd} pebbles={leftPebbles} label="as I am" />
+        <Pan end={rightEnd} pebbles={rightPebbles} label="change this" />
+      </svg>
+    </div>
+  )
+}
+
+function LeanTrace({ history }) {
+  // small horizontal axis, each past weigh-in a dot placed by its lean
+  const rows = history.slice(0, 5)
+  if (rows.length === 0) return null
+  return (
+    <svg viewBox="0 0 300 34" style={{ display: 'block', width: '100%', height: 34, marginTop: 6 }}>
+      <line x1="30" y1="14" x2="270" y2="14" stroke="#E2D7C3" strokeWidth="1" />
+      <line x1="150" y1="9" x2="150" y2="19" stroke="#D8CBAE" strokeWidth="1" />
+      <text x="30" y="30" fontFamily="Georgia, serif" fontSize="7.5" fontStyle="italic" fill={P.muted}>same</text>
+      <text x="270" y="30" textAnchor="end" fontFamily="Georgia, serif" fontSize="7.5" fontStyle="italic" fill={P.muted}>change</text>
+      {rows.map((p, i) => (
+        <circle key={i} cx={30 + (Number(p.lean) / 100) * 240} cy="14" r={i === 0 ? 3.4 : 2.4}
+          fill={i === 0 ? P.deepGold : P.goldgreen} opacity={i === 0 ? 1 : Math.max(0.3, 0.8 - i * 0.15)} />
+      ))}
+    </svg>
+  )
 }
 
 export default function TheScales({ stage = 'reflect' }) {
@@ -26,33 +96,20 @@ export default function TheScales({ stage = 'reflect' }) {
   const [lean, setLean] = useState(50)
   const [word, setWord] = useState('')
   const [history, setHistory] = useState([])
-  const [savedToday, setSavedToday] = useState(false)
-  const [editing, setEditing] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savedFlash, setSavedFlash] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || cancelled) { setLoading(false); return }
-      const { data } = await supabase
-        .from('free_stage_signals')
-        .select('id, payload')
-        .eq('user_id', user.id)
-        .eq('signal_type', 'reflect_lean')
-        .order('created_at', { ascending: false })
-        .limit(6)
+      const rows = (await loadSignals('reflect_lean', 8)).filter(r => r.payload && r.payload.lean != null)
       if (cancelled) return
-      const rows = (data || []).filter((r) => r.payload && r.payload.lean != null)
-      setHistory(rows.map((r) => r.payload))
-      const today = localDateStr()
-      const todays = rows.find((r) => r.payload.date === today)
+      setHistory(rows.map(r => r.payload))
+      const todays = rows.find(r => r.payload.date === localDateStr())
       if (todays) {
         setTodayRowId(todays.id)
         setLean(Number(todays.payload.lean))
         setWord(todays.payload.word || '')
-        setSavedToday(true)
-        setEditing(false)
       }
       setLoading(false)
     }
@@ -63,106 +120,60 @@ export default function TheScales({ stage = 'reflect' }) {
   const handleSave = async () => {
     if (saving) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
     const payload = { lean, word: word || null, date: localDateStr() }
     if (todayRowId) {
-      const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', todayRowId)
-      if (!error) { setSavedToday(true); setEditing(false) }
+      await updateSignal(todayRowId, payload)
+      setHistory(h => [payload, ...h.filter(p => p.date !== payload.date)])
     } else {
-      const { data, error } = await supabase.from('free_stage_signals')
-        .insert({ user_id: user.id, stage, signal_type: 'reflect_lean', payload })
-        .select('id').single()
-      if (!error && data) {
-        setTodayRowId(data.id)
-        setHistory((h) => [payload, ...h])
-        setSavedToday(true)
-        setEditing(false)
-      }
+      const id = await appendSignal(stage, 'reflect_lean', payload)
+      if (id) { setTodayRowId(id); setHistory(h => [payload, ...h]) }
     }
+    setSavedFlash(true); setTimeout(() => setSavedFlash(false), 2200)
     setSaving(false)
   }
 
   const leanText = lean > 55 ? 'toward changing this' : lean < 45 ? 'toward staying as you are' : 'right in the middle'
-  const changeCount = history.slice(0, 5).filter((p) => Number(p.lean) > 55).length
-  const weighIns = Math.min(history.length, 5)
+  const recent = history.slice(0, 5)
+  const changeCount = recent.filter(p => Number(p.lean) > 55).length
 
-  if (loading) return <p style={S.muted}>One moment…</p>
-
-  if (savedToday && !editing) {
-    return (
-      <div style={S.wrap}>
-        <p style={S.intro}>Saved for today. Come back tomorrow — the answer usually moves.</p>
-        <div style={S.savedCard}>
-          <ScaleBar lean={lean} />
-          <p style={S.savedLine}>You lean {leanText}{word ? ` — feeling ${word.toLowerCase()}` : ''}.</p>
-          {weighIns >= 3 && (
-            <p style={S.trend}>{changeCount} of your last {weighIns} weigh-ins leaned toward change.</p>
-          )}
-        </div>
-        <button style={S.editLink} onClick={() => setEditing(true)}>Weigh again</button>
-      </div>
-    )
-  }
+  if (loading) return <p style={K.muted}>One moment…</p>
 
   return (
-    <div style={S.wrap}>
-      <p style={S.intro}>No right answer. Just where you honestly are, today only.</p>
-
-      <ScaleBar lean={lean} />
-      <input
-        type="range" min="0" max="100" value={lean}
-        onChange={(e) => setLean(Number(e.target.value))}
-        style={S.range}
-      />
-      <div style={S.endLabels}>
-        <span style={S.endLabel}>Keep things the same</span>
-        <span style={S.endLabel}>Change this</span>
+    <div style={K.wrap}>
+      <p style={K.intro}>
+        No right answer — just where the weight honestly sits, today only. Move the slider and watch the beam agree with you.
+      </p>
+      <BeamScales lean={lean} />
+      <input type="range" min="0" max="100" value={lean}
+        onChange={(e) => setLean(Number(e.target.value))} style={T.range} />
+      <div style={T.endLabels}>
+        <span style={T.endLabel}>Keep things the same</span>
+        <span style={T.endLabel}>Change this</span>
       </div>
-
-      <p style={S.q}>One word for how it feels?</p>
-      <div style={S.chips}>
+      <p style={K.q}>One word for how it feels?</p>
+      <div style={K.chips}>
         {WORDS.map((w) => (
-          <button key={w} onClick={() => setWord(word === w ? '' : w)} style={{ ...S.chip, ...(word === w ? S.chipOn : {}) }}>{w}</button>
+          <button key={w} onClick={() => setWord(word === w ? '' : w)} style={{ ...K.chip, ...(word === w ? K.chipOn : {}) }}>{w}</button>
         ))}
       </div>
-
-      <button style={S.saveBtn} disabled={saving} onClick={handleSave}>
-        {saving ? 'Saving…' : 'Save for today'}
+      <button onClick={handleSave} disabled={saving} style={K.saveBtn}>
+        {saving ? 'One moment…' : savedFlash ? 'Weighed in ✓' : todayRowId ? 'Weigh in again' : 'Weigh in for today'}
       </button>
+      <p style={K.doneLine}>You lean {leanText}{word ? ` — feeling ${word.toLowerCase()}` : ''}.</p>
+      {recent.length >= 2 && (
+        <div style={K.pattern}>
+          <p style={K.patternLabel}>Your last {recent.length} weigh-ins</p>
+          <LeanTrace history={history} />
+          <p style={K.patternText}>{changeCount} of {recent.length} leaned toward change. The answer moving is the answer working.</p>
+        </div>
+      )}
+      <ScienceFooter text="Ambivalence is not indecision — it is two motivational systems reporting honestly. Decisional-balance research shows the lean shifts day to day, and that watching your own weigh-ins move is more persuasive than any argument someone else could put on the scale." />
     </div>
   )
 }
 
-function ScaleBar({ lean }) {
-  return (
-    <div style={S.barWrap}>
-      <div style={S.barTrack}>
-        <div style={{ ...S.barFill, width: `${lean}%` }} />
-        <div style={{ ...S.barThumb, left: `calc(${lean}% - 9px)` }} />
-      </div>
-    </div>
-  )
-}
-
-const S = {
-  wrap: { padding: '2px 2px 6px' },
-  muted: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#9C8C78', fontSize: 13.5, textAlign: 'center', padding: '18px 0' },
-  intro: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#6B5C4A', fontSize: 13.5, lineHeight: 1.55, margin: '0 0 16px' },
-  q: { fontFamily: 'Georgia, serif', color: '#2A1F15', fontSize: 14.5, fontWeight: 500, margin: '16px 0 8px' },
-  barWrap: { padding: '6px 2px 2px' },
-  barTrack: { position: 'relative', height: 10, borderRadius: 999, background: 'linear-gradient(90deg, #EDE6D6 0%, #E4D9BF 100%)', border: '0.5px solid #E2D7C3' },
-  barFill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999, background: 'linear-gradient(90deg, #D9C9A4 0%, #C9A85C 100%)', opacity: 0.85 },
-  barThumb: { position: 'absolute', top: -5, width: 18, height: 18, borderRadius: '50%', background: '#FAF7F1', border: '1.5px solid #854F0B', boxShadow: '0 1px 5px rgba(60,40,20,0.25)' },
-  range: { width: '100%', marginTop: 10, accentColor: '#854F0B' },
-  endLabels: { display: 'flex', justifyContent: 'space-between', marginTop: 4 },
-  endLabel: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11.5, color: '#9C8C78' },
-  chips: { display: 'flex', flexWrap: 'wrap', gap: 7 },
-  chip: { padding: '8px 12px', borderRadius: 999, border: '0.5px solid #E2D7C3', background: '#FDFBF6', color: '#3A2A1C', fontFamily: 'Georgia, serif', fontSize: 12.5, cursor: 'pointer' },
-  chipOn: { background: '#F4ECDD', border: '1px solid #C9A85C' },
-  saveBtn: { width: '100%', marginTop: 18, padding: '13px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: 13, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  savedCard: { background: '#FDFBF6', border: '0.5px solid #E8DFD0', borderRadius: 14, padding: '16px 15px' },
-  savedLine: { fontFamily: 'Georgia, serif', fontSize: 14.5, color: '#2A1F15', margin: '12px 0 0', textAlign: 'center' },
-  trend: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, color: '#854F0B', margin: '8px 0 0', textAlign: 'center' },
-  editLink: { display: 'block', margin: '12px auto 0', background: 'transparent', border: 'none', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer' },
+const T = {
+  range: { width: '100%', marginTop: 4, accentColor: '#854F0B' },
+  endLabels: { display: 'flex', justifyContent: 'space-between', marginTop: 2 },
+  endLabel: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 10.5, color: '#9C8C78' },
 }
