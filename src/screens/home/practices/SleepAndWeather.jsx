@@ -1,28 +1,84 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../../../supabaseClient'
-
 // ===================================================================
 // TOOL: "The basics"  (Early days)
 // ===================================================================
-// Plain words, three questions: sleep, food, movement. These three
-// decide how hard tonight feels, so they get checked every day. When
-// two or more slip, the tool says so — gently — and asks for a
-// simpler, earlier evening.
+// Sleep, food, movement — the three things that decide how hard
+// tonight feels. Now they make literal weather: each checked day
+// draws its own sky in a seven-day strip — clear when the basics
+// held, clouding over as they slip. Tonight's forecast, honestly.
 //
-// Data: free_stage_signals, stage 'endure', signal_type 'daily_vitals'
-// (same signal as before), payload { sleep, food, movement, date } —
-// one row per day, updated in place. Older rows that only carried
-// sleep + weather still load; sleep prefills and the rest is asked.
+// Data: free_stage_signals, stage 'endure', signal_type
+// 'daily_vitals' (unchanged; same option strings), payload
+// { sleep, food, movement, date } — one row per day, updated in place.
 // ===================================================================
+import { useState, useEffect } from 'react'
+import {
+  localDateStr, loadTodayRow, loadSignals, appendSignal, updateSignal,
+  Chips, ScienceFooter, K, P,
+} from './practiceKit'
 
 const SLEEPS = ['Badly', 'Okay', 'Well']
 const FOODS = ['Not really', 'Mostly', 'Yes']
 const MOVES = ['No', 'A little', 'Yes']
 const LOWS = ['Badly', 'Not really', 'No']
 
-const localDateStr = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const WD = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+const lowsOf = (p) => [p?.sleep, p?.food, p?.movement].filter(v => LOWS.includes(v)).length
+
+// one small sky per day: 0 lows = clear, 1 = a passing cloud,
+// 2 = clouded, 3 = heavy weather. no day is a bad day — just weather.
+function DaySky({ lows, empty, isToday }) {
+  return (
+    <svg viewBox="0 0 36 36" style={{ width: 32, height: 32, display: 'block' }}>
+      <rect x="1" y="1" width="34" height="34" rx="8"
+        fill={empty ? '#F4EFE2' : '#EFE8D6'}
+        stroke={isToday ? P.deepGold : '#E2D7C3'} strokeWidth={isToday ? 1.3 : 0.6} />
+      {empty ? (
+        <circle cx="18" cy="18" r="1.6" fill="none" stroke="#D8CBAE" strokeWidth="0.8" />
+      ) : (
+        <>
+          {lows <= 1 && (
+            <>
+              <circle cx={lows === 0 ? 18 : 14} cy={lows === 0 ? 17 : 14} r="6" fill="#E9C98E" />
+              <circle cx={lows === 0 ? 18 : 14} cy={lows === 0 ? 17 : 14} r="8.5" fill="#E9C98E" opacity="0.25" />
+            </>
+          )}
+          {lows >= 1 && (
+            <g fill="#DDD3BC">
+              <ellipse cx="21" cy="22" rx="9" ry="4.2" />
+              <ellipse cx="16" cy="19.5" rx="6" ry="3.4" />
+            </g>
+          )}
+          {lows >= 2 && (
+            <g fill="#CBBFA4">
+              <ellipse cx="14" cy="14" rx="7.5" ry="3.8" />
+              <ellipse cx="20" cy="12" rx="5" ry="3" />
+            </g>
+          )}
+          {lows >= 3 && (
+            <g fill="#B9AC8F">
+              <ellipse cx="18" cy="26" rx="10" ry="4" />
+            </g>
+          )}
+        </>
+      )}
+    </svg>
+  )
+}
+
+function WeatherStrip({ days }) {
+  return (
+    <div style={{ ...K.stage, padding: '12px 10px 8px', display: 'block' }}>
+      <div style={W.row}>
+        {days.map((d, i) => (
+          <div key={i} style={W.cell}>
+            <DaySky lows={d.lows} empty={d.empty} isToday={d.isToday} />
+            <span style={{ ...W.wd, ...(d.isToday ? { color: P.deepGold, fontWeight: 600 } : {}) }}>{d.label}</span>
+          </div>
+        ))}
+      </div>
+      <p style={W.caption}>the week's weather — drawn by sleep, food, and movement</p>
+    </div>
+  )
 }
 
 export default function SleepAndWeather({ stage = 'endure' }) {
@@ -31,30 +87,34 @@ export default function SleepAndWeather({ stage = 'endure' }) {
   const [sleep, setSleep] = useState('')
   const [food, setFood] = useState('')
   const [movement, setMovement] = useState('')
-  const [editing, setEditing] = useState(true)
+  const [days, setDays] = useState([])
   const [saving, setSaving] = useState(false)
+  const [savedFlash, setSavedFlash] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || cancelled) { setLoading(false); return }
-      const { data } = await supabase
-        .from('free_stage_signals')
-        .select('id, payload')
-        .eq('user_id', user.id)
-        .eq('signal_type', 'daily_vitals')
-        .eq('payload->>date', localDateStr())
-        .limit(1)
+      const [today, recent] = await Promise.all([
+        loadTodayRow('daily_vitals'),
+        loadSignals('daily_vitals', 12),
+      ])
       if (cancelled) return
-      const row = data && data[0]
-      if (row?.payload) {
-        setRowId(row.id)
-        if (SLEEPS.includes(row.payload.sleep)) setSleep(row.payload.sleep)
-        if (FOODS.includes(row.payload.food)) setFood(row.payload.food)
-        if (MOVES.includes(row.payload.movement)) setMovement(row.payload.movement)
-        if (row.payload.sleep && row.payload.food && row.payload.movement) setEditing(false)
+      if (today?.payload) {
+        setRowId(today.id)
+        if (SLEEPS.includes(today.payload.sleep)) setSleep(today.payload.sleep)
+        if (FOODS.includes(today.payload.food)) setFood(today.payload.food)
+        if (MOVES.includes(today.payload.movement)) setMovement(today.payload.movement)
       }
+      const byDate = {}
+      recent.forEach(r => { if (r.payload?.date) byDate[r.payload.date] = r.payload })
+      const arr = []
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i)
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        const p = byDate[key]
+        arr.push({ label: WD[d.getDay()], lows: p ? lowsOf(p) : 0, empty: !p, isToday: i === 0 })
+      }
+      setDays(arr)
       setLoading(false)
     }
     load()
@@ -67,81 +127,51 @@ export default function SleepAndWeather({ stage = 'endure' }) {
   const handleSave = async () => {
     if (saving || !canSave) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
     const payload = { sleep, food, movement, date: localDateStr() }
     if (rowId) {
-      const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId)
-      if (!error) setEditing(false)
+      await updateSignal(rowId, payload)
     } else {
-      const { data, error } = await supabase.from('free_stage_signals')
-        .insert({ user_id: user.id, stage, signal_type: 'daily_vitals', payload })
-        .select('id').single()
-      if (!error && data) { setRowId(data.id); setEditing(false) }
+      const id = await appendSignal(stage, 'daily_vitals', payload)
+      if (id) setRowId(id)
     }
+    setDays(ds => ds.map(d => (d.isToday ? { ...d, lows, empty: false } : d)))
+    setSavedFlash(true); setTimeout(() => setSavedFlash(false), 2200)
     setSaving(false)
   }
 
-  const Row = ({ label, options, val, onPick }) => (
-    <>
-      <p style={S.q}>{label}</p>
-      <div style={S.chips}>
-        {options.map((o) => (
-          <button key={o} onClick={() => onPick(o)} style={{ ...S.chip, ...(val === o ? S.chipOn : {}) }}>{o}</button>
-        ))}
-      </div>
-    </>
-  )
-
-  if (loading) return <p style={S.muted}>One moment…</p>
-
-  if (!editing && canSave) {
-    return (
-      <div style={S.wrap}>
-        <div style={S.savedCard}>
-          <div style={S.readRow}><span style={S.readLabel}>Sleep</span><span style={S.readVal}>{sleep}</span></div>
-          <div style={S.readRow}><span style={S.readLabel}>Food</span><span style={S.readVal}>{food}</span></div>
-          <div style={{ ...S.readRow, borderBottom: 'none' }}><span style={S.readLabel}>Movement</span><span style={S.readVal}>{movement}</span></div>
-        </div>
-        {lows >= 2 ? (
-          <p style={S.warnLine}>Two or more of the basics slipped today. That makes evenings harder than they need to be — keep tonight simple and get to bed early.</p>
-        ) : lows === 1 ? (
-          <p style={S.noteLine}>One of the basics slipped. Nothing dramatic — just go a bit easier on yourself this evening.</p>
-        ) : (
-          <p style={S.noteLine}>All three held today. Quiet wins like this are what the good days are built from.</p>
-        )}
-        <button style={S.editLink} onClick={() => setEditing(true)}>Change the answers</button>
-      </div>
-    )
-  }
+  if (loading) return <p style={K.muted}>One moment…</p>
 
   return (
-    <div style={S.wrap}>
-      <p style={S.intro}>Three quick questions. These three things decide most of how hard tonight feels — so they get checked every day.</p>
-      <Row label="How did you sleep last night?" options={SLEEPS} val={sleep} onPick={setSleep} />
-      <Row label="Did you eat proper meals today?" options={FOODS} val={food} onPick={setFood} />
-      <Row label="Did you move your body today?" options={MOVES} val={movement} onPick={setMovement} />
-      <button style={{ ...S.saveBtn, opacity: canSave ? 1 : 0.45 }} disabled={!canSave || saving} onClick={handleSave}>
-        {saving ? 'Saving…' : 'Check them off'}
+    <div style={K.wrap}>
+      <p style={K.intro}>
+        Plain words, three questions. These decide how hard tonight feels — so they get checked before tonight arrives, and the week draws its own weather.
+      </p>
+      <WeatherStrip days={days} />
+      <Chips label="How did you sleep last night?" options={SLEEPS} value={sleep} onPick={setSleep} />
+      <Chips label="Have you eaten properly today?" options={FOODS} value={food} onPick={setFood} />
+      <Chips label="Did you move your body?" options={MOVES} value={movement} onPick={setMovement} />
+      <button onClick={handleSave} disabled={!canSave || saving}
+        style={{ ...K.saveBtn, ...(!canSave ? K.saveBtnDim : {}) }}>
+        {saving ? 'One moment…' : savedFlash ? 'Weather drawn ✓' : 'Draw today\u2019s weather'}
       </button>
+      {canSave && (
+        lows >= 2 ? (
+          <p style={W.warn}>Two or more of the basics slipped today. That makes evenings harder than they need to be — keep tonight simple and get to bed early.</p>
+        ) : lows === 1 ? (
+          <p style={K.doneLine}>One of the basics slipped. Nothing dramatic — just go a bit easier on yourself this evening.</p>
+        ) : (
+          <p style={K.doneLine}>All three held. Clear skies going into tonight.</p>
+        )
+      )}
+      <ScienceFooter text="Most “sudden” cravings are hours in the making: short sleep alone measurably raises next-day impulsivity, and low blood sugar reads to the brain as needing something. Checking the three levers before evening is how a hard night gets seen coming — and softened in advance." />
     </div>
   )
 }
 
-const S = {
-  wrap: { padding: '2px 2px 6px' },
-  muted: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#9C8C78', fontSize: 13.5, textAlign: 'center', padding: '18px 0' },
-  intro: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#6B5C4A', fontSize: 13.5, lineHeight: 1.55, margin: '0 0 12px' },
-  q: { fontFamily: 'Georgia, serif', color: '#2A1F15', fontSize: 14.5, fontWeight: 500, margin: '14px 0 8px' },
-  chips: { display: 'flex', flexWrap: 'wrap', gap: 7 },
-  chip: { padding: '8px 14px', borderRadius: 999, border: '0.5px solid #E2D7C3', background: '#FDFBF6', color: '#3A2A1C', fontFamily: 'Georgia, serif', fontSize: 12.5, cursor: 'pointer' },
-  chipOn: { background: '#F4ECDD', border: '1px solid #C9A85C' },
-  saveBtn: { width: '100%', marginTop: 18, padding: '13px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: 13, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  savedCard: { background: '#FDFBF6', border: '0.5px solid #E8DFD0', borderRadius: 14, padding: '4px 15px' },
-  readRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '0.5px solid #F0EAD9' },
-  readLabel: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 13, color: '#6B5C4A' },
-  readVal: { fontFamily: 'Georgia, serif', fontSize: 14, color: '#2A1F15' },
-  warnLine: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, color: '#854F0B', margin: '12px 2px 0', lineHeight: 1.55 },
-  noteLine: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, color: '#9C8C78', margin: '12px 2px 0', lineHeight: 1.55 },
-  editLink: { display: 'block', margin: '12px auto 0', background: 'transparent', border: 'none', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer' },
+const W = {
+  row: { display: 'flex', justifyContent: 'space-between' },
+  cell: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 },
+  wd: { fontSize: 8.5, color: '#B8A88E', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', letterSpacing: '0.05em' },
+  caption: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 9, color: '#9C8C78', textAlign: 'center', margin: '8px 0 0' },
+  warn: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12, color: '#854F0B', margin: '10px 0 0', lineHeight: 1.55, textAlign: 'center' },
 }

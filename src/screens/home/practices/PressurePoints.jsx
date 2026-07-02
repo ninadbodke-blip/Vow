@@ -1,20 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
-import { supabase } from '../../../supabaseClient'
-
 // ===================================================================
 // TOOL: "The three pillars"  (Staying steady)
 // ===================================================================
 // A structure doesn't fall from one bad night — it falls when the
-// load goes up while the pillars under it go soft. Each day: name
-// this week's load, then press and hold to lock each pillar you
-// actually held today. The last seven days build into a grid, so a
-// soft pillar shows up before it becomes a crack.
+// load goes up while the pillars under it go soft. The structure is
+// drawn now: a beam carrying this week's load-stone, held by three
+// pillars that light up solid as each one is pressed and held. The
+// last seven days build into a grid, so a soft pillar shows up
+// before it becomes a crack.
 //
-// Data: free_stage_signals, stage 'build',
-// signal_type 'build_pillars' (same contract as the old home),
-// payload { stress (1–5), pillars: [keys], high_stress, date } —
-// one row per day, updated in place.
+// Data: free_stage_signals, stage 'build', signal_type
+// 'build_pillars' (unchanged), payload { stress (1–5), pillars:
+// [keys], high_stress, date } — one row per day, updated in place.
 // ===================================================================
+import { useState, useEffect, useRef } from 'react'
+import {
+  localDateStr, loadTodayRow, loadSignals, appendSignal, updateSignal,
+  ScienceFooter, K, P,
+} from './practiceKit'
 
 const STRESS_LEVELS = [
   { v: 1, label: 'Feather-light' },
@@ -23,28 +25,70 @@ const STRESS_LEVELS = [
   { v: 4, label: 'Heavy' },
   { v: 5, label: 'Crushing' },
 ]
-
 const PILLARS = [
   { key: 'sleep', label: 'Solid sleep', sub: 'the hours you actually got' },
   { key: 'movement', label: 'Movement', sub: 'you moved the body' },
   { key: 'silence', label: 'Silence', sub: 'time alone with no noise' },
 ]
-
 const HOLD_MS = 1300
+const WD = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
-const localDateStr = (d = new Date()) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+function Structure({ stress, locked }) {
+  const xs = [78, 150, 222]
+  const stoneW = 34 + Math.max(0, stress - 1) * 16
+  return (
+    <div style={{ ...K.stage, height: 160 }}>
+      <svg viewBox="0 0 300 160" style={{ display: 'block', width: '100%', height: '100%' }}>
+        <defs>
+          <linearGradient id="vowPillarSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#EDE8DB" /><stop offset="100%" stopColor="#F8F3E6" />
+          </linearGradient>
+          <linearGradient id="vowPillarHeld" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#E9C98E" /><stop offset="100%" stopColor="#C9A85C" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="300" height="160" fill="url(#vowPillarSky)" />
+        {/* the week's load, resting on the beam */}
+        {stress > 0 && (
+          <g style={{ transition: 'all 0.4s' }}>
+            <rect x={150 - stoneW / 2} y={54 - Math.min(stress * 4, 20)} width={stoneW} height={Math.min(14 + stress * 3, 28)} rx="6"
+              fill={P.stone} stroke={P.stoneEdge} strokeWidth="0.7" />
+            <ellipse cx={150 - stoneW * 0.18} cy={54 - Math.min(stress * 4, 20) + 5} rx={stoneW * 0.2} ry="3" fill="#D8CBAE" opacity="0.7" />
+          </g>
+        )}
+        {/* the beam */}
+        <rect x="52" y="66" width="196" height="8" rx="3.5" fill={P.barkDark} />
+        {/* the three pillars */}
+        {PILLARS.map((p, i) => {
+          const held = !!locked[p.key]
+          return (
+            <g key={p.key}>
+              <rect x={xs[i] - 9} y="74" width="18" height="58" rx="3"
+                fill={held ? 'url(#vowPillarHeld)' : 'none'}
+                stroke={held ? P.deepGold : '#CDBFA4'}
+                strokeWidth={held ? 1 : 1.2}
+                strokeDasharray={held ? 'none' : '4 4'}
+                style={{ transition: 'all 0.35s' }} />
+              <rect x={xs[i] - 12} y="70" width="24" height="5" rx="2" fill={held ? P.deepGold : '#CDBFA4'} opacity={held ? 0.9 : 0.6} style={{ transition: 'all 0.35s' }} />
+              <rect x={xs[i] - 12} y="132" width="24" height="5" rx="2" fill={held ? P.deepGold : '#CDBFA4'} opacity={held ? 0.9 : 0.6} style={{ transition: 'all 0.35s' }} />
+              <text x={xs[i]} y="150" textAnchor="middle" fontFamily="Georgia, serif" fontSize="8.5" fontStyle="italic"
+                fill={held ? P.deepGold : P.muted}>{p.key}</text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
 
 function PillarHold({ label, sub, locked, onLock, onUnlock }) {
   const [pct, setPct] = useState(0)
   const timerRef = useRef(null)
-
   const stop = () => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
     if (!locked) setPct(0)
   }
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current) }, [])
-
   const start = (e) => {
     e.preventDefault()
     if (locked) { onUnlock(); return }
@@ -60,19 +104,47 @@ function PillarHold({ label, sub, locked, onLock, onUnlock }) {
       })
     }, 30)
   }
-
   return (
     <button
       onPointerDown={start} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
-      style={{ ...S.pillar, ...(locked ? S.pillarOn : {}) }}
+      style={{ ...G.pillarBtn, ...(locked ? G.pillarBtnOn : {}) }}
     >
-      {!locked && pct > 0 && <span style={{ ...S.pillarFill, width: `${pct}%` }} />}
-      <span style={S.pillarText}>
-        <span style={{ ...S.pillarLabel, ...(locked ? S.pillarLabelOn : {}) }}>{label}</span>
-        <span style={{ ...S.pillarSub, ...(locked ? S.pillarSubOn : {}) }}>{locked ? 'held today — tap to undo' : sub}</span>
+      {!locked && pct > 0 && <span style={{ ...G.pillarFill, width: `${pct}%` }} />}
+      <span style={G.pillarText}>
+        <span style={{ ...G.pillarLabel, ...(locked ? G.pillarLabelOn : {}) }}>{label}</span>
+        <span style={{ ...G.pillarSub, ...(locked ? G.pillarSubOn : {}) }}>{locked ? 'held today — tap to undo' : sub}</span>
       </span>
-      <span style={{ ...S.pillarMark, opacity: locked ? 1 : 0 }}>✓</span>
+      <span style={{ ...G.pillarMark, opacity: locked ? 1 : 0 }}>✓</span>
     </button>
+  )
+}
+
+function WeekGrid({ history }) {
+  const byDate = {}
+  history.forEach(p => { if (p?.date) byDate[p.date] = p })
+  const cols = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    cols.push({ label: WD[d.getDay()], p: byDate[key], isToday: i === 0 })
+  }
+  return (
+    <div style={G.grid}>
+      <div style={G.gridRowLabels}>
+        {PILLARS.map(p => <span key={p.key} style={G.gridRowLabel}>{p.key}</span>)}
+        <span style={G.gridRowLabel}>load</span>
+      </div>
+      {cols.map((c, i) => (
+        <div key={i} style={G.gridCol}>
+          {PILLARS.map(p => {
+            const held = c.p && Array.isArray(c.p.pillars) && c.p.pillars.includes(p.key)
+            return <span key={p.key} style={{ ...G.gridDot, ...(held ? G.gridDotOn : c.p ? G.gridDotOff : {}) }} />
+          })}
+          <span style={{ ...G.gridLoad, opacity: c.p ? 0.35 + (Number(c.p.stress) || 0) * 0.13 : 0.15 }} />
+          <span style={{ ...G.gridWd, ...(c.isToday ? { color: '#854F0B', fontWeight: 600 } : {}) }}>{c.label}</span>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -83,167 +155,106 @@ export default function PressurePoints({ stage = 'build' }) {
   const [locked, setLocked] = useState({})
   const [history, setHistory] = useState([])
   const [saving, setSaving] = useState(false)
-  const [savedTick, setSavedTick] = useState(false)
+  const [savedFlash, setSavedFlash] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || cancelled) { setLoading(false); return }
-      const { data } = await supabase
-        .from('free_stage_signals')
-        .select('id, payload')
-        .eq('user_id', user.id)
-        .eq('signal_type', 'build_pillars')
-        .order('created_at', { ascending: false })
-        .limit(20)
+      const [today, rows] = await Promise.all([
+        loadTodayRow('build_pillars'),
+        loadSignals('build_pillars', 14),
+      ])
       if (cancelled) return
-      const rows = data || []
-      const today = rows.find((r) => r.payload?.date === localDateStr())
       if (today?.payload) {
         setRowId(today.id)
         setStress(Number(today.payload.stress) || 0)
         setLocked((today.payload.pillars || []).reduce((a, k) => { a[k] = true; return a }, {}))
       }
-      setHistory(rows.filter((r) => r.payload?.date).map((r) => r.payload))
+      setHistory(rows.map(r => r.payload).filter(p => p?.date))
       setLoading(false)
     }
     load()
     return () => { cancelled = true }
   }, [])
 
-  const lockedKeys = PILLARS.filter((p) => locked[p.key]).map((p) => p.key)
-
-  const persist = async (nextStress, nextLockedKeys) => {
+  const save = async (nextStress, nextLocked) => {
     if (saving) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
-    const payload = {
-      stress: nextStress,
-      pillars: nextLockedKeys,
-      high_stress: nextStress >= 4 && nextLockedKeys.length > 0,
-      date: localDateStr(),
-    }
+    const pillars = Object.keys(nextLocked).filter(k => nextLocked[k])
+    const payload = { stress: nextStress || null, pillars, high_stress: (nextStress || 0) >= 4, date: localDateStr() }
     if (rowId) {
-      await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId)
+      await updateSignal(rowId, payload)
     } else {
-      const { data } = await supabase.from('free_stage_signals')
-        .insert({ user_id: user.id, stage, signal_type: 'build_pillars', payload })
-        .select('id').single()
-      if (data) setRowId(data.id)
+      const id = await appendSignal(stage, 'build_pillars', payload)
+      if (id) setRowId(id)
     }
-    setHistory((h) => [payload, ...h.filter((p) => p.date !== payload.date)])
+    setHistory(h => [payload, ...h.filter(p => p.date !== payload.date)])
+    setSavedFlash(true); setTimeout(() => setSavedFlash(false), 1800)
     setSaving(false)
-    setSavedTick(true)
-    setTimeout(() => setSavedTick(false), 1500)
   }
 
-  const pickStress = (v) => { setStress(v); persist(v, lockedKeys) }
-  const lockPillar = (key) => {
-    const next = { ...locked, [key]: true }
-    setLocked(next)
-    persist(stress, PILLARS.filter((p) => next[p.key]).map((p) => p.key))
-  }
-  const unlockPillar = (key) => {
-    const next = { ...locked, [key]: false }
-    setLocked(next)
-    persist(stress, PILLARS.filter((p) => next[p.key]).map((p) => p.key))
-  }
+  const pickStress = (v) => { setStress(v); save(v, locked) }
+  const lockPillar = (key) => { const next = { ...locked, [key]: true }; setLocked(next); save(stress, next) }
+  const unlockPillar = (key) => { const next = { ...locked, [key]: false }; setLocked(next); save(stress, next) }
 
-  // last 7 days for the grid (today first)
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - i)
-    return localDateStr(d)
-  })
-  const byDate = history.reduce((a, p) => { if (!a[p.date]) a[p.date] = p; return a }, {})
-  const anyHistory = days.some((d) => byDate[d])
+  const heldCount = Object.values(locked).filter(Boolean).length
+  const softUnderLoad = stress >= 4 && heldCount <= 1
 
-  const insight = (() => {
-    if (!stress && lockedKeys.length === 0) return null
-    if (stress >= 4 && lockedKeys.length >= 2) return 'Heavy load with the pillars held under it — this is exactly the work.'
-    if (stress >= 4 && lockedKeys.length === 0) return 'A heavy week with nothing locked under it is how cracks start. Pick one pillar tonight and hold just that.'
-    if (stress >= 4) return 'Heavy week. One pillar is holding — a second would take real weight off the evening.'
-    return 'Lighter week — lock the pillars anyway. They are cheapest to hold when nothing is pressing.'
-  })()
-
-  if (loading) return <p style={S.muted}>One moment…</p>
+  if (loading) return <p style={K.muted}>One moment…</p>
 
   return (
-    <div style={S.wrap}>
-      <p style={S.intro}>
-        A structure doesn’t fall from one bad night. It falls when the load goes up while the pillars under it go soft. Name the load, then hold what holds you.
+    <div style={K.wrap}>
+      <p style={K.intro}>
+        A structure doesn't fall from one bad night — it falls when the load rises while the pillars go soft. Name this week's weight, then press and hold each pillar you actually held today.
       </p>
-
-      <p style={S.q}>This week’s load</p>
-      <div style={S.chips}>
-        {STRESS_LEVELS.map((s) => (
-          <button key={s.v} onClick={() => pickStress(s.v)} style={{ ...S.chip, ...(stress === s.v ? S.chipOn : {}) }}>{s.label}</button>
+      <Structure stress={stress} locked={locked} />
+      <p style={K.q}>How heavy is this week, honestly?</p>
+      <div style={K.chips}>
+        {STRESS_LEVELS.map(s => (
+          <button key={s.v} onClick={() => pickStress(s.v)} style={{ ...K.chip, ...(stress === s.v ? K.chipOn : {}) }}>{s.label}</button>
         ))}
       </div>
-
-      <p style={S.q}>Press and hold each pillar you held today</p>
-      <div style={S.pillarList}>
-        {PILLARS.map((p) => (
-          <PillarHold
-            key={p.key}
-            label={p.label}
-            sub={p.sub}
-            locked={!!locked[p.key]}
-            onLock={() => lockPillar(p.key)}
-            onUnlock={() => unlockPillar(p.key)}
-          />
+      <p style={K.q}>The pillars you held today — press and hold to lock:</p>
+      <div style={G.pillarList}>
+        {PILLARS.map(p => (
+          <PillarHold key={p.key} label={p.label} sub={p.sub} locked={!!locked[p.key]}
+            onLock={() => lockPillar(p.key)} onUnlock={() => unlockPillar(p.key)} />
         ))}
       </div>
-
-      {insight && <p style={S.insight}>{savedTick ? 'Saved. ' : ''}{insight}</p>}
-
-      {anyHistory && (
-        <div style={S.gridCard}>
-          <p style={S.gridHead}>The last seven days</p>
-          {PILLARS.map((p) => (
-            <div key={p.key} style={S.gridRow}>
-              <span style={S.gridLabel}>{p.label}</span>
-              <span style={S.gridDots}>
-                {days.slice().reverse().map((d) => {
-                  const held = byDate[d]?.pillars?.includes(p.key)
-                  return <span key={d} style={{ ...S.dot, ...(held ? S.dotOn : {}) }} />
-                })}
-              </span>
-            </div>
-          ))}
-          <p style={S.gridFoot}>oldest → today. A pillar missing three days in a row is the crack forming.</p>
+      {savedFlash && <p style={K.doneLine}>Held. The grid remembers.</p>}
+      {softUnderLoad && (
+        <p style={G.softNote}>Heavy week, soft pillars — that combination deserves gentleness, not alarm. Pick the easiest pillar and hold just that one tonight.</p>
+      )}
+      {history.length > 0 && (
+        <div style={K.pattern}>
+          <p style={K.patternLabel}>The last seven days</p>
+          <WeekGrid history={history} />
         </div>
       )}
+      <ScienceFooter text="Stress doesn't cause relapse by itself — it causes it through the pillars, degrading sleep, movement, and quiet first. Tracking load and supports side by side catches the dangerous combination (rising weight, softening structure) days before it feels like a craving." />
     </div>
   )
 }
 
-const S = {
-  wrap: { padding: '2px 2px 6px' },
-  muted: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#9C8C78', fontSize: 13.5, textAlign: 'center', padding: '18px 0' },
-  intro: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#6B5C4A', fontSize: 13.5, lineHeight: 1.6, margin: '0 0 12px' },
-  q: { fontFamily: 'Georgia, serif', color: '#2A1F15', fontSize: 14.5, fontWeight: 500, margin: '14px 0 8px' },
-  chips: { display: 'flex', flexWrap: 'wrap', gap: 7 },
-  chip: { padding: '8px 12px', borderRadius: 999, border: '0.5px solid #E2D7C3', background: '#FDFBF6', color: '#3A2A1C', fontFamily: 'Georgia, serif', fontSize: 12.5, cursor: 'pointer' },
-  chipOn: { background: '#F4ECDD', border: '1px solid #C9A85C' },
-  pillarList: { display: 'flex', flexDirection: 'column', gap: 9 },
-  pillar: { position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '13px 14px', background: '#FDFBF6', border: '0.5px solid #E2D7C3', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit', touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' },
-  pillarOn: { background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', border: '0.5px solid #241710' },
-  pillarFill: { position: 'absolute', left: 0, top: 0, bottom: 0, background: 'linear-gradient(90deg, rgba(217,181,122,0.25), rgba(201,168,92,0.45))', pointerEvents: 'none', transition: 'width 0.05s linear' },
-  pillarText: { position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', gap: 2 },
-  pillarLabel: { fontFamily: 'Georgia, serif', fontSize: 14.5, color: '#2A1F15', fontWeight: 500 },
-  pillarLabelOn: { color: '#FAF7F1' },
-  pillarSub: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11.5, color: '#9C8C78' },
-  pillarSubOn: { color: '#D9B57A' },
-  pillarMark: { position: 'relative', color: '#D9B57A', fontSize: 15, transition: 'opacity 0.2s' },
-  insight: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, color: '#854F0B', lineHeight: 1.55, margin: '14px 0 0' },
-  gridCard: { marginTop: 16, background: '#FBF7EE', border: '0.5px solid #E5D9C2', borderRadius: 14, padding: '12px 14px' },
-  gridHead: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 11, color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 9px' },
-  gridRow: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 7 },
-  gridLabel: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12, color: '#6B5C4A', width: 84, flexShrink: 0 },
-  gridDots: { display: 'flex', gap: 6 },
-  dot: { width: 13, height: 13, borderRadius: '50%', background: '#EFE9DA', border: '0.5px solid #E2D7C3' },
-  dotOn: { background: 'linear-gradient(180deg, #D9B57A, #C9A85C)', border: '0.5px solid #B8923F' },
-  gridFoot: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 10.5, color: '#9C8C78', margin: '4px 0 0' },
+const G = {
+  pillarList: { display: 'flex', flexDirection: 'column', gap: 8 },
+  pillarBtn: { position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', padding: '12px 14px', borderRadius: 13, border: '0.5px solid #E2D7C3', background: '#FDFBF6', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' },
+  pillarBtnOn: { background: 'linear-gradient(180deg, #F4ECDD 0%, #EFE3CB 100%)', border: '1px solid #C9A85C' },
+  pillarFill: { position: 'absolute', left: 0, top: 0, bottom: 0, background: 'rgba(233,201,142,0.3)' },
+  pillarText: { position: 'relative', display: 'flex', flexDirection: 'column', gap: 1 },
+  pillarLabel: { fontFamily: 'Georgia, serif', fontSize: 13.5, color: '#2A1F15' },
+  pillarLabelOn: { color: '#854F0B' },
+  pillarSub: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 10.5, color: '#9C8C78' },
+  pillarSubOn: { color: '#A67B3B' },
+  pillarMark: { position: 'relative', color: '#854F0B', fontSize: 15, transition: 'opacity 0.25s' },
+  softNote: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12, color: '#854F0B', margin: '10px 0 0', lineHeight: 1.55, textAlign: 'center' },
+  grid: { display: 'flex', gap: 6, alignItems: 'flex-end', marginTop: 4 },
+  gridRowLabels: { display: 'flex', flexDirection: 'column', gap: 5, paddingBottom: 15 },
+  gridRowLabel: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 8, color: '#9C8C78', height: 10, lineHeight: '10px' },
+  gridCol: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flex: 1 },
+  gridDot: { width: 10, height: 10, borderRadius: '50%', background: 'transparent', border: '0.8px solid #E0D5C0', display: 'block' },
+  gridDotOn: { background: '#C9A85C', border: '0.8px solid #B8934A' },
+  gridDotOff: { background: '#EFE8D6', border: '0.8px solid #E0D5C0' },
+  gridLoad: { width: 12, height: 5, borderRadius: 2.5, background: '#8A7458', display: 'block' },
+  gridWd: { fontSize: 8, color: '#B8A88E', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' },
 }

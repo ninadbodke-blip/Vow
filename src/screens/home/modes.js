@@ -189,7 +189,7 @@ export const MODES = {
     daily: {
       id: 'hard_hour',
       title: 'The hard hour',
-      line: 'Name tonight\u2019s hardest hour — and guard it in advance.',
+      line: 'Name tonight\u2019s hardest hour — and guard it before it arrives.',
       minutes: 1,
       Component: TheHardHour,
       Glyph: HardHourGlyph,
@@ -198,7 +198,7 @@ export const MODES = {
       {
         id: 'instead',
         title: 'Instead, I…',
-        line: 'What did you do with the time it used to take?',
+        line: 'Each hour reclaimed grows a leaf — and teaches you what lifts you.',
         minutes: 2,
         Component: InsteadI,
         Glyph: InsteadGlyph,
@@ -206,7 +206,7 @@ export const MODES = {
       {
         id: 'renew',
         title: 'Renew your vow',
-        line: 'Yesterday\u2019s reason, said again today.',
+        line: 'Yesterday\u2019s reason, sealed again today. The seals add up.',
         minutes: 1,
         Component: RenewYourVow,
         Glyph: RenewGlyph,
@@ -214,7 +214,7 @@ export const MODES = {
       {
         id: 'vitals',
         title: 'The basics',
-        line: 'Sleep, food, movement — the three things that decide how hard tonight feels.',
+        line: 'Sleep, food, movement — the week draws its own weather.',
         minutes: 1,
         Component: SleepAndWeather,
         Glyph: VitalsGlyph,
@@ -229,7 +229,7 @@ export const MODES = {
     daily: {
       id: 'deposit',
       title: 'Where your hours go',
-      line: 'Recovery hands back about 14 hours a week. Deploy every one.',
+      line: 'Fourteen hours a week come back. Plant every one, clear the mist.',
       minutes: 2,
       Component: TodaysDeposit,
       Glyph: DepositGlyph,
@@ -238,7 +238,7 @@ export const MODES = {
       {
         id: 'pressure',
         title: 'The three pillars',
-        line: 'Sleep, movement, silence \u2014 hold the structure under heavy weeks.',
+        line: 'Sleep, movement, silence \u2014 the pillars under this week\u2019s load, drawn.',
         minutes: 2,
         Component: PressurePoints,
         Glyph: GaugeGlyph,
@@ -246,7 +246,7 @@ export const MODES = {
       {
         id: 'drift',
         title: 'The blind spot',
-        line: 'Feeling safe and being safe aren\u2019t the same thing.',
+        line: 'Feeling safe and being safe, mapped — with your drift as a trail.',
         minutes: 1,
         Component: TheBlindSpot,
         Glyph: BlindspotGlyph,
@@ -254,7 +254,7 @@ export const MODES = {
       {
         id: 'proof',
         title: 'The week\u2019s proof',
-        line: 'One thing you did instead — entered into evidence.',
+        line: 'One thing you did — set as a stone on the evidence shelf.',
         minutes: 2,
         Component: WeeksProof,
         Glyph: ProofGlyph,

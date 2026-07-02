@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../supabaseClient'
+import { ScienceFooter } from './practiceKit'
 
 // ===================================================================
 // PRACTICE: "The hard hour"  (Early Days)
@@ -362,6 +363,7 @@ export default function TheHardHour() {
       )}
 
       {heldCount > 0 && <p style={styles.tally}>You’ve held {heldCount} hard {heldCount === 1 ? 'hour' : 'hours'}.</p>}
+      <ScienceFooter text="Cravings keep appointments: for most people the hard hour is the same hour, night after night, because cue-conditioning runs on the clock. Naming it and placing the defense while calm moves the decision out of the hour itself — and the how-did-it-go loop teaches you which guards actually hold." />
     </div>
   )
 }
