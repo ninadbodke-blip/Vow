@@ -1,17 +1,22 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../../../supabaseClient'
-
 // ===================================================================
-// PRACTICE: "Your autopilot"  (A closer look)
+// TOOL: "Without thinking"  (A closer look)
 // ===================================================================
-// No verdicts here. The user names how awake they were the last time
-// it ran, and what came right before. Seeing the autopilot is the
-// whole practice — deciding anything about it belongs to later modes.
+// No verdicts here. Each time it runs, the user logs how awake they
+// were and what came right before — and every observation becomes a
+// mark on the awareness dial. Over entries, the pattern surfaces on
+// its own: where the autopilot usually flies, and what usually hands
+// it the controls. Seeing the machine is the whole practice.
 //
 // Data: free_stage_signals, stage 'notice',
-// signal_type 'notice_autopilot' (same contract as the old home),
-// payload { level, before_activity, date } — one row, updated in place.
+// signal_type 'notice_autopilot' (unchanged), payload
+// { level, before_activity, date } — now APPENDED per observation
+// (was one row updated in place), so the dial accumulates memory.
 // ===================================================================
+import { useState, useEffect } from 'react'
+import {
+  localDateStr, loadSignals, appendSignal,
+  Chips, Steps, ScienceFooter, K, P,
+} from './practiceKit'
 
 const LEVELS = [
   { value: 0, label: 'I fully chose it' },
@@ -19,47 +24,91 @@ const LEVELS = [
   { value: 2, label: 'I barely noticed' },
   { value: 3, label: 'I only realised afterwards' },
 ]
-
+const SHORT = ['Chose it', 'Half', 'Barely', 'After']
 const BEFORE = ['Scrolling', 'Work stress', 'After dinner', 'Boredom', 'Being social', 'An argument', 'Late night', 'Just habit']
 
-const localDateStr = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+// dial geometry: semicircle, 180° (fully chose) → 0° (only afterwards)
+const CX = 150, CY = 128, R = 96
+const angleFor = (level) => 180 - (level / 3) * 180
+const ptAt = (deg, r) => {
+  const rad = (deg * Math.PI) / 180
+  return { x: CX + r * Math.cos(rad), y: CY - r * Math.sin(rad) }
+}
+
+function Dial({ level, history }) {
+  const arcStart = ptAt(180, R), arcEnd = ptAt(0, R)
+  return (
+    <div style={{ ...K.stage, height: 150 }}>
+      <svg viewBox="0 0 300 150" style={{ display: 'block', width: '100%', height: '100%' }}>
+        <defs>
+          <linearGradient id="vowDialSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#E5E1D9" /><stop offset="100%" stopColor="#F4F0E6" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="300" height="150" fill="url(#vowDialSky)" />
+        {/* misty morning sun, barely there — the notice sky */}
+        <circle cx="258" cy="34" r="12" fill="#E9C98E" opacity="0.3" />
+        {/* the arc */}
+        <path d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 0 1 ${arcEnd.x} ${arcEnd.y}`}
+          fill="none" stroke="#E2D7C3" strokeWidth="7" strokeLinecap="round" />
+        {/* awake → asleep tint along the arc */}
+        <path d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 0 1 ${ptAt(90, R).x} ${ptAt(90, R).y}`}
+          fill="none" stroke={P.light} strokeWidth="7" strokeLinecap="round" opacity="0.5" />
+        <path d={`M ${ptAt(90, R).x} ${ptAt(90, R).y} A ${R} ${R} 0 0 1 ${arcEnd.x} ${arcEnd.y}`}
+          fill="none" stroke={P.mound} strokeWidth="7" strokeLinecap="round" opacity="0.5" />
+        {/* stop ticks + short labels */}
+        {LEVELS.map((l) => {
+          const a = angleFor(l.value)
+          const t1 = ptAt(a, R - 8), t2 = ptAt(a, R + 8), lb = ptAt(a, R + 20)
+          return (
+            <g key={l.value}>
+              <line x1={t1.x} y1={t1.y} x2={t2.x} y2={t2.y} stroke={P.bark} strokeWidth="1.2" opacity="0.5" />
+              <text x={lb.x} y={lb.y + 3} textAnchor="middle" fontFamily="Georgia, serif" fontSize="8.5"
+                fontStyle="italic" fill={P.body} opacity="0.85">{SHORT[l.value]}</text>
+            </g>
+          )
+        })}
+        {/* memory dots — every past observation, fading with age */}
+        {history.map((h, i) => {
+          const a = angleFor(h.level)
+          const p = ptAt(a + (((i * 7) % 9) - 4) * 1.4, R - 20 - ((i * 5) % 3) * 9)
+          const recency = Math.max(0.22, 0.85 - i * 0.06)
+          return <circle key={i} cx={p.x} cy={p.y} r="2.4" fill={P.goldgreen} opacity={recency} />
+        })}
+        {/* the needle */}
+        {level != null && (
+          <g style={{ transform: `rotate(${90 - angleFor(level)}deg)`, transformOrigin: `${CX}px ${CY}px`, transition: 'transform 0.5s cubic-bezier(0.34, 1.3, 0.64, 1)' }}>
+            <line x1={CX} y1={CY} x2={CX} y2={CY - R + 26} stroke={P.deepGold} strokeWidth="2.4" strokeLinecap="round" />
+          </g>
+        )}
+        <circle cx={CX} cy={CY} r="5.5" fill={P.ink} />
+        <circle cx={CX} cy={CY} r="2.4" fill="#FAF7F1" />
+        <text x={CX} y={CY + 16} textAnchor="middle" fontFamily="Georgia, serif" fontSize="8.5" fontStyle="italic" fill={P.muted}>
+          how awake you were
+        </text>
+      </svg>
+    </div>
+  )
 }
 
 export default function YourAutopilot({ stage = 'notice' }) {
   const [loading, setLoading] = useState(true)
-  const [rowId, setRowId] = useState(null)
+  const [history, setHistory] = useState([])
   const [level, setLevel] = useState(null)
   const [before, setBefore] = useState('')
   const [ownBefore, setOwnBefore] = useState('')
-  const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [savedFlash, setSavedFlash] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || cancelled) { setLoading(false); return }
-      const { data } = await supabase
-        .from('free_stage_signals')
-        .select('id, payload')
-        .eq('user_id', user.id)
-        .eq('signal_type', 'notice_autopilot')
-        .order('created_at', { ascending: false })
-        .limit(1)
+      const rows = await loadSignals('notice_autopilot', 30)
       if (cancelled) return
-      const row = data && data[0]
-      if (row) {
-        setRowId(row.id)
-        if (row.payload?.level != null) setLevel(Math.min(3, Number(row.payload.level)))
-        if (row.payload?.before_activity) {
-          if (BEFORE.includes(row.payload.before_activity)) setBefore(row.payload.before_activity)
-          else { setBefore('own'); setOwnBefore(row.payload.before_activity) }
-        }
-      } else {
-        setEditing(true)
-      }
+      const h = rows
+        .map(r => ({ level: Math.min(3, Number(r.payload?.level) || 0), before: r.payload?.before_activity || '' }))
+        .filter(x => x.before)
+      setHistory(h)
       setLoading(false)
     }
     load()
@@ -72,90 +121,65 @@ export default function YourAutopilot({ stage = 'notice' }) {
   const handleSave = async () => {
     if (saving || !canSave) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
     const payload = { level, before_activity: beforeText, date: localDateStr() }
-    if (rowId) {
-      const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', rowId)
-      if (!error) setEditing(false)
-    } else {
-      const { data, error } = await supabase.from('free_stage_signals')
-        .insert({ user_id: user.id, stage, signal_type: 'notice_autopilot', payload })
-        .select('id').single()
-      if (!error && data) { setRowId(data.id); setEditing(false) }
-    }
+    await appendSignal(stage, 'notice_autopilot', payload)
+    setHistory(h => [{ level, before: beforeText }, ...h])
+    setLevel(null); setBefore(''); setOwnBefore('')
+    setSavedFlash(true); setTimeout(() => setSavedFlash(false), 2200)
     setSaving(false)
   }
 
-  if (loading) return <p style={S.muted}>One moment…</p>
-
-  if (!editing && level != null && beforeText) {
-    return (
-      <div style={S.wrap}>
-        <p style={S.intro}>This is what you noticed. It can change any time you look again.</p>
-        <div style={S.savedCard}>
-          <p style={S.savedLine}>{LEVELS[level].label}</p>
-          <p style={S.savedSub}>usually right after — {beforeText.toLowerCase()}</p>
-        </div>
-        <button style={S.editLink} onClick={() => setEditing(true)}>Look again</button>
-      </div>
-    )
+  // pattern read-back
+  let patternLine = null
+  if (history.length >= 2) {
+    const levelCounts = [0, 0, 0, 0]
+    const beforeCounts = {}
+    history.forEach(h => {
+      levelCounts[h.level] += 1
+      beforeCounts[h.before] = (beforeCounts[h.before] || 0) + 1
+    })
+    const topLevel = levelCounts.indexOf(Math.max(...levelCounts))
+    const topBefores = Object.entries(beforeCounts).sort((a, b) => b[1] - a[1]).slice(0, 2)
+    patternLine = `It usually runs at \u201c${LEVELS[topLevel].label.toLowerCase()}\u201d \u00b7 most common lead-in: ${topBefores.map(([k, n]) => `${k.toLowerCase()} \u00d7${n}`).join(', ')}.`
   }
 
+  if (loading) return <p style={K.muted}>One moment…</p>
+
   return (
-    <div style={S.wrap}>
-      <p style={S.intro}>Think of the last time it happened almost on its own. No need to judge it — just remember it.</p>
-
-      <p style={S.q}>How much did you choose it?</p>
-      <div style={S.levels}>
-        {LEVELS.map((l) => (
-          <button key={l.value} onClick={() => setLevel(l.value)}
-            style={{ ...S.levelBtn, ...(level === l.value ? S.levelOn : {}) }}>
-            {l.label}
-          </button>
+    <div style={K.wrap}>
+      <p style={K.intro}>
+        Sometimes it happens before you even decide. Each time it does, log it here — one mark on the dial. The pattern draws itself.
+      </p>
+      <Dial level={level} history={history} />
+      <Steps items={[
+        'Think of the last time it ran — today, or the most recent one.',
+        'How awake were you when it started?',
+        'What came right before it?',
+      ]} />
+      <Chips options={LEVELS.map(l => l.label)} value={level != null ? LEVELS[level].label : ''}
+        onPick={(lab) => setLevel(LEVELS.find(l => l.label === lab).value)} />
+      <p style={K.q}>And right before it?</p>
+      <div style={K.chips}>
+        {BEFORE.map(b => (
+          <button key={b} onClick={() => setBefore(b)} style={{ ...K.chip, ...(before === b ? K.chipOn : {}) }}>{b}</button>
         ))}
-      </div>
-
-      <p style={S.q}>What came right before?</p>
-      <div style={S.chips}>
-        {BEFORE.map((b) => (
-          <button key={b} onClick={() => setBefore(b)}
-            style={{ ...S.chip, ...(before === b ? S.chipOn : {}) }}>{b}</button>
-        ))}
-        <button onClick={() => setBefore('own')} style={{ ...S.chip, ...(before === 'own' ? S.chipOn : {}) }}>Something else…</button>
+        <button onClick={() => setBefore('own')} style={{ ...K.chip, ...(before === 'own' ? K.chipOn : {}) }}>Something else…</button>
       </div>
       {before === 'own' && (
-        <input
-          style={S.input}
-          value={ownBefore}
-          onChange={(e) => setOwnBefore(e.target.value)}
-          placeholder="What came before, in your words"
-          maxLength={60}
-        />
+        <input style={K.ownInput} value={ownBefore} onChange={(e) => setOwnBefore(e.target.value)}
+          placeholder="What came before?" maxLength={60} />
       )}
-
-      <button style={{ ...S.saveBtn, opacity: canSave ? 1 : 0.45 }} disabled={!canSave || saving} onClick={handleSave}>
-        {saving ? 'Saving…' : 'Save what you noticed'}
+      <button onClick={handleSave} disabled={!canSave || saving}
+        style={{ ...K.saveBtn, ...(!canSave ? K.saveBtnDim : {}) }}>
+        {saving ? 'One moment…' : savedFlash ? 'Marked on the dial ✓' : 'Mark it on the dial'}
       </button>
+      {history.length > 0 && (
+        <div style={K.pattern}>
+          <p style={K.patternLabel}>{history.length} observation{history.length === 1 ? '' : 's'} so far</p>
+          <p style={K.patternText}>{patternLine || 'One more mark and the pattern starts to show.'}</p>
+        </div>
+      )}
+      <ScienceFooter text="Habits run as cue-to-routine chains below awareness — that is their design. Each logged observation is one rep of noticing the cue with the lights on, which is exactly how habit-reversal training loosens an automatic chain: not by force, but by making it visible mid-run." />
     </div>
   )
-}
-
-const S = {
-  wrap: { padding: '2px 2px 6px' },
-  muted: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#9C8C78', fontSize: 13.5, textAlign: 'center', padding: '18px 0' },
-  intro: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#6B5C4A', fontSize: 13.5, lineHeight: 1.55, margin: '0 0 14px' },
-  q: { fontFamily: 'Georgia, serif', color: '#2A1F15', fontSize: 14.5, fontWeight: 500, margin: '14px 0 8px' },
-  levels: { display: 'flex', flexDirection: 'column', gap: 7 },
-  levelBtn: { textAlign: 'left', padding: '11px 13px', borderRadius: 12, border: '0.5px solid #E2D7C3', background: '#FDFBF6', color: '#3A2A1C', fontFamily: 'Georgia, serif', fontSize: 13.5, cursor: 'pointer' },
-  levelOn: { background: '#F4ECDD', border: '1px solid #C9A85C', boxShadow: '0 1px 6px rgba(133,79,11,0.10)' },
-  chips: { display: 'flex', flexWrap: 'wrap', gap: 7 },
-  chip: { padding: '8px 12px', borderRadius: 999, border: '0.5px solid #E2D7C3', background: '#FDFBF6', color: '#3A2A1C', fontFamily: 'Georgia, serif', fontSize: 12.5, cursor: 'pointer' },
-  chipOn: { background: '#F4ECDD', border: '1px solid #C9A85C' },
-  input: { width: '100%', boxSizing: 'border-box', marginTop: 9, padding: '11px 13px', borderRadius: 12, border: '0.5px solid #E2D7C3', background: '#FFFFFF', fontFamily: 'Georgia, serif', fontSize: 13.5, color: '#2A1F15', outline: 'none' },
-  saveBtn: { width: '100%', marginTop: 18, padding: '13px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: 13, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  savedCard: { background: '#FDFBF6', border: '0.5px solid #E8DFD0', borderRadius: 14, padding: '16px 15px', textAlign: 'center' },
-  savedLine: { fontFamily: 'Georgia, serif', fontSize: 15.5, color: '#2A1F15', margin: 0 },
-  savedSub: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, color: '#9C8C78', margin: '5px 0 0' },
-  editLink: { display: 'block', margin: '12px auto 0', background: 'transparent', border: 'none', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, textDecoration: 'underline', cursor: 'pointer' },
 }

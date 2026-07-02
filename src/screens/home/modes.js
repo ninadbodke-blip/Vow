@@ -30,7 +30,7 @@ import TheScales from './practices/TheScales'
 import WhatItCosts from './practices/WhatItCosts'
 import TheExcuses from './practices/TheExcuses'
 import VowAndDay from './practices/VowAndDay'
-import ClearThePath from './practices/ClearThePath'
+import TheRehearsal from './practices/TheRehearsal'
 import HowReady from './practices/HowReady'
 import PressurePoints from './practices/PressurePoints'
 import TheBlindSpot from './practices/TheBlindSpot'
@@ -69,7 +69,7 @@ export const MODES = {
     daily: {
       id: 'catch',
       title: 'Catch it in the act',
-      line: 'Every time you feel like doing it, tap once. Just noticing counts.',
+      line: 'Every time you feel like doing it, tap once. Each catch lights a firefly.',
       minutes: 1,
       Component: CatchItInTheAct,
       Glyph: CatchGlyph,
@@ -78,7 +78,7 @@ export const MODES = {
       {
         id: 'autopilot',
         title: 'Without thinking',
-        line: 'Sometimes it happens before you even decide. When?',
+        line: 'Log each time it ran on its own. The dial remembers, and the pattern shows.',
         minutes: 2,
         Component: YourAutopilot,
         Glyph: AutopilotGlyph,
@@ -86,7 +86,7 @@ export const MODES = {
       {
         id: 'ledger',
         title: 'What it gives, what it takes',
-        line: 'What it promises you, and what it really leaves you with.',
+        line: 'Each time: what it promised, what it left. The book keeps the score.',
         minutes: 2,
         Component: GivesAndTakes,
         Glyph: LedgerGlyph,
@@ -94,7 +94,7 @@ export const MODES = {
       {
         id: 'context',
         title: 'Where it happens',
-        line: 'The places, people, and times it usually shows up.',
+        line: 'Pin each moment on the map. The pattern has an address.',
         minutes: 1,
         Component: WhereItHappens,
         Glyph: PinGlyph,
@@ -164,11 +164,11 @@ export const MODES = {
         Glyph: VowDayGlyph,
       },
       {
-        id: 'path',
-        title: 'Clear the path',
-        line: 'Six fights your future self never has to have.',
-        minutes: 3,
-        Component: ClearThePath,
+        id: 'rehearsal',
+        title: 'The rehearsal',
+        line: 'One scene a day, answered before it arrives. Each one lays a stone.',
+        minutes: 2,
+        Component: TheRehearsal,
         Glyph: PathGlyph,
       },
       {
