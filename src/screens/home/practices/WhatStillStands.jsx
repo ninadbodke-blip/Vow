@@ -1,31 +1,106 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../../../supabaseClient'
-
 // ===================================================================
-// PRACTICE: "What still stands"  (Getting back up)
+// TOOL: "What still stands"  (Getting back up)
 // ===================================================================
-// After a slip, the voice says "everything's gone." This practice is
-// the inventory that proves otherwise: the user taps each thing the
-// slip did not take, and watches the list stand. No pep talk — just
-// evidence.
+// After a slip the voice says "everything's gone" — so here is the
+// field where everything actually is. Six standing stones, one for
+// each thing the slip did not take. They were never knocked down;
+// they're just hard to see through the morning mist. Tap each one
+// and it clarifies. See all six, and the sun is up.
 //
-// Data: free_stage_signals, stage 'reclaim',
-// signal_type 'reclaim_stands', payload { kept: [keys], date }.
-// One row per day, updated in place.
+// Data: free_stage_signals, stage 'reclaim', signal_type
+// 'reclaim_stands' (unchanged), payload { kept: [keys], date } —
+// one row per day, updated in place.
 // ===================================================================
+import { useState, useEffect } from 'react'
+import {
+  localDateStr, loadTodayRow, appendSignal, updateSignal,
+  ScienceFooter, K, P,
+} from './practiceKit'
 
 const STANDS = [
-  { key: 'reasons',  label: 'Your reasons' },
-  { key: 'days',     label: 'Every day you already had' },
-  { key: 'learning', label: 'What you know about the pattern now' },
-  { key: 'people',   label: 'The people who know' },
-  { key: 'tools',    label: 'Your tools and routines' },
-  { key: 'here',     label: 'The fact that you came back here' },
+  { key: 'reasons',  label: 'Your reasons',                              short: 'reasons' },
+  { key: 'days',     label: 'Every day you already had',                 short: 'the days' },
+  { key: 'learning', label: 'What you know about the pattern now',       short: 'the learning' },
+  { key: 'people',   label: 'The people who know',                       short: 'the people' },
+  { key: 'tools',    label: 'Your tools and routines',                   short: 'the tools' },
+  { key: 'here',     label: 'The fact that you came back here',          short: 'being here' },
 ]
 
-const localDateStr = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+// six menhirs across the field — varied, old, unbothered
+const STONES = [
+  { x: 42,  w: 20, h: 46, lean: -2 },
+  { x: 86,  w: 17, h: 56, lean: 1.5 },
+  { x: 129, w: 22, h: 40, lean: -1 },
+  { x: 172, w: 18, h: 52, lean: 2 },
+  { x: 215, w: 21, h: 44, lean: -1.5 },
+  { x: 258, w: 17, h: 50, lean: 1 },
+]
+
+function StoneField({ kept, onToggle }) {
+  const allSeen = kept.length === STANDS.length
+  return (
+    <div style={{ ...K.stage, height: 172 }}>
+      <svg viewBox="0 0 300 172" style={{ display: 'block', width: '100%', height: '100%' }}>
+        <defs>
+          <linearGradient id="vowStandSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#E9E2D2" /><stop offset="100%" stopColor="#F8F2E3" />
+          </linearGradient>
+          <linearGradient id="vowStoneLit" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#B5A481" /><stop offset="78%" stopColor="#C4B49A" />
+            <stop offset="100%" stopColor="#E4CFA4" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="300" height="172" fill="url(#vowStandSky)" />
+        {/* the sun comes up as the stones are seen */}
+        <circle cx="268" cy="30" r="12" fill="#E9C98E"
+          opacity={0.2 + (kept.length / STANDS.length) * 0.7}
+          style={{ transition: 'opacity 0.5s' }} />
+        {allSeen && <circle cx="268" cy="30" r="20" fill="#E9C98E" opacity="0.22" />}
+        {/* the field */}
+        <rect x="0" y="128" width="300" height="44" fill="#EBE2CC" />
+        <ellipse cx="150" cy="130" rx="175" ry="9" fill="#E3D8BC" />
+        {/* the stones */}
+        {STANDS.map((s, i) => {
+          const st = STONES[i]
+          const seen = kept.includes(s.key)
+          const baseY = 130
+          return (
+            <g key={s.key} onClick={() => onToggle(s.key)} style={{ cursor: 'pointer' }}
+              transform={`rotate(${st.lean} ${st.x} ${baseY})`}>
+              {/* shadow */}
+              <ellipse cx={st.x + 3} cy={baseY + 2} rx={st.w * 0.68} ry="3.2"
+                fill={P.barkDark} opacity={seen ? 0.16 : 0.06} style={{ transition: 'opacity 0.5s' }} />
+              {/* the stone — always there; seeing it is the change */}
+              <path
+                d={`M ${st.x - st.w / 2} ${baseY}
+                    L ${st.x - st.w / 2 + 2} ${baseY - st.h * 0.72}
+                    Q ${st.x - st.w / 2 + 3} ${baseY - st.h} ${st.x} ${baseY - st.h - 2}
+                    Q ${st.x + st.w / 2 - 2} ${baseY - st.h} ${st.x + st.w / 2 - 1} ${baseY - st.h * 0.66}
+                    L ${st.x + st.w / 2} ${baseY} Z`}
+                fill={seen ? 'url(#vowStoneLit)' : '#EDE6D4'}
+                stroke={seen ? P.stoneEdge : '#D8CDB4'}
+                strokeWidth={seen ? 0.9 : 0.8}
+                strokeDasharray={seen ? 'none' : '3 3'}
+                opacity={seen ? 1 : 0.75}
+                style={{ transition: 'all 0.5s' }} />
+              {/* first light on the east edge */}
+              {seen && (
+                <path d={`M ${st.x + st.w / 2 - 1} ${baseY - st.h * 0.66} L ${st.x + st.w / 2} ${baseY}`}
+                  fill="none" stroke={P.goldSoft} strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
+              )}
+              <text x={st.x} y={baseY + 15} textAnchor="middle" fontFamily="Georgia, serif" fontSize="7.5"
+                fontStyle="italic" fill={seen ? P.deepGold : P.muted}
+                style={{ transition: 'fill 0.5s' }}>{s.short}</text>
+            </g>
+          )
+        })}
+        <text x="150" y="20" textAnchor="middle" fontFamily="Georgia, serif" fontSize="9" fontStyle="italic"
+          fill={allSeen ? P.deepGold : P.muted} style={{ transition: 'fill 0.5s' }}>
+          {allSeen ? 'all of it, still standing' : 'tap each stone the slip did not take'}
+        </text>
+      </svg>
+    </div>
+  )
 }
 
 export default function WhatStillStands({ stage = 'reclaim' }) {
@@ -33,27 +108,16 @@ export default function WhatStillStands({ stage = 'reclaim' }) {
   const [todayRowId, setTodayRowId] = useState(null)
   const [kept, setKept] = useState([])
   const [saving, setSaving] = useState(false)
-  const [savedToday, setSavedToday] = useState(false)
+  const [savedFlash, setSavedFlash] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || cancelled) { setLoading(false); return }
-      const { data } = await supabase
-        .from('free_stage_signals')
-        .select('id, payload')
-        .eq('user_id', user.id)
-        .eq('signal_type', 'reclaim_stands')
-        .order('created_at', { ascending: false })
-        .limit(3)
+      const today = await loadTodayRow('reclaim_stands')
       if (cancelled) return
-      const today = localDateStr()
-      const todays = (data || []).find((r) => r.payload?.date === today)
-      if (todays) {
-        setTodayRowId(todays.id)
-        setKept(Array.isArray(todays.payload.kept) ? todays.payload.kept : [])
-        setSavedToday(true)
+      if (today?.payload) {
+        setTodayRowId(today.id)
+        setKept(Array.isArray(today.payload.kept) ? today.payload.kept : [])
       }
       setLoading(false)
     }
@@ -61,82 +125,48 @@ export default function WhatStillStands({ stage = 'reclaim' }) {
     return () => { cancelled = true }
   }, [])
 
-  const toggle = async (key) => {
-    const next = kept.includes(key) ? kept.filter((k) => k !== key) : [...kept, key]
-    setKept(next)
-    setSavedToday(false)
+  const toggle = (key) => {
+    setKept(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]))
   }
 
   const handleSave = async () => {
     if (saving || kept.length === 0) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
     const payload = { kept, date: localDateStr() }
     if (todayRowId) {
-      const { error } = await supabase.from('free_stage_signals').update({ payload }).eq('id', todayRowId)
-      if (!error) setSavedToday(true)
+      await updateSignal(todayRowId, payload)
     } else {
-      const { data, error } = await supabase.from('free_stage_signals')
-        .insert({ user_id: user.id, stage, signal_type: 'reclaim_stands', payload })
-        .select('id').single()
-      if (!error && data) { setTodayRowId(data.id); setSavedToday(true) }
+      const id = await appendSignal(stage, 'reclaim_stands', payload)
+      if (id) setTodayRowId(id)
     }
+    setSavedFlash(true); setTimeout(() => setSavedFlash(false), 2200)
     setSaving(false)
   }
 
-  if (loading) return <p style={S.muted}>One moment…</p>
+  if (loading) return <p style={K.muted}>One moment…</p>
 
   return (
-    <div style={S.wrap}>
-      <p style={S.intro}>
-        A slip takes a day. It does not take the ground you stood on. Tap what is still yours — slowly is fine.
+    <div style={K.wrap}>
+      <p style={K.intro}>
+        The voice after a slip says everything is gone. This is the field where everything actually is. The stones were never knocked down — they are just hard to see through the morning. Tap each one the slip did not take.
       </p>
-
-      <div style={S.list}>
-        {STANDS.map((s) => {
-          const on = kept.includes(s.key)
-          return (
-            <button key={s.key} onClick={() => toggle(s.key)} style={{ ...S.stand, ...(on ? S.standOn : {}) }}>
-              <span style={{ ...S.pillar, ...(on ? S.pillarOn : {}) }} />
-              <span style={{ ...S.standLabel, ...(on ? S.standLabelOn : {}) }}>{s.label}</span>
-            </button>
-          )
-        })}
+      <StoneField kept={kept} onToggle={toggle} />
+      <div style={K.chips}>
+        {STANDS.map(s => (
+          <button key={s.key} onClick={() => toggle(s.key)}
+            style={{ ...K.chip, ...(kept.includes(s.key) ? K.chipOn : {}) }}>{s.label}</button>
+        ))}
       </div>
-
+      <button onClick={handleSave} disabled={kept.length === 0 || saving}
+        style={{ ...K.saveBtn, ...(kept.length === 0 ? K.saveBtnDim : {}) }}>
+        {saving ? 'One moment…' : savedFlash ? 'On record ✓' : 'Keep the inventory'}
+      </button>
       {kept.length > 0 && (
-        <p style={S.countLine}>
-          {kept.length === STANDS.length
-            ? 'All of it. All of it is still standing.'
-            : `${kept.length} ${kept.length === 1 ? 'thing' : 'things'} still standing — and that list is real.`}
+        <p style={K.doneLine}>
+          {kept.length} of {STANDS.length} seen. The slip took a day. It did not take these.
         </p>
       )}
-
-      {!savedToday && (
-        <button style={{ ...S.saveBtn, opacity: kept.length > 0 ? 1 : 0.45 }} disabled={kept.length === 0 || saving} onClick={handleSave}>
-          {saving ? 'Saving…' : 'Keep the list'}
-        </button>
-      )}
-      {savedToday && kept.length > 0 && (
-        <p style={S.savedNote}>Kept. It will be here tomorrow too.</p>
-      )}
+      <ScienceFooter text="The all-is-lost feeling has a name — the abstinence violation effect — and it, not the slip itself, is what most often turns one lapse into a relapse. Its antidote is exactly this: a concrete inventory of what remains, because the catastrophizing voice cannot survive an itemized list." />
     </div>
   )
-}
-
-const S = {
-  wrap: { padding: '2px 2px 6px' },
-  muted: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#9C8C78', fontSize: 13.5, textAlign: 'center', padding: '18px 0' },
-  intro: { fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#6B5C4A', fontSize: 13.5, lineHeight: 1.6, margin: '0 0 14px' },
-  list: { display: 'flex', flexDirection: 'column', gap: 7 },
-  stand: { display: 'flex', alignItems: 'center', gap: 11, textAlign: 'left', padding: '12px 13px', borderRadius: 12, border: '0.5px solid #E2D7C3', background: '#FDFBF6', cursor: 'pointer' },
-  standOn: { background: '#F4EFE0', border: '1px solid #C9A85C', boxShadow: '0 1px 6px rgba(133,79,11,0.08)' },
-  pillar: { width: 4, height: 20, borderRadius: 3, background: '#E2D7C3', flexShrink: 0, transition: 'background 0.25s' },
-  pillarOn: { background: 'linear-gradient(180deg, #D9B57A, #B8954C)' },
-  standLabel: { fontFamily: 'Georgia, serif', fontSize: 13.5, color: '#6B5C4A' },
-  standLabelOn: { color: '#2A1F15' },
-  countLine: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 13, color: '#854F0B', margin: '14px 0 0', textAlign: 'center', lineHeight: 1.5 },
-  saveBtn: { width: '100%', marginTop: 14, padding: '13px', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', color: '#FAF7F1', border: 'none', borderRadius: 13, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  savedNote: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 12.5, color: '#9C8C78', margin: '12px 0 0', textAlign: 'center' },
 }

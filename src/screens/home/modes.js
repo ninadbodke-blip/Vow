@@ -269,7 +269,7 @@ export const MODES = {
     daily: {
       id: 'shield',
       title: 'Today\u2019s shield',
-      line: 'One small promise, for one short window.',
+      line: 'One small promise for one short window — raise it, hold just that.',
       minutes: 1,
       Component: TodaysShield,
       Glyph: ShieldGlyph,
@@ -278,7 +278,7 @@ export const MODES = {
       {
         id: 'stands',
         title: 'What still stands',
-        line: 'The slip took a day. Tap what it didn\u2019t take.',
+        line: 'The slip took a day. The stones it didn\u2019t take are still standing.',
         minutes: 1,
         Component: WhatStillStands,
         Glyph: StandsGlyph,
@@ -286,7 +286,7 @@ export const MODES = {
       {
         id: 'kinder',
         title: 'The kinder voice',
-        line: 'What you\u2019d say to a friend — said to yourself.',
+        line: 'What you\u2019d say to a friend — said to yourself, and kept.',
         minutes: 2,
         Component: KinderVoice,
         Glyph: KinderGlyph,
@@ -294,7 +294,7 @@ export const MODES = {
       {
         id: 'reach',
         title: 'What it was reaching for',
-        line: 'The need under the slip, and one other way to meet it.',
+        line: 'The need was real; the route slipped. Redraw the route.',
         minutes: 2,
         Component: WhatItWasReachingFor,
         Glyph: ReachGlyph,
