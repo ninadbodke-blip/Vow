@@ -26,6 +26,14 @@ const LIES = [
   'Everyone does it',
   'I\u2019m fine, actually',
   'It\u2019s not that bad',
+  'This is the last time',
+  'It\u2019s been a hard day',
+  'I can handle it now',
+  'No one will know',
+  'I\u2019ve been so good lately',
+  'I need it to sleep',
+  'I\u2019m celebrating',
+  'Life\u2019s too short',
 ]
 
 // ink tally: groups of five — four strokes and a diagonal cut
@@ -74,7 +82,7 @@ function TallyBoard({ counts, loudCounts, todayPicks }) {
           </span>
           <span style={E.boardTally}>
             <TallyMarks n={r.n} />
-            <span style={E.boardCount}>\u00d7{r.n}{r.loud > 0 ? ` \u00b7 loudest \u00d7${r.loud}` : ''}</span>
+            <span style={E.boardCount}>×{r.n}{r.loud > 0 ? ` · loudest ×${r.loud}` : ''}</span>
           </span>
         </div>
       ))}
