@@ -253,7 +253,12 @@ function AppRoutes() {
       <Route
         path="/app/signup"
         element={
-          session
+          // A real (non-anonymous) account never needs the signup screen —
+          // send it home or into onboarding. But an ANONYMOUS session must
+          // reach SignUp so it can be upgraded in place (that's the whole
+          // save-your-progress flow); without this, an onboarded anonymous
+          // user was bounced straight to home and never saw the form.
+          session && !session.user?.is_anonymous
             ? (hasOnboardingProgress ? <Navigate to="/app/home" /> : <Navigate to="/app/onboarding/addiction" />)
             : <SignUp />
         }
