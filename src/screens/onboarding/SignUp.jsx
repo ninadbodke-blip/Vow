@@ -57,19 +57,58 @@ export default function SignUp() {
   // original cold-start behaviour: new user -> onboarding, returning -> home.
   const returnTo = location.state?.returnTo || null
 
+  // If someone was sent here explicitly to sign in (e.g. "Already have an
+  // account?" on Welcome), open in sign-in mode. This wins over the anonymous
+  // default below so returning users aren't forced into the upgrade UI.
+  const startMode = location.state?.startMode || null
+
   useEffect(() => {
     let cancelled = false
+
+    // A failed Google *link* redirects back here with the reason in the URL.
+    // The common one: the Google account already belongs to a Vow user, so it
+    // can't be linked onto this anonymous session. Guide them to sign in to
+    // that existing account instead of trying to link again.
+    try {
+      const params = new URLSearchParams(window.location.hash.replace(/^#/, '') || window.location.search)
+      if (params.get('error_code') === 'identity_already_exists') {
+        setMode('signin')
+        setError('That Google account already has a Vow account. Sign in to it below — your current exploration stays on this device but won\u2019t move over.')
+        // Clean the error out of the URL so a refresh doesn't re-trigger it.
+        window.history.replaceState({}, '', '/app/signup')
+      }
+    } catch (e) { /* no-op */ }
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (cancelled) return
       if (user?.is_anonymous) {
         setIsAnon(true)
-        setMode('signup') // upgrading is a "create account" gesture, not "sign in"
+        if (!startMode) setMode('signup') // default anonymous action is "save/upgrade"
+      } else if (user) {
+        // A real, non-anonymous session is already live on the signup screen.
+        // This happens right after a successful Google link redirect. Forward to
+        // any stashed return target (e.g. the paywall the person came from),
+        // else home. The route guard would also bounce a real account off this
+        // screen, but forwarding explicitly preserves returnTo.
+        let dest = '/app/home'
+        try {
+          const stashed = sessionStorage.getItem('vow_return_to')
+          if (stashed) { dest = stashed; sessionStorage.removeItem('vow_return_to') }
+        } catch (e) {}
+        navigate(dest, { replace: true })
+        return
       }
+      if (startMode) setMode(startMode)
     })
     return () => { cancelled = true }
   }, [])
 
   const isSignup = mode === 'signup'
+  // Upgrade-in-place only applies to an anonymous user who is SAVING (signup
+  // mode). An anonymous user who chooses "Sign in" is switching to a real,
+  // existing account — that's a normal sign-in that replaces the throwaway
+  // anonymous session, not an upgrade.
+  const isUpgrade = isAnon && isSignup
 
   // ---- AUTH LOGIC ----
   const handleGoogle = async () => {
@@ -103,19 +142,29 @@ export default function SignUp() {
         // Session is now set. The onAuthStateChange listener in App.jsx re-routes
         // automatically (new user -> onboarding, returning -> home), so we don't
         // navigate manually here.
-      } else if (isAnon) {
+      } else if (isUpgrade) {
         // WEB, upgrading an anonymous session: link the Google identity onto the
         // SAME user so all progress is preserved. Requires "Manual linking"
-        // enabled in Supabase Auth settings. Land back at returnTo if provided.
-        const dest = returnTo ? `${window.location.origin}${returnTo}` : `${window.location.origin}/app/home`
+        // enabled in Supabase Auth settings. If that Google already belongs to
+        // an account, Supabase rejects it and redirects back with
+        // error_code=identity_already_exists, which the mount effect catches and
+        // flips this screen to sign-in mode.
+        //
+        // We always redirect back to /app/signup (not returnTo) so the error
+        // case is parseable here. For the success case, stash returnTo so the
+        // mount effect can forward there once the linked session is live. A full
+        // page redirect wipes React state, so sessionStorage is the carrier.
+        try { if (returnTo) sessionStorage.setItem('vow_return_to', returnTo) } catch (e) {}
         const { error } = await supabase.auth.linkIdentity({
           provider: 'google',
-          options: { redirectTo: dest },
+          options: { redirectTo: `${window.location.origin}/app/signup` },
         })
         if (error) throw error
         // A successful call redirects the whole page to Google.
       } else {
-        // WEB / PWA, fresh sign-in: existing full-page redirect flow.
+        // WEB / PWA, fresh sign-in OR an anonymous user signing into an existing
+        // account: existing full-page redirect flow. Signing in replaces the
+        // throwaway anonymous session with the real account.
         const dest = returnTo ? `${window.location.origin}${returnTo}` : `${window.location.origin}/app`
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
@@ -141,7 +190,7 @@ export default function SignUp() {
     setLoading(true)
 
     try {
-      if (isAnon) {
+      if (isUpgrade) {
         // UPGRADE the anonymous session in place — same user.id, so the
         // substance / stage / tracker already created stay attached. No new
         // account, nothing to migrate.
@@ -199,12 +248,14 @@ export default function SignUp() {
         <p className="vrise" style={{ ...styles.tag, animationDelay: '0.09s' }}>{t('tagline')}</p>
 
         <h1 className="vrise" style={{ ...styles.headline, animationDelay: '0.16s' }}>
-          {isAnon ? 'Save your progress.' : 'Step Into the Sanctuary.'}
+          {isUpgrade ? 'Save your progress.' : isSignup ? 'Step Into the Sanctuary.' : 'Welcome back.'}
         </h1>
         <p className="vrise" style={{ ...styles.headlineSub, animationDelay: '0.22s' }}>
-          {isAnon
+          {isUpgrade
             ? "Your streak is safe on this device. Add an email so a new phone or reinstall can't take it."
-            : 'Your timeline is secure. Your progress is private.'}
+            : isSignup
+              ? 'Your timeline is secure. Your progress is private.'
+              : 'Sign in to the account you already have.'}
         </p>
       </div>
 
@@ -212,7 +263,7 @@ export default function SignUp() {
       <div className="vault-rise" style={styles.vault}>
         <span style={styles.vaultGrip} />
 
-        {!isAnon && (
+        {!isAnon ? (
           <div style={styles.toggleRow}>
             <button
               type="button"
@@ -231,12 +282,29 @@ export default function SignUp() {
               {t('signIn')}
             </button>
           </div>
+        ) : (
+          // Anonymous: default is "save this progress", but a returning user who
+          // landed here by mistake can switch to signing into their real account.
+          <button
+            type="button"
+            onClick={() => { setMode(isSignup ? 'signin' : 'signup'); setError(null); setSuccess(null) }}
+            style={styles.anonSwitch}
+          >
+            {isSignup ? 'Already have an account? Sign in' : '← Back to saving this progress'}
+          </button>
         )}
 
-        {/* GOOGLE SSO — primary path. Hidden only for a native anonymous upgrade,
+        {isAnon && !isSignup && (
+          <p style={styles.anonWarn}>
+            Signing in opens your existing account. This exploration stays on this device but won't move into it.
+          </p>
+        )}
+
+        {/* GOOGLE SSO — primary path. Hidden only for a native anonymous UPGRADE,
             where ID-token sign-in would start a fresh account and lose progress;
-            those users save via email/password, which upgrades in place. */}
-        {!(isAnon && Capacitor.isNativePlatform()) && (
+            those users save via email/password. Native anonymous users who are
+            SIGNING IN do get Google (it signs into the existing account). */}
+        {!(isUpgrade && Capacitor.isNativePlatform()) && (
           <button
             type="button"
             className="vow-google"
@@ -249,7 +317,7 @@ export default function SignUp() {
           </button>
         )}
 
-        {!(isAnon && Capacitor.isNativePlatform()) && (
+        {!(isUpgrade && Capacitor.isNativePlatform()) && (
         <div style={styles.divider}>
           <span style={styles.dividerLine} />
           <span style={styles.dividerText}>or</span>
@@ -306,7 +374,7 @@ export default function SignUp() {
             disabled={loading}
             style={{ ...styles.submitBtn, ...(loading ? styles.btnDisabled : {}) }}
           >
-            {loading ? 'One moment…' : isAnon ? 'Save my progress' : 'Submit →'}
+            {loading ? 'One moment…' : isUpgrade ? 'Save my progress' : isSignup ? 'Submit →' : 'Sign in →'}
           </button>
 
           {error && <p style={styles.err}>{error}</p>}
@@ -431,6 +499,16 @@ const styles = {
     margin: '0 auto 1.4rem',
   },
 
+  anonSwitch: {
+    display: 'block', width: '100%', textAlign: 'center', background: 'transparent',
+    border: 'none', color: 'rgba(217,181,122,0.9)', fontSize: '12.5px',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer',
+    margin: '0 0 1rem', padding: '4px',
+  },
+  anonWarn: {
+    fontSize: '11.5px', color: 'rgba(250,247,241,0.55)', fontFamily: 'Georgia, serif',
+    fontStyle: 'italic', textAlign: 'center', lineHeight: 1.5, margin: '0 0 1rem',
+  },
   toggleRow: {
     display: 'flex',
     gap: '4px',

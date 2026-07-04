@@ -173,6 +173,17 @@ export default function Welcome() {
           <button onClick={next} style={styles.continueBtn}>Continue →</button>
         )}
 
+        {/* Existing users: a real sign-in door. Goes straight to the auth screen
+            in sign-in mode and does NOT create an anonymous session, so the 54
+            people who already have accounts can get back in. */}
+        <button
+          onClick={() => navigate('/app/signup', { state: { startMode: 'signin' } })}
+          style={styles.signInLink}
+          disabled={entering}
+        >
+          Already have an account? <span style={styles.signInLinkStrong}>Sign in</span>
+        </button>
+
         <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(250,247,241,0.4)', fontFamily: 'Georgia, serif', margin: '1.4rem 0 0', letterSpacing: '0.02em' }}>© Vow™ Labs 2026</p>
       </div>
     </div>
@@ -287,6 +298,13 @@ const styles = {
     fontFamily: 'inherit',
     letterSpacing: '0.02em',
   },
+  signInLink: {
+    display: 'block', width: '100%', textAlign: 'center', background: 'transparent',
+    border: 'none', color: 'rgba(250,247,241,0.55)', fontSize: '13px',
+    fontFamily: 'Georgia, serif', fontStyle: 'italic', cursor: 'pointer',
+    margin: '1.1rem 0 0', padding: '6px',
+  },
+  signInLinkStrong: { color: '#D9B57A', textDecoration: 'underline', textUnderlineOffset: '2px' },
   beginBtn: {
     width: '100%',
     padding: '16px',
