@@ -5,6 +5,22 @@ import { supabase } from '../supabaseClient'
 import BottomNav from '../components/BottomNav'
 import VowBrandMark from '../components/VowBrandMark'
 import { createStageMove } from './freeHome/stageMove'
+import { MedallionArt } from './vowPath/overviewKit'
+
+// Tiny drawn glyphs tying the profile to the path's visual language — decoration only.
+const STAGE_GLYPHS = { notice: 'eye', reflect: 'scales', commit: 'seal', endure: 'sunrise', build: 'tree', reclaim: 'lantern' }
+const Glyph = ({ kind, size = 26 }) => (
+  <svg viewBox="0 0 48 48" width={size} height={size} aria-hidden="true" style={{ flex: `0 0 ${size}px` }}>
+    <MedallionArt kind={kind} />
+  </svg>
+)
+const Sprig = () => (
+  <svg viewBox="0 0 90 14" width="84" height="13" aria-hidden="true" style={{ display: 'block', margin: '0.9rem auto 0' }}>
+    <path d="M4 7 H34 M56 7 H86" stroke="#D9B57A" strokeWidth="0.8" opacity="0.7" />
+    <path d="M45 11 C41 9 39 5 40 2 C43 3 45 6 45 11 M45 9 C47 6 50 4 52 5 C51 8 48 9 45 9" fill="#93A36B" />
+  </svg>
+)
+
 
 // ===================================================================
 // PROFILE — you, plainly. Minimal on purpose.
@@ -228,13 +244,17 @@ export default function Profile() {
               )}
             </>
           )}
+          <Sprig />
         </div>
 
         {/* WHERE YOU STAND */}
         {stage && (
-          <p style={styles.standLine}>
-            Day {daysOnTracker} · {STAGE_LABELS[stage]}
-          </p>
+          <div style={styles.standWrap}>
+            <Glyph kind={STAGE_GLYPHS[stage] || 'sprig'} size={24} />
+            <p style={styles.standLine}>
+              Day {daysOnTracker} · {STAGE_LABELS[stage]}
+            </p>
+          </div>
         )}
 
         {/* WHY I STARTED */}
@@ -302,6 +322,7 @@ export default function Profile() {
                     disabled={moving || isCurrent}
                     style={{ ...styles.stageRow, cursor: (moving || isCurrent) ? 'default' : 'pointer', opacity: locked ? 0.55 : 1 }}
                   >
+                    <Glyph kind={STAGE_GLYPHS[st.key] || 'sprig'} size={26} />
                     <span style={styles.stageRowBody}>
                       <span style={{ ...styles.stageRowLabel, ...(isCurrent ? styles.stageRowLabelCurrent : {}) }}>
                         {st.label}
@@ -322,12 +343,12 @@ export default function Profile() {
           <p style={styles.sectionLabel}>Looking back</p>
           <div style={styles.card}>
             <button onClick={() => navigate('/app/slips')} style={styles.row}>
-              <span style={styles.rowLabel}>Slip history</span>
+              <span style={styles.rowLead}><Glyph kind="journal" size={22} /><span style={styles.rowLabel}>Slip history</span></span>
               <span style={styles.rowArrow}>›</span>
             </button>
             <div style={styles.divider} />
             <button onClick={() => navigate('/app/urges')} style={styles.row}>
-              <span style={styles.rowLabel}>Urge log</span>
+              <span style={styles.rowLead}><Glyph kind="drift" size={22} /><span style={styles.rowLabel}>Urge log</span></span>
               <span style={styles.rowArrow}>›</span>
             </button>
           </div>
@@ -408,7 +429,7 @@ export default function Profile() {
 }
 
 const styles = {
-  frame: { minHeight: '100vh', background: '#FAF7F1', padding: '1.25rem 1rem 2rem', display: 'flex', justifyContent: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  frame: { minHeight: '100vh', background: 'radial-gradient(900px 420px at 50% -8%, rgba(217,181,122,0.14), transparent 60%), linear-gradient(180deg, #FAF7F1 0%, #F6F0E4 100%)', padding: '1.25rem 1rem 2rem', display: 'flex', justifyContent: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
   phone: { maxWidth: '440px', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' },
 
   topBar: { display: 'flex', justifyContent: 'center' },
@@ -422,25 +443,27 @@ const styles = {
   nameInput: { background: 'transparent', border: 'none', borderBottom: '1.5px solid #854F0B', fontSize: '22px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, textAlign: 'center', outline: 'none', padding: '2px 4px', width: '80%', maxWidth: '280px' },
   editActions: { display: 'flex', gap: '20px', justifyContent: 'center' },
 
+  standWrap: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '9px 18px', margin: '0 auto', width: 'fit-content', border: '0.5px solid #EBDFC9', borderRadius: '999px', background: 'linear-gradient(180deg, #FDFBF6 0%, #FBF6EC 100%)' },
   standLine: { textAlign: 'center', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '14px', color: '#854F0B', margin: 0 },
 
   sectionLabel: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.16em', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0 2px 8px' },
   smallLink: { background: 'transparent', border: 'none', color: '#854F0B', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.14em', cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
   smallLinkMuted: { background: 'transparent', border: 'none', color: '#9C8C78', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.14em', cursor: 'pointer', fontFamily: 'inherit', padding: 0 },
 
-  card: { background: '#FDFBF6', border: '0.5px solid #E8DFD0', borderRadius: '14px', overflow: 'hidden' },
+  card: { background: 'linear-gradient(180deg, #FDFBF6 0%, #FBF6EC 100%)', border: '0.5px solid #EBDFC9', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 20px -16px rgba(90,65,35,0.35)' },
   row: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '13px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', textAlign: 'left' },
+  rowLead: { display: 'flex', alignItems: 'center', gap: '10px' },
   rowLabel: { fontSize: '14px', color: '#2A1F15' },
   rowArrow: { fontSize: '15px', color: '#9C8C78' },
   divider: { height: '0.5px', background: '#EFE7D8', margin: '0 16px' },
   signOut: { fontSize: '14px', color: '#854F0B' },
 
-  whyText: { fontSize: '15px', color: '#3F3528', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap', padding: '14px 16px 0' },
+  whyText: { fontSize: '15px', color: '#3F3528', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.7, margin: '14px 16px 0', whiteSpace: 'pre-wrap', padding: '0 0 0 12px', borderLeft: '2px solid #E4D4B4' },
   whyFooter: { display: 'flex', justifyContent: 'flex-end', gap: '18px', padding: '10px 16px 12px' },
   whyEmptyBtn: { width: '100%', padding: '15px 16px', background: 'transparent', border: '1px dashed #D9C7A6', borderRadius: '14px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '14px', color: '#9C8C78', textAlign: 'left' },
   whyTextarea: { width: '100%', boxSizing: 'border-box', minHeight: '120px', padding: '13px 15px', borderRadius: '14px', border: '0.5px solid #E2D7C3', background: '#FDFBF6', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '14.5px', color: '#2A1F15', outline: 'none', resize: 'vertical', lineHeight: 1.6 },
 
-  stageRow: { display: 'flex', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', fontFamily: 'inherit', textAlign: 'left' },
+  stageRow: { display: 'flex', alignItems: 'center', gap: '11px', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', fontFamily: 'inherit', textAlign: 'left' },
   stageRowBody: { display: 'flex', flexDirection: 'column', gap: '2px' },
   stageRowLabel: { fontSize: '14px', color: '#2A1F15' },
   stageRowLabelCurrent: { color: '#854F0B', fontWeight: 600 },
