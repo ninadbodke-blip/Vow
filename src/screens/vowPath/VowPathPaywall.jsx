@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
+import { supabase } from '../../supabaseClient'
 import { startVowPathPurchase } from '../../lib/razorpayCheckout'
 import { renderPayPalButtons } from '../../lib/paypalCheckout'
 import { purchaseVowPath } from '../../lib/revenueCatCheckout'
@@ -33,6 +35,23 @@ function PayPalLogo() {
 }
 
 export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked, onClose }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // A purchase requires a real, durable account — never an anonymous session.
+  // Entitlements and RevenueCat attribute to user.id; an anonymous id lives only
+  // in this device's storage, so a paid unlock on it could be silently lost on
+  // reinstall with no way to restore. If the buyer hasn't saved their account,
+  // send them to do that first, then return them here to complete the purchase.
+  // Returns true if it redirected (caller should stop).
+  const requireRealAccount = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.is_anonymous) {
+      navigate('/app/signup', { state: { returnTo: location.pathname + location.search } })
+      return true
+    }
+    return false
+  }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [showPicker, setShowPicker] = useState(false)
@@ -89,8 +108,9 @@ export default function VowPathPaywall({ stageName = 'the Vow Path', onUnlocked,
     })
   }
 
-  const handleMainButton = () => {
+  const handleMainButton = async () => {
     if (busy) return
+    if (await requireRealAccount()) return
     if (isNative) {
       if (nativePurchaseReady) handleNativePurchase()
       // if not ready, button is replaced by the coming-soon note (see render)

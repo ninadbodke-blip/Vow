@@ -419,10 +419,11 @@ setLoading(false)
 
       if (savingsError) throw savingsError
 
-      // The counter just started ticking — the single best moment to ask an
-      // anonymous user to save their progress, since they now have something
-      // real to lose. A permanent account skips straight home, unchanged.
-      navigate(user.is_anonymous ? '/app/onboarding/save-progress' : '/app/home')
+      // The counter just started ticking — the best moment to ask an anonymous
+      // user to save their progress, since they now have something real to lose.
+      // SignUp detects the anonymous session and upgrades it in place (same
+      // user.id, nothing orphaned). A permanent account skips straight home.
+      navigate(user.is_anonymous ? '/app/signup' : '/app/home')
     } catch (err) {
       setError(err.message)
       setSaving(false)

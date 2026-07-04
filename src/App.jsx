@@ -9,7 +9,6 @@ import { SocialLogin } from '@capgo/capacitor-social-login'
 // RevenueCat init is deferred until Play Billing goes live (package not installed yet):
 import { configureRevenueCat, identifyRevenueCatUser, logoutRevenueCat } from './lib/revenueCatCheckout'
 import SignUp from './screens/onboarding/SignUp'
-import SaveProgress from './screens/onboarding/SaveProgress'
 import AddictionPicker from './screens/onboarding/AddictionPicker'
 import StatePicker from './screens/onboarding/StatePicker'
 import TrackerSetup from './screens/onboarding/TrackerSetup'
@@ -272,10 +271,6 @@ function AppRoutes() {
       <Route
         path="/app/onboarding/setup"
         element={session ? <TrackerSetup /> : <Navigate to="/app/signup" />}
-      />
-      <Route
-        path="/app/onboarding/save-progress"
-        element={session ? <SaveProgress /> : <Navigate to="/app/signup" />}
       />
 
       {/* ===== HOME ===== */}

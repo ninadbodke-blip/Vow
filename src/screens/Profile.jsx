@@ -163,7 +163,7 @@ export default function Profile() {
       title: 'This will lose your progress',
       body: "You haven't saved your account yet. Signing out now means there's no way back to this streak — save it first, or go ahead if you're sure.",
       actions: [
-        { label: 'Save my progress first', primary: true, run: () => { setSheet(null); navigate('/app/onboarding/save-progress') } },
+        { label: 'Save my progress first', primary: true, run: () => { setSheet(null); navigate('/app/signup') } },
         { label: 'Sign out anyway', danger: true, run: signOut },
         { label: 'Cancel', run: () => setSheet(null) },
       ],
@@ -220,7 +220,7 @@ export default function Profile() {
                 <span style={styles.name}>{profile?.full_name || 'Your name'}</span>
               </button>
               {user?.is_anonymous ? (
-                <button onClick={() => navigate('/app/onboarding/save-progress')} style={styles.savePrompt}>
+                <button onClick={() => navigate('/app/signup')} style={styles.savePrompt}>
                   Progress not saved yet — tap to secure it
                 </button>
               ) : (

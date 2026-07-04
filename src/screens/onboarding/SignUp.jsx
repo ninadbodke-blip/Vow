@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useLang } from '../../LanguageContext'
 import { supabase } from '../../supabaseClient'
 import AnimatedVowFlame from '../../components/AnimatedVowFlame'
@@ -36,6 +36,7 @@ const CSS = `
 export default function SignUp() {
   const { t } = useLang()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [mode, setMode] = useState('signup')
   const [name, setName] = useState('')
@@ -45,6 +46,28 @@ export default function SignUp() {
   const [oauthLoading, setOauthLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+
+  // If the person already has an anonymous session (they entered the app from
+  // Welcome without signing up), this screen UPGRADES that session in place
+  // rather than creating a second account — same user.id, so the substance,
+  // stage, and tracker they already have are preserved, never orphaned.
+  const [isAnon, setIsAnon] = useState(false)
+  // Where to go after a successful upgrade/sign-in. Set by whoever sent the
+  // user here (e.g. the paywall passes the checkout route). Defaults keep the
+  // original cold-start behaviour: new user -> onboarding, returning -> home.
+  const returnTo = location.state?.returnTo || null
+
+  useEffect(() => {
+    let cancelled = false
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (cancelled) return
+      if (user?.is_anonymous) {
+        setIsAnon(true)
+        setMode('signup') // upgrading is a "create account" gesture, not "sign in"
+      }
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const isSignup = mode === 'signup'
 
@@ -57,6 +80,14 @@ export default function SignUp() {
       if (Capacitor.isNativePlatform()) {
         // NATIVE (Android/iOS): real Google account picker -> ID token -> Supabase.
         // No browser redirect; the session lands inside the app.
+        // NOTE: linking a Google *ID token* onto an existing anonymous session
+        // is not a flow supabase-js exposes — signInWithIdToken starts a fresh
+        // Google-based session. So on native, an anonymous user who taps Google
+        // here would begin a new account and their pre-signup progress would not
+        // carry over. To keep progress safe, native anonymous users are steered
+        // to email/password (which upgrades in place); the Google button is
+        // hidden for them in the render below. This branch stays the normal
+        // Google sign-in for everyone who is NOT mid-upgrade.
         const res = await SocialLogin.login({
           provider: 'google',
           options: { filterByAuthorizedAccounts: false }, // no scopes -> Credential Manager picker, no MainActivity edit
@@ -72,15 +103,27 @@ export default function SignUp() {
         // Session is now set. The onAuthStateChange listener in App.jsx re-routes
         // automatically (new user -> onboarding, returning -> home), so we don't
         // navigate manually here.
+      } else if (isAnon) {
+        // WEB, upgrading an anonymous session: link the Google identity onto the
+        // SAME user so all progress is preserved. Requires "Manual linking"
+        // enabled in Supabase Auth settings. Land back at returnTo if provided.
+        const dest = returnTo ? `${window.location.origin}${returnTo}` : `${window.location.origin}/app/home`
+        const { error } = await supabase.auth.linkIdentity({
+          provider: 'google',
+          options: { redirectTo: dest },
+        })
+        if (error) throw error
+        // A successful call redirects the whole page to Google.
       } else {
-        // WEB / PWA: existing full-page redirect flow (works fine in a browser).
+        // WEB / PWA, fresh sign-in: existing full-page redirect flow.
+        const dest = returnTo ? `${window.location.origin}${returnTo}` : `${window.location.origin}/app`
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           // Return into the app, not the marketing root. /app is a pure gate:
           // it routes a returning user to /app/home and a new user into
           // onboarding. Sending the callback to window.location.origin landed
           // people on the marketing page with a silent session.
-          options: { redirectTo: `${window.location.origin}/app` },
+          options: { redirectTo: dest },
         })
         if (error) throw error
         // A successful call redirects the whole page to Google.
@@ -98,7 +141,22 @@ export default function SignUp() {
     setLoading(true)
 
     try {
-      if (isSignup) {
+      if (isAnon) {
+        // UPGRADE the anonymous session in place — same user.id, so the
+        // substance / stage / tracker already created stay attached. No new
+        // account, nothing to migrate.
+        const { data, error } = await supabase.auth.updateUser({
+          email,
+          password,
+          data: name.trim() ? { full_name: name.trim() } : undefined,
+        })
+        if (error) throw error
+        if (name.trim() && data?.user?.id) {
+          await supabase.from('profiles').update({ full_name: name.trim() }).eq('id', data.user.id)
+        }
+        setSuccess('Saved. Check your email to confirm it, if asked.')
+        setTimeout(() => navigate(returnTo || '/app/home'), 1400)
+      } else if (isSignup) {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -114,11 +172,11 @@ export default function SignUp() {
         }
 
         setSuccess('Account created. Check your email if confirmation is required.')
-        setTimeout(() => navigate('/app/onboarding/addiction'), 1500)
+        setTimeout(() => navigate(returnTo || '/app/onboarding/addiction'), 1500)
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        navigate('/app/home')
+        navigate(returnTo || '/app/home')
       }
     } catch (err) {
       setError(err.message)
@@ -141,10 +199,12 @@ export default function SignUp() {
         <p className="vrise" style={{ ...styles.tag, animationDelay: '0.09s' }}>{t('tagline')}</p>
 
         <h1 className="vrise" style={{ ...styles.headline, animationDelay: '0.16s' }}>
-          Step Into the Sanctuary.
+          {isAnon ? 'Save your progress.' : 'Step Into the Sanctuary.'}
         </h1>
         <p className="vrise" style={{ ...styles.headlineSub, animationDelay: '0.22s' }}>
-          Your timeline is secure. Your progress is private.
+          {isAnon
+            ? "Your streak is safe on this device. Add an email so a new phone or reinstall can't take it."
+            : 'Your timeline is secure. Your progress is private.'}
         </p>
       </div>
 
@@ -152,42 +212,50 @@ export default function SignUp() {
       <div className="vault-rise" style={styles.vault}>
         <span style={styles.vaultGrip} />
 
-        <div style={styles.toggleRow}>
+        {!isAnon && (
+          <div style={styles.toggleRow}>
+            <button
+              type="button"
+              className="vow-toggle"
+              style={{ ...styles.toggleBtn, ...(isSignup ? styles.toggleActive : {}) }}
+              onClick={() => { setMode('signup'); setError(null); setSuccess(null) }}
+            >
+              {t('signUp')}
+            </button>
+            <button
+              type="button"
+              className="vow-toggle"
+              style={{ ...styles.toggleBtn, ...(!isSignup ? styles.toggleActive : {}) }}
+              onClick={() => { setMode('signin'); setError(null); setSuccess(null) }}
+            >
+              {t('signIn')}
+            </button>
+          </div>
+        )}
+
+        {/* GOOGLE SSO — primary path. Hidden only for a native anonymous upgrade,
+            where ID-token sign-in would start a fresh account and lose progress;
+            those users save via email/password, which upgrades in place. */}
+        {!(isAnon && Capacitor.isNativePlatform()) && (
           <button
             type="button"
-            className="vow-toggle"
-            style={{ ...styles.toggleBtn, ...(isSignup ? styles.toggleActive : {}) }}
-            onClick={() => { setMode('signup'); setError(null); setSuccess(null) }}
+            className="vow-google"
+            style={{ ...styles.googleBtn, ...(oauthLoading ? styles.btnDisabled : {}) }}
+            onClick={handleGoogle}
+            disabled={oauthLoading}
           >
-            {t('signUp')}
+            <GoogleG />
+            {oauthLoading ? 'Redirecting…' : 'Continue with Google'}
           </button>
-          <button
-            type="button"
-            className="vow-toggle"
-            style={{ ...styles.toggleBtn, ...(!isSignup ? styles.toggleActive : {}) }}
-            onClick={() => { setMode('signin'); setError(null); setSuccess(null) }}
-          >
-            {t('signIn')}
-          </button>
-        </div>
+        )}
 
-        {/* GOOGLE SSO — primary path, surfaced at the top */}
-        <button
-          type="button"
-          className="vow-google"
-          style={{ ...styles.googleBtn, ...(oauthLoading ? styles.btnDisabled : {}) }}
-          onClick={handleGoogle}
-          disabled={oauthLoading}
-        >
-          <GoogleG />
-          {oauthLoading ? 'Redirecting…' : 'Continue with Google'}
-        </button>
-
+        {!(isAnon && Capacitor.isNativePlatform()) && (
         <div style={styles.divider}>
           <span style={styles.dividerLine} />
           <span style={styles.dividerText}>or</span>
           <span style={styles.dividerLine} />
         </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           {isSignup && (
@@ -238,7 +306,7 @@ export default function SignUp() {
             disabled={loading}
             style={{ ...styles.submitBtn, ...(loading ? styles.btnDisabled : {}) }}
           >
-            {loading ? 'One moment…' : 'Submit →'}
+            {loading ? 'One moment…' : isAnon ? 'Save my progress' : 'Submit →'}
           </button>
 
           {error && <p style={styles.err}>{error}</p>}
