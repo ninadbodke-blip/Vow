@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../../supabaseClient'
 
 const slides = [
   {
@@ -85,12 +86,35 @@ function FurnaceIllustration() {
 export default function Welcome() {
   const navigate = useNavigate()
   const [idx, setIdx] = useState(0)
+  const [entering, setEntering] = useState(false)
 
   const isLast = idx === slides.length - 1
   const next = () => setIdx(i => (i < slides.length - 1 ? i + 1 : i))
   const prev = () => setIdx(i => (i > 0 ? i - 1 : i))
-  const skip = () => navigate('/app/signup')
-  const begin = () => navigate('/app/signup')
+
+  // No signup wall here. An anonymous Supabase session gives a real user.id
+  // instantly — every onboarding screen and table write already keys off
+  // user.id, so nothing downstream needs to know the difference. The actual
+  // ask to save the account (email/password) comes later, right after the
+  // tracker starts — the moment they have something real to lose, not before
+  // they've seen the app do anything for them.
+  const enterApp = async () => {
+    if (entering) return
+    setEntering(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const { error } = await supabase.auth.signInAnonymously()
+        if (error) throw error
+      }
+      navigate('/app/onboarding/addiction')
+    } catch (err) {
+      console.error('Anonymous sign-in failed, falling back to sign-up:', err)
+      navigate('/app/signup')
+    }
+  }
+  const skip = enterApp
+  const begin = enterApp
 
   // Swipe left = forward, right = back. Taps (dx ~ 0) pass through to buttons.
   const swipeX = useRef(null)
@@ -117,7 +141,7 @@ export default function Welcome() {
       />
 
       <div style={styles.shell} onPointerDown={onSwipeStart} onPointerUp={onSwipeEnd} onPointerLeave={() => { swipeX.current = null }}>
-        <button onClick={skip} style={styles.skipBtn}>Skip</button>
+        <button onClick={skip} style={styles.skipBtn} disabled={entering}>Skip</button>
 
         <div style={styles.illustration}>
           {slide.illustration === 'spark' && <SparkIllustration />}
@@ -144,7 +168,7 @@ export default function Welcome() {
         </div>
 
         {isLast ? (
-          <button onClick={begin} style={styles.beginBtn}>Begin</button>
+          <button onClick={begin} style={styles.beginBtn} disabled={entering}>{entering ? 'One moment…' : 'Begin'}</button>
         ) : (
           <button onClick={next} style={styles.continueBtn}>Continue →</button>
         )}

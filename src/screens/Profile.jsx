@@ -155,6 +155,21 @@ export default function Profile() {
     navigate('/app/welcome')
   }
 
+  // An anonymous session has no email/password to sign back in with, so
+  // signing out is unrecoverable — unlike a saved account, where it's routine.
+  const handleSignOutTap = () => {
+    if (!user?.is_anonymous) { signOut(); return }
+    setSheet({
+      title: 'This will lose your progress',
+      body: "You haven't saved your account yet. Signing out now means there's no way back to this streak — save it first, or go ahead if you're sure.",
+      actions: [
+        { label: 'Save my progress first', primary: true, run: () => { setSheet(null); navigate('/app/onboarding/save-progress') } },
+        { label: 'Sign out anyway', danger: true, run: signOut },
+        { label: 'Cancel', run: () => setSheet(null) },
+      ],
+    })
+  }
+
   if (loading) {
     return (
       <div style={styles.frame}>
@@ -204,7 +219,13 @@ export default function Profile() {
               <button onClick={() => setEditingName(true)} style={styles.nameBtn} aria-label="Edit name">
                 <span style={styles.name}>{profile?.full_name || 'Your name'}</span>
               </button>
-              <p style={styles.email}>{user?.email}</p>
+              {user?.is_anonymous ? (
+                <button onClick={() => navigate('/app/onboarding/save-progress')} style={styles.savePrompt}>
+                  Progress not saved yet — tap to secure it
+                </button>
+              ) : (
+                <p style={styles.email}>{user?.email}</p>
+              )}
             </>
           )}
         </div>
@@ -346,7 +367,7 @@ export default function Profile() {
               <span style={styles.rowArrow}>›</span>
             </Link>
             <div style={styles.divider} />
-            <button onClick={signOut} style={styles.row}>
+            <button onClick={handleSignOutTap} style={styles.row}>
               <span style={styles.signOut}>Sign out</span>
             </button>
           </div>
@@ -396,6 +417,7 @@ const styles = {
   nameBtn: { background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0, margin: '0 auto', display: 'inline-block' },
   name: { fontSize: '26px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.015em', borderBottom: '1px dotted #C8AE83', paddingBottom: '3px' },
   email: { fontSize: '13px', color: '#9C8C78', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0.6rem 0 0' },
+  savePrompt: { fontSize: '12.5px', color: '#854F0B', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: '0.6rem 0 0', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', textDecoration: 'underline', textUnderlineOffset: '2px' },
   nameEditWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' },
   nameInput: { background: 'transparent', border: 'none', borderBottom: '1.5px solid #854F0B', fontSize: '22px', color: '#2A1F15', fontFamily: 'Georgia, serif', fontWeight: 500, textAlign: 'center', outline: 'none', padding: '2px 4px', width: '80%', maxWidth: '280px' },
   editActions: { display: 'flex', gap: '20px', justifyContent: 'center' },
