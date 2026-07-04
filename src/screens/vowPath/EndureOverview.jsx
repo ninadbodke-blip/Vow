@@ -10,6 +10,12 @@ import {
 } from './data/endureContent'
 import { useStageBackground } from './utils/silhouettes'
 import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
+import { Medallion, WeekBadge, CandleArt } from './overviewKit'
+
+// Drawn-medallion art per day, and a badge per phase — visual only.
+const DAY_ART = { 1: 'sunrise', 2: 'piles', 3: 'roots', 4: 'fork', 5: 'scales', 6: 'columns', 7: 'candle', 8: 'drift', 9: 'lantern', 10: 'waymark', 11: 'sorter', 12: 'coins', 13: 'speech', 14: 'candle', 15: 'journal', 16: 'eye', 17: 'sorter', 18: 'body', 19: 'home', 20: 'portrait', 21: 'seal' }
+const PHASE_ART = { phase_1: 'sunrise', phase_2: 'drift', phase_3: 'piles' }
+
 
 const STATUS = {
   COMPLETED: 'completed',
@@ -29,6 +35,8 @@ export default function EndureOverview() {
   const [checkins, setCheckins] = useState({})
   const [activeDay, setActiveDay] = useState(null)
   const [draft, setDraft] = useState({ didIt: null, felt: null, helpful: null, note: '' })
+  // Visual-only: future phases render collapsed with a '+ N more' toggle.
+  const [expandedPhases, setExpandedPhases] = useState({})
   const heroUrl = useStageBackground('endure')
 
   useEffect(() => {
@@ -207,27 +215,40 @@ export default function EndureOverview() {
           </p>
         </div>
 
-        {/* 4 — The continuous thread (runs the full height behind the centred phase headers) */}
+        {/* 4 — The sectioned timeline: phase badges, drawn medallions, one thread */}
         <div style={styles.listWrap}>
           <div style={styles.thread} aria-hidden="true" />
           {ENDURE_PHASES.map((phase) => {
             const [start, end] = phase.dayRange
             const phaseDays = ENDURE_DAYS.filter(d => d.day >= start && d.day <= end)
+            // Visual-only progressive disclosure: phases entirely ahead of the
+            // current day show their first three exercises + a "+ N more"
+            // toggle. Day logic is untouched — expanding reveals the same rows
+            // with the same handlers.
+            const currentDayNum = lastCompleted + 1
+            const isFuturePhase = start > currentDayNum && !isPilotOrDev
+            const expanded = !!expandedPhases[phase.key]
+            const visibleDays = (isFuturePhase && !expanded) ? phaseDays.slice(0, 3) : phaseDays
+            const hiddenCount = phaseDays.length - visibleDays.length
             return (
               <div key={phase.key}>
-                {ENDURE_PHASES.length > 1 && (
-                  <div style={styles.phaseHeader}>
-                    <p style={styles.phaseTitle}>{`· ${phase.title.toUpperCase()} ·`}</p>
+                <div style={styles.phaseHeader}>
+                  <span style={styles.phaseBadge}><WeekBadge art={PHASE_ART[phase.key] || 'sprig'} /></span>
+                  <span style={styles.phaseHeadText}>
+                    <p style={styles.phaseTitle}>{phase.title.toUpperCase()}</p>
                     {phase.subtitle && <p style={styles.phaseSubtitle}>{phase.subtitle}</p>}
-                  </div>
-                )}
+                  </span>
+                </div>
 
-                {phaseDays.map((day) => {
+                {visibleDays.map((day) => {
                   const status = getDayStatus(day.day)
                   const tappable = isDayTappable(day.day)
                   const isToday = status === STATUS.CURRENT
                   const isDone = status === STATUS.COMPLETED
                   const isLocked = status === STATUS.LOCKED && !tappable
+                  const isCloseDay = /,\s*close|\bcloses\b/i.test(day.arrivalTitle)
+                  const hasCheckin = isDone && day.practice
+                  const checkinDone = !!checkins[day.day]
 
                   if (isToday) {
                     return (
@@ -236,17 +257,60 @@ export default function EndureOverview() {
                         onClick={() => handleDayTap(day.day)}
                         style={styles.vaultCard}
                       >
-                        <span style={styles.vaultEyebrow}>Today's work</span>
-                        <span style={styles.vaultTitle}>{day.arrivalTitle}</span>
-                        {day.arrivalSubtitle && (
-                          <span style={styles.vaultSubtitle}>{day.arrivalSubtitle}</span>
-                        )}
+                        <span style={styles.vaultText}>
+                          <span style={styles.vaultEyebrow}>Today's work</span>
+                          <span style={styles.vaultTitle}>{day.arrivalTitle}</span>
+                          {day.arrivalSubtitle && (
+                            <span style={styles.vaultSubtitle}>{day.arrivalSubtitle}</span>
+                          )}
+                        </span>
+                        <CandleArt />
                       </button>
                     )
                   }
 
-                  const hasCheckin = isDone && ENDURE_PRACTICES[day.day]
-                  const checkinDone = !!checkins[day.day]
+                  if (isCloseDay) {
+                    // Phase-close days read as a rest, not an exercise — same
+                    // button and tap handler, quieter clothing. Their practice
+                    // check-in ("Did you try it?" / "Noted") is preserved.
+                    return (
+                      <div key={day.day} style={{ position: 'relative' }}>
+                        <button
+                          onClick={() => handleDayTap(day.day)}
+                          disabled={!tappable}
+                          style={{
+                            ...styles.closeCard,
+                            ...(isLocked ? styles.dayRowLocked : {}),
+                            cursor: tappable ? 'pointer' : 'not-allowed',
+                            paddingRight: hasCheckin ? '84px' : '16px',
+                          }}
+                        >
+                          <span style={{ ...styles.closeTitle, ...(isDone ? styles.dayTitleDone : {}) }}>{day.arrivalTitle}</span>
+                          {day.arrivalSubtitle && <span style={styles.closeSub}>{day.arrivalSubtitle}</span>}
+                        </button>
+                        {hasCheckin && (
+                          <button
+                            onClick={() => openCheckin(day)}
+                            style={styles.checkinMarker}
+                            aria-label={checkinDone ? 'Edit your check-in' : 'Add a practice check-in'}
+                          >
+                            <span style={{
+                              ...styles.checkinRing,
+                              ...(checkinDone ? styles.checkinRingDone : {}),
+                            }}>
+                              {day.practice?.archetype && (
+                                <PracticeArchetypeIcon archetype={day.practice.archetype} size={15} />
+                              )}
+                            </span>
+                            <span style={styles.checkinLabel}>
+                              {checkinDone ? 'Noted' : 'Did you try it?'}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    )
+                  }
+
                   return (
                     <div key={day.day} style={{ position: 'relative' }}>
                       <button
@@ -259,18 +323,18 @@ export default function EndureOverview() {
                           paddingRight: hasCheckin ? '84px' : '4px',
                         }}
                       >
-                        <span style={{
-                          ...styles.dayNode,
-                          color: isDone ? '#D9B57A' : '#C9BBA3',
-                        }}>{isDone ? '✦' : '·'}</span>
+                        <Medallion art={DAY_ART[day.day] || 'sprig'} done={isDone} locked={isLocked} />
                         <span style={styles.dayContent}>
-                          <span style={{
-                            ...styles.dayTitle,
-                            ...(isDone ? styles.dayTitleDone : {}),
-                          }}>{day.arrivalTitle}</span>
-                          {day.arrivalSubtitle && (
-                            <span style={styles.daySubtitle}>{day.arrivalSubtitle}</span>
-                          )}
+                          <span style={styles.dayNum}>{day.day - start + 1}</span>
+                          <span style={styles.dayTexts}>
+                            <span style={{
+                              ...styles.dayTitle,
+                              ...(isDone ? styles.dayTitleDone : {}),
+                            }}>{day.arrivalTitle}</span>
+                            {day.arrivalSubtitle && (
+                              <span style={styles.daySubtitle}>{day.arrivalSubtitle}</span>
+                            )}
+                          </span>
                         </span>
                       </button>
 
@@ -284,8 +348,8 @@ export default function EndureOverview() {
                             ...styles.checkinRing,
                             ...(checkinDone ? styles.checkinRingDone : {}),
                           }}>
-                            {ENDURE_PRACTICES[day.day]?.archetype && (
-                              <PracticeArchetypeIcon archetype={ENDURE_PRACTICES[day.day].archetype} size={15} />
+                            {day.practice?.archetype && (
+                              <PracticeArchetypeIcon archetype={day.practice.archetype} size={15} />
                             )}
                           </span>
                           <span style={styles.checkinLabel}>
@@ -296,12 +360,21 @@ export default function EndureOverview() {
                     </div>
                   )
                 })}
+
+                {hiddenCount > 0 && (
+                  <button
+                    style={styles.moreBtn}
+                    onClick={() => setExpandedPhases(prev => ({ ...prev, [phase.key]: true }))}
+                  >
+                    + {hiddenCount} more {hiddenCount === 1 ? 'exercise' : 'exercises'}
+                  </button>
+                )}
               </div>
             )
           })}
         </div>
 
-        {/* 5 — The anchor */}
+                {/* 5 — The anchor */}
         <div style={styles.anchor}>
           <span style={styles.anchorMark}>✧</span>
           <span style={styles.anchorText}>{STAGE_END}</span>
@@ -454,70 +527,97 @@ const styles = {
   progressEmph: { color: '#854F0B' },
 
   // 4 — Continuous thread + list
-  listWrap: { position: 'relative', marginTop: '1.25rem', paddingTop: '0.25rem', paddingBottom: '48px' },
-  // Endure is multi-phase, so the thread starts BELOW the first centred phase header
-  // (Notice, single-phase, used top:18). If the spine peeks above the first
-  // "· PHASE ·" header or starts mid-first-day, nudge this value.
+  listWrap: { position: 'relative', marginTop: '1.4rem', paddingTop: '0.25rem', paddingBottom: '44px' },
+
+  // one continuous thread, aligned to the medallion centres
   thread: {
-    position: 'absolute', left: '19px', top: '88px', bottom: 0, width: '1.5px',
-    background: 'linear-gradient(180deg, rgba(217,181,122,0.6) 0%, rgba(217,181,122,0.6) 80%, rgba(217,181,122,0) 100%)',
+    position: 'absolute', left: '23px', top: '20px', bottom: 0, width: '1.5px',
+    background: 'linear-gradient(180deg, rgba(217,181,122,0.55) 0%, rgba(217,181,122,0.55) 82%, rgba(217,181,122,0) 100%)',
   },
-  phaseHeader: { textAlign: 'center', margin: '2rem 0 1.25rem' },
+
+  phaseHeader: {
+    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
+    gap: '13px', margin: '1.9rem 0 0.9rem', textAlign: 'left',
+  },
+  phaseBadge: {
+    flex: '0 0 40px', width: '40px', height: '40px', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', background: '#FAF7F1',
+    borderRadius: '50%', marginLeft: '4px',
+  },
+  phaseHeadText: { display: 'flex', flexDirection: 'column', gap: '2px' },
   phaseTitle: {
     fontSize: '12px', fontWeight: 600, color: '#854F0B',
     fontFamily: '-apple-system, sans-serif', textTransform: 'uppercase',
-    letterSpacing: '0.2em', margin: '0 0 0.35rem',
+    letterSpacing: '0.18em', margin: 0,
   },
   phaseSubtitle: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.4 },
 
   dayRow: {
-    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start',
+    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
     gap: '12px', width: '100%', background: 'transparent', border: 'none',
-    textAlign: 'left', padding: '15px 4px', fontFamily: 'inherit',
+    textAlign: 'left', padding: '10px 4px', fontFamily: 'inherit',
   },
-  dayRowLocked: { opacity: 0.3 },
-  dayNode: {
-    width: '30px', flexShrink: 0, textAlign: 'center', fontSize: '15px',
-    lineHeight: '1.5', marginTop: '1px', background: '#FAF7F1',
+  dayRowLocked: { opacity: 0.38 },
+  dayContent: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '9px' },
+  dayNum: {
+    flex: '0 0 auto', fontSize: '13px', color: '#B8A88E',
+    fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums',
   },
-  dayContent: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '1px' },
-  dayTitle: { fontSize: '16px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
+  dayTexts: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' },
+  dayTitle: { fontSize: '15.5px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
   dayTitleDone: { color: '#9C8C78', fontStyle: 'italic', fontWeight: 400 },
-  daySubtitle: { fontSize: '13px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
+  daySubtitle: { fontSize: '12.5px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
 
+  // Today's work — the dark vault card, now with the drawn candle
   vaultCard: {
-    position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column',
-    gap: '5px', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
+    gap: '14px', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
     fontFamily: 'inherit', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    borderRadius: '18px', padding: '20px 22px', margin: '10px 0',
-    boxShadow: '0 14px 30px -12px rgba(40,25,10,0.5)',
+    borderRadius: '18px', padding: '18px 20px', margin: '10px 0',
+    boxShadow: '0 10px 24px -12px rgba(40,25,10,0.5)',
   },
+  vaultText: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '5px' },
   vaultEyebrow: {
-    fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase',
-    letterSpacing: '0.2em', fontWeight: 600, fontFamily: '-apple-system, sans-serif',
+    fontSize: '10px', fontWeight: 600, color: '#D9B57A', textTransform: 'uppercase',
+    letterSpacing: '0.2em', fontFamily: '-apple-system, sans-serif',
   },
   vaultTitle: { fontSize: '19px', fontWeight: 500, color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
   vaultSubtitle: { fontSize: '13px', color: '#CBBA98', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.45 },
 
-  // Check-in marker on completed practice rows
+  // week-close days — a rest, not an exercise
+  closeCard: {
+    position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column',
+    alignItems: 'center', gap: '4px', width: '100%', border: '0.5px solid #EBDFC9',
+    background: '#FBF7EE', borderRadius: '14px', padding: '14px 16px',
+    margin: '8px 0', fontFamily: 'inherit', textAlign: 'center',
+  },
+  closeTitle: { fontSize: '15px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
+  closeSub: { fontSize: '12.5px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
+
+  // "+ N more exercises" toggle for weeks still ahead
+  moreBtn: {
+    position: 'relative', zIndex: 1, display: 'block', background: 'transparent',
+    border: 'none', cursor: 'pointer', fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    fontSize: '13px', color: '#854F0B', padding: '6px 4px 6px 56px', textAlign: 'left',
+  },
+
   checkinMarker: {
-    position: 'absolute', right: '0px', top: '50%', transform: 'translateY(-50%)',
-    zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center',
-    gap: '4px', width: '78px', background: 'transparent', border: 'none',
-    cursor: 'pointer', fontFamily: 'inherit', padding: '4px 2px',
+    position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+    background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px',
+    zIndex: 2, fontFamily: 'inherit', width: '76px',
   },
   checkinRing: {
-    width: '26px', height: '26px', borderRadius: '50%', border: '1.5px solid #C9A86A',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#854F0B', background: 'transparent', lineHeight: 1,
+    width: '30px', height: '30px', borderRadius: '50%', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', background: '#FDFBF6',
+    border: '1.5px solid #D8CCB8', color: '#9C8C78',
   },
   checkinRingDone: { background: '#D9B57A', border: '1.5px solid #D9B57A', color: '#3A2A1C', fontWeight: 700 },
   checkinLabel: {
-    fontSize: '10px', color: '#9C8C78', fontStyle: 'italic',
-    fontFamily: 'Georgia, serif', lineHeight: 1.15, textAlign: 'center',
+    fontSize: '9.5px', color: '#9C8C78', fontFamily: '-apple-system, sans-serif',
+    letterSpacing: '0.02em', whiteSpace: 'nowrap',
   },
 
-  // Check-in bottom sheet
   sheetOverlay: {
     position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(40,25,15,0.55)',
     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',

@@ -9,6 +9,12 @@ import {
 } from './data/reflectV2Content'
 import { useStageBackground } from './utils/silhouettes'
 import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
+import { Medallion, WeekBadge, CandleArt } from './overviewKit'
+
+// Drawn-medallion art per day, and a badge per week — visual only.
+const DAY_ART = { 1: 'tree', 2: 'journal', 3: 'eye', 4: 'piles', 5: 'coins', 6: 'letter', 7: 'candle', 8: 'scales', 9: 'body', 10: 'waymark', 11: 'fork', 12: 'speech', 13: 'lantern', 14: 'candle', 15: 'sorter', 16: 'columns', 17: 'letter', 18: 'ruler', 19: 'candle', 20: 'portrait', 21: 'doors' }
+const PHASE_ART = { see_it: 'sprig', feel_it: 'scales', decide: 'doors' }
+
 
 const STATUS = {
   COMPLETED: 'completed',
@@ -18,92 +24,6 @@ const STATUS = {
 
 const STAGE_END = 'End of Reflect'
 
-
-// =====================================================================
-// Drawn medallions — small SVG vignettes in the day-world palette, one
-// per day, so the timeline reads as a journey without any image assets.
-// Pure decoration: all tap/lock/status logic is untouched around them.
-// =====================================================================
-const MP = { ring: '#D9B57A', ringSoft: '#E4D4B4', bg: '#F6EFE2', bark: '#82603F', barkD: '#5F4429', leaf: '#74875A', leafL: '#93A36B', gold: '#C9A85C', goldD: '#854F0B', cream: '#FDFBF6', ink: '#3A2A1C', mut: '#B8A88E' }
-
-function MedallionArt({ day }) {
-  switch (day) {
-    case 1: return (<g><path d="M24 34 L24 22" stroke={MP.bark} strokeWidth="2" fill="none"/><path d="M24 26 C18 24 14 18 15 13 C21 13 25 17 24 24 M24 24 C27 18 32 15 36 16 C35 21 30 25 24 26" fill={MP.leafL}/><circle cx="24" cy="15" r="4.5" fill={MP.leaf}/></g>)
-    case 2: return (<g><rect x="15" y="12" width="18" height="24" rx="2.5" fill={MP.cream} stroke={MP.gold} strokeWidth="1.4"/><path d="M19 18 H29 M19 23 H29 M19 28 H25" stroke={MP.mut} strokeWidth="1.4" strokeLinecap="round"/><path d="M15 14 C13 16 13 32 15 34" stroke={MP.bark} strokeWidth="1.6" fill="none"/></g>)
-    case 3: return (<g><path d="M10 24 C15 16 33 16 38 24 C33 32 15 32 10 24 Z" fill={MP.cream} stroke={MP.bark} strokeWidth="1.5"/><circle cx="24" cy="24" r="5.5" fill={MP.leaf}/><circle cx="24" cy="24" r="2.2" fill={MP.ink}/></g>)
-    case 4: return (<g><path d="M12 33 L19 20 L25 33 Z" fill={MP.leafL}/><path d="M20 33 L28 15 L36 33 Z" fill={MP.leaf}/><circle cx="31" cy="19" r="1.6" fill={MP.cream}/></g>)
-    case 5: return (<g><ellipse cx="18" cy="31" rx="6" ry="2.6" fill={MP.gold}/><ellipse cx="18" cy="28" rx="6" ry="2.6" fill={MP.goldD}/><path d="M30 34 L30 24" stroke={MP.bark} strokeWidth="1.8"/><path d="M30 27 C27 25 25 22 26 19 C29 20 31 22 30 27 M30 25 C32 22 35 21 37 22 C36 25 33 26 30 25" fill={MP.leafL}/></g>)
-    case 6: case 17: return (<g><rect x="12" y="16" width="24" height="16" rx="2" fill={MP.cream} stroke={MP.gold} strokeWidth="1.4"/><path d="M12 17 L24 26 L36 17" stroke={MP.gold} strokeWidth="1.4" fill="none"/><circle cx="33" cy="15" r="3" fill={MP.goldD}/></g>)
-    case 7: case 14: case 19: return (<g><rect x="21" y="20" width="6" height="13" rx="1.5" fill={MP.cream} stroke={MP.gold} strokeWidth="1"/><ellipse cx="24" cy="34" rx="8" ry="2" fill={MP.goldD} opacity="0.35"/><path d="M24 12 C26.5 15.5 26 18 24 19 C22 18 21.5 15.5 24 12 Z" fill={MP.gold}/><circle cx="24" cy="16" r="4.5" fill={MP.gold} opacity="0.22"/></g>)
-    case 8: return (<g><path d="M24 13 L24 33 M14 17 L34 17" stroke={MP.bark} strokeWidth="1.8"/><path d="M10 24 C10 27 18 27 18 24 L14 17 Z" fill={MP.leafL}/><path d="M30 27 C30 30 38 30 38 27 L34 17 Z" fill={MP.leaf}/><rect x="19" y="32" width="10" height="2.4" rx="1.2" fill={MP.bark}/></g>)
-    case 9: return (<g><circle cx="24" cy="15" r="4" fill={MP.bark}/><path d="M24 20 C18 22 17 27 18 34 L30 34 C31 27 30 22 24 20 Z" fill={MP.leafL}/><circle cx="24" cy="26" r="2.2" fill={MP.goldD}/></g>)
-    case 10: return (<g><path d="M17 34 C16 25 19 16 24 12 C29 16 32 25 31 34 Z" fill={MP.mut}/><path d="M24 12 C29 16 32 25 31 34 L24 34 Z" fill={MP.bark} opacity="0.35"/><path d="M20 24 H28" stroke={MP.cream} strokeWidth="1.8" strokeLinecap="round"/></g>)
-    case 11: return (<g><path d="M24 35 L24 26 C24 21 19 19 15 15" stroke={MP.bark} strokeWidth="2.2" fill="none"/><path d="M24 26 C24 21 29 19 33 15" stroke={MP.gold} strokeWidth="2.2" fill="none"/><circle cx="33" cy="14" r="2.6" fill={MP.gold}/><circle cx="15" cy="14" r="2.2" fill={MP.mut}/></g>)
-    case 12: return (<g><path d="M13 16 h22 a2 2 0 0 1 2 2 v9 a2 2 0 0 1 -2 2 H22 l-6 5 v-5 h-3 a2 2 0 0 1 -2 -2 v-9 a2 2 0 0 1 2 -2 Z" fill={MP.cream} stroke={MP.bark} strokeWidth="1.5"/><path d="M18 21 H30 M18 25 H26" stroke={MP.mut} strokeWidth="1.5" strokeLinecap="round"/></g>)
-    case 13: return (<g><rect x="19" y="15" width="10" height="15" rx="2" fill={MP.cream} stroke={MP.bark} strokeWidth="1.5"/><path d="M19 15 L24 11 L29 15" stroke={MP.bark} strokeWidth="1.5" fill="none"/><path d="M24 30 L24 34" stroke={MP.bark} strokeWidth="1.5"/><circle cx="24" cy="22" r="3" fill={MP.gold}/><circle cx="24" cy="22" r="5.5" fill={MP.gold} opacity="0.2"/></g>)
-    case 15: return (<g><circle cx="16" cy="19" r="4" fill={MP.leafL}/><circle cx="28" cy="15" r="3.2" fill={MP.leaf}/><circle cx="34" cy="23" r="2.8" fill={MP.mut}/><path d="M14 30 H34 M17 34 H31" stroke={MP.bark} strokeWidth="1.8" strokeLinecap="round"/></g>)
-    case 16: return (<g><rect x="13" y="14" width="9" height="20" rx="2" fill={MP.cream} stroke={MP.mut} strokeWidth="1.4"/><rect x="26" y="14" width="9" height="20" rx="2" fill={MP.cream} stroke={MP.gold} strokeWidth="1.4"/><path d="M16 20 h3 M16 25 h3 M29 20 h3 M29 25 h3 M29 30 h3" stroke={MP.bark} strokeWidth="1.3" strokeLinecap="round"/></g>)
-    case 18: return (<g><path d="M12 29 H36" stroke={MP.bark} strokeWidth="2"/><path d="M15 29 v-5 M20 29 v-8 M25 29 v-5 M30 29 v-8 M35 29 v-5" stroke={MP.bark} strokeWidth="1.5"/><circle cx="30" cy="17" r="2.8" fill={MP.gold}/></g>)
-    case 20: return (<g><rect x="14" y="12" width="20" height="24" rx="2" fill={MP.cream} stroke={MP.gold} strokeWidth="1.6"/><circle cx="24" cy="21" r="4" fill={MP.mut}/><path d="M17 33 C19 27 29 27 31 33" fill={MP.leafL}/></g>)
-    case 21: return (<g>{[13, 21, 29].map((x, i) => (<path key={x} d={`M${x} 33 v-13 a3 3 0 0 1 6 0 v13 Z`} fill={i === 1 ? MP.gold : MP.cream} stroke={i === 1 ? MP.goldD : MP.mut} strokeWidth="1.3"/>))}</g>)
-    default: return (<g><path d="M24 34 L24 20" stroke={MP.bark} strokeWidth="2"/><path d="M24 24 C20 22 18 18 19 15 C23 16 25 19 24 24 M24 22 C26 19 30 17 32 18 C31 21 27 23 24 22" fill={MP.leafL}/></g>)
-  }
-}
-
-// Medallion = drawn vignette in a ringed circle, with a status badge:
-// gold check when done, small padlock when locked. Current day never
-// renders a medallion (it renders as the Today's-work vault card).
-function Medallion({ day, done, locked }) {
-  return (
-    <span style={{ position: 'relative', width: 40, height: 40, flex: '0 0 40px', display: 'inline-block' }}>
-      <svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true">
-        <circle cx="24" cy="24" r="22" fill={MP.bg} stroke={done ? MP.ring : MP.ringSoft} strokeWidth="1.6" />
-        <g opacity={locked ? 0.45 : 1}><MedallionArt day={day} /></g>
-      </svg>
-      {done && (
-        <svg viewBox="0 0 16 16" width="15" height="15" style={{ position: 'absolute', right: -2, bottom: -1 }} aria-hidden="true">
-          <circle cx="8" cy="8" r="7.5" fill={MP.goldD} />
-          <path d="M4.6 8.2 L7 10.6 L11.4 5.8" stroke="#FAF7F1" strokeWidth="1.7" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
-      {locked && (
-        <svg viewBox="0 0 16 16" width="14" height="14" style={{ position: 'absolute', right: -1, bottom: 0 }} aria-hidden="true">
-          <circle cx="8" cy="8" r="7.5" fill="#EDE4D2" stroke="#D8CCB8" strokeWidth="0.8" />
-          <rect x="5" y="7.2" width="6" height="4.6" rx="1" fill={MP.mut} />
-          <path d="M6.2 7.2 v-1.4 a1.8 1.8 0 0 1 3.6 0 v1.4" stroke={MP.mut} strokeWidth="1.3" fill="none" />
-        </svg>
-      )}
-    </span>
-  )
-}
-
-// Week badge on the phase header — sprig / scales / doors for the three arcs.
-function WeekBadge({ week }) {
-  return (
-    <svg viewBox="0 0 48 48" width="36" height="36" aria-hidden="true">
-      <circle cx="24" cy="24" r="22" fill="none" stroke={MP.ring} strokeWidth="1.4" />
-      {week === 1 && <MedallionArt day={0} />}
-      {week === 2 && <MedallionArt day={8} />}
-      {week === 3 && <MedallionArt day={21} />}
-    </svg>
-  )
-}
-
-// The candle on the Today's-work vault card.
-function CandleArt() {
-  return (
-    <svg viewBox="0 0 44 56" width="40" height="51" aria-hidden="true" style={{ flex: '0 0 40px' }}>
-      <circle cx="22" cy="18" r="14" fill="#F6E8C4" opacity="0.13" />
-      <circle cx="22" cy="18" r="8" fill="#F6E8C4" opacity="0.16" />
-      <rect x="17" y="24" width="10" height="22" rx="2" fill="#EFE2C8" />
-      <rect x="17" y="24" width="10" height="4" rx="2" fill="#E4D2AC" />
-      <path d="M22 22 v-3" stroke="#5F4429" strokeWidth="1.2" />
-      <path d="M22 8 C25.4 12.6 24.8 16 22 17.6 C19.2 16 18.6 12.6 22 8 Z" fill="#EFDCAF" />
-      <path d="M22 11 C23.6 13.4 23.3 15.2 22 16.1 C20.7 15.2 20.4 13.4 22 11 Z" fill="#D9B57A" />
-      <ellipse cx="22" cy="49" rx="13" ry="2.6" fill="#120B06" opacity="0.5" />
-    </svg>
-  )
-}
 
 export default function ReflectOverview() {
   const navigate = useNavigate()
@@ -313,7 +233,7 @@ export default function ReflectOverview() {
             return (
               <div key={phase.key}>
                 <div style={styles.phaseHeader}>
-                  <span style={styles.phaseBadge}><WeekBadge week={phase.week} /></span>
+                  <span style={styles.phaseBadge}><WeekBadge art={PHASE_ART[phase.key] || 'sprig'} /></span>
                   <span style={styles.phaseHeadText}>
                     <p style={styles.phaseTitle}>{phase.title.toUpperCase()}</p>
                     {phase.subtitle && <p style={styles.phaseSubtitle}>{phase.subtitle}</p>}
@@ -406,7 +326,7 @@ export default function ReflectOverview() {
                           paddingRight: hasCheckin ? '84px' : '4px',
                         }}
                       >
-                        <Medallion day={day.day} done={isDone} locked={isLocked} />
+                        <Medallion art={DAY_ART[day.day] || 'sprig'} done={isDone} locked={isLocked} />
                         <span style={styles.dayContent}>
                           <span style={styles.dayNum}>{day.day - start + 1}</span>
                           <span style={styles.dayTexts}>
