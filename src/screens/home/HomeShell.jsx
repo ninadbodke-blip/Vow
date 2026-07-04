@@ -93,6 +93,10 @@ export default function HomeShell({ progress }) {
   const [anchor, setAnchor] = useState(null)
   const [slipCount, setSlipCount] = useState(progress?.endure_slip_count || 0)
   const [commitTarget, setCommitTarget] = useState(null)
+  // Whether Early days has ever genuinely begun (loaded in loadAll). Drives the
+  // resume-vs-restart decision when returning to Early days after exploring an
+  // earlier stage — see the createStageMove call below.
+  const [hasBegunEndure, setHasBegunEndure] = useState(false)
 
   // The chosen day-one date (from "Your vow & your day") powers the
   // countdown ticker under the tree in Getting ready. Re-fetched when
@@ -190,6 +194,23 @@ export default function HomeShell({ progress }) {
       .eq('user_id', user.id).eq('is_active', true).order('created_at')
     setTracker(trackers && trackers.length > 0 ? trackers[0] : null)
 
+    // Resume-integrity: has Early days ever genuinely begun? True while in
+    // endure/build, OR if an endure_began signal was ever written. This survives
+    // exploring back to an earlier stage, so returning to Early days RESUMES the
+    // day-one clock rather than restarting it. Same detection StageWayfinder uses,
+    // so both entry points agree. (A genuine slip-reset clears this marker.)
+    let begun = vppRow?.free_state === 'endure' || vppRow?.free_state === 'build'
+    if (!begun) {
+      const { data: ev } = await supabase
+        .from('free_stage_signals')
+        .select('id')
+        .eq('user_id', user.id)
+        .or('signal_type.eq.endure_began,stage.eq.endure,stage.eq.build')
+        .limit(1)
+      begun = !!(ev && ev.length)
+    }
+    setHasBegunEndure(begun)
+
     const { data: tc } = await supabase
       .from('free_daily_checkins').select('*')
       .eq('user_id', user.id).eq('checkin_date', localDateStr()).maybeSingle()
@@ -244,7 +265,7 @@ export default function HomeShell({ progress }) {
   const goToStage = createStageMove({
     stage: freeState,
     tracker,
-    hasBegunEndure: freeState === 'endure' || freeState === 'build',
+    hasBegunEndure,
     stopDateISO: null,
     primarySubstance: progress?.primary_substance || null,
     daysOnTracker: emDaysOnTracker,

@@ -33,21 +33,60 @@ export function createStageMove({
 }) {
   // Perform a stage change. reset=true deactivates the tracker + clears the
   // current run (genuine slip). reset=false preserves the counter (curiosity).
-  const applyStage = async (target, { reset = false } = {}) => {
+  // keepClockLive=true means this is an "exploring — keep my progress" move away
+  // from a live counter stage: the day counter must keep visibly running, so we
+  // do NOT pause the tracker even when landing on Commit. The streak stays live
+  // the whole time they look around, and returning to Early days/Staying steady
+  // is seamless (nothing to resume — it never stopped).
+  const applyStage = async (target, { reset = false, keepClockLive = false } = {}) => {
     if (moving) return
     setMoving(true)
     const { data: { user: u } } = await supabase.auth.getUser()
     if (!u) { setMoving(false); return }
     if (reset && tracker?.id) {
-      await supabase.from('trackers').update({ is_active: false }).eq('id', tracker.id)
+      // A genuine slip-reset: deactivate AND move the clock (same effect as a
+      // logged slip), preserving the longest streak. Leaving start_date stale
+      // would let a later return silently revive the streak that was just reset.
+      const nowISO = new Date().toISOString()
+      const prevSeconds = tracker.start_date
+        ? Math.floor((Date.now() - new Date(tracker.start_date).getTime()) / 1000)
+        : 0
+      const newLongest = Math.max(tracker.longest_streak_seconds || 0, prevSeconds)
+      await supabase.from('trackers').update({
+        is_active: false,
+        start_date: nowISO,
+        total_resets: (tracker.total_resets || 0) + 1,
+        longest_streak_seconds: newLongest,
+      }).eq('id', tracker.id)
+      // Clear the "Early days has begun" marker so returning runs the real begin
+      // ceremony again rather than resuming the reset streak. Best-effort.
+      try {
+        await supabase.from('free_stage_signals').delete()
+          .eq('user_id', u.id).eq('signal_type', 'endure_began')
+      } catch (e) { console.error('clear endure_began failed:', e) }
     }
     const patch = { free_state: target, updated_at: new Date().toISOString() }
     if (reset) { patch.endure_starts_at = null; patch.endure_slip_count = 0 }
+    // Entering a live-counter stage (Early days / Staying steady) on a non-reset
+    // move: make sure the tracker is active so the day counter runs. With the
+    // keep-clock-live explore path the tracker never paused, so this is usually a
+    // no-op; it also covers any lateral entry that left it inactive. start_date is
+    // never touched here, so the streak resumes unbroken.
+    if (!reset && (target === 'build' || target === 'endure') && tracker?.id) {
+      try {
+        await supabase.from('trackers')
+          .update({ is_active: true, tracker_status: 'active' })
+          .eq('id', tracker.id)
+      } catch (e) { console.error('counter-stage reactivate failed:', e) }
+    }
     if (target === 'commit') {
-      // Commit owns no live counter — pause the tracker (longest streak stays on
-      // the row; nothing is reset). The countdown to the stop date is its clock.
+      // Commit owns no live counter of its own — its clock is the stop-date
+      // countdown (endure_starts_at), which we clear so Commit starts fresh.
+      // Normally we also pause the tracker; but when the user is just exploring
+      // back from a live counter stage, we leave it running so the day count
+      // keeps ticking and is intact the moment they return.
       patch.endure_starts_at = null
-      if (tracker?.id) {
+      if (tracker?.id && !keepClockLive) {
         try { await supabase.from('trackers').update({ is_active: false }).eq('id', tracker.id) }
         catch (e) { console.error('Commit tracker pause failed:', e) }
       }
@@ -235,7 +274,7 @@ export function createStageMove({
         title: `Heading to "${STAGE_LABELS[target]}"?`,
         body: `If you're just curious, look around — your day count stays exactly where it is. If you slipped, "Getting back up" is the gentler place to land, and it keeps your days too.`,
         actions: [
-          { label: 'Just exploring — keep my progress', primary: true, run: () => applyStage(target, { reset: false }) },
+          { label: 'Just exploring — keep my progress', primary: true, run: () => applyStage(target, { reset: false, keepClockLive: true }) },
           { label: 'I slipped → Getting back up', run: () => applyStage('reclaim') },
           { label: `I slipped → reset & go to ${STAGE_LABELS[target]}`, danger: true, run: () => applyStage(target, { reset: true }) },
           { label: 'Cancel', run: () => setSheet(null) },
