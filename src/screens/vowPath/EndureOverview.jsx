@@ -247,7 +247,7 @@ export default function EndureOverview() {
                   const isDone = status === STATUS.COMPLETED
                   const isLocked = status === STATUS.LOCKED && !tappable
                   const isCloseDay = /,\s*close|\bcloses\b/i.test(day.arrivalTitle)
-                  const hasCheckin = isDone && day.practice
+                  const hasCheckin = isDone && ENDURE_PRACTICES[day.day]
                   const checkinDone = !!checkins[day.day]
 
                   if (isToday) {
@@ -298,8 +298,8 @@ export default function EndureOverview() {
                               ...styles.checkinRing,
                               ...(checkinDone ? styles.checkinRingDone : {}),
                             }}>
-                              {day.practice?.archetype && (
-                                <PracticeArchetypeIcon archetype={day.practice.archetype} size={15} />
+                              {ENDURE_PRACTICES[day.day]?.archetype && (
+                                <PracticeArchetypeIcon archetype={ENDURE_PRACTICES[day.day].archetype} size={15} />
                               )}
                             </span>
                             <span style={styles.checkinLabel}>
@@ -348,8 +348,8 @@ export default function EndureOverview() {
                             ...styles.checkinRing,
                             ...(checkinDone ? styles.checkinRingDone : {}),
                           }}>
-                            {day.practice?.archetype && (
-                              <PracticeArchetypeIcon archetype={day.practice.archetype} size={15} />
+                            {ENDURE_PRACTICES[day.day]?.archetype && (
+                              <PracticeArchetypeIcon archetype={ENDURE_PRACTICES[day.day].archetype} size={15} />
                             )}
                           </span>
                           <span style={styles.checkinLabel}>

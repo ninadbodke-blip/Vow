@@ -247,7 +247,7 @@ export default function CommitOverview() {
                   const isDone = status === STATUS.COMPLETED
                   const isLocked = status === STATUS.LOCKED && !tappable
                   const isCloseDay = /,\s*close|\bcloses\b/i.test(day.arrivalTitle)
-                  const hasCheckin = isDone && day.practice
+                  const hasCheckin = isDone && COMMIT_PRACTICES[day.day]
                   const checkinDone = !!checkins[day.day]
 
                   if (isToday) {
@@ -298,8 +298,8 @@ export default function CommitOverview() {
                               ...styles.checkinRing,
                               ...(checkinDone ? styles.checkinRingDone : {}),
                             }}>
-                              {day.practice?.archetype && (
-                                <PracticeArchetypeIcon archetype={day.practice.archetype} size={15} />
+                              {COMMIT_PRACTICES[day.day]?.archetype && (
+                                <PracticeArchetypeIcon archetype={COMMIT_PRACTICES[day.day].archetype} size={15} />
                               )}
                             </span>
                             <span style={styles.checkinLabel}>
@@ -348,8 +348,8 @@ export default function CommitOverview() {
                             ...styles.checkinRing,
                             ...(checkinDone ? styles.checkinRingDone : {}),
                           }}>
-                            {day.practice?.archetype && (
-                              <PracticeArchetypeIcon archetype={day.practice.archetype} size={15} />
+                            {COMMIT_PRACTICES[day.day]?.archetype && (
+                              <PracticeArchetypeIcon archetype={COMMIT_PRACTICES[day.day].archetype} size={15} />
                             )}
                           </span>
                           <span style={styles.checkinLabel}>

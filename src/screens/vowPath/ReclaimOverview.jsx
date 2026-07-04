@@ -9,6 +9,12 @@ import {
   pickReclaimModule,
 } from './data/reclaimContent'
 import { useStageBackground } from './utils/silhouettes'
+import { Medallion, CandleArt } from './overviewKit'
+
+// Drawn-medallion art per step — visual only. Modules rotate their content
+// but share the five-step arc, so art keys off the step number.
+const DAY_ART = { 1: 'sunrise', 2: 'scales', 3: 'roots', 4: 'lantern', 5: 'fork' }
+
 
 const STATUS = {
   COMPLETED: 'completed',
@@ -205,11 +211,14 @@ export default function ReclaimOverview() {
                   onClick={() => handleDayTap(day.day)}
                   style={styles.vaultCard}
                 >
-                  <span style={styles.vaultEyebrow}>{day.day === 1 ? 'Begin here' : "Today's work"}</span>
-                  <span style={styles.vaultTitle}>{day.arrivalTitle}</span>
-                  {day.arrivalSubtitle && (
-                    <span style={styles.vaultSubtitle}>{day.arrivalSubtitle}</span>
-                  )}
+                  <span style={styles.vaultText}>
+                    <span style={styles.vaultEyebrow}>{day.day === 1 ? 'Begin here' : "Today's work"}</span>
+                    <span style={styles.vaultTitle}>{day.arrivalTitle}</span>
+                    {day.arrivalSubtitle && (
+                      <span style={styles.vaultSubtitle}>{day.arrivalSubtitle}</span>
+                    )}
+                  </span>
+                  <CandleArt />
                 </button>
               )
             }
@@ -225,18 +234,18 @@ export default function ReclaimOverview() {
                   cursor: tappable ? 'pointer' : 'not-allowed',
                 }}
               >
-                <span style={{
-                  ...styles.dayNode,
-                  color: isDone ? '#D9B57A' : '#C9BBA3',
-                }}>{isDone ? '✦' : '·'}</span>
+                <Medallion art={DAY_ART[day.day] || 'sprig'} done={isDone} locked={isLocked} />
                 <span style={styles.dayContent}>
-                  <span style={{
-                    ...styles.dayTitle,
-                    ...(isDone ? styles.dayTitleDone : {}),
-                  }}>{day.arrivalTitle}</span>
-                  {day.arrivalSubtitle && (
-                    <span style={styles.daySubtitle}>{day.arrivalSubtitle}</span>
-                  )}
+                  <span style={styles.dayNum}>{day.day}</span>
+                  <span style={styles.dayTexts}>
+                    <span style={{
+                      ...styles.dayTitle,
+                      ...(isDone ? styles.dayTitleDone : {}),
+                    }}>{day.arrivalTitle}</span>
+                    {day.arrivalSubtitle && (
+                      <span style={styles.daySubtitle}>{day.arrivalSubtitle}</span>
+                    )}
+                  </span>
                 </span>
               </button>
             )
@@ -326,37 +335,42 @@ const styles = {
   },
   progressEmph: { color: '#854F0B' },
 
-  listWrap: { position: 'relative', marginTop: '1.25rem', paddingTop: '0.25rem', paddingBottom: '48px' },
+  listWrap: { position: 'relative', marginTop: '1.4rem', paddingTop: '0.25rem', paddingBottom: '44px' },
+
+  // one continuous thread, aligned to the medallion centres
   thread: {
-    position: 'absolute', left: '19px', top: '18px', bottom: 0, width: '1.5px',
-    background: 'linear-gradient(180deg, rgba(217,181,122,0.6) 0%, rgba(217,181,122,0.6) 80%, rgba(217,181,122,0) 100%)',
+    position: 'absolute', left: '23px', top: '20px', bottom: 0, width: '1.5px',
+    background: 'linear-gradient(180deg, rgba(217,181,122,0.55) 0%, rgba(217,181,122,0.55) 82%, rgba(217,181,122,0) 100%)',
   },
 
   dayRow: {
-    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start',
+    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
     gap: '12px', width: '100%', background: 'transparent', border: 'none',
-    textAlign: 'left', padding: '15px 4px', fontFamily: 'inherit',
+    textAlign: 'left', padding: '10px 4px', fontFamily: 'inherit',
   },
-  dayRowLocked: { opacity: 0.3 },
-  dayNode: {
-    width: '30px', flexShrink: 0, textAlign: 'center', fontSize: '15px',
-    lineHeight: '1.5', marginTop: '1px', background: '#FAF7F1',
+  dayRowLocked: { opacity: 0.38 },
+  dayContent: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '9px' },
+  dayNum: {
+    flex: '0 0 auto', fontSize: '13px', color: '#B8A88E',
+    fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums',
   },
-  dayContent: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '1px' },
-  dayTitle: { fontSize: '16px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
+  dayTexts: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' },
+  dayTitle: { fontSize: '15.5px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
   dayTitleDone: { color: '#9C8C78', fontStyle: 'italic', fontWeight: 400 },
-  daySubtitle: { fontSize: '13px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
+  daySubtitle: { fontSize: '12.5px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
 
+  // Today's work — the dark vault card, now with the drawn candle
   vaultCard: {
-    position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column',
-    gap: '5px', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
+    gap: '14px', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
     fontFamily: 'inherit', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
-    borderRadius: '18px', padding: '20px 22px', margin: '10px 0',
-    boxShadow: '0 14px 30px -12px rgba(40,25,10,0.5)',
+    borderRadius: '18px', padding: '18px 20px', margin: '10px 0',
+    boxShadow: '0 10px 24px -12px rgba(40,25,10,0.5)',
   },
+  vaultText: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '5px' },
   vaultEyebrow: {
-    fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase',
-    letterSpacing: '0.2em', fontWeight: 600, fontFamily: '-apple-system, sans-serif',
+    fontSize: '10px', fontWeight: 600, color: '#D9B57A', textTransform: 'uppercase',
+    letterSpacing: '0.2em', fontFamily: '-apple-system, sans-serif',
   },
   vaultTitle: { fontSize: '19px', fontWeight: 500, color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
   vaultSubtitle: { fontSize: '13px', color: '#CBBA98', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.45 },
