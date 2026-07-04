@@ -9,7 +9,13 @@ import {
 } from './data/buildContent'
 import { useStageBackground } from './utils/silhouettes'
 import { PracticeArchetypeIcon } from './practiceArchetypeIcons'
+import { Medallion, WeekBadge, CandleArt } from './overviewKit'
 import { isCadenceBypassed } from './utils/vowPathGating'
+
+// Drawn-medallion art per week, and a badge per phase — visual only.
+const DAY_ART = { 1: 'drift', 2: 'roots', 3: 'lantern', 4: 'body', 5: 'home', 6: 'people', 7: 'sunrise', 8: 'fork', 9: 'tree' }
+const PHASE_ART = { arriving: 'sunrise', constructing: 'home', horizon: 'piles' }
+
 import { isExploringPastStage } from './utils/stageAccess'
 
 const STATUS = {
@@ -40,6 +46,8 @@ export default function BuildOverview() {
   const [savingOffline, setSavingOffline] = useState(false)
   const [activeDayCard, setActiveDayCard] = useState(null) // { week, act } for the per-day floating card
   const [dayCardChoice, setDayCardChoice] = useState(null) // 'done' | 'missed' | null
+  // Visual-only: fully locked future phases render collapsed with a '+ N more' toggle.
+  const [expandedPhases, setExpandedPhases] = useState({})
 
   useEffect(() => {
     async function load() {
@@ -267,14 +275,26 @@ export default function BuildOverview() {
           {BUILD_PHASES.map((phase) => {
             const [start, end] = phase.dayRange
             const phaseWeeks = BUILD_DAYS.filter(d => d.day >= start && d.day <= end)
+            // Visual-only progressive disclosure: phases entirely ahead of the
+            // live week show their first three weeks + a "+ N more" toggle.
+            // Week logic is untouched — expanding reveals the same rows with
+            // the same handlers. Exploring/bypass users see everything.
+            const liveWeekNum = exploringBuild ? (nextExploredEntry || 1) : currentWeek
+            const isFuturePhase = start > liveWeekNum && !bypass
+            const expanded = !!expandedPhases[phase.key]
+            const visibleWeeks = (isFuturePhase && !expanded) ? phaseWeeks.slice(0, 3) : phaseWeeks
+            const hiddenCount = phaseWeeks.length - visibleWeeks.length
             return (
               <div key={phase.key}>
                 <div style={styles.phaseHeader}>
-                  <p style={styles.phaseTitle}>{`· ${phase.title.toUpperCase()} ·`}</p>
-                  {phase.subtitle && <p style={styles.phaseSubtitle}>{phase.subtitle}</p>}
+                  <span style={styles.phaseBadge}><WeekBadge art={PHASE_ART[phase.key] || 'sprig'} /></span>
+                  <span style={styles.phaseHeadText}>
+                    <p style={styles.phaseTitle}>{phase.title.toUpperCase()}</p>
+                    {phase.subtitle && <p style={styles.phaseSubtitle}>{phase.subtitle}</p>}
+                  </span>
                 </div>
 
-                {phaseWeeks.map((week) => {
+                {visibleWeeks.map((week) => {
                   const status = getDayStatus(week.day)
                   const tappable = isDayTappable(week.day)
                   const isToday = status === STATUS.CURRENT
@@ -288,11 +308,14 @@ export default function BuildOverview() {
                     <div key={week.day}>
                       {isToday ? (
                         <button onClick={() => handleDayTap(week.day)} style={styles.vaultCard}>
-                          <span style={styles.vaultEyebrow}>This week's work</span>
-                          <span style={styles.vaultTitle}>{week.arrivalTitle}</span>
-                          {week.arrivalSubtitle && (
-                            <span style={styles.vaultSubtitle}>{week.arrivalSubtitle}</span>
-                          )}
+                          <span style={styles.vaultText}>
+                            <span style={styles.vaultEyebrow}>This week's work</span>
+                            <span style={styles.vaultTitle}>{week.arrivalTitle}</span>
+                            {week.arrivalSubtitle && (
+                              <span style={styles.vaultSubtitle}>{week.arrivalSubtitle}</span>
+                            )}
+                          </span>
+                          <CandleArt />
                         </button>
                       ) : (
                         <button
@@ -304,16 +327,17 @@ export default function BuildOverview() {
                             cursor: tappable ? 'pointer' : 'not-allowed',
                           }}
                         >
-                          <span style={{ ...styles.dayNode, color: isDone ? '#D9B57A' : '#C9BBA3' }}>
-                            {isDone ? '✦' : '·'}
-                          </span>
+                          <Medallion art={DAY_ART[week.day] || 'sprig'} done={isDone} locked={isLocked} />
                           <span style={styles.dayContent}>
-                            <span style={{ ...styles.dayTitle, ...(isDone ? styles.dayTitleDone : {}) }}>
-                              {week.arrivalTitle}
+                            <span style={styles.dayNum}>{week.day - start + 1}</span>
+                            <span style={styles.dayTexts}>
+                              <span style={{ ...styles.dayTitle, ...(isDone ? styles.dayTitleDone : {}) }}>
+                                {week.arrivalTitle}
+                              </span>
+                              {week.arrivalSubtitle && (
+                                <span style={styles.daySubtitle}>{week.arrivalSubtitle}</span>
+                              )}
                             </span>
-                            {week.arrivalSubtitle && (
-                              <span style={styles.daySubtitle}>{week.arrivalSubtitle}</span>
-                            )}
                           </span>
                         </button>
                       )}
@@ -367,6 +391,15 @@ export default function BuildOverview() {
                     </div>
                   )
                 })}
+
+                {hiddenCount > 0 && (
+                  <button
+                    style={styles.moreBtn}
+                    onClick={() => setExpandedPhases(prev => ({ ...prev, [phase.key]: true }))}
+                  >
+                    + {hiddenCount} more {hiddenCount === 1 ? 'week' : 'weeks'}
+                  </button>
+                )}
               </div>
             )
           })}
@@ -538,39 +571,72 @@ const styles = {
   pilotNote: { display: 'inline-block', fontSize: '11px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', background: '#F2ECE0', borderRadius: '999px', padding: '5px 14px' },
 
   // 4 — Continuous thread + list
-  listWrap: { position: 'relative', marginTop: '1.25rem', paddingTop: '0.25rem', paddingBottom: '48px' },
+  listWrap: { position: 'relative', marginTop: '1.4rem', paddingTop: '0.25rem', paddingBottom: '44px' },
+
+  // one continuous thread, aligned to the medallion centres
   thread: {
-    position: 'absolute', left: '19px', top: '88px', bottom: 0, width: '1.5px',
-    background: 'linear-gradient(180deg, rgba(217,181,122,0.6) 0%, rgba(217,181,122,0.6) 80%, rgba(217,181,122,0) 100%)',
+    position: 'absolute', left: '23px', top: '20px', bottom: 0, width: '1.5px',
+    background: 'linear-gradient(180deg, rgba(217,181,122,0.55) 0%, rgba(217,181,122,0.55) 82%, rgba(217,181,122,0) 100%)',
   },
-  phaseHeader: { textAlign: 'center', margin: '2rem 0 1.25rem' },
-  phaseTitle: { fontSize: '12px', fontWeight: 600, color: '#854F0B', fontFamily: '-apple-system, sans-serif', textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 0.35rem' },
+
+  phaseHeader: {
+    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
+    gap: '13px', margin: '1.9rem 0 0.9rem', textAlign: 'left',
+  },
+  phaseBadge: {
+    flex: '0 0 40px', width: '40px', height: '40px', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', background: '#FAF7F1',
+    borderRadius: '50%', marginLeft: '4px',
+  },
+  phaseHeadText: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  phaseTitle: {
+    fontSize: '12px', fontWeight: 600, color: '#854F0B',
+    fontFamily: '-apple-system, sans-serif', textTransform: 'uppercase',
+    letterSpacing: '0.18em', margin: 0,
+  },
   phaseSubtitle: { fontSize: '13px', color: '#6B5C4A', fontFamily: 'Georgia, serif', fontStyle: 'italic', margin: 0, lineHeight: 1.4 },
 
   dayRow: {
-    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: '12px', width: '100%',
-    background: 'transparent', border: 'none', textAlign: 'left', padding: '15px 4px', fontFamily: 'inherit',
+    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
+    gap: '12px', width: '100%', background: 'transparent', border: 'none',
+    textAlign: 'left', padding: '10px 4px', fontFamily: 'inherit',
   },
-  dayRowLocked: { opacity: 0.3 },
-  dayNode: { width: '30px', flexShrink: 0, textAlign: 'center', fontSize: '15px', lineHeight: '1.5', marginTop: '1px', background: '#FAF7F1' },
-  dayContent: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '1px' },
-  dayTitle: { fontSize: '16px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
+  dayRowLocked: { opacity: 0.38 },
+  dayContent: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '9px' },
+  dayNum: {
+    flex: '0 0 auto', fontSize: '13px', color: '#B8A88E',
+    fontFamily: 'Georgia, serif', fontVariantNumeric: 'tabular-nums',
+  },
+  dayTexts: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' },
+  dayTitle: { fontSize: '15.5px', fontWeight: 500, color: '#2A1F15', fontFamily: 'Georgia, serif', lineHeight: 1.35 },
   dayTitleDone: { color: '#9C8C78', fontStyle: 'italic', fontWeight: 400 },
-  daySubtitle: { fontSize: '13px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
+  daySubtitle: { fontSize: '12.5px', color: '#9C8C78', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.4 },
 
+  // Today's work — the dark vault card, now with the drawn candle
   vaultCard: {
-    position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '5px', width: '100%',
-    textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-    background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)', borderRadius: '18px', padding: '20px 22px',
-    margin: '10px 0', boxShadow: '0 14px 30px -12px rgba(40,25,10,0.5)',
+    position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
+    gap: '14px', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+    fontFamily: 'inherit', background: 'linear-gradient(180deg, #3A2A1C 0%, #241710 100%)',
+    borderRadius: '18px', padding: '18px 20px', margin: '10px 0',
+    boxShadow: '0 10px 24px -12px rgba(40,25,10,0.5)',
   },
-  vaultEyebrow: { fontSize: '10px', color: '#D9B57A', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 600, fontFamily: '-apple-system, sans-serif' },
+  vaultText: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '5px' },
+  vaultEyebrow: {
+    fontSize: '10px', fontWeight: 600, color: '#D9B57A', textTransform: 'uppercase',
+    letterSpacing: '0.2em', fontFamily: '-apple-system, sans-serif',
+  },
   vaultTitle: { fontSize: '19px', fontWeight: 500, color: '#FAF7F1', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 },
   vaultSubtitle: { fontSize: '13px', color: '#CBBA98', fontStyle: 'italic', fontFamily: 'Georgia, serif', lineHeight: 1.45 },
 
-  // Offline practice marker — glyph ring + title + weekly progress
+  // "+ N more exercises" toggle for weeks still ahead
+  moreBtn: {
+    position: 'relative', zIndex: 1, display: 'block', background: 'transparent',
+    border: 'none', cursor: 'pointer', fontFamily: 'Georgia, serif', fontStyle: 'italic',
+    fontSize: '13px', color: '#854F0B', padding: '6px 4px 6px 56px', textAlign: 'left',
+  },
+
   offlineStrip: {
-    display: 'flex', alignItems: 'center', gap: '11px', width: 'calc(100% - 48px)', marginLeft: '42px', boxSizing: 'border-box',
+    display: 'flex', alignItems: 'center', gap: '11px', width: 'calc(100% - 56px)', marginLeft: '52px', boxSizing: 'border-box',
     marginTop: '-2px', marginBottom: '10px',
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', border: '0.5px solid #EADFCB',
     borderRadius: '14px', padding: '10px 13px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
@@ -587,7 +653,7 @@ const styles = {
 
   // Per-day glyph chips (new daily model)
   dailyWrap: {
-    width: 'calc(100% - 34px)', marginLeft: '30px', boxSizing: 'border-box', marginTop: '-2px', marginBottom: '12px',
+    width: 'calc(100% - 56px)', marginLeft: '52px', boxSizing: 'border-box', marginTop: '-2px', marginBottom: '12px',
     background: 'linear-gradient(180deg, #FBF6EA 0%, #F5EEDF 100%)', border: '0.5px solid #EADFCB',
     borderRadius: '14px', padding: '11px 9px 13px',
   },
