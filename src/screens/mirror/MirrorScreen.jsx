@@ -5,6 +5,7 @@ import BottomNav from '../../components/BottomNav'
 import VowPathInvite from '../freeHome/VowPathInvite'
 import OraclePool from './OraclePool'
 import JournalArchive from './JournalArchive'
+import DaysCalendar from './DaysCalendar'
 import CoachMark from '../../components/CoachMark'
 import VowBrandMark from '../../components/VowBrandMark'
 import { moodByScore, moodByValue } from '../freeHome/DailyCheckin'
@@ -157,6 +158,7 @@ export default function MirrorScreen() {
   const [checkins, setCheckins] = useState([])
   const [byType, setByType] = useState({})
   const [urgeLogs, setUrgeLogs] = useState([])
+  const [calOpen, setCalOpen] = useState(false)
   const [activityLogs, setActivityLogs] = useState([])
   const [aiReflection, setAiReflection] = useState(null)
   const [pebbleDays, setPebbleDays] = useState([])  // ISO dates (yyyy-mm-dd) a pebble was dropped
@@ -674,6 +676,16 @@ export default function MirrorScreen() {
           </>
         )}
 
+        {/* THE BOOK OF DAYS — the whole record as a gentle calendar */}
+        <button onClick={() => setCalOpen(true)} style={styles.calEntry}>
+          <span style={styles.calEntryBody}>
+            <span style={styles.groundEyebrow}>Day by day</span>
+            <span style={styles.calEntryTitle}>The book of days</span>
+            <span style={styles.calEntrySub}>Every day, marked gently — quiet days, urges ridden, slips weathered.</span>
+          </span>
+          <span style={styles.calEntryArrow}>›</span>
+        </button>
+
         <div style={styles.archiveDivider} />
         <div ref={archiveRef}><JournalArchive /></div>
 
@@ -682,6 +694,7 @@ export default function MirrorScreen() {
         <BottomNav />
 
         {/* Gentle guided tour — first visit to Oracle, replayable via "?" */}
+        <DaysCalendar open={calOpen} onClose={() => setCalOpen(false)} />
         <CoachMark steps={tourSteps} open={tourOpen} onClose={finishTour} />
         {!tourOpen && (
           <button onClick={() => setTourOpen(true)} style={styles.tourReplay} aria-label="Show me around" title="Show me around">?</button>
@@ -769,6 +782,16 @@ const styles = {
 
   // Ground
   groundCard: { background: 'linear-gradient(180deg, #FBF6EA 0%, #F4ECDD 100%)', border: '0.5px solid #E0CDB3', borderRadius: '18px', padding: '18px', boxShadow: '0 3px 12px rgba(80,50,20,0.05)' },
+  calEntry: {
+    display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left',
+    background: 'linear-gradient(180deg, #FDFBF6 0%, #FBF6EC 100%)', border: '0.5px solid #EBDFC9',
+    borderRadius: '16px', padding: '15px 16px', margin: '14px 0 0', cursor: 'pointer',
+    fontFamily: 'inherit', boxShadow: '0 8px 20px -16px rgba(90,65,35,0.35)',
+  },
+  calEntryBody: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' },
+  calEntryTitle: { fontFamily: 'Georgia, serif', fontSize: '16px', fontWeight: 500, color: '#2A1F15' },
+  calEntrySub: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '12px', color: '#9C8C78', lineHeight: 1.45 },
+  calEntryArrow: { fontSize: '18px', color: '#B8A88E' },
   groundEyebrow: { fontSize: '10.5px', color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 500, fontFamily: 'Georgia, serif', margin: '0 0 14px' },
   groundRow: { display: 'flex', justifyContent: 'space-around', gap: '10px' },
   groundStat: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', flex: 1 },
