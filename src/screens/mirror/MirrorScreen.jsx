@@ -43,11 +43,14 @@ async function fetchWeeklyAIReflection(weeklySummary) {
   } catch { return null }
 }
 
-const AUTOPILOT = { 1: 'on total autopilot', 2: 'half-awake to it', 3: 'fully conscious' }
-const GHOST_ORDER = ['entitlement', 'resentment', 'isolation', 'nostalgia']
-const GHOSTS = { entitlement: 'Entitlement', resentment: 'Resentment', isolation: 'Isolation', nostalgia: 'Nostalgia' }
+// notice_autopilot stores the chip INDEX (0..2) — not 1..3 as it once did.
+const AUTOPILOT_IDX = { 0: 'on total autopilot', 1: 'half-awake to it', 2: 'fully conscious' }
 const FRACTURES = { exhaustion: 'Exhaustion', social: 'Social — ambient pressure', emotional: 'An emotional wave', vacuum: 'The vacuum' }
 const DOMAIN_LABEL = { physical: 'your body', relational: 'the people close to you', craft: 'your craft', rest: 'real rest', idle: 'open, unclaimed time' }
+// WhatItCosts v3 stores the user's chosen currency; NONE/absent = bare numbers.
+const CUR_SYMBOL = { INR: '₹', USD: '$', EUR: '€', GBP: '£' }
+// daily_vitals stores words, not numbers — these are the low-signal answers.
+const VITAL_LOWS = new Set(['Badly', 'Not really', 'No'])
 
 const ProfileIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -57,7 +60,7 @@ const ProfileIcon = () => (
   </svg>
 )
 
-const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN')
+const fmtCur = (n, code) => (CUR_SYMBOL[code] || '') + Math.round(n).toLocaleString(code === 'INR' ? 'en-IN' : 'en-US')
 const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0)
 function mostCommon(arr) {
   const m = {}; let best = null, bc = 0
@@ -153,6 +156,8 @@ export default function MirrorScreen() {
   const [stage, setStage] = useState(null)
   const [checkins, setCheckins] = useState([])
   const [byType, setByType] = useState({})
+  const [urgeLogs, setUrgeLogs] = useState([])
+  const [activityLogs, setActivityLogs] = useState([])
   const [aiReflection, setAiReflection] = useState(null)
   const [pebbleDays, setPebbleDays] = useState([])  // ISO dates (yyyy-mm-dd) a pebble was dropped
 
@@ -219,6 +224,18 @@ export default function MirrorScreen() {
       const grouped = {}
       ;(sig || []).forEach(r => { if (!grouped[r.signal_type]) grouped[r.signal_type] = []; grouped[r.signal_type].push(r) })
       setByType(grouped)
+
+      // The revamped tools write two tables beyond free_stage_signals:
+      // the urge flow logs rides in urge_logs, and "Instead, I…" logs
+      // mood-lift entries in free_activity_logs. Both read-only here.
+      const { data: ul } = await supabase.from('urge_logs')
+        .select('intensity, triggers, resisted, duration_seconds, technique_used, technique_helped, created_at')
+        .eq('user_id', user.id).order('created_at', { ascending: false }).limit(200)
+      setUrgeLogs(ul || [])
+      const { data: al } = await supabase.from('free_activity_logs')
+        .select('activity_type, mood_before, mood_after, created_at')
+        .eq('user_id', user.id).order('created_at', { ascending: false }).limit(200)
+      setActivityLogs(al || [])
 
       // Oracle pebbles: stored as free_stage_signals rows of type 'oracle_pebble',
       // one per day. We keep the set of distinct dates a pebble was dropped.
@@ -294,77 +311,147 @@ export default function MirrorScreen() {
     }, grew: grewWeek,
   })
 
-  // ---- PORTRAIT A — the shape of the pull (awareness / reckoning) ----
+  // ---- PORTRAIT A — the shape of the pull ------------------------------
+  // Reads the CURRENT contracts: notice_context {location, company,
+  // time_of_day}, notice_roi {after}, notice_autopilot {level: 0..2},
+  // notice_catch {count}, reflect_cost v3 {daily_cost, daily_hours,
+  // currency, first_measured}, reflect_rationalization {lies[], loudest},
+  // plus urge_logs (ridden, triggers, techniques).
   const ctxLoc = mostCommon(g('notice_context').map(r => r.payload?.location))
   const ctxCompany = mostCommon(g('notice_context').map(r => r.payload?.company))
+  const ctxTime = mostCommon(g('notice_context').map(r => r.payload?.time_of_day))
   const roiAfter = mostCommon(g('notice_roi').map(r => r.payload?.after))
-  const apLvls = g('notice_autopilot').map(r => r.payload?.level).filter(v => v != null)
-  const apAvg = apLvls.length ? AUTOPILOT[Math.round(avg(apLvls))] : null
+  const apLvls = g('notice_autopilot').map(r => Number(r.payload?.level)).filter(v => Number.isFinite(v))
+  const apAvg = apLvls.length ? AUTOPILOT_IDX[Math.max(0, Math.min(2, Math.round(avg(apLvls))))] : null
+  const catches = g('notice_catch').reduce((a, r) => a + (Number(r.payload?.count) || 0), 0)
+
+  // The live meter, in the user's own currency (bare number if none chosen).
   const cost = g('reflect_cost')[0]?.payload
-  const costSpend = (cost?.daily_cost != null && cost?.max_horizon) ? cost.daily_cost * cost.max_horizon : null
-  const costDays = (cost?.daily_hours != null && cost?.max_horizon) ? Math.round(cost.daily_hours * cost.max_horizon / 24) : null
+  const meterDays = cost?.first_measured ? Math.max(0, (nowTs - new Date(cost.first_measured).getTime()) / 86400000) : null
+  const meterMoney = (meterDays != null && cost?.daily_cost) ? cost.daily_cost * meterDays : null
+  const meterHours = (meterDays != null && cost?.daily_hours) ? Math.round(cost.daily_hours * meterDays) : null
+
   const lies = new Set(g('reflect_rationalization').flatMap(r => r.payload?.lies || []))
+  const loudestLie = mostCommon(g('reflect_rationalization').map(r => r.payload?.loudest))
+
+  const urgesRidden = urgeLogs.filter(r => r.resisted).length
+  const topTrigger = mostCommon(urgeLogs.flatMap(r => Array.isArray(r.triggers) ? r.triggers : []))
+  const topTechnique = mostCommon(urgeLogs.filter(r => r.technique_helped && r.technique_used).map(r => r.technique_used))
 
   const pullLines = []
-  if (ctxLoc) pullLines.push(`It keeps finding you ${ctxLoc[0]}${ctxCompany ? `, ${ctxCompany[0]}` : ''}.`)
+  if (ctxTime || ctxLoc) {
+    const door = [ctxTime && ctxTime[0].toLowerCase(), ctxLoc && ctxLoc[0], ctxCompany && ctxCompany[0]].filter(Boolean).join(' · ')
+    pullLines.push(`Its favorite door, by your own logs: ${door}.`)
+  }
+  if (topTrigger) pullLines.push(`What opens that door most often is ${String(topTrigger[0]).toLowerCase()}.`)
   if (roiAfter) pullLines.push(`When it fades, what it leaves behind is ${roiAfter[0]} — never the promise it made.`)
   if (apAvg && pullLines.length < 3) pullLines.push(`It tends to arrive while you are ${apAvg}.`)
+  if (loudestLie && pullLines.length < 4) pullLines.push(`The lie that shouts loudest: \u201c${loudestLie[0]}\u201d`)
 
   const pullChips = []
-  if (costSpend != null) pullChips.push({ v: inr(costSpend), l: 'it would cost' })
-  if (costDays) pullChips.push({ v: costDays + (costDays === 1 ? ' day' : ' days'), l: 'of life, mapped' })
+  if (meterMoney != null && meterMoney >= 1) pullChips.push({ v: fmtCur(meterMoney, cost?.currency), l: 'counted by the meter' })
+  else if (meterHours) pullChips.push({ v: meterHours + 'h', l: 'counted by the meter' })
+  if (urgesRidden) pullChips.push({ v: urgesRidden, l: urgesRidden === 1 ? 'urge ridden out' : 'urges ridden out' })
+  if (catches) pullChips.push({ v: catches, l: 'caught mid-reach' })
   if (lies.size) pullChips.push({ v: lies.size, l: lies.size === 1 ? 'lie named' : 'lies named' })
-  if (urge.total) pullChips.push({ v: urge.total, l: urge.total === 1 ? 'urge met' : 'urges met' })
   const hasPull = pullLines.length > 0 || pullChips.length > 0
 
-  // ---- PORTRAIT B — what you're building (defenses / becoming) ----
+  // ---- PORTRAIT B — what you're building --------------------------------
+  // commit_vow {text}, commit_confidence {score}, commit_rehearsal {move},
+  // commit_fear (count), build_pillars {pillars[], high_stress},
+  // build_allocation {physical..idle} summed across rows, build_evidence,
+  // daily_steady (count), endure_hard_hour {outcome}, endure_recommit,
+  // free_activity_logs (top mood-lift).
   const vow = g('commit_vow')[0]?.payload?.text
-  const perimLocked = g('commit_perimeter')[0]?.payload?.locked
   const conf = g('commit_confidence')[0]?.payload?.score
+  const rehearsals = g('commit_rehearsal')
+  const rehearsedMove = rehearsals[0]?.payload?.move
+  const worriesAnswered = g('commit_fear').length
   const pillarsHeld = g('build_pillars').filter(r => r.payload?.high_stress).length
-  const topPillar = mostCommon(g('build_pillars').flatMap(r => r.payload?.pillars || []))
-  const alloc = g('build_allocation')[0]?.payload
-  let topDomain = null
-  if (alloc) {
-    let best = null, bv = -1
-    ;['physical', 'relational', 'craft', 'rest'].forEach(d => { const v = alloc[d]; if (typeof v === 'number' && v > bv) { bv = v; best = d } })
-    if (best && bv > 0) topDomain = DOMAIN_LABEL[best]
-  }
+  const topPillar = mostCommon(g('build_pillars').flatMap(r => Array.isArray(r.payload?.pillars) ? r.payload.pillars : []))
+  const allocSums = { physical: 0, relational: 0, craft: 0, rest: 0 }
+  g('build_allocation').forEach(r => {
+    Object.keys(allocSums).forEach(d => { const v = Number(r.payload?.[d]); if (Number.isFinite(v)) allocSums[d] += v })
+  })
+  const topDomainKey = Object.keys(allocSums).reduce((b, d) => (allocSums[d] > (allocSums[b] || 0) ? d : b), null)
+  const topDomain = topDomainKey && allocSums[topDomainKey] > 0 ? DOMAIN_LABEL[topDomainKey] : null
   const builtMarks = g('build_evidence').length + g('journal').length
+  const steadyCount = g('daily_steady').length
+  const hardHoursClosed = g('endure_hard_hour').filter(r => r.payload?.outcome).length
+  const recommits = g('endure_recommit').length
+
+  // "Instead, I…" — the activity that lifts mood most, by their own numbers.
+  const liftByType = {}
+  activityLogs.forEach(l => {
+    if (l.mood_before == null || l.mood_after == null) return
+    if (!liftByType[l.activity_type]) liftByType[l.activity_type] = { sum: 0, n: 0 }
+    liftByType[l.activity_type].sum += (l.mood_after - l.mood_before)
+    liftByType[l.activity_type].n += 1
+  })
+  let topLift = null
+  Object.entries(liftByType).forEach(([t, { sum, n }]) => {
+    const m = sum / n
+    if (n >= 2 && (!topLift || m > topLift.m)) topLift = { t, m }
+  })
+  const topLiftLabel = topLift ? String(topLift.t).replace(/_/g, ' ') : null
 
   const builtLines = []
   if (vow) builtLines.push({ kind: 'vow', text: vow })
-  if (topPillar) builtLines.push({ kind: 'plain', text: `When the stress is real, what holds you up is ${topPillar[0]}.` })
+  if (rehearsedMove) builtLines.push({ kind: 'plain', text: `Your rehearsed move for the hard moment: \u201c${rehearsedMove}\u201d` })
+  if (topPillar) builtLines.push({ kind: 'plain', text: `When the stress is real, what holds you up is ${String(topPillar[0]).toLowerCase()}.` })
   if (topDomain) builtLines.push({ kind: 'plain', text: `Your reclaimed hours are going, most of all, to ${topDomain}.` })
+  if (topLiftLabel) builtLines.push({ kind: 'plain', text: `By your own numbers, what lifts you most is ${topLiftLabel}.` })
+  if (topTechnique && builtLines.length < 5) builtLines.push({ kind: 'plain', text: `In the hardest minutes, ${String(topTechnique[0]).toLowerCase()} has been the tool that worked.` })
 
-  const builtChips = []
-  if (Array.isArray(perimLocked) && perimLocked.length) builtChips.push({ v: perimLocked.length + '/4', l: 'defenses locked' })
-  if (pillarsHeld) builtChips.push({ v: pillarsHeld, l: pillarsHeld === 1 ? 'time held under load' : 'times held under load' })
-  if (builtMarks) builtChips.push({ v: builtMarks, l: builtMarks === 1 ? 'mark of becoming' : 'marks of becoming' })
-  if (conf != null) builtChips.push({ v: conf + '/10', l: 'self-trust' })
+  const builtChipsAll = []
+  if (rehearsals.length) builtChipsAll.push({ v: rehearsals.length, l: rehearsals.length === 1 ? 'rehearsal run' : 'rehearsals run' })
+  if (steadyCount) builtChipsAll.push({ v: steadyCount, l: steadyCount === 1 ? 'steady minute' : 'steady minutes' })
+  if (hardHoursClosed) builtChipsAll.push({ v: hardHoursClosed, l: hardHoursClosed === 1 ? 'hard hour met' : 'hard hours met' })
+  if (pillarsHeld) builtChipsAll.push({ v: pillarsHeld, l: pillarsHeld === 1 ? 'time held under load' : 'times held under load' })
+  if (builtMarks) builtChipsAll.push({ v: builtMarks, l: builtMarks === 1 ? 'mark of becoming' : 'marks of becoming' })
+  if (recommits) builtChipsAll.push({ v: recommits, l: recommits === 1 ? 'vow renewed' : 'vow renewals' })
+  if (worriesAnswered) builtChipsAll.push({ v: worriesAnswered, l: worriesAnswered === 1 ? 'worry answered' : 'worries answered' })
+  if (conf != null) builtChipsAll.push({ v: conf + '/10', l: 'self-trust' })
+  const builtChips = builtChipsAll.slice(0, 4)
   const hasBuilt = builtLines.length > 0 || builtChips.length > 0
 
-  // ---- The Alchemy — a named contradiction turned into proof ----
+  // ---- The Alchemy — contradiction into proof (contracts unchanged) -----
   const dissonance = g('reflect_dissonance')[0]?.payload
   const evidence = g('build_evidence').find(r => r.payload?.proof || r.payload?.text)?.payload
   const evidenceText = evidence?.proof || evidence?.text || null
 
-  // ---- The Drift — ghost aggregation ----
-  const ghostCounts = { entitlement: 0, resentment: 0, isolation: 0, nostalgia: 0 }
-  g('build_blindspot').forEach(r => (r.payload?.ghosts || []).forEach(gk => { if (gk in ghostCounts) ghostCounts[gk]++ }))
-  const ghostTotal = Object.values(ghostCounts).reduce((a, b) => a + b, 0)
-  const ghostMax = Math.max(...Object.values(ghostCounts), 1)
+  // ---- The map — confidence vs guard (replaces the retired ghost drift) --
+  // build_drift {confidence 0..100, exposure 0..100}: high confidence with a
+  // dropping guard is the classic month-two blind spot the tool watches for.
+  const driftRows = g('build_drift')
+  const driftLatest = driftRows[0]?.payload
+  let mapLine = null
+  if (driftLatest && Number.isFinite(Number(driftLatest.confidence))) {
+    const c = Number(driftLatest.confidence), e = Number(driftLatest.exposure) || 0
+    if (c >= 60 && e <= 40) mapLine = 'Confidence high, guard drifting low — the classic month-two blind spot. Worth one honest look.'
+    else if (c >= 60 && e > 40) mapLine = 'Confidence high — and your guard is still up. That pairing is the strong quadrant.'
+    else if (c < 60 && e > 40) mapLine = 'Guard up, confidence still gathering. Careful is not the same as fragile.'
+    else mapLine = 'Both readings low lately. Gentler days are allowed; keep the map honest.'
+  }
 
-  // ---- Anatomy of a Fracture (reclaim only) ----
+  // ---- Reclaim — fracture (legacy, guarded) + the gentle inventory -------
   const fr = g('reclaim_return')[0]?.payload
   const fractureReason = fr ? (FRACTURES[fr.fracture_type] || fr.fracture_type) : null
   const sleepRaw = g('daily_vitals')[0]?.payload?.sleep
-  const sleepStr = sleepRaw == null ? null : (typeof sleepRaw === 'number' ? `${sleepRaw}/5` : String(sleepRaw))
-  const fractureGhost = mostCommon(g('build_blindspot').flatMap(r => r.payload?.ghosts || []))
-  const fractureGhostLabel = fractureGhost ? (GHOSTS[fractureGhost[0]] || fractureGhost[0]) : null
+  const sleepStr = sleepRaw == null ? null : String(sleepRaw)
+  const topNeed = mostCommon(g('reclaim_need').flatMap(r => Array.isArray(r.payload?.needs) ? r.payload.needs : []))
+  const shieldsRaised = g('reclaim_shield').length
+  const topWindow = mostCommon(g('reclaim_shield').map(r => r.payload?.window))
+  const standsLatest = g('reclaim_stands')[0]?.payload?.kept
+  const kinderLetters = g('reclaim_kinder').length
+
+  // The week's texture add-ons: word-based vitals + steady minutes.
+  const vitals7 = within7(g('daily_vitals'))
+  const lowDays7 = vitals7.filter(r => ['sleep', 'food', 'movement'].some(k => VITAL_LOWS.has(r.payload?.[k]))).length
+  const steady7 = within7(g('daily_steady')).length
 
   const totalSignals = Object.values(byType).reduce((a, v) => a + v.length, 0)
-  const isEmpty = !tracker && totalSignals === 0 && checkins.length === 0
+  const isEmpty = !tracker && totalSignals === 0 && checkins.length === 0 && urgeLogs.length === 0 && activityLogs.length === 0
 
   const Chips = ({ items }) => (
     <div style={styles.chipRow}>
@@ -464,14 +551,35 @@ export default function MirrorScreen() {
                 <div style={styles.clinicalDivider} />
                 <p style={styles.clinicalData}>
                   Your perimeter broke at <strong style={styles.clinicalHighlight}>{fractureReason}</strong>
-                  {sleepStr ? <> — and in the days prior, your sleep had dropped to <strong style={styles.clinicalHighlight}>{sleepStr}</strong></> : null}
-                  {fractureGhostLabel ? <>, while your radar kept flagging <strong style={styles.clinicalHighlight}>{fractureGhostLabel}</strong></> : null}.
+                  {sleepStr ? <> — and in the days prior, your sleep was running <strong style={styles.clinicalHighlight}>{sleepStr.toLowerCase()}</strong></> : null}
+                  {topNeed ? <>, while what it was really reaching for was <strong style={styles.clinicalHighlight}>{String(topNeed[0]).toLowerCase()}</strong></> : null}.
                   {' '}You were carrying more than willpower could hold. That is data, not a verdict.
                 </p>
               </div>
             ) : (
               <div ref={sealRef}>
                 <SundaySeal summary={summary} />
+              </div>
+            )}
+
+            {/* THE GENTLE INVENTORY — reclaim only: what the four tools hold */}
+            {isReclaim && (shieldsRaised > 0 || kinderLetters > 0 || (standsLatest && standsLatest.length) || topNeed) && (
+              <div style={styles.softCard}>
+                <p style={styles.eyebrow}>The gentle inventory</p>
+                <p style={styles.portraitHelper}>What you've been doing about it — none of it small.</p>
+                {standsLatest && standsLatest.length > 0 && (
+                  <p style={styles.portraitLine}>{standsLatest.length} {standsLatest.length === 1 ? 'thing' : 'things'} you named that still stand — the slip took none of them.</p>
+                )}
+                {topNeed && (
+                  <p style={styles.portraitLine}>What it keeps reaching for, by your own logs: {String(topNeed[0]).toLowerCase()}. That need is legitimate — the route wasn't.</p>
+                )}
+                {(shieldsRaised > 0 || kinderLetters > 0) && (
+                  <Chips items={[
+                    ...(shieldsRaised ? [{ v: shieldsRaised, l: shieldsRaised === 1 ? 'shield raised' : 'shields raised' }] : []),
+                    ...(topWindow ? [{ v: String(topWindow[0]), l: 'watched window' }] : []),
+                    ...(kinderLetters ? [{ v: kinderLetters, l: kinderLetters === 1 ? 'kinder letter kept' : 'kinder letters kept' }] : []),
+                  ]} />
+                )}
               </div>
             )}
 
@@ -489,6 +597,12 @@ export default function MirrorScreen() {
                   {energyAvg ? `Energy held around ${energyAvg.toFixed(1)} of 5` : 'A few quiet check-ins'}
                   {pullDays > 0 ? ` · the pull surfaced ${pullDays} ${pullDays === 1 ? 'day' : 'days'}.` : ' · the pull stayed quiet.'}
                 </p>
+                {(lowDays7 > 0 || steady7 > 0) && (
+                  <p style={styles.softBody}>
+                    {lowDays7 > 0 ? `${lowDays7} ${lowDays7 === 1 ? 'day' : 'days'} ran on low sleep, food, or movement` : 'The basics held'}
+                    {steady7 > 0 ? ` · ${steady7} steady ${steady7 === 1 ? 'minute' : 'minutes'} taken.` : '.'}
+                  </p>
+                )}
               </div>
             )}
 
@@ -532,27 +646,15 @@ export default function MirrorScreen() {
               </div>
             )}
 
-            {/* THE DRIFT — literary heatmap of the ghosts */}
-            {!isReclaim && ghostTotal > 0 && (
+            {/* THE MAP — confidence vs guard, from the blind-spot tool */}
+            {!isReclaim && mapLine && (
               <div style={styles.driftCard}>
-                <p style={styles.eyebrow}>The drift</p>
-                <p style={styles.driftHelper}>Where the ghosts have been circling.</p>
-                <div style={styles.driftRow}>
-                  {GHOST_ORDER.map((key, idx) => {
-                    const count = ghostCounts[key]
-                    const intensity = count / ghostMax
-                    return (
-                      <span key={key} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                        <span style={{
-                          fontFamily: 'Georgia, serif', fontSize: '15px', textTransform: 'uppercase', letterSpacing: '0.06em',
-                          color: '#2A1F15', opacity: count === 0 ? 0.22 : 0.45 + intensity * 0.55,
-                          fontWeight: count === 0 ? 400 : 500 + Math.round(intensity * 300), transition: 'all 0.3s ease',
-                        }}>{GHOSTS[key]}</span>
-                        {idx < GHOST_ORDER.length - 1 && <span style={styles.driftDot}>·</span>}
-                      </span>
-                    )
-                  })}
-                </div>
+                <p style={styles.eyebrow}>The map</p>
+                <p style={styles.driftHelper}>Where you placed yourself, last time you looked.</p>
+                <p style={styles.portraitLine}>{mapLine}</p>
+                {driftRows.length > 1 && (
+                  <p style={styles.driftHelper}>{driftRows.length} readings taken — the trail is on the tool itself.</p>
+                )}
               </div>
             )}
 
